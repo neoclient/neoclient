@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, List, Tuple, TypeVar, Type
+from typing import Any, Callable, List, Optional, Tuple, TypeVar, Type
 import annotate
 from .enums import HttpMethod
 from .sentinels import Specification
@@ -42,18 +42,18 @@ class Retrofit:
 
     def _method(self, specification: RequestSpecification, /) -> Callable:
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            return client.request(specification.method, self._url(specification.endpoint)).json()
+            return client.request(specification.method, self._url(specification.endpoint), params=specification.params).json()
 
         return wrapper
 
 
 def method(verb: HttpMethod, /):
-    def proxy(endpoint: str, /):
+    def proxy(endpoint: str, /, *, params: Optional[dict] = None):
         def decorate(method: MethodType, /):
             annotate.annotate(
                 method,
                 annotate.Annotation(
-                    Specification, RequestSpecification(method=verb.value, endpoint=endpoint)
+                    Specification, RequestSpecification(method=verb.value, endpoint=endpoint, params=params)
                 ),
             )
 
@@ -63,5 +63,10 @@ def method(verb: HttpMethod, /):
 
     return proxy
 
-
+put = method(HttpMethod.PUT)
 get = method(HttpMethod.GET)
+post = method(HttpMethod.POST)
+head = method(HttpMethod.HEAD)
+patch = method(HttpMethod.PATCH)
+delete = method(HttpMethod.DELETE)
+options = method(HttpMethod.OPTIONS)

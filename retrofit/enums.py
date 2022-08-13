@@ -2,7 +2,10 @@ import enum
 
 
 class HttpMethod(str, enum.Enum):
-    # def __str__(self):
-    #     return str.__str__(self)
-
+    PUT: str = "PUT"
     GET: str = "GET"
+    POST: str = "POST"
+    HEAD: str = "HEAD"
+    PATCH: str = "PATCH"
+    DELETE: str = "DELETE"
+    OPTIONS: str = "OPTIONS"
