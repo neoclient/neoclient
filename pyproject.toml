@@ -8,6 +8,8 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.8"
 httpx = "^0.23.0"
+annotate = {git = "https://github.com/tombulled/annotate", rev = "v0.1.11"}
+sentinel = {git = "https://github.com/tombulled/sentinel", rev = "v0.1.5"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"
