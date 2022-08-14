@@ -1,18 +1,18 @@
 from retrofit import Retrofit, get, post, get_arguments
-from retrofit.models import Path, Param
+from retrofit.models import Path, Param, Header
 from typing import Protocol
 from annotate import get_annotations
-import pydantic.fields
 from inspect import signature
 
 
-# class Path(pydantic.fields.FieldInfo): pass
-
-
 class HttpBinService(Protocol):
-    # @get("get")
-    # def get(self) -> dict:
-    #     ...
+    @get("ip")
+    def ip(self) -> dict:
+        ...
+
+    @get("headers")
+    def headers(self, foo: str = Header("foo")) -> dict:
+        ...
 
     @post("post")
     def post(self, foo: str = Param("foo")) -> dict:

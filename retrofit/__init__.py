@@ -1,17 +1,13 @@
-from ast import arg
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Type
+from typing import Any, Callable, Dict, List, Tuple, TypeVar, Type
 import annotate
 from .enums import HttpMethod, Annotation
-from .models import RequestSpecification, Path, Param, Request
+from .models import RequestSpecification, Path, Param, Request, Header
 from types import MethodType
 import urllib.parse
 import inspect
-import httpx
 
 T = TypeVar("T")
-
-client = httpx.Client()
 
 def get_arguments(args, kwargs, signature):
     positional_parameters = list(signature.parameters.values())[:len(args)]
@@ -63,22 +59,26 @@ class Retrofit:
             arguments = get_arguments(args, kwargs, signature)
 
             params = {
-                field: arguments[param.field]
+                field: arguments[param.name]
                 for field, param in specification.params.items()
             }
             
             path_params = {
-                field: arguments[path.field]
+                field: arguments[path.name]
                 for field, path in specification.path_params.items()
+            }
+
+            headers = {
+                field: arguments[header.name]
+                for field, header in specification.headers.items()
             }
 
             return Request(
                 method=specification.method,
                 url=self._url(specification.endpoint).format(**path_params),
                 params=params,
+                headers=headers,
             )
-
-            # return client.request(specification.method, self._url(specification.endpoint), params=specification.params).json()
 
         return wrapper
 
@@ -88,6 +88,7 @@ def build_spec(verb: str, endpoint: str, method: MethodType) -> RequestSpecifica
     parameters = list(signature.parameters.values())[1:]
 
     params: Dict[str, Param] = {}
+    headers: Dict[str, Header] = {}
     path_params: Dict[str, Path] = {}
 
     for parameter in parameters:
@@ -101,8 +102,12 @@ def build_spec(verb: str, endpoint: str, method: MethodType) -> RequestSpecifica
             param: Param = default
 
             params[parameter.name] = param
+        elif isinstance(default, Header):
+            header: Header = default
 
-    return RequestSpecification(method=verb, endpoint=endpoint, params=params, path_params=path_params)
+            headers[header.name] = header
+
+    return RequestSpecification(method=verb, endpoint=endpoint, params=params, path_params=path_params, headers=headers)
 
 
 def method(verb: HttpMethod, /):
