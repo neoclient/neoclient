@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, InitVar
-from typing import Callable, ClassVar, Generic, TypeVar, Union
+from typing import Callable, ClassVar, Generic, Optional, TypeVar, Union
 from sentinel import Missing
 from abc import ABC
 
@@ -58,13 +58,14 @@ class Info(ABC, Generic[T]):
     def has_default(self) -> bool:
         return self._has_default
 
+
 @dataclass(init=False)
 class FieldInfo(Info[T]):
-    name: str
+    name: Optional[str]
 
     def __init__(
         self,
-        name: str,
+        name: Optional[str] = None,
         *,
         default: Union[T, Missing] = Missing,
         default_factory: Union[Callable[[], T], Missing] = Missing
@@ -72,6 +73,10 @@ class FieldInfo(Info[T]):
         super().__init__(default=default, default_factory=default_factory)
 
         self.name = name
+
+    @staticmethod
+    def generate_name(name: str):
+        return name
 
 
 class Path(FieldInfo[T]):
@@ -85,8 +90,14 @@ class Query(FieldInfo[T]):
 class Header(FieldInfo[T]):
     type: ClassVar[FieldType] = FieldType.HEADER
 
+    @staticmethod
+    def generate_name(name: str):
+        return name.title().replace("_", "-")
+
+
 class QueryDict(Info[T]):
     type: ClassVar[FieldType] = FieldType.QUERY_DICT
+
 
 class HeaderDict(Info[T]):
     type: ClassVar[FieldType] = FieldType.HEADER_DICT

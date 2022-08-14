@@ -37,5 +37,6 @@ from typing_extensions import Annotated
 
 Path = Annotated[int, "path"]
 
+
 def foo(x: Path = 123) -> int:
     return x

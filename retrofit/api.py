@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, TypeVar, Type, Union
 from typing_extensions import ParamSpec
 import annotate
 from .enums import FieldType, HttpMethod, Annotation
@@ -72,19 +72,34 @@ class Retrofit:
             # TODO: Make `get_arguments` complain if the arguments don't conform to the spec
             arguments: Dict[str, Any] = get_arguments(args, kwargs, signature)
 
+            # omit_arguments: Set[str] = set()
+
             argument_name: str
             argument: Any
             for argument_name, argument in arguments.items():
-                if not isinstance(argument, FieldInfo): continue
+                if not isinstance(argument, Info):
+                    continue
 
-                field: FieldInfo = argument
+                field: Info = argument
 
                 if not field.has_default():
                     raise ValueError(
                         f"{method.__name__}() missing argument: {argument_name!r}"
                     )
 
+                # Consciously choose to omit field with `None` value as it's likely not wanted
+                # if field.default is None:
+                #     omit_arguments.add(argument_name)
+
                 arguments[argument_name] = field.default
+
+            # print(arguments)
+
+            # argument: str
+            # for argument in omit_arguments:
+            #     arguments.pop(argument)
+
+            # print(arguments)
 
             sources: Dict[FieldType, Dict[str, Any]] = {
                 FieldType.QUERY: specification.params,
@@ -103,7 +118,18 @@ class Retrofit:
                 field: Info
                 for parameter, field in data.items():
                     if isinstance(field, FieldInfo):
-                        destinations[field_type][field.name] = arguments[parameter]
+                        field_name: str = (
+                            field.name
+                            if field.name is not None
+                            else field.generate_name(parameter)
+                        )
+                        value: Any = arguments[parameter]
+
+                        # Consciously choose to omit field with `None` value as it's likely not wanted
+                        if value is None:
+                            continue
+
+                        destinations[field_type][field_name] = value
                     else:
                         destinations[field_type].update(arguments[parameter])
 
@@ -123,7 +149,9 @@ def build_request_specification(
     method: str, endpoint: str, signature: inspect.Signature
 ) -> RequestSpecification:
     if not signature.parameters:
-        raise ValueError("Signature expects no parameters. Should expect at least `self`")
+        raise ValueError(
+            "Signature expects no parameters. Should expect at least `self`"
+        )
 
     # Ignore first parameter, as it should be `self`
     parameters: List[inspect.Parameter] = list(signature.parameters.values())[1:]
@@ -150,13 +178,22 @@ def build_request_specification(
         endpoint=endpoint,
         params={**destinations[FieldType.QUERY_DICT], **destinations[FieldType.QUERY]},
         path_params=destinations[FieldType.PATH],
-        headers={**destinations[FieldType.HEADER_DICT], **destinations[FieldType.HEADER]},
+        headers={
+            **destinations[FieldType.HEADER_DICT],
+            **destinations[FieldType.HEADER],
+        },
     )
 
 
-def request(method: str, endpoint: Optional[str] = None, /):
+def request(
+    method: str, endpoint: Optional[str] = None, /
+) -> Callable[[FunctionType], FunctionType]:
     def decorate(func: FunctionType, /) -> FunctionType:
-        uri: str = endpoint if endpoint is not None else func.__name__
+        uri: str = (
+            endpoint
+            if endpoint is not None
+            else func.__name__.lower().replace("_", "-")
+        )
 
         spec: RequestSpecification = build_request_specification(
             method, uri, inspect.signature(func)
