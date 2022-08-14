@@ -1,6 +1,10 @@
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, ClassVar
 from sentinel import Missing
+from abc import ABC
+
+from .enums import FieldType
+
 
 @dataclass
 class RequestSpecification:
@@ -10,6 +14,7 @@ class RequestSpecification:
     path_params: dict = field(default_factory=dict)
     headers: dict = field(default_factory=dict)
 
+
 @dataclass
 class Request:
     method: str
@@ -18,20 +23,26 @@ class Request:
     headers: dict = field(default_factory=dict)
     body: str = ""
 
+
 @dataclass
-class FieldInfo:
+class FieldInfo(ABC):
+    type: ClassVar[FieldType]
+
     name: str
     default: Any = Missing
-    # default_factory
+    # TODO: default_factory
+
 
 @dataclass
 class Path(FieldInfo):
-    pass
+    type: ClassVar[FieldType] = FieldType.PATH
+
 
 @dataclass
-class Param(FieldInfo):
-    pass
+class Query(FieldInfo):
+    type: ClassVar[FieldType] = FieldType.QUERY
+
 
 @dataclass
 class Header(FieldInfo):
-    pass
+    type: ClassVar[FieldType] = FieldType.HEADER

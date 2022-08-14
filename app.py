@@ -1,24 +1,25 @@
-from retrofit import Retrofit, get, post, get_arguments
-from retrofit.models import Path, Param, Header
+from retrofit import Retrofit, get, post, put, request
+from retrofit.models import Path, Query, Header
 from typing import Protocol
-from annotate import get_annotations
-from inspect import signature
 
 
 class HttpBinService(Protocol):
-    @get("ip")
+    @request("GET")
     def ip(self) -> dict:
         ...
 
-    @get("headers")
+    @get
     def headers(self, foo: str = Header("foo")) -> dict:
         ...
 
     @post("post")
-    def post(self, foo: str = Param("foo")) -> dict:
+    def post(self, foo: str = Query("foo")) -> dict:
         ...
 
-    # TODO: Get this method working. Mypy complains, however it doesn't for fastapi... why??
+    @put("put")
+    def put(self, foo: str = "baz") -> dict:
+        ...
+
     @get("status/{code}")
     def status(self, code: int = Path("code")) -> dict:
         ...
@@ -27,16 +28,3 @@ class HttpBinService(Protocol):
 retrofit: Retrofit = Retrofit("https://httpbin.org/")
 
 httpbin: HttpBinService = retrofit.create(HttpBinService)
-
-d: dict = httpbin.status(404)
-
-# s = signature(HttpBinService.status)
-# ps = list(s.parameters.items())[1:]
-# p = ps[0][1]
-# p2 = ps[1][1]
-
-
-# def foo(a: int, b: str, c: float = 1.0, d: tuple = ()):
-#     ...
-
-# print(get_arguments((123, "abc"), {"d": (1,2,3)}, signature(foo)))
