@@ -27,21 +27,17 @@ class Request:
 
 
 @dataclass(init=False)
-class FieldInfo(ABC, Generic[T]):
+class Info(ABC, Generic[T]):
     _has_default: InitVar[bool]
     _default_factory: InitVar[Callable[[], T]]
     type: ClassVar[FieldType]
-    name: str
 
     def __init__(
         self,
-        name: str,
         *,
         default: Union[T, Missing] = Missing,
         default_factory: Union[Callable[[], T], Missing] = Missing
     ):
-        self.name = name
-
         if default is not Missing and default_factory is not Missing:
             raise ValueError("cannot specify both default and default_factory")
 
@@ -62,6 +58,21 @@ class FieldInfo(ABC, Generic[T]):
     def has_default(self) -> bool:
         return self._has_default
 
+@dataclass(init=False)
+class FieldInfo(Info[T]):
+    name: str
+
+    def __init__(
+        self,
+        name: str,
+        *,
+        default: Union[T, Missing] = Missing,
+        default_factory: Union[Callable[[], T], Missing] = Missing
+    ):
+        super().__init__(default=default, default_factory=default_factory)
+
+        self.name = name
+
 
 class Path(FieldInfo[T]):
     type: ClassVar[FieldType] = FieldType.PATH
@@ -73,3 +84,9 @@ class Query(FieldInfo[T]):
 
 class Header(FieldInfo[T]):
     type: ClassVar[FieldType] = FieldType.HEADER
+
+class QueryDict(Info[T]):
+    type: ClassVar[FieldType] = FieldType.QUERY_DICT
+
+class HeaderDict(Info[T]):
+    type: ClassVar[FieldType] = FieldType.HEADER_DICT

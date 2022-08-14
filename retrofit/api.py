@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Type, Un
 from typing_extensions import ParamSpec
 import annotate
 from .enums import FieldType, HttpMethod, Annotation
-from .models import FieldInfo, RequestSpecification, Query, Request
+from .models import FieldInfo, RequestSpecification, Query, Request, Info
 from types import FunctionType
 import urllib.parse
 import inspect
@@ -69,18 +69,22 @@ class Retrofit:
         signature: inspect.Signature = inspect.signature(method)
 
         def wrapper(*args: PT.args, **kwargs: PT.kwargs) -> Any:
-            # Ensure arguments are good by calling the protocol's method
-            method(*args, **kwargs)
-
+            # TODO: Make `get_arguments` complain if the arguments don't conform to the spec
             arguments: Dict[str, Any] = get_arguments(args, kwargs, signature)
 
             argument_name: str
             argument: Any
             for argument_name, argument in arguments.items():
-                if isinstance(argument, FieldInfo):
+                if not isinstance(argument, FieldInfo): continue
+
+                field: FieldInfo = argument
+
+                if not field.has_default():
                     raise ValueError(
                         f"{method.__name__}() missing argument: {argument_name!r}"
                     )
+
+                arguments[argument_name] = field.default
 
             sources: Dict[FieldType, Dict[str, Any]] = {
                 FieldType.QUERY: specification.params,
@@ -88,13 +92,20 @@ class Retrofit:
                 FieldType.HEADER: specification.headers,
             }
 
-            destinations: Dict[FieldType, Dict[str, FieldInfo]] = {
-                field_type: {
-                    parameter: arguments[field.name]
-                    for parameter, field in data.items()
-                }
-                for field_type, data in sources.items()
-            }
+            destinations: Dict[FieldType, Dict[str, Info]] = {}
+
+            field_type: FieldType
+            data: Dict[str, Info]
+            for field_type, data in sources.items():
+                destinations[field_type] = {}
+
+                parameter: str
+                field: Info
+                for parameter, field in data.items():
+                    if isinstance(field, FieldInfo):
+                        destinations[field_type][field.name] = arguments[parameter]
+                    else:
+                        destinations[field_type].update(arguments[parameter])
 
             return Request(
                 method=specification.method,
@@ -111,10 +122,13 @@ class Retrofit:
 def build_request_specification(
     method: str, endpoint: str, signature: inspect.Signature
 ) -> RequestSpecification:
+    if not signature.parameters:
+        raise ValueError("Signature expects no parameters. Should expect at least `self`")
+
     # Ignore first parameter, as it should be `self`
     parameters: List[inspect.Parameter] = list(signature.parameters.values())[1:]
 
-    destinations: Dict[FieldType, Dict[str, FieldInfo]] = {
+    destinations: Dict[FieldType, Dict[str, Info]] = {
         field_type: {} for field_type in FieldType
     }
 
@@ -123,9 +137,9 @@ def build_request_specification(
         default: Any = parameter.default
 
         # Assume it's a `Query` field if the type is not known
-        field: FieldInfo = (
+        field: Info = (
             default
-            if isinstance(default, FieldInfo)
+            if isinstance(default, Info)
             else Query(name=parameter.name, default=default)
         )
 
@@ -134,9 +148,9 @@ def build_request_specification(
     return RequestSpecification(
         method=method,
         endpoint=endpoint,
-        params=destinations[FieldType.QUERY],
+        params={**destinations[FieldType.QUERY_DICT], **destinations[FieldType.QUERY]},
         path_params=destinations[FieldType.PATH],
-        headers=destinations[FieldType.HEADER],
+        headers={**destinations[FieldType.HEADER_DICT], **destinations[FieldType.HEADER]},
     )
 
 
