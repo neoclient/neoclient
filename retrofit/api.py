@@ -1,17 +1,26 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Type, Union
+from typing_extensions import ParamSpec
 import annotate
 from .enums import FieldType, HttpMethod, Annotation
 from .models import FieldInfo, RequestSpecification, Query, Request
 from types import FunctionType
 import urllib.parse
 import inspect
+import functools
 
 T = TypeVar("T")
 
+PT = ParamSpec("PT")
+RT = TypeVar("RT")
 
-def get_arguments(args: Any, kwargs: Any, signature: inspect.Signature) -> Dict[str, Any]:
-    positional_parameters: List[inspect.Parameter] = list(signature.parameters.values())[: len(args)]
+
+def get_arguments(
+    args: Any, kwargs: Any, signature: inspect.Signature
+) -> Dict[str, Any]:
+    positional_parameters: List[inspect.Parameter] = list(
+        signature.parameters.values()
+    )[: len(args)]
 
     positional: Dict[str, Any] = {
         parameter.name: arg for arg, parameter in zip(args, positional_parameters)
@@ -45,7 +54,9 @@ class Retrofit:
 
             spec: RequestSpecification = annotations[Annotation.SPECIFICATION]
 
-            attributes[member_name] = self._method(spec, member)
+            attributes[member_name] = functools.wraps(member)(
+                self._method(spec, member)
+            )
 
         return type(protocol.__name__, (object,), attributes)()
 
@@ -53,17 +64,28 @@ class Retrofit:
         return urllib.parse.urljoin(self.base_url, endpoint)
 
     def _method(
-        self, specification: RequestSpecification, method: FunctionType, /
-    ) -> Callable:
+        self, specification: RequestSpecification, method: Callable[PT, RT], /
+    ) -> Callable[PT, RT]:
         signature: inspect.Signature = inspect.signature(method)
 
-        def wrapper(*args: Any, **kwargs: Any) -> Any:
+        def wrapper(*args: PT.args, **kwargs: PT.kwargs) -> Any:
+            # Ensure arguments are good by calling the protocol's method
+            method(*args, **kwargs)
+
             arguments: Dict[str, Any] = get_arguments(args, kwargs, signature)
+
+            argument_name: str
+            argument: Any
+            for argument_name, argument in arguments.items():
+                if isinstance(argument, FieldInfo):
+                    raise ValueError(
+                        f"{method.__name__}() missing argument: {argument_name!r}"
+                    )
 
             sources: Dict[FieldType, Dict[str, Any]] = {
                 FieldType.QUERY: specification.params,
                 FieldType.PATH: specification.path_params,
-                FieldType.HEADER: specification.headers
+                FieldType.HEADER: specification.headers,
             }
 
             destinations: Dict[FieldType, Dict[str, FieldInfo]] = {
@@ -76,22 +98,24 @@ class Retrofit:
 
             return Request(
                 method=specification.method,
-                url=self._url(specification.endpoint).format(**destinations[FieldType.PATH]),
+                url=self._url(specification.endpoint).format(
+                    **destinations[FieldType.PATH]
+                ),
                 params=destinations[FieldType.QUERY],
-                headers=destinations[FieldType.HEADER]
+                headers=destinations[FieldType.HEADER],
             )
 
         return wrapper
 
 
-def build_request_specification(method: str, endpoint: str, signature: inspect.Signature) -> RequestSpecification:
+def build_request_specification(
+    method: str, endpoint: str, signature: inspect.Signature
+) -> RequestSpecification:
     # Ignore first parameter, as it should be `self`
     parameters: List[inspect.Parameter] = list(signature.parameters.values())[1:]
 
     destinations: Dict[FieldType, Dict[str, FieldInfo]] = {
-        FieldType.QUERY: {},
-        FieldType.PATH: {},
-        FieldType.HEADER: {}
+        field_type: {} for field_type in FieldType
     }
 
     parameter: inspect.Parameter
@@ -120,7 +144,9 @@ def request(method: str, endpoint: Optional[str] = None, /):
     def decorate(func: FunctionType, /) -> FunctionType:
         uri: str = endpoint if endpoint is not None else func.__name__
 
-        spec: RequestSpecification = build_request_specification(method, uri, inspect.signature(func))
+        spec: RequestSpecification = build_request_specification(
+            method, uri, inspect.signature(func)
+        )
 
         annotate.annotate(
             func,

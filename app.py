@@ -28,3 +28,6 @@ class HttpBinService(Protocol):
 retrofit: Retrofit = Retrofit("https://httpbin.org/")
 
 httpbin: HttpBinService = retrofit.create(HttpBinService)
+
+# NOTE: This should fail
+httpbin.status()
