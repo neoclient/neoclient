@@ -1,9 +1,9 @@
+from ast import arg
 from dataclasses import dataclass
-from typing import Any, Callable, List, Optional, Tuple, TypeVar, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Type
 import annotate
-from .enums import HttpMethod
-from .sentinels import Specification
-from .models import RequestSpecification
+from .enums import HttpMethod, Annotation
+from .models import RequestSpecification, Path, Param, Request
 from types import MethodType
 import urllib.parse
 import inspect
@@ -12,6 +12,22 @@ import httpx
 T = TypeVar("T")
 
 client = httpx.Client()
+
+def get_arguments(args, kwargs, signature):
+    positional_parameters = list(signature.parameters.values())[:len(args)]
+
+    positional = {
+        parameter.name: arg
+        for arg, parameter in zip(args, positional_parameters)
+    }
+
+    defaults = {
+        parameter.name: parameter.default
+        for parameter in signature.parameters.values()
+        if parameter.default is not parameter.empty
+    }
+
+    return {**defaults, **positional, **kwargs}
 
 
 @dataclass
@@ -28,32 +44,76 @@ class Retrofit:
         for member_name, member in members:
             annotations: dict = annotate.get_annotations(member)
 
-            if Specification not in annotations:
+            if Annotation.SPECIFICATION not in annotations:
                 continue
 
-            spec: RequestSpecification = annotations[Specification]
+            spec: RequestSpecification = annotations[Annotation.SPECIFICATION]
 
-            attributes[member_name] = self._method(spec)
+            attributes[member_name] = self._method(spec, member)
 
         return type(protocol.__name__, (object,), attributes)()
 
     def _url(self, endpoint: str, /) -> str:
         return urllib.parse.urljoin(self.base_url, endpoint)
 
-    def _method(self, specification: RequestSpecification, /) -> Callable:
+    def _method(self, specification: RequestSpecification, method: MethodType, /) -> Callable:
+        signature = inspect.signature(method)
+
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            return client.request(specification.method, self._url(specification.endpoint), params=specification.params).json()
+            arguments = get_arguments(args, kwargs, signature)
+
+            params = {
+                field: arguments[param.field]
+                for field, param in specification.params.items()
+            }
+            
+            path_params = {
+                field: arguments[path.field]
+                for field, path in specification.path_params.items()
+            }
+
+            return Request(
+                method=specification.method,
+                url=self._url(specification.endpoint).format(**path_params),
+                params=params,
+            )
+
+            # return client.request(specification.method, self._url(specification.endpoint), params=specification.params).json()
 
         return wrapper
 
+def build_spec(verb: str, endpoint: str, method: MethodType) -> RequestSpecification:
+    signature = inspect.signature(method)
+
+    parameters = list(signature.parameters.values())[1:]
+
+    params: Dict[str, Param] = {}
+    path_params: Dict[str, Path] = {}
+
+    for parameter in parameters:
+        default = parameter.default
+
+        if isinstance(default, Path):
+            path: Path = default
+
+            path_params[parameter.name] = path
+        elif isinstance(default, Param):
+            param: Param = default
+
+            params[parameter.name] = param
+
+    return RequestSpecification(method=verb, endpoint=endpoint, params=params, path_params=path_params)
+
 
 def method(verb: HttpMethod, /):
-    def proxy(endpoint: str, /, *, params: Optional[dict] = None):
+    def proxy(endpoint: str, /):
         def decorate(method: MethodType, /):
+            spec: RequestSpecification = build_spec(verb.value, endpoint, method)
+
             annotate.annotate(
                 method,
                 annotate.Annotation(
-                    Specification, RequestSpecification(method=verb.value, endpoint=endpoint, params=params)
+                    Annotation.SPECIFICATION, spec
                 ),
             )
 

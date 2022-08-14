@@ -9,3 +9,7 @@ class HttpMethod(str, enum.Enum):
     PATCH: str = "PATCH"
     DELETE: str = "DELETE"
     OPTIONS: str = "OPTIONS"
+    
+
+class Annotation(enum.Enum):
+    SPECIFICATION = enum.auto()
