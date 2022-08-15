@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Protocol, TypeVar, Type, Union
+from typing import Any, Callable, Dict, List, TypeVar, Type
 from typing_extensions import ParamSpec
 import annotate
-from .enums import FieldType, HttpMethod, Annotation
+from .enums import FieldType, Annotation
 from .models import FieldInfo, Specification, Query, Request, Info
 from types import FunctionType
 import urllib.parse
@@ -15,26 +15,29 @@ T = TypeVar("T")
 PT = ParamSpec("PT")
 RT = TypeVar("RT")
 
-def get_operations(protocol: Protocol, /) -> Dict[str, FunctionType]:
+
+def get_specifications(cls: type, /) -> Dict[str, Specification]:
     return {
-        member_name: member
-        for member_name, member in inspect.getmembers(protocol)
-        if Annotation.SPECIFICATION in annotate.get_annotations(member)
+        member_name: annotate.get_annotations(member)[Annotation.SPECIFICATION]
+        for member_name, member in inspect.getmembers(cls)
+        if isinstance(member, FunctionType)
+        and Annotation.SPECIFICATION in annotate.get_annotations(member)
     }
+
 
 @dataclass
 class Retrofit:
     base_url: str
 
     def create(self, protocol: Type[T], /) -> T:
-        operations: Dict[str, FunctionType] = get_operations(protocol)
+        specifications: Dict[str, Specification] = get_specifications(protocol)
 
         attributes: dict = {"__module__": protocol.__module__}
 
         func_name: str
-        func: FunctionType
-        for func_name, func in operations.items():
-            specification: Specification = annotate.get_annotations(func)[Annotation.SPECIFICATION]
+        specification: Specification
+        for func_name, specification in specifications.items():
+            func: FunctionType = getattr(protocol, func_name)
 
             attributes[func_name] = self._method(specification, func)
 
@@ -49,7 +52,10 @@ class Retrofit:
         signature: inspect.Signature = inspect.signature(method)
 
         @functools.wraps(method)
+        @staticmethod
         def wrapper(*args: PT.args, **kwargs: PT.kwargs) -> Any:
+            print("api.Retrofit._method.wrapper:", args, kwargs)
+
             # TODO: Make `get_arguments` complain if the arguments don't conform to the spec
             arguments: Dict[str, Any] = utils.get_arguments(args, kwargs, signature)
 
@@ -59,21 +65,19 @@ class Retrofit:
                 if not isinstance(argument, Info):
                     continue
 
-                field: Info = argument
-
-                if not field.has_default():
+                if not argument.has_default():
                     raise ValueError(
                         f"{method.__name__}() missing argument: {argument_name!r}"
                     )
 
-                arguments[argument_name] = field.default
+                arguments[argument_name] = argument.default
 
             destinations: Dict[FieldType, Dict[str, Info]] = {}
 
             # TODO: Fix relationships between maps and single types
             maps: Dict[FieldType, FieldType] = {
                 FieldType.HEADER_DICT: FieldType.HEADER,
-                FieldType.QUERY_DICT: FieldType.QUERY
+                FieldType.QUERY_DICT: FieldType.QUERY,
             }
 
             parameter: str
@@ -93,7 +97,9 @@ class Retrofit:
 
                     destinations.setdefault(field.type, {})[field_name] = value
                 else:
-                    destinations.setdefault(maps[field.type], {}).update(arguments[parameter])
+                    destinations.setdefault(maps[field.type], {}).update(
+                        arguments[parameter]
+                    )
 
             return Request(
                 method=specification.method,
@@ -110,13 +116,17 @@ class Retrofit:
 def build_request_specification(
     method: str, endpoint: str, signature: inspect.Signature
 ) -> Specification:
-    if not signature.parameters:
-        raise ValueError(
-            "Signature expects no parameters. Should expect at least `self`"
-        )
+    print("api.build_request_specification:", method, endpoint, signature)
+
+    # if not signature.parameters:
+    #     raise ValueError(
+    #         "Signature expects no parameters. Should expect at least `self`"
+    #     )
 
     # Ignore first parameter, as it should be `self`
-    parameters: List[inspect.Parameter] = list(signature.parameters.values())[1:]
+    # parameters: List[inspect.Parameter] = list(signature.parameters.values())[1:]
+
+    parameters: List[inspect.Parameter] = list(signature.parameters.values())
 
     fields: Dict[str, Info] = {}
 

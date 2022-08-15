@@ -13,29 +13,29 @@ TODO:
 class HttpBinService(Protocol):
     ### Request Inspection
     @get
-    def ip(self) -> dict:
+    def ip() -> dict:
         ...
 
     @get
-    def headers(self, headers: dict = HeaderDict(default_factory=dict)) -> dict:
+    def headers(headers: dict = HeaderDict(default_factory=dict)) -> dict:
         ...
 
     @get
-    def user_agent(self, user_agent: str = Header()) -> dict:
+    def user_agent(user_agent: str = Header()) -> dict:
         ...
 
     @get
     def redirect_to(
-        self, url: str = Query(), status_code: Optional[int] = Query(default=None)
+        url: str = Query(), status_code: Optional[int] = Query(default=None)
     ) -> dict:
         ...
 
     @get("status/{code}")
-    def status(self, code: int = Path()) -> dict:
+    def status(code: int = Path()) -> dict:
         ...
 
     @get
-    def get(self, params: dict = QueryDict(default_factory=dict)) -> dict:
+    def get(params: dict = QueryDict(default_factory=dict)) -> dict:
         ...
 
 

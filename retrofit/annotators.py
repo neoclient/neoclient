@@ -1,5 +1,5 @@
 from types import FunctionType
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 from .models import Specification
 from .enums import Annotation, HttpMethod
@@ -10,8 +10,8 @@ import annotate
 
 def request(
     method: str, endpoint: Optional[str] = None, /
-) -> Callable[[FunctionType], FunctionType]:
-    def decorate(func: FunctionType, /) -> FunctionType:
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    def decorate(func: Callable[..., Any], /) -> Callable[..., Any]:
         uri: str = (
             endpoint
             if endpoint is not None
@@ -24,7 +24,9 @@ def request(
 
         annotate.annotate(
             func,
-            annotate.Annotation(Annotation.SPECIFICATION, spec, targets=(FunctionType,)),
+            annotate.Annotation(
+                Annotation.SPECIFICATION, spec, targets=(FunctionType,)
+            ),
         )
 
         return func

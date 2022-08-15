@@ -7,11 +7,7 @@ class NoValue(enum.Enum):
 
 
 class StrEnum(str, enum.Enum):
-    def __repr__(self) -> str:
-        return f"<{type(self).__name__}.{self.name}>"
-
-    def __str__(self) -> str:
-        return self.value
+    pass
 
 
 class HttpMethod(StrEnum):
