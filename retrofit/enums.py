@@ -24,5 +24,4 @@ class FieldType(NoValue):
     QUERY = enum.auto()
     PATH = enum.auto()
     HEADER = enum.auto()
-    # HEADER_DICT = enum.auto()
-    # QUERY_DICT = enum.auto()
+    BODY = enum.auto()

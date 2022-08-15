@@ -77,6 +77,9 @@ class Header(FieldInfo[T]):
     def generate_name(name: str):
         return name.title().replace("_", "-")
 
+class Body(FieldInfo[T]):
+    type: ClassVar[FieldType] = FieldType.BODY
+
 
 class QueryDict(FieldDictInfo[T]):
     type: ClassVar[FieldType] = FieldType.QUERY
@@ -99,4 +102,4 @@ class Request:
     url: str
     params: dict = field(default_factory=dict)
     headers: dict = field(default_factory=dict)
-    body: str = ""
+    body: dict = field(default_factory=dict)

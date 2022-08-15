@@ -1,3 +1,3 @@
+from .annotators import delete, get, head, options, patch, post, put, request
 from .api import Retrofit
-from .annotators import put, get, post, head, patch, delete, options, request
-from .models import Path, Query, Header, HeaderDict, QueryDict
+from .models import Body, Header, HeaderDict, Path, Query, QueryDict

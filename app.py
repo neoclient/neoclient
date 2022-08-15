@@ -1,4 +1,4 @@
-from retrofit import Retrofit, get, HeaderDict, Header, Query, Path, QueryDict
+from retrofit import Retrofit, get, post, HeaderDict, Header, Query, Path, QueryDict, Body
 from retrofit.converters import IdentityConverter, IdentityResolver
 from typing import Any, Dict, List, Protocol, Optional, Set
 
@@ -29,6 +29,10 @@ class HttpBinService(Protocol):
 
     @get
     def get(params: dict = QueryDict(default_factory=dict)) -> dict:
+        ...
+
+    @post
+    def post(message: str = Body()) -> dict:
         ...
 
 
