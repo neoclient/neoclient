@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, TypeVar, Type
+from typing import Any, Callable, Dict, Optional, OrderedDict, TypeVar, Type
 from typing_extensions import ParamSpec
 import annotate
 
@@ -9,8 +9,8 @@ from .models import FieldInfo, Specification, Query, Request, Info
 from types import FunctionType
 import inspect
 import functools
-from . import utils
 import furl
+from arguments import Arguments
 
 T = TypeVar("T")
 
@@ -74,13 +74,10 @@ class Retrofit:
     def _method(
         self, specification: Specification, method: Callable[PT, RT], /
     ) -> Callable[PT, RT]:
-        signature: inspect.Signature = inspect.signature(method)
-
         @functools.wraps(method)
         @staticmethod
         def wrapper(*args: PT.args, **kwargs: PT.kwargs) -> Any:
-            # TODO: Make `get_arguments` complain if the arguments don't conform to the spec
-            arguments: Dict[str, Any] = utils.get_arguments(args, kwargs, signature)
+            arguments: Dict[str, Any] = Arguments(*args, **kwargs).bind(method).asdict()
 
             argument_name: str
             argument: Any

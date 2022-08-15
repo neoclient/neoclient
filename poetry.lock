@@ -34,6 +34,24 @@ test = ["coverage[toml] (>=4.5)", "hypothesis (>=4.0)", "pytest (>=7.0)", "pytes
 trio = ["trio (>=0.16)"]
 
 [[package]]
+name = "arguments"
+version = "0.1.5"
+description = "Arguments manager"
+category = "main"
+optional = false
+python-versions = "^3.8"
+develop = false
+
+[package.dependencies]
+typing-extensions = "^4.1.1"
+
+[package.source]
+type = "git"
+url = "https://github.com/tombulled/arguments"
+reference = "v0.1.5"
+resolved_reference = "ce3eaa7e82fbc71ccca68baf9237abb30ab788ea"
+
+[[package]]
 name = "atomicwrites"
 version = "1.4.1"
 description = "Atomic file writes."
@@ -377,7 +395,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "747cb7bb0f67b1f785ae469426189a2495178adeb78a986d98fb06a505539416"
+content-hash = "82466071388f5cae1ccb306bbeacf21993da7d0fcc9d7e32d174e7cddc276406"
 
 [metadata.files]
 annotate = []
@@ -385,6 +403,7 @@ anyio = [
     {file = "anyio-3.6.1-py3-none-any.whl", hash = "sha256:cb29b9c70620506a9a8f87a309591713446953302d7d995344d0d7c6c0c9a7be"},
     {file = "anyio-3.6.1.tar.gz", hash = "sha256:413adf95f93886e442aea925f3ee43baa5a765a64a0f52c6081894f9992fdd0b"},
 ]
+arguments = []
 atomicwrites = []
 attribute = []
 attrs = []
