@@ -4,6 +4,10 @@ version = "0.1.0"
 description = "Retrofit for Python"
 authors = ["Tom Bulled <26026015+tombulled@users.noreply.github.com>"]
 license = "MIT"
+readme = "README.md"
+homepage = "https://pypi.org/project/retrofit/"
+repository = "https://github.com/tombulled/retrofit"
+keywords = ["retrofit", "http", "client"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
