@@ -114,8 +114,6 @@ class Retrofit:
                 elif isinstance(field, FieldDictInfo):
                     destinations.setdefault(field.type, {}).update(arguments[parameter])
 
-            print(destinations)
-
             return self.converter.convert(
                 self.resolver.resolve(
                     Request(
@@ -125,6 +123,7 @@ class Retrofit:
                         ),
                         params=destinations.get(FieldType.QUERY, {}),
                         headers=destinations.get(FieldType.HEADER, {}),
+                        body=destinations.get(FieldType.BODY, {})
                     )
                 )
             )
