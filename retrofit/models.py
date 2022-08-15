@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, InitVar
-from typing import Callable, ClassVar, Dict, Generic, Optional, TypeVar, Union
+from typing import Any, Callable, ClassVar, Dict, Generic, Optional, TypeVar, Union
 from sentinel import Missing
 from abc import ABC
 
@@ -90,16 +90,13 @@ class HeaderDict(FieldDictInfo[T]):
 
 
 @dataclass
-class Specification:
-    method: str
-    endpoint: str
-    fields: Dict[str, Info] = field(default_factory=dict)
-
-
-@dataclass
 class Request:
     method: str
     url: str
     params: dict = field(default_factory=dict)
     headers: dict = field(default_factory=dict)
     body: dict = field(default_factory=dict)
+
+@dataclass
+class Specification(Request):
+    fields: Dict[str, Info] = field(default_factory=dict)

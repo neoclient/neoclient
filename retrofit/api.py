@@ -19,6 +19,10 @@ PT = ParamSpec("PT")
 RT = TypeVar("RT")
 
 
+def get_specification(func: FunctionType, /) -> Optional[Specification]:
+    return annotate.get_annotations(func).get(Annotation.SPECIFICATION)
+
+
 def get_specifications(cls: type, /) -> Dict[str, Specification]:
     return {
         member_name: annotate.get_annotations(member)[Annotation.SPECIFICATION]
@@ -118,11 +122,11 @@ class Retrofit:
                 self.resolver.resolve(
                     Request(
                         method=specification.method,
-                        url=self._url(specification.endpoint).format(
+                        url=self._url(specification.url).format(
                             **destinations.get(FieldType.PATH, {})
                         ),
-                        params=destinations.get(FieldType.QUERY, {}),
-                        headers=destinations.get(FieldType.HEADER, {}),
+                        params={**specification.params, **destinations.get(FieldType.QUERY, {})},
+                        headers={**specification.headers, **destinations.get(FieldType.HEADER, {})},
                         body=destinations.get(FieldType.BODY, {})
                     )
                 )
@@ -165,6 +169,6 @@ def build_request_specification(
 
     return Specification(
         method=method,
-        endpoint=endpoint,
+        url=endpoint,
         fields=fields,
     )

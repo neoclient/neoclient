@@ -1,8 +1,8 @@
 from types import FunctionType
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 from .models import Specification
-from .enums import Annotation, HttpMethod
+from .enums import Annotation, FieldType, HttpMethod
 from . import api
 import inspect
 import annotate
@@ -11,7 +11,7 @@ import annotate
 def request(
     method: str, endpoint: Optional[str] = None, /
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-    def decorate(func: Callable[..., Any], /) -> Callable[..., Any]:
+    def decorator(func: Callable[..., Any], /) -> Callable[..., Any]:
         uri: str = (
             endpoint
             if endpoint is not None
@@ -31,7 +31,7 @@ def request(
 
         return func
 
-    return decorate
+    return decorator
 
 
 def method(method: HttpMethod, /) -> Callable:
@@ -51,3 +51,37 @@ head = method(HttpMethod.HEAD)
 patch = method(HttpMethod.PATCH)
 delete = method(HttpMethod.DELETE)
 options = method(HttpMethod.OPTIONS)
+
+
+def static(
+    field_type: FieldType, data: Dict[str, Any]
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    def decorator(func: Callable[..., Any], /) -> Callable[..., Any]:
+        specification: Optional[Specification] = api.get_specification(func)
+
+        if specification is None:
+            raise Exception(
+                f"{func!r} has no specification. Cannot add static {field_type.name} fields"
+            )
+
+        destinations: Dict[FieldType, Dict[str, Any]] = {
+            FieldType.QUERY: specification.params,
+            FieldType.HEADER: specification.headers,
+        }
+
+        destinations[field_type].update(data)
+
+        return func
+
+    return decorator
+
+
+def _static_for_field(field_type: FieldType):
+    def outer(data: Dict[str, Any], /):
+        return static(field_type, data)
+
+    return outer
+
+
+headers = _static_for_field(FieldType.HEADER)
+query_params = _static_for_field(FieldType.QUERY)
