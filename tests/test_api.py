@@ -1,5 +1,5 @@
 from retrofit.api import request
-from retrofit.models import Query, RequestSpecification
+from retrofit.models import Query, Specification
 from retrofit.enums import Annotation
 from typing import Protocol
 import annotate
@@ -12,7 +12,7 @@ def test_request_no_endpoint() -> None:
             ...
 
     assert annotate.get_annotations(Service.operation) == {
-        Annotation.SPECIFICATION: RequestSpecification(
+        Annotation.SPECIFICATION: Specification(
             method="GET", endpoint="operation", params={"param": Query("param")}
         )
     }

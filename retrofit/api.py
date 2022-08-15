@@ -1,62 +1,42 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, TypeVar, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Protocol, Set, Tuple, TypeVar, Type, Union
 from typing_extensions import ParamSpec
 import annotate
 from .enums import FieldType, HttpMethod, Annotation
-from .models import FieldInfo, RequestSpecification, Query, Request, Info
+from .models import FieldInfo, Specification, Query, Request, Info
 from types import FunctionType
 import urllib.parse
 import inspect
 import functools
+from . import utils
 
 T = TypeVar("T")
 
 PT = ParamSpec("PT")
 RT = TypeVar("RT")
 
-
-def get_arguments(
-    args: Any, kwargs: Any, signature: inspect.Signature
-) -> Dict[str, Any]:
-    positional_parameters: List[inspect.Parameter] = list(
-        signature.parameters.values()
-    )[: len(args)]
-
-    positional: Dict[str, Any] = {
-        parameter.name: arg for arg, parameter in zip(args, positional_parameters)
+def get_operations(protocol: Protocol, /) -> Dict[str, FunctionType]:
+    return {
+        member_name: member
+        for member_name, member in inspect.getmembers(protocol)
+        if Annotation.SPECIFICATION in annotate.get_annotations(member)
     }
-
-    defaults: Dict[str, Any] = {
-        parameter.name: parameter.default
-        for parameter in signature.parameters.values()
-        if parameter.default is not parameter.empty
-    }
-
-    return {**defaults, **positional, **kwargs}
-
 
 @dataclass
 class Retrofit:
     base_url: str
 
     def create(self, protocol: Type[T], /) -> T:
-        members: List[Tuple[str, Any]] = inspect.getmembers(protocol)
+        operations: Dict[str, FunctionType] = get_operations(protocol)
 
-        attributes: dict = {}
+        attributes: dict = {"__module__": protocol.__module__}
 
-        member_name: str
-        member: Any
-        for member_name, member in members:
-            annotations: dict = annotate.get_annotations(member)
+        func_name: str
+        func: FunctionType
+        for func_name, func in operations.items():
+            specification: Specification = annotate.get_annotations(func)[Annotation.SPECIFICATION]
 
-            if Annotation.SPECIFICATION not in annotations:
-                continue
-
-            spec: RequestSpecification = annotations[Annotation.SPECIFICATION]
-
-            attributes[member_name] = functools.wraps(member)(
-                self._method(spec, member)
-            )
+            attributes[func_name] = self._method(specification, func)
 
         return type(protocol.__name__, (object,), attributes)()
 
@@ -64,15 +44,14 @@ class Retrofit:
         return urllib.parse.urljoin(self.base_url, endpoint)
 
     def _method(
-        self, specification: RequestSpecification, method: Callable[PT, RT], /
+        self, specification: Specification, method: Callable[PT, RT], /
     ) -> Callable[PT, RT]:
         signature: inspect.Signature = inspect.signature(method)
 
+        @functools.wraps(method)
         def wrapper(*args: PT.args, **kwargs: PT.kwargs) -> Any:
             # TODO: Make `get_arguments` complain if the arguments don't conform to the spec
-            arguments: Dict[str, Any] = get_arguments(args, kwargs, signature)
-
-            # omit_arguments: Set[str] = set()
+            arguments: Dict[str, Any] = utils.get_arguments(args, kwargs, signature)
 
             argument_name: str
             argument: Any
@@ -87,59 +66,42 @@ class Retrofit:
                         f"{method.__name__}() missing argument: {argument_name!r}"
                     )
 
-                # Consciously choose to omit field with `None` value as it's likely not wanted
-                # if field.default is None:
-                #     omit_arguments.add(argument_name)
-
                 arguments[argument_name] = field.default
-
-            # print(arguments)
-
-            # argument: str
-            # for argument in omit_arguments:
-            #     arguments.pop(argument)
-
-            # print(arguments)
-
-            sources: Dict[FieldType, Dict[str, Any]] = {
-                FieldType.QUERY: specification.params,
-                FieldType.PATH: specification.path_params,
-                FieldType.HEADER: specification.headers,
-            }
 
             destinations: Dict[FieldType, Dict[str, Info]] = {}
 
-            field_type: FieldType
-            data: Dict[str, Info]
-            for field_type, data in sources.items():
-                destinations[field_type] = {}
+            # TODO: Fix relationships between maps and single types
+            maps: Dict[FieldType, FieldType] = {
+                FieldType.HEADER_DICT: FieldType.HEADER,
+                FieldType.QUERY_DICT: FieldType.QUERY
+            }
 
-                parameter: str
-                field: Info
-                for parameter, field in data.items():
-                    if isinstance(field, FieldInfo):
-                        field_name: str = (
-                            field.name
-                            if field.name is not None
-                            else field.generate_name(parameter)
-                        )
-                        value: Any = arguments[parameter]
+            parameter: str
+            field: Info
+            for parameter, field in specification.fields.items():
+                if isinstance(field, FieldInfo):
+                    field_name: str = (
+                        field.name
+                        if field.name is not None
+                        else field.generate_name(parameter)
+                    )
+                    value: Any = arguments[parameter]
 
-                        # Consciously choose to omit field with `None` value as it's likely not wanted
-                        if value is None:
-                            continue
+                    # Consciously choose to omit field with `None` value as it's likely not wanted
+                    if value is None:
+                        continue
 
-                        destinations[field_type][field_name] = value
-                    else:
-                        destinations[field_type].update(arguments[parameter])
+                    destinations.setdefault(field.type, {})[field_name] = value
+                else:
+                    destinations.setdefault(maps[field.type], {}).update(arguments[parameter])
 
             return Request(
                 method=specification.method,
                 url=self._url(specification.endpoint).format(
-                    **destinations[FieldType.PATH]
+                    **destinations.get(FieldType.PATH, {})
                 ),
-                params=destinations[FieldType.QUERY],
-                headers=destinations[FieldType.HEADER],
+                params=destinations.get(FieldType.QUERY, {}),
+                headers=destinations.get(FieldType.HEADER, {}),
             )
 
         return wrapper
@@ -147,7 +109,7 @@ class Retrofit:
 
 def build_request_specification(
     method: str, endpoint: str, signature: inspect.Signature
-) -> RequestSpecification:
+) -> Specification:
     if not signature.parameters:
         raise ValueError(
             "Signature expects no parameters. Should expect at least `self`"
@@ -156,9 +118,7 @@ def build_request_specification(
     # Ignore first parameter, as it should be `self`
     parameters: List[inspect.Parameter] = list(signature.parameters.values())[1:]
 
-    destinations: Dict[FieldType, Dict[str, Info]] = {
-        field_type: {} for field_type in FieldType
-    }
+    fields: Dict[str, Info] = {}
 
     parameter: inspect.Parameter
     for parameter in parameters:
@@ -171,17 +131,12 @@ def build_request_specification(
             else Query(name=parameter.name, default=default)
         )
 
-        destinations[field.type][parameter.name] = field
+        fields[parameter.name] = field
 
-    return RequestSpecification(
+    return Specification(
         method=method,
         endpoint=endpoint,
-        params={**destinations[FieldType.QUERY_DICT], **destinations[FieldType.QUERY]},
-        path_params=destinations[FieldType.PATH],
-        headers={
-            **destinations[FieldType.HEADER_DICT],
-            **destinations[FieldType.HEADER],
-        },
+        fields=fields,
     )
 
 
@@ -195,13 +150,13 @@ def request(
             else func.__name__.lower().replace("_", "-")
         )
 
-        spec: RequestSpecification = build_request_specification(
+        spec: Specification = build_request_specification(
             method, uri, inspect.signature(func)
         )
 
         annotate.annotate(
             func,
-            annotate.Annotation(Annotation.SPECIFICATION, spec),
+            annotate.Annotation(Annotation.SPECIFICATION, spec, targets=(FunctionType,)),
         )
 
         return func

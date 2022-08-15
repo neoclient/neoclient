@@ -1,29 +1,11 @@
 from dataclasses import dataclass, field, InitVar
-from typing import Callable, ClassVar, Generic, Optional, TypeVar, Union
+from typing import Callable, ClassVar, Dict, Generic, Optional, TypeVar, Union
 from sentinel import Missing
 from abc import ABC
 
 from .enums import FieldType
 
 T = TypeVar("T")
-
-
-@dataclass
-class RequestSpecification:
-    method: str
-    endpoint: str
-    params: dict = field(default_factory=dict)
-    path_params: dict = field(default_factory=dict)
-    headers: dict = field(default_factory=dict)
-
-
-@dataclass
-class Request:
-    method: str
-    url: str
-    params: dict = field(default_factory=dict)
-    headers: dict = field(default_factory=dict)
-    body: str = ""
 
 
 @dataclass(init=False)
@@ -101,3 +83,19 @@ class QueryDict(Info[T]):
 
 class HeaderDict(Info[T]):
     type: ClassVar[FieldType] = FieldType.HEADER_DICT
+
+
+@dataclass
+class Specification:
+    method: str
+    endpoint: str
+    fields: Dict[str, Info] = field(default_factory=dict)
+
+
+@dataclass
+class Request:
+    method: str
+    url: str
+    params: dict = field(default_factory=dict)
+    headers: dict = field(default_factory=dict)
+    body: str = ""
