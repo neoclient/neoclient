@@ -16,7 +16,7 @@ class Repository:
 
 class GitHubService(Protocol):
     @get("users/{user}/repos")
-    def list_repos(user: str = Path("user")) -> List<Repository>:
+    def list_repos(user: str = Path("user")) -> List[Repository]:
         ...
 ```
 
@@ -29,7 +29,7 @@ retrofit: Retrofit = Retrofit("https://api.github.com/")
 service: GitHubService = retrofit.create(GitHubService)
 ```
 
-Each method call of the created `GitHubService` makes a synchronous HTTP request to the remote webserver.
+Each method call to the created `GitHubService` makes a synchronous HTTP request to the remote webserver.
 ```python
 from typing import List
 
