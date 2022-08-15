@@ -41,11 +41,6 @@ class Retrofit:
     def create(self, protocol: Type[T], /) -> T:
         specifications: Dict[str, Specification] = get_specifications(protocol)
 
-        # Validate endpoints are all fully qualified urls if no base url
-        # func_name: str
-        # specification: Specification
-        # for func_name, specification in specifications.items():
-
         attributes: dict = {"__module__": protocol.__module__}
 
         func_name: str

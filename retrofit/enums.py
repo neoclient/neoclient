@@ -6,18 +6,14 @@ class NoValue(enum.Enum):
         return f"<{type(self).__name__}.{self.name}>"
 
 
-class StrEnum(str, enum.Enum):
-    pass
-
-
-class HttpMethod(StrEnum):
-    PUT: str = "PUT"
-    GET: str = "GET"
-    POST: str = "POST"
-    HEAD: str = "HEAD"
-    PATCH: str = "PATCH"
-    DELETE: str = "DELETE"
-    OPTIONS: str = "OPTIONS"
+class HttpMethod(NoValue):
+    PUT = enum.auto()
+    GET = enum.auto()
+    POST = enum.auto()
+    HEAD = enum.auto()
+    PATCH = enum.auto()
+    DELETE = enum.auto()
+    OPTIONS = enum.auto()
 
 
 class Annotation(NoValue):

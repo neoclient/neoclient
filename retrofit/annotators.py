@@ -37,9 +37,9 @@ def request(
 def method(method: HttpMethod, /) -> Callable:
     def proxy(obj: Union[None, str, FunctionType], /):
         if isinstance(obj, FunctionType):
-            return request(method.value)(obj)
+            return request(method.name)(obj)
 
-        return request(method.value, obj)
+        return request(method.name, obj)
 
     return proxy
 
