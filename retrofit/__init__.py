@@ -1,1 +1,2 @@
-from .api import Retrofit, put, get, post, head, patch, delete, options, request
+from .api import Retrofit
+from .annotators import put, get, post, head, patch, delete, options, request
