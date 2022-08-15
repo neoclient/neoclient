@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, TypeVar, Type
+from typing import Any, Callable, Dict, TypeVar, Type
 from typing_extensions import ParamSpec
 import annotate
+
+from .converters import Converter, IdentityConverter, IdentityResolver, Resolver
 from .enums import FieldType, Annotation
 from .models import FieldInfo, Specification, Query, Request, Info
 from types import FunctionType
@@ -32,6 +34,8 @@ class BaseService:
 @dataclass
 class Retrofit:
     base_url: str
+    resolver: Resolver = IdentityResolver()
+    converter: Converter = IdentityConverter()
 
     def create(self, protocol: Type[T], /) -> T:
         specifications: Dict[str, Specification] = get_specifications(protocol)
@@ -58,8 +62,6 @@ class Retrofit:
         @functools.wraps(method)
         @staticmethod
         def wrapper(*args: PT.args, **kwargs: PT.kwargs) -> Any:
-            print("api.Retrofit._method.wrapper:", args, kwargs)
-
             # TODO: Make `get_arguments` complain if the arguments don't conform to the spec
             arguments: Dict[str, Any] = utils.get_arguments(args, kwargs, signature)
 
@@ -105,14 +107,14 @@ class Retrofit:
                         arguments[parameter]
                     )
 
-            return Request(
+            return self.converter.convert(self.resolver.resolve(Request(
                 method=specification.method,
                 url=self._url(specification.endpoint).format(
                     **destinations.get(FieldType.PATH, {})
                 ),
                 params=destinations.get(FieldType.QUERY, {}),
                 headers=destinations.get(FieldType.HEADER, {}),
-            )
+            )))
 
         return wrapper
 
@@ -120,22 +122,10 @@ class Retrofit:
 def build_request_specification(
     method: str, endpoint: str, signature: inspect.Signature
 ) -> Specification:
-    print("api.build_request_specification:", method, endpoint, signature)
-
-    # if not signature.parameters:
-    #     raise ValueError(
-    #         "Signature expects no parameters. Should expect at least `self`"
-    #     )
-
-    # Ignore first parameter, as it should be `self`
-    # parameters: List[inspect.Parameter] = list(signature.parameters.values())[1:]
-
-    parameters: List[inspect.Parameter] = list(signature.parameters.values())
-
     fields: Dict[str, Info] = {}
 
     parameter: inspect.Parameter
-    for parameter in parameters:
+    for parameter in signature.parameters.values():
         default: Any = parameter.default
 
         # Assume it's a `Query` field if the type is not known

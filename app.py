@@ -1,13 +1,6 @@
-from retrofit import Retrofit, get, post, put, request
-from retrofit.models import Path, Query, Header, HeaderDict, QueryDict
-from typing import Any, Dict, Optional, Protocol
-
-"""
-TODO:
-    Implement `Headers`, `QueryParams`
-    Implement @Body, @Field etc.
-    Switch to `furl` over `urllib.parse`
-"""
+from retrofit import Retrofit, get, HeaderDict, Header, Query, Path, QueryDict
+from retrofit.converters import HttpxResolver, HttpxJsonConverter
+from typing import Protocol, Optional
 
 
 class HttpBinService(Protocol):
@@ -39,6 +32,10 @@ class HttpBinService(Protocol):
         ...
 
 
-retrofit: Retrofit = Retrofit("https://httpbin.org/")
+retrofit: Retrofit = Retrofit(
+    base_url="https://httpbin.org/",
+    resolver=HttpxResolver(),
+    converter=HttpxJsonConverter()
+)
 
 httpbin: HttpBinService = retrofit.create(HttpBinService)
