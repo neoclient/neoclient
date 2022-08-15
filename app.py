@@ -1,17 +1,29 @@
-from retrofit import Retrofit, get, post, HeaderDict, Header, Query, Path, QueryDict, Body, headers, query_params
+from retrofit import (
+    Retrofit,
+    get,
+    post,
+    Headers,
+    Header,
+    Query,
+    Path,
+    Queries,
+    # Body,
+    headers,
+    query_params,
+)
 from retrofit.converters import IdentityConverter, IdentityResolver
 from typing import Any, Dict, List, Protocol, Optional, Set
 
 
 class HttpBinService(Protocol):
-    ### Request Inspection
-    # @get
-    # def ip() -> dict:
-    #     ...
+    ## Request Inspection
+    @get
+    def ip() -> dict:
+        ...
 
-    # @get
-    # def headers(headers: dict = HeaderDict(default_factory=dict)) -> dict:
-    #     ...
+    @get
+    def headers(headers: dict = Headers(default_factory=dict)) -> dict:
+        ...
 
     # @get
     # def user_agent(user_agent: str = Header()) -> dict:
@@ -31,17 +43,11 @@ class HttpBinService(Protocol):
     # def get(params: dict = QueryDict(default_factory=dict)) -> dict:
     #     ...
 
-    @headers({
-        "User-Agent": "robototron",
-        "X-Who-Am-I": "Sam"
-    })
-    @query_params({
-        "foo": "bar",
-        "cat": "dog"
-    })
-    @post
-    def post(message: str = Body()) -> dict:
-        ...
+    # @headers({"User-Agent": "robototron", "X-Who-Am-I": "Sam"})
+    # @query_params({"foo": "bar", "cat": "dog"})
+    # @post
+    # def post(message: str = Body()) -> dict:
+    #     ...
 
 
 retrofit: Retrofit = Retrofit(

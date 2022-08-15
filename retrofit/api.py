@@ -4,8 +4,9 @@ from typing_extensions import ParamSpec
 import annotate
 
 from .converters import Converter, HttpxJsonConverter, HttpxResolver, Resolver
-from .enums import FieldType, Annotation
-from .models import FieldDictInfo, FieldInfo, Path, Specification, Query, Request, Info
+from .enums import ParamType, Annotation
+from .models import Specification, Request
+from .params import Params, Param, Path, Query, Info
 from types import FunctionType
 import inspect
 import functools
@@ -97,12 +98,12 @@ class Retrofit:
 
                 arguments[argument_name] = argument.default
 
-            destinations: Dict[FieldType, Dict[str, Info]] = {}
+            destinations: Dict[ParamType, Dict[str, Info]] = {}
 
             parameter: str
             field: Info
             for parameter, field in specification.fields.items():
-                if isinstance(field, FieldInfo):
+                if isinstance(field, Param):
                     field_name: str = (
                         field.name
                         if field.name is not None
@@ -115,7 +116,7 @@ class Retrofit:
                         continue
 
                     destinations.setdefault(field.type, {})[field_name] = value
-                elif isinstance(field, FieldDictInfo):
+                elif isinstance(field, Params):
                     destinations.setdefault(field.type, {}).update(arguments[parameter])
 
             return self.converter.convert(
@@ -123,11 +124,17 @@ class Retrofit:
                     Request(
                         method=specification.method,
                         url=self._url(specification.url).format(
-                            **destinations.get(FieldType.PATH, {})
+                            **destinations.get(ParamType.PATH, {})
                         ),
-                        params={**specification.params, **destinations.get(FieldType.QUERY, {})},
-                        headers={**specification.headers, **destinations.get(FieldType.HEADER, {})},
-                        body=destinations.get(FieldType.BODY, {})
+                        params={
+                            **specification.params,
+                            **destinations.get(ParamType.QUERY, {}),
+                        },
+                        headers={
+                            **specification.headers,
+                            **destinations.get(ParamType.HEADER, {}),
+                        },
+                        # body=destinations.get(FieldType.BODY, {}),
                     )
                 )
             )
@@ -151,7 +158,7 @@ def build_request_specification(
             else Query(name=parameter.name, default=default)
         )
 
-        if isinstance(field, FieldInfo) and field.name is None:
+        if isinstance(field, Param) and field.name is None:
             field.name = field.generate_name(parameter.name)
 
         fields[parameter.name] = field

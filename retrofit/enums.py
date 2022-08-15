@@ -20,8 +20,13 @@ class Annotation(NoValue):
     SPECIFICATION = enum.auto()
 
 
-class FieldType(NoValue):
+class ParamType(NoValue):
     QUERY = enum.auto()
-    PATH = enum.auto()
     HEADER = enum.auto()
-    BODY = enum.auto()
+    PATH = enum.auto()
+    COOKIE = enum.auto()
+
+    # TODO: Remove/move
+    # BODY = enum.auto()
+    # FIELD = enum.auto()
+    # PART = enum.auto()

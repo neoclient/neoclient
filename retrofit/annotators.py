@@ -2,7 +2,7 @@ from types import FunctionType
 from typing import Any, Callable, Dict, Optional, Union
 
 from .models import Specification
-from .enums import Annotation, FieldType, HttpMethod
+from .enums import Annotation, ParamType, HttpMethod
 from . import api
 import inspect
 import annotate
@@ -54,7 +54,7 @@ options = method(HttpMethod.OPTIONS)
 
 
 def static(
-    field_type: FieldType, data: Dict[str, Any]
+    field_type: ParamType, data: Dict[str, Any]
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     def decorator(func: Callable[..., Any], /) -> Callable[..., Any]:
         specification: Optional[Specification] = api.get_specification(func)
@@ -64,9 +64,9 @@ def static(
                 f"{func!r} has no specification. Cannot add static {field_type.name} fields"
             )
 
-        destinations: Dict[FieldType, Dict[str, Any]] = {
-            FieldType.QUERY: specification.params,
-            FieldType.HEADER: specification.headers,
+        destinations: Dict[ParamType, Dict[str, Any]] = {
+            ParamType.QUERY: specification.params,
+            ParamType.HEADER: specification.headers,
         }
 
         destinations[field_type].update(data)
@@ -76,12 +76,12 @@ def static(
     return decorator
 
 
-def _static_for_field(field_type: FieldType):
+def _static_for_field(field_type: ParamType):
     def outer(data: Dict[str, Any], /):
         return static(field_type, data)
 
     return outer
 
 
-headers = _static_for_field(FieldType.HEADER)
-query_params = _static_for_field(FieldType.QUERY)
+headers = _static_for_field(ParamType.HEADER)
+query_params = _static_for_field(ParamType.QUERY)
