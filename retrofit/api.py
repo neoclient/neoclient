@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, OrderedDict, TypeVar, Type
+from typing import Any, Callable, Dict, Optional, TypeVar, Type
 from typing_extensions import ParamSpec
 import annotate
 
 from .converters import Converter, IdentityConverter, IdentityResolver, Resolver
 from .enums import FieldType, Annotation
-from .models import FieldInfo, Specification, Query, Request, Info
+from .models import FieldDictInfo, FieldInfo, Specification, Query, Request, Info
 from types import FunctionType
 import inspect
 import functools
@@ -94,12 +94,6 @@ class Retrofit:
 
             destinations: Dict[FieldType, Dict[str, Info]] = {}
 
-            # TODO: Fix relationships between maps and single types
-            maps: Dict[FieldType, FieldType] = {
-                FieldType.HEADER_DICT: FieldType.HEADER,
-                FieldType.QUERY_DICT: FieldType.QUERY,
-            }
-
             parameter: str
             field: Info
             for parameter, field in specification.fields.items():
@@ -116,8 +110,8 @@ class Retrofit:
                         continue
 
                     destinations.setdefault(field.type, {})[field_name] = value
-                else:
-                    destinations.setdefault(maps[field.type], {}).update(
+                elif isinstance(field, FieldDictInfo):
+                    destinations.setdefault(field.type, {}).update(
                         arguments[parameter]
                     )
 

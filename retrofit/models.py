@@ -10,8 +10,9 @@ T = TypeVar("T")
 
 @dataclass(init=False)
 class Info(ABC, Generic[T]):
-    _has_default: InitVar[bool]
-    _default_factory: InitVar[Callable[[], T]]
+    _default: InitVar[Union[T, Missing]]
+    _default_factory: InitVar[Union[Callable[[], T], Missing]]
+
     type: ClassVar[FieldType]
 
     def __init__(
@@ -23,22 +24,18 @@ class Info(ABC, Generic[T]):
         if default is not Missing and default_factory is not Missing:
             raise ValueError("cannot specify both default and default_factory")
 
-        self._has_default = True
-
-        if default is Missing and default_factory is Missing:
-            self._has_default = False
-            self._default_factory = lambda: Missing
-        elif default is not Missing:
-            self._default_factory = lambda: default
-        else:
-            self._default_factory = default_factory
+        self._default = default
+        self._default_factory = default_factory
 
     @property
     def default(self) -> T:
-        return self._default_factory()
+        if self._default_factory is not Missing:
+            return self._default_factory()
+
+        return self._default
 
     def has_default(self) -> bool:
-        return self._has_default
+        return self._default is not Missing or self._default_factory is not Missing
 
 
 @dataclass(init=False)
@@ -60,6 +57,9 @@ class FieldInfo(Info[T]):
     def generate_name(name: str):
         return name
 
+class FieldDictInfo(Info[T]):
+    pass
+
 
 class Path(FieldInfo[T]):
     type: ClassVar[FieldType] = FieldType.PATH
@@ -77,12 +77,12 @@ class Header(FieldInfo[T]):
         return name.title().replace("_", "-")
 
 
-class QueryDict(Info[T]):
-    type: ClassVar[FieldType] = FieldType.QUERY_DICT
+class QueryDict(FieldDictInfo[T]):
+    type: ClassVar[FieldType] = FieldType.QUERY
 
 
-class HeaderDict(Info[T]):
-    type: ClassVar[FieldType] = FieldType.HEADER_DICT
+class HeaderDict(FieldDictInfo[T]):
+    type: ClassVar[FieldType] = FieldType.HEADER
 
 
 @dataclass
