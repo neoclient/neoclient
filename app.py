@@ -17,12 +17,12 @@ from typing import Any, Dict, List, Protocol, Optional, Set
 
 class HttpBinService(Protocol):
     ## Request Inspection
-    @get
+    @get("ip")
     def ip() -> dict:
         ...
 
-    @get
-    def headers(headers: dict = Headers(default_factory=dict)) -> dict:
+    @get("headers")
+    def headers(headers: dict = Headers()) -> dict:
         ...
 
     # @get

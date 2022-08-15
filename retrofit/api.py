@@ -20,8 +20,8 @@ PT = ParamSpec("PT")
 RT = TypeVar("RT")
 
 
-def get_specification(func: FunctionType, /) -> Optional[Specification]:
-    return annotate.get_annotations(func).get(Annotation.SPECIFICATION)
+def get_specification(obj: Any, /) -> Optional[Specification]:
+    return annotate.get_annotations(obj).get(Annotation.SPECIFICATION)
 
 
 def get_specifications(cls: type, /) -> Dict[str, Specification]:
@@ -54,15 +54,15 @@ class Retrofit:
         for func_name, specification in specifications.items():
             func: FunctionType = getattr(protocol, func_name)
 
-            # Validate endpoint is a fully qualified url if no base url
+            # Validate url is a fully qualified url if no base url
             if (
                 self.base_url is None or not furl.has_netloc(self.base_url)
-            ) and not furl.has_netloc(specification.endpoint):
+            ) and not furl.has_netloc(specification.url):
                 raise Exception(
-                    f"Cannot construct fully-qualified URL from: base_url={self.base_url!r}, endpoint={specification.endpoint!r}"
+                    f"Cannot construct fully-qualified URL from: base_url={self.base_url!r}, endpoint={specification.url!r}"
                 )
 
-            attributes[func_name] = self._method(specification, func)
+            attributes[func_name] = staticmethod(self._method(specification, func))
 
         return type(protocol.__name__, (BaseService,), attributes)()
 
@@ -81,7 +81,6 @@ class Retrofit:
         self, specification: Specification, method: Callable[PT, RT], /
     ) -> Callable[PT, RT]:
         @functools.wraps(method)
-        @staticmethod
         def wrapper(*args: PT.args, **kwargs: PT.kwargs) -> Any:
             arguments: Dict[str, Any] = Arguments(*args, **kwargs).bind(method).asdict()
 
@@ -165,7 +164,7 @@ def build_request_specification(
 
     expected_path_params: Set[str] = set(parse.compile(endpoint).named_fields)
     actual_path_params: Set[str] = {
-        field.name for field in fields.values() if isinstance(field, Path)
+        field.name for field in fields.values() if isinstance(field, Path) and field.name is not None
     }
 
     # Validate that only expected path params provided

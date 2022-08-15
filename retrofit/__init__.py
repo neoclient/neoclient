@@ -11,6 +11,4 @@ from .annotators import (
     query_params,
 )
 from .api import Retrofit
-
-# from .models import Body, Header, HeaderDict, Path, Query, QueryDict
 from .params import Header, Headers, Path, Query, Queries

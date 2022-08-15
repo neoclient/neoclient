@@ -1,21 +1,26 @@
 from types import FunctionType
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, Optional, TypeVar
 
 from .models import Specification
 from .enums import Annotation, ParamType, HttpMethod
 from . import api
 import inspect
 import annotate
+from .params import Path
+
+# AnyCallable = TypeVar("AnyCallable", bound=Callable[..., Any])
+# Func = TypeVar("Func", bound=FunctionType)
+Func = TypeVar("Func", bound=Callable[..., Any])
 
 
 def request(
     method: str, endpoint: Optional[str] = None, /
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-    def decorator(func: Callable[..., Any], /) -> Callable[..., Any]:
+) -> Callable[[Func], Func]:
+    def decorator(func: Func, /) -> Func:
         uri: str = (
             endpoint
             if endpoint is not None
-            else func.__name__.lower().replace("_", "-")
+            else Path.generate_name(func.__name__)
         )
 
         spec: Specification = api.build_request_specification(
@@ -34,29 +39,26 @@ def request(
     return decorator
 
 
-def method(method: HttpMethod, /) -> Callable:
-    def proxy(obj: Union[None, str, FunctionType], /):
-        if isinstance(obj, FunctionType):
-            return request(method.name)(obj)
-
-        return request(method.name, obj)
+def _method(method: HttpMethod, /) -> Callable[[str], Callable[[Func], Func]]:
+    def proxy(url: str, /) -> Callable[[Func], Func]:
+        return request(method.name, url)
 
     return proxy
 
 
-put = method(HttpMethod.PUT)
-get = method(HttpMethod.GET)
-post = method(HttpMethod.POST)
-head = method(HttpMethod.HEAD)
-patch = method(HttpMethod.PATCH)
-delete = method(HttpMethod.DELETE)
-options = method(HttpMethod.OPTIONS)
+put: Callable[[str], Callable[[Func], Func]] = _method(HttpMethod.PUT)
+get: Callable[[str], Callable[[Func], Func]] = _method(HttpMethod.GET)
+post: Callable[[str], Callable[[Func], Func]] = _method(HttpMethod.POST)
+head: Callable[[str], Callable[[Func], Func]] = _method(HttpMethod.HEAD)
+patch: Callable[[str], Callable[[Func], Func]] = _method(HttpMethod.PATCH)
+delete: Callable[[str], Callable[[Func], Func]] = _method(HttpMethod.DELETE)
+options: Callable[[str], Callable[[Func], Func]] = _method(HttpMethod.OPTIONS)
 
 
 def static(
     field_type: ParamType, data: Dict[str, Any]
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-    def decorator(func: Callable[..., Any], /) -> Callable[..., Any]:
+) -> Callable[[Func], Func]:
+    def decorator(func: Func, /) -> Func:
         specification: Optional[Specification] = api.get_specification(func)
 
         if specification is None:

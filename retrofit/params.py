@@ -1,41 +1,34 @@
-from dataclasses import dataclass, InitVar
-from typing import Any, Callable, ClassVar, Dict, Generic, Optional, TypeVar, Union
+from dataclasses import dataclass
+from typing import Any, Callable, ClassVar, Dict, Generic, Literal, Optional, TypeVar, Union
 from sentinel import Missing
 from abc import ABC
 
 from .enums import ParamType
+from .default import Default, Sentinel
 
 T = TypeVar("T")
 
 
 @dataclass(init=False)
 class Info(ABC, Generic[T]):
-    _default: InitVar[Union[T, Missing]]
-    _default_factory: InitVar[Union[Callable[[], T], Missing]]
+    _default: Default[T]
 
     type: ClassVar[ParamType]
 
     def __init__(
         self,
         *,
-        default: Union[T, Missing] = Missing,
-        default_factory: Union[Callable[[], T], Missing] = Missing,
+        default: Union[T, Literal[Sentinel.Missing]] = Sentinel.Missing,
+        default_factory: Union[Callable[[], T], Literal[Sentinel.Missing]] = Sentinel.Missing,
     ):
-        if default is not Missing and default_factory is not Missing:
-            raise ValueError("cannot specify both default and default_factory")
-
-        self._default = default
-        self._default_factory = default_factory
+        self._default = Default(value=default, factory=default_factory)
 
     @property
     def default(self) -> T:
-        if self._default_factory is not Missing:
-            return self._default_factory()
-
-        return self._default
+        return self._default.get()
 
     def has_default(self) -> bool:
-        return self._default is not Missing or self._default_factory is not Missing
+        return self._default.present()
 
 
 @dataclass(init=False)
@@ -46,7 +39,7 @@ class Param(Info[T]):
         self,
         name: Optional[str] = None,
         *,
-        default: T = Missing,
+        default: T = Sentinel.Missing,
     ):
         super().__init__(default=default)
 

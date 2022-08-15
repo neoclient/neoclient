@@ -1,20 +1,20 @@
-from typing import Generic, Protocol, TypeVar
+from typing import Protocol, TypeVar
 from .models import Request
 from httpx import Response
 import httpx
 
-T = TypeVar("T")
-RT = TypeVar("RT")
-CT = TypeVar("CT")
+T_co = TypeVar("T_co", covariant=True)
+R_cont = TypeVar("R_cont", contravariant=True)
+C_co = TypeVar("C_co", covariant=True)
 
 
-class Resolver(Protocol, Generic[T]):
-    def resolve(self, request: Request, /) -> T:
+class Resolver(Protocol[T_co]):
+    def resolve(self, request: Request, /) -> T_co:
         ...
 
 
-class Converter(Protocol[RT, CT]):
-    def convert(self, resolved: RT, /) -> CT:
+class Converter(Protocol[R_cont, C_co]):
+    def convert(self, resolved: R_cont, /) -> C_co:
         ...
 
 
