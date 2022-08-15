@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, TypeVar, Type
+from typing import Any, Callable, Dict, Optional, TypeVar, Type
 from typing_extensions import ParamSpec
 import annotate
 
@@ -7,10 +7,10 @@ from .converters import Converter, IdentityConverter, IdentityResolver, Resolver
 from .enums import FieldType, Annotation
 from .models import FieldInfo, Specification, Query, Request, Info
 from types import FunctionType
-import urllib.parse
 import inspect
 import functools
 from . import utils
+import furl
 
 T = TypeVar("T")
 
@@ -26,6 +26,7 @@ def get_specifications(cls: type, /) -> Dict[str, Specification]:
         and Annotation.SPECIFICATION in annotate.get_annotations(member)
     }
 
+
 class BaseService:
     def __repr__(self) -> str:
         return f"<{type(self).__name__}()>"
@@ -33,12 +34,17 @@ class BaseService:
 
 @dataclass
 class Retrofit:
-    base_url: str
+    base_url: Optional[str] = None
     resolver: Resolver = IdentityResolver()
     converter: Converter = IdentityConverter()
 
     def create(self, protocol: Type[T], /) -> T:
         specifications: Dict[str, Specification] = get_specifications(protocol)
+
+        # Validate endpoints are all fully qualified urls if no base url
+        # func_name: str
+        # specification: Specification
+        # for func_name, specification in specifications.items():
 
         attributes: dict = {"__module__": protocol.__module__}
 
@@ -47,12 +53,28 @@ class Retrofit:
         for func_name, specification in specifications.items():
             func: FunctionType = getattr(protocol, func_name)
 
+            # Validate endpoint is a fully qualified url if no base url
+            if (
+                self.base_url is None or not furl.has_netloc(self.base_url)
+            ) and not furl.has_netloc(specification.endpoint):
+                raise Exception(
+                    f"Cannot construct fully-qualified URL from: base_url={self.base_url!r}, endpoint={specification.endpoint!r}"
+                )
+
             attributes[func_name] = self._method(specification, func)
 
         return type(protocol.__name__, (BaseService,), attributes)()
 
     def _url(self, endpoint: str, /) -> str:
-        return urllib.parse.urljoin(self.base_url, endpoint)
+        if furl.has_netloc(endpoint):
+            return endpoint
+
+        if self.base_url is None or not furl.has_netloc(self.base_url):
+            raise Exception(
+                f"Cannot construct fully-qualified URL from: base_url={self.base_url!r}, endpoint={endpoint!r}"
+            )
+
+        return furl.urljoin(self.base_url, endpoint)
 
     def _method(
         self, specification: Specification, method: Callable[PT, RT], /
@@ -107,14 +129,18 @@ class Retrofit:
                         arguments[parameter]
                     )
 
-            return self.converter.convert(self.resolver.resolve(Request(
-                method=specification.method,
-                url=self._url(specification.endpoint).format(
-                    **destinations.get(FieldType.PATH, {})
-                ),
-                params=destinations.get(FieldType.QUERY, {}),
-                headers=destinations.get(FieldType.HEADER, {}),
-            )))
+            return self.converter.convert(
+                self.resolver.resolve(
+                    Request(
+                        method=specification.method,
+                        url=self._url(specification.endpoint).format(
+                            **destinations.get(FieldType.PATH, {})
+                        ),
+                        params=destinations.get(FieldType.QUERY, {}),
+                        headers=destinations.get(FieldType.HEADER, {}),
+                    )
+                )
+            )
 
         return wrapper
 

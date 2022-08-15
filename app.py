@@ -34,8 +34,8 @@ class HttpBinService(Protocol):
 
 retrofit: Retrofit = Retrofit(
     base_url="https://httpbin.org/",
-    resolver=HttpxResolver(),
-    converter=HttpxJsonConverter()
+    # resolver=HttpxResolver(),
+    # converter=HttpxJsonConverter()
 )
 
 httpbin: HttpBinService = retrofit.create(HttpBinService)
