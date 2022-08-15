@@ -24,6 +24,10 @@ def get_specifications(cls: type, /) -> Dict[str, Specification]:
         and Annotation.SPECIFICATION in annotate.get_annotations(member)
     }
 
+class BaseService:
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__}()>"
+
 
 @dataclass
 class Retrofit:
@@ -41,7 +45,7 @@ class Retrofit:
 
             attributes[func_name] = self._method(specification, func)
 
-        return type(protocol.__name__, (object,), attributes)()
+        return type(protocol.__name__, (BaseService,), attributes)()
 
     def _url(self, endpoint: str, /) -> str:
         return urllib.parse.urljoin(self.base_url, endpoint)
