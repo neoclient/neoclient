@@ -57,6 +57,7 @@ class FieldInfo(Info[T]):
     def generate_name(name: str):
         return name
 
+
 class FieldDictInfo(Info[T]):
     pass
 

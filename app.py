@@ -1,6 +1,6 @@
 from retrofit import Retrofit, get, HeaderDict, Header, Query, Path, QueryDict
-from retrofit.converters import HttpxResolver, HttpxJsonConverter
-from typing import Protocol, Optional
+from retrofit.converters import IdentityConverter, IdentityResolver
+from typing import Any, Dict, List, Protocol, Optional, Set
 
 
 class HttpBinService(Protocol):
@@ -34,8 +34,8 @@ class HttpBinService(Protocol):
 
 retrofit: Retrofit = Retrofit(
     base_url="https://httpbin.org/",
-    # resolver=HttpxResolver(),
-    # converter=HttpxJsonConverter()
+    resolver=IdentityResolver(),
+    converter=IdentityConverter(),
 )
 
 httpbin: HttpBinService = retrofit.create(HttpBinService)

@@ -2,16 +2,19 @@ from retrofit import Retrofit, Path, get
 from typing import List, Protocol
 from dataclasses import dataclass
 
+
 @dataclass
 class Repository:
     id: int
     name: str
     description: str
 
+
 class GitHubService(Protocol):
     @get("users/{user}/repos")
     def list_repos(user: str = Path("user")) -> List[Repository]:
         ...
+
 
 from retrofit import Retrofit
 

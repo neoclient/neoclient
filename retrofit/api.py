@@ -1,16 +1,17 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, TypeVar, Type
+from typing import Any, Callable, Dict, Optional, Set, TypeVar, Type
 from typing_extensions import ParamSpec
 import annotate
 
-from .converters import Converter, IdentityConverter, IdentityResolver, Resolver
+from .converters import Converter, HttpxJsonConverter, HttpxResolver, Resolver
 from .enums import FieldType, Annotation
-from .models import FieldDictInfo, FieldInfo, Specification, Query, Request, Info
+from .models import FieldDictInfo, FieldInfo, Path, Specification, Query, Request, Info
 from types import FunctionType
 import inspect
 import functools
 import furl
 from arguments import Arguments
+import parse
 
 T = TypeVar("T")
 
@@ -35,8 +36,8 @@ class BaseService:
 @dataclass
 class Retrofit:
     base_url: Optional[str] = None
-    resolver: Resolver = IdentityResolver()
-    converter: Converter = IdentityConverter()
+    resolver: Resolver = HttpxResolver()
+    converter: Converter = HttpxJsonConverter()
 
     def create(self, protocol: Type[T], /) -> T:
         specifications: Dict[str, Specification] = get_specifications(protocol)
@@ -111,9 +112,7 @@ class Retrofit:
 
                     destinations.setdefault(field.type, {})[field_name] = value
                 elif isinstance(field, FieldDictInfo):
-                    destinations.setdefault(field.type, {}).update(
-                        arguments[parameter]
-                    )
+                    destinations.setdefault(field.type, {}).update(arguments[parameter])
 
             return self.converter.convert(
                 self.resolver.resolve(
@@ -147,7 +146,21 @@ def build_request_specification(
             else Query(name=parameter.name, default=default)
         )
 
+        if isinstance(field, FieldInfo) and field.name is None:
+            field.name = field.generate_name(parameter.name)
+
         fields[parameter.name] = field
+
+    expected_path_params: Set[str] = set(parse.compile(endpoint).named_fields)
+    actual_path_params: Set[str] = {
+        field.name for field in fields.values() if isinstance(field, Path)
+    }
+
+    # Validate that only expected path params provided
+    if expected_path_params != actual_path_params:
+        raise ValueError(
+            f"Incompatible path params. Got: {actual_path_params}, expected: {expected_path_params}"
+        )
 
     return Specification(
         method=method,
