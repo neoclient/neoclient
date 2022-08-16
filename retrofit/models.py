@@ -10,6 +10,7 @@ class Request:
     params: dict = field(default_factory=dict)
     headers: dict = field(default_factory=dict)
     body: dict = field(default_factory=dict)
+    cookies: dict = field(default_factory=dict)
 
 
 @dataclass

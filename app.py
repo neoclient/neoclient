@@ -10,6 +10,7 @@ from retrofit import (
     # Body,
     headers,
     query_params,
+    Cookie
 )
 from retrofit.converters import IdentityConverter, IdentityResolver
 from typing import Any, Dict, List, Protocol, Optional, Set
@@ -35,9 +36,9 @@ class HttpBinService(Protocol):
     # ) -> dict:
     #     ...
 
-    @get("status/{code}")
-    def status(self, code: int) -> dict:
-        ...
+    # @get("status/{code}")
+    # def status(self, code: int) -> dict:
+    #     ...
 
     # @get
     # def get(params: dict = QueryDict(default_factory=dict)) -> dict:
@@ -48,6 +49,10 @@ class HttpBinService(Protocol):
     # @post
     # def post(message: str = Body()) -> dict:
     #     ...
+
+    @get("cookies")
+    def cookies(self, foo: str = Cookie()):
+        ...
 
 
 retrofit: Retrofit = Retrofit(

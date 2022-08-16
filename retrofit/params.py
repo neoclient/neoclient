@@ -76,6 +76,10 @@ class Header(Param[T]):
 class Cookie(Param[T]):
     type: ParamType = ParamType.COOKIE
 
+    @staticmethod
+    def generate_name(name: str):
+        return name.upper()
+
 
 class Params(Info[T]):
     def __init__(

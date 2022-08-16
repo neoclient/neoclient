@@ -136,6 +136,10 @@ class Retrofit:
                             **specification.headers,
                             **destinations.get(ParamType.HEADER, {}),
                         },
+                        cookies={
+                            **specification.cookies,
+                            **destinations.get(ParamType.COOKIE, {}),
+                        },
                         # body=destinations.get(FieldType.BODY, {}),
                     )
                 )
