@@ -15,7 +15,7 @@ from .sentinels import Missing
 from .converters import Converter, HttpxJsonConverter, HttpxResolver, Resolver
 from .enums import Annotation, ParamType
 from .models import Request, Specification
-from .params import Info, Param, Params, Path, Query
+from .params import Body, Info, Param, Params, Path, Query
 
 T = TypeVar("T")
 
@@ -105,21 +105,26 @@ class Retrofit:
             parameter: str
             field: Info
             for parameter, field in specification.fields.items():
+                value: Any = arguments[parameter]
+
+                # Consciously choose to omit field with `None` value as it's likely not wanted
+                if value is None:
+                    continue
+
                 if isinstance(field, Param):
                     field_name: str = (
                         field.name
                         if field.name is not None
                         else field.generate_name(parameter)
                     )
-                    value: Any = arguments[parameter]
-
-                    # Consciously choose to omit field with `None` value as it's likely not wanted
-                    if value is None:
-                        continue
 
                     destinations.setdefault(field.type, {})[field_name] = value
                 elif isinstance(field, Params):
-                    destinations.setdefault(field.type, {}).update(arguments[parameter])
+                    destinations.setdefault(field.type, {}).update(value)
+                elif isinstance(field, Body):
+                    destinations[field.type] = value
+
+            print("destinations:", destinations)
 
             return self.converter.convert(
                 self.resolver.resolve(
@@ -140,7 +145,7 @@ class Retrofit:
                             **specification.cookies,
                             **destinations.get(ParamType.COOKIE, {}),
                         },
-                        # body=destinations.get(FieldType.BODY, {}),
+                        body=destinations.get(ParamType.BODY, {}),
                     )
                 )
             )
@@ -181,13 +186,21 @@ def build_request_specification(
     parameter_default: Any
     for parameter_name, parameter_default in fields_to_infer.items():
         param_cls: Type[Param]
-        
-        if parameter_name in expected_path_params and not any(isinstance(field, Path) and field.name in expected_path_params for field in fields.values()):
+
+        if parameter_name in expected_path_params and not any(
+            isinstance(field, Path) and field.name in expected_path_params
+            for field in fields.values()
+        ):
             param_cls = Path
         else:
             param_cls = Query
-        
-        fields[parameter_name] = param_cls(parameter_name, default = parameter_default if parameter_default is not parameter.empty else Missing)
+
+        fields[parameter_name] = param_cls(
+            parameter_name,
+            default=parameter_default
+            if parameter_default is not parameter.empty
+            else Missing,
+        )
 
     actual_path_params: Set[str] = {
         field.name

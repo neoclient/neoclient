@@ -11,7 +11,8 @@ from retrofit import (
     headers,
     query_params,
     Cookie,
-    Cookies
+    Cookies,
+    Body,
 )
 from retrofit.converters import IdentityConverter, IdentityResolver
 from typing import Any, Dict, List, Protocol, Optional, Set
@@ -41,9 +42,9 @@ class HttpBinService(Protocol):
     # def status(self, code: int) -> dict:
     #     ...
 
-    # @get
-    # def get(params: dict = QueryDict(default_factory=dict)) -> dict:
-    #     ...
+    @get("get")
+    def get(self, body: dict = Body(default_factory=dict)) -> dict:
+        ...
 
     # @headers({"User-Agent": "robototron", "X-Who-Am-I": "Sam"})
     # @query_params({"foo": "bar", "cat": "dog"})
@@ -51,9 +52,9 @@ class HttpBinService(Protocol):
     # def post(message: str = Body()) -> dict:
     #     ...
 
-    @get("cookies")
-    def cookies(self, cookies: dict = Cookies()):
-        ...
+    # @get("cookies")
+    # def cookies(self, cookies: dict = Cookies()):
+    #     ...
 
 
 retrofit: Retrofit = Retrofit(

@@ -27,6 +27,6 @@ class ParamType(NoValue):
     COOKIE = enum.auto()
 
     # TODO: Remove/move
-    # BODY = enum.auto()
+    BODY = enum.auto()
     # FIELD = enum.auto()
     # PART = enum.auto()

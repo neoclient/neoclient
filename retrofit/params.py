@@ -30,15 +30,16 @@ class Info(ABC, Generic[T]):
         return self._default.present()
 
 
+class Body(Info):
+    type: ParamType = ParamType.BODY
+
+
 @dataclass(init=False)
 class Param(Info[T]):
     name: Optional[str]
 
     def __init__(
-        self,
-        name: Optional[str] = None,
-        *,
-        default: Union[T, MissingType] = Missing,
+        self, name: Optional[str] = None, *, default: Union[T, MissingType] = Missing
     ):
         super().__init__(default=default)
 
@@ -83,9 +84,15 @@ class Cookie(Param[T]):
 
 class Params(Info[Dict[str, Any]]):
     def __init__(
-        self, *, default_factory: Union[Callable[[], Dict[str, Any]], MissingType] = Missing
+        self,
+        *,
+        default_factory: Union[Callable[[], Dict[str, Any]], MissingType] = Missing,
     ):
-        super().__init__(default_factory=default_factory if default_factory is not Missing else lambda: dict())
+        super().__init__(
+            default_factory=default_factory
+            if default_factory is not Missing
+            else lambda: dict()
+        )
 
 
 class Queries(Params):
