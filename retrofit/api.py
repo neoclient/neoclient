@@ -1,18 +1,20 @@
+import functools
+import inspect
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, Set, TypeVar, Type
-from typing_extensions import ParamSpec
+from inspect import Parameter
+from types import FunctionType
+from typing import Any, Callable, Dict, List, Optional, Set, Type, TypeVar
+
 import annotate
+import furl
+import parse
+from arguments import Arguments
+from typing_extensions import ParamSpec
 
 from .converters import Converter, HttpxJsonConverter, HttpxResolver, Resolver
-from .enums import ParamType, Annotation
-from .models import Specification, Request
-from .params import Params, Param, Path, Query, Info
-from types import FunctionType
-import inspect
-import functools
-import furl
-from arguments import Arguments
-import parse
+from .enums import Annotation, ParamType
+from .models import Request, Specification
+from .params import Info, Param, Params, Path, Query
 
 T = TypeVar("T")
 
@@ -62,7 +64,7 @@ class Retrofit:
                     f"Cannot construct fully-qualified URL from: base_url={self.base_url!r}, endpoint={specification.url!r}"
                 )
 
-            attributes[func_name] = staticmethod(self._method(specification, func))
+            attributes[func_name] = self._method(specification, func)
 
         return type(protocol.__name__, (BaseService,), attributes)()
 
@@ -144,10 +146,15 @@ class Retrofit:
 def build_request_specification(
     method: str, endpoint: str, signature: inspect.Signature
 ) -> Specification:
+    if not signature.parameters:
+        raise Exception("Method must have at least one parameter")
+
+    parameters: List[Parameter] = list(signature.parameters.values())[1:]
+
     fields: Dict[str, Info] = {}
 
     parameter: inspect.Parameter
-    for parameter in signature.parameters.values():
+    for parameter in parameters:
         default: Any = parameter.default
 
         # Assume it's a `Query` field if the type is not known

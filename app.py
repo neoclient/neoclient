@@ -18,11 +18,11 @@ from typing import Any, Dict, List, Protocol, Optional, Set
 class HttpBinService(Protocol):
     ## Request Inspection
     @get("ip")
-    def ip() -> dict:
+    def ip(self) -> dict:
         ...
 
     @get("headers")
-    def headers(headers: dict = Headers()) -> dict:
+    def headers(self, headers: dict = Headers(default_factory=lambda: {"x-foo": "bar"})) -> dict:
         ...
 
     # @get

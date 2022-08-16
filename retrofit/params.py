@@ -1,25 +1,25 @@
 from dataclasses import dataclass
-from typing import Any, Callable, ClassVar, Dict, Generic, Literal, Optional, TypeVar, Union
+from typing import Any, Callable, ClassVar, Dict, Generic, Optional, TypeVar, Union
 from sentinel import Missing
 from abc import ABC
 
 from .enums import ParamType
-from .default import Default, Sentinel
+from .default import Default
+from .sentinels import Missing, MissingType
 
 T = TypeVar("T")
 
 
-@dataclass(init=False)
 class Info(ABC, Generic[T]):
     _default: Default[T]
 
-    type: ClassVar[ParamType]
+    type: ParamType
 
     def __init__(
         self,
         *,
-        default: Union[T, Literal[Sentinel.Missing]] = Sentinel.Missing,
-        default_factory: Union[Callable[[], T], Literal[Sentinel.Missing]] = Sentinel.Missing,
+        default: Union[T, MissingType] = Missing,
+        default_factory: Union[Callable[[], T], MissingType] = Missing,
     ):
         self._default = Default(value=default, factory=default_factory)
 
@@ -39,7 +39,7 @@ class Param(Info[T]):
         self,
         name: Optional[str] = None,
         *,
-        default: T = Sentinel.Missing,
+        default: T = Missing,
     ):
         super().__init__(default=default)
 
@@ -51,7 +51,7 @@ class Param(Info[T]):
 
 
 class Path(Param[T]):
-    type: ClassVar[ParamType] = ParamType.PATH
+    type: ParamType = ParamType.PATH
 
     @staticmethod
     def generate_name(name: str):
@@ -59,7 +59,7 @@ class Path(Param[T]):
 
 
 class Query(Param[T]):
-    type: ClassVar[ParamType] = ParamType.QUERY
+    type: ParamType = ParamType.QUERY
 
     @staticmethod
     def generate_name(name: str):
@@ -67,7 +67,7 @@ class Query(Param[T]):
 
 
 class Header(Param[T]):
-    type: ClassVar[ParamType] = ParamType.HEADER
+    type: ParamType = ParamType.HEADER
 
     @staticmethod
     def generate_name(name: str):
@@ -75,26 +75,17 @@ class Header(Param[T]):
 
 
 class Params(Info[T]):
-    def __init__(self, *, default_factory: Union[Callable[[], T], Missing] = Missing):
+    def __init__(self, *, default_factory: Union[Callable[[], T], MissingType] = Missing):
         super().__init__(default_factory=default_factory)
 
 
 class Queries(Params[Dict[str, Any]]):
-    type: ClassVar[ParamType] = ParamType.QUERY
-
-    def __init__(self) -> None:
-        super().__init__(default_factory=dict)
+    type: ParamType = ParamType.QUERY
 
 
 class Headers(Params[Dict[str, Any]]):
-    type: ClassVar[ParamType] = ParamType.HEADER
-
-    def __init__(self) -> None:
-        super().__init__(default_factory=dict)
+    type: ParamType = ParamType.HEADER
 
 
 class Cookies(Params[Dict[str, Any]]):
-    type: ClassVar[ParamType] = ParamType.COOKIE
-
-    def __init__(self) -> None:
-        super().__init__(default_factory=dict)
+    type: ParamType = ParamType.COOKIE
