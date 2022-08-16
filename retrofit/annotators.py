@@ -18,9 +18,7 @@ def request(
 ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
     def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
         uri: str = (
-            endpoint
-            if endpoint is not None
-            else Path.generate_name(func.__name__)
+            endpoint if endpoint is not None else Path.generate_name(func.__name__)
         )
 
         spec: Specification = api.build_request_specification(
@@ -39,20 +37,36 @@ def request(
     return decorator
 
 
-def _method(method: HttpMethod, /) -> Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]]:
+def _method(
+    method: HttpMethod, /
+) -> Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]]:
     def proxy(url: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return request(method.name, url)
 
     return proxy
 
 
-put: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(HttpMethod.PUT)
-get: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(HttpMethod.GET)
-post: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(HttpMethod.POST)
-head: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(HttpMethod.HEAD)
-patch: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(HttpMethod.PATCH)
-delete: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(HttpMethod.DELETE)
-options: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(HttpMethod.OPTIONS)
+put: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
+    HttpMethod.PUT
+)
+get: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
+    HttpMethod.GET
+)
+post: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
+    HttpMethod.POST
+)
+head: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
+    HttpMethod.HEAD
+)
+patch: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
+    HttpMethod.PATCH
+)
+delete: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
+    HttpMethod.DELETE
+)
+options: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
+    HttpMethod.OPTIONS
+)
 
 
 def static(

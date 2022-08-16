@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, ClassVar, Dict, Generic, Optional, TypeVar, Union
-from sentinel import Missing
+from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union
 from abc import ABC
 
 from .enums import ParamType
@@ -39,7 +38,7 @@ class Param(Info[T]):
         self,
         name: Optional[str] = None,
         *,
-        default: T = Missing,
+        default: Union[T, MissingType] = Missing,
     ):
         super().__init__(default=default)
 
@@ -74,8 +73,14 @@ class Header(Param[T]):
         return name.title().replace("_", "-")
 
 
+class Cookie(Param[T]):
+    type: ParamType = ParamType.COOKIE
+
+
 class Params(Info[T]):
-    def __init__(self, *, default_factory: Union[Callable[[], T], MissingType] = Missing):
+    def __init__(
+        self, *, default_factory: Union[Callable[[], T], MissingType] = Missing
+    ):
         super().__init__(default_factory=default_factory)
 
 

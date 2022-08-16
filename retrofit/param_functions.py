@@ -1,4 +1,12 @@
-from typing import Any
-from sentinel import Missing
+from typing import Optional, TypeVar, Union
+from .sentinels import Missing, MissingType
+from . import params
 
-# def Path(...) -> ...
+
+T = TypeVar("T")
+
+
+def Header(
+    name: Optional[str] = None, *, default: Union[T, MissingType] = Missing
+) -> params.Header[T]:
+    return params.Header(name=name, default=default)

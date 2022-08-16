@@ -171,7 +171,9 @@ def build_request_specification(
 
     expected_path_params: Set[str] = set(parse.compile(endpoint).named_fields)
     actual_path_params: Set[str] = {
-        field.name for field in fields.values() if isinstance(field, Path) and field.name is not None
+        field.name
+        for field in fields.values()
+        if isinstance(field, Path) and field.name is not None
     }
 
     # Validate that only expected path params provided

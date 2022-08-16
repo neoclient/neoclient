@@ -2,7 +2,6 @@ import pytest
 
 from retrofit.params import Query
 from retrofit.enums import ParamType
-from sentinel import Missing
 
 
 def test_field_no_default() -> None:

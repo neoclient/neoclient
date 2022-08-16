@@ -32,6 +32,4 @@ class Default(Generic[T]):
         raise Exception("There is no default")
 
     def present(self) -> bool:
-        return (
-            self._value is not Missing or self._factory is not Missing
-        )
+        return self._value is not Missing or self._factory is not Missing
