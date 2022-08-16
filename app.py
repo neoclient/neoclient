@@ -10,7 +10,8 @@ from retrofit import (
     # Body,
     headers,
     query_params,
-    Cookie
+    Cookie,
+    Cookies
 )
 from retrofit.converters import IdentityConverter, IdentityResolver
 from typing import Any, Dict, List, Protocol, Optional, Set
@@ -51,7 +52,7 @@ class HttpBinService(Protocol):
     #     ...
 
     @get("cookies")
-    def cookies(self, foo: str = Cookie()):
+    def cookies(self, cookies: dict = Cookies()):
         ...
 
 

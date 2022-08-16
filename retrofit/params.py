@@ -81,20 +81,20 @@ class Cookie(Param[T]):
         return name.upper()
 
 
-class Params(Info[T]):
+class Params(Info[Dict[str, Any]]):
     def __init__(
-        self, *, default_factory: Union[Callable[[], T], MissingType] = Missing
+        self, *, default_factory: Union[Callable[[], Dict[str, Any]], MissingType] = Missing
     ):
-        super().__init__(default_factory=default_factory)
+        super().__init__(default_factory=default_factory if default_factory is not Missing else lambda: dict())
 
 
-class Queries(Params[Dict[str, Any]]):
+class Queries(Params):
     type: ParamType = ParamType.QUERY
 
 
-class Headers(Params[Dict[str, Any]]):
+class Headers(Params):
     type: ParamType = ParamType.HEADER
 
 
-class Cookies(Params[Dict[str, Any]]):
+class Cookies(Params):
     type: ParamType = ParamType.COOKIE

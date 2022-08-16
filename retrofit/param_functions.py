@@ -28,3 +28,15 @@ def Cookie(
     name: Optional[str] = None, *, default: Union[T, MissingType] = Missing
 ) -> params.Cookie[T]:
     return params.Cookie(name=name, default=default)
+
+
+def Headers() -> params.Headers:
+    return params.Headers()
+
+
+def Queries() -> params.Queries:
+    return params.Queries()
+
+
+def Cookies() -> params.Cookies:
+    return params.Cookies()

@@ -11,5 +11,4 @@ from .annotators import (
     query_params,
 )
 from .api import Retrofit
-from .params import Headers, Queries
-from .param_functions import Header, Path, Query, Cookie
+from .param_functions import Header, Path, Query, Cookie, Headers, Queries, Cookies
