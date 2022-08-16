@@ -11,6 +11,7 @@ import parse
 from arguments import Arguments
 from typing_extensions import ParamSpec
 
+from .sentinels import Missing
 from .converters import Converter, HttpxJsonConverter, HttpxResolver, Resolver
 from .enums import Annotation, ParamType
 from .models import Request, Specification
@@ -152,17 +153,18 @@ def build_request_specification(
     parameters: List[Parameter] = list(signature.parameters.values())[1:]
 
     fields: Dict[str, Info] = {}
+    fields_to_infer: Dict[str, Any] = {}
 
     parameter: inspect.Parameter
     for parameter in parameters:
         default: Any = parameter.default
 
-        # Assume it's a `Query` field if the type is not known
-        field: Info = (
-            default
-            if isinstance(default, Info)
-            else Query(name=parameter.name, default=default)
-        )
+        if not isinstance(default, Info):
+            fields_to_infer[parameter.name] = default
+
+            continue
+
+        field: Info = default
 
         if isinstance(field, Param) and field.name is None:
             field.name = field.generate_name(parameter.name)
@@ -170,6 +172,19 @@ def build_request_specification(
         fields[parameter.name] = field
 
     expected_path_params: Set[str] = set(parse.compile(endpoint).named_fields)
+
+    parameter_name: str
+    parameter_default: Any
+    for parameter_name, parameter_default in fields_to_infer.items():
+        param_cls: Type[Param]
+        
+        if parameter_name in expected_path_params and not any(isinstance(field, Path) and field.name in expected_path_params for field in fields.values()):
+            param_cls = Path
+        else:
+            param_cls = Query
+        
+        fields[parameter_name] = param_cls(parameter_name, default = parameter_default if parameter_default is not parameter.empty else Missing)
+
     actual_path_params: Set[str] = {
         field.name
         for field in fields.values()

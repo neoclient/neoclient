@@ -25,9 +25,9 @@ class HttpBinService(Protocol):
     # def headers(self, headers: dict = Headers(default_factory=lambda: {"x-foo": "bar"})) -> dict:
     #     ...
 
-    @get("user-agent")
-    def user_agent(self, user_agent: str = Header()) -> dict:
-        ...
+    # @get("user-agent")
+    # def user_agent(self, user_agent: str = Header()) -> dict:
+    #     ...
 
     # @get
     # def redirect_to(
@@ -35,9 +35,9 @@ class HttpBinService(Protocol):
     # ) -> dict:
     #     ...
 
-    # @get("status/{code}")
-    # def status(code: int = Path()) -> dict:
-    #     ...
+    @get("status/{code}")
+    def status(self, code: int) -> dict:
+        ...
 
     # @get
     # def get(params: dict = QueryDict(default_factory=dict)) -> dict:
@@ -56,4 +56,4 @@ retrofit: Retrofit = Retrofit(
     converter=IdentityConverter(),
 )
 
-httpbin: HttpBinService = retrofit.create(HttpBinService) # type: ignore
+httpbin: HttpBinService = retrofit.create(HttpBinService)  # type: ignore
