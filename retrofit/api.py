@@ -7,7 +7,6 @@ from typing import Any, Callable, Dict, List, Optional, Set, Type, TypeVar
 
 import annotate
 import furl
-import parse
 from arguments import Arguments
 from typing_extensions import ParamSpec
 
@@ -16,6 +15,7 @@ from .converters import Converter, HttpxJsonConverter, HttpxResolver, Resolver
 from .enums import Annotation, ParamType
 from .models import Request, Specification
 from .params import Body, Info, Param, Params, Path, Query
+from . import utils
 
 T = TypeVar("T")
 
@@ -178,7 +178,7 @@ def build_request_specification(
 
         fields[parameter.name] = field
 
-    expected_path_params: Set[str] = set(parse.compile(endpoint).named_fields)
+    expected_path_params: Set[str] = utils.get_path_params(endpoint)
 
     parameter_name: str
     parameter_default: Any

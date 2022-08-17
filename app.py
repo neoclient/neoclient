@@ -42,8 +42,12 @@ class HttpBinService(Protocol):
     # def status(self, code: int) -> dict:
     #     ...
 
-    @get("get")
-    def get(self, q: Optional[str] = Query(default=None)) -> dict:
+    # @get("get")
+    # def get(self, q: Optional[str] = Query(default=None)) -> dict:
+    #     ...
+
+    @get("/users/{id}")
+    def get_user(self, id: str = Path("id")) -> dict:
         ...
 
     # @headers({"User-Agent": "robototron", "X-Who-Am-I": "Sam"})

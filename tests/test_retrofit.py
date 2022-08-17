@@ -1,8 +1,9 @@
-from retrofit import Retrofit, Query, get
-from retrofit.models import Request
-from retrofit.converters import IdentityConverter, IdentityResolver
-from typing import Protocol, Optional
+from typing import Optional, Protocol
+
 import pytest
+from retrofit import Path, Query, Retrofit, get
+from retrofit.converters import IdentityConverter, IdentityResolver
+from retrofit.models import Request
 
 
 @pytest.fixture
@@ -50,3 +51,21 @@ def test_query_required_not_omitted(retrofit: Retrofit):
         body={},
         cookies={},
     )
+
+
+def test_error_if_missing_path_param(retrofit: Retrofit):
+    with pytest.raises(ValueError):
+
+        class Service(Protocol):
+            @get("/users/{id}")
+            def get(self) -> Request:
+                ...
+
+
+def test_error_if_extra_path_param(retrofit: Retrofit):
+    with pytest.raises(ValueError):
+
+        class Service(Protocol):
+            @get("/users/")
+            def get(self, id: str = Path()) -> Request:
+                ...
