@@ -1,6 +1,6 @@
 from .params import Info
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict, Optional
 
 
 @dataclass
@@ -9,7 +9,7 @@ class Request:
     url: str
     params: dict = field(default_factory=dict)
     headers: dict = field(default_factory=dict)
-    json: dict = field(default_factory=dict)
+    json: Optional[dict] = None
     cookies: dict = field(default_factory=dict)
 
 

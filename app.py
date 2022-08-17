@@ -78,7 +78,7 @@ class HttpBinService(Protocol):
     #     ...
 
     @post("post")
-    def create_user(self, user: User, item: Item):
+    def create_user(self, user: User, item: Item) -> Request:
         ...
 
     # @headers({"User-Agent": "robototron", "X-Who-Am-I": "Sam"})
@@ -100,4 +100,4 @@ retrofit: Retrofit = Retrofit(
 
 httpbin: HttpBinService = retrofit.create(HttpBinService)  # type: ignore
 
-r: Resp = httpbin.create_user(User(id=1, name="user"), Item(id=1, name="item"))
+# r: Request = httpbin.create_user(User(id=1, name="user"), Item(id=1, name="item"))

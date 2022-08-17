@@ -1,43 +1,48 @@
 # retrofit
-HTTP client for Python inspired by [FastAPI](https://github.com/tiangolo/fastapi) and [Retrofit](https://square.github.io/retrofit/)
+Fast HTTP clients for Python inspired by [FastAPI](https://github.com/tiangolo/fastapi) and [Retrofit](https://square.github.io/retrofit/)
 
 ## Introduction
 Retrofit turns your HTTP API into a Python protocol.
 ```python
-from retrofit import get, Path
+from retrofit import Retrofit, get
 from typing import Protocol
-from dataclasses import dataclass
+from pydantic import BaseModel
 
-@dataclass
-class Repository:
-    id: int
-    name: str
-    description: str
+class Response(BaseModel):
+    args: dict
+    headers: dict
+    origin: str
+    url: str
 
-class GitHubService(Protocol):
-    @get("users/{user}/repos")
-    def list_repos(user: str = Path("user")) -> List[Repository]:
+class Httpbin(Protocol):
+    @get("/get")
+    def get(self, message: str) -> Response:
         ...
 ```
 
-The `Retrofit` class generates an implementation of the `GitHubService` protocol.
+The `Retrofit` class generates an implementation of the `Httpbin` protocol.
 ```python
 from retrofit import Retrofit
 
-retrofit: Retrofit = Retrofit("https://api.github.com/")
+retrofit: Retrofit = Retrofit("https://httpbin.org/")
 
-service: GitHubService = retrofit.create(GitHubService)
+httpbin: Httpbin = retrofit.create(Httpbin)  # type: ignore
 ```
 
-Each method call to the created `GitHubService` makes a synchronous HTTP request to the remote webserver.
+Each method call to the created `Httpbin` makes a synchronous HTTP request to the remote webserver.
 ```python
-from typing import List
-
-repos: List[Repository] = service.list_repos("octocat")
-```
-```python
->>> repos[0]
-Repository(id=132935648, name="boysenberry-repo-1", description="Testing")
+>>> httpbin.get()
+Response(
+    args={"message": "Hello, World!"},
+    headers={
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Host": "httpbin.org",
+        "User-Agent": "python-httpx/0.23.0",
+    },
+    origin="1.2.3.4",
+    url="https://httpbin.org/get?message=Hello%2C+World!"
+)
 ```
 
 Use annotations to describe the HTTP request:

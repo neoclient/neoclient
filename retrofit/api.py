@@ -153,14 +153,14 @@ class Retrofit:
 
             body_params: Dict[str, Any] = destinations.get(ParamType.BODY, {})
 
-            json: dict
+            json: Optional[dict] = None
 
             # If there's only onw body param, make it the entire JSON request body
             if len(body_params) == 1:
                 json = list(body_params.values())[0].dict()
-            # If there are zero or multiple body params, construct a multi-level dict
+            # If there are multiple body params, construct a multi-level dict
             # of each body parameter. E.g. (user: User, item: Item) -> {"user": ..., "item": ...}
-            else:
+            elif body_params:
                 json = {key: val.dict() for key, val in body_params.items()}
 
             request: Request = Request(
