@@ -35,7 +35,7 @@ class HttpxResolver(Resolver[Response]):
             url=request.url,
             params=request.params,
             headers=request.headers,
-            # body
+            json=request.json,
         )
 
 

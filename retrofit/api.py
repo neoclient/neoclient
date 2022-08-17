@@ -1,18 +1,19 @@
 import functools
 import inspect
 from dataclasses import dataclass
-from inspect import Parameter
+from inspect import Parameter, Signature
 from types import FunctionType
-from typing import Any, Callable, Dict, List, Optional, Set, Type, TypeVar
+from typing import Any, Callable, Dict, List, NoReturn, Optional, Set, Type, TypeVar, Union
 
 import annotate
 import furl
 from arguments import Arguments
 from typing_extensions import ParamSpec
 from pydantic import BaseModel
+from httpx import Response
 
 from .sentinels import Missing
-from .converters import Converter, HttpxJsonConverter, HttpxResolver, Resolver
+from .converters import Converter, HttpxJsonConverter, HttpxResolver, IdentityConverter, Resolver
 from .enums import Annotation, ParamType
 from .models import Request, Specification
 from .params import Body, Info, Param, Params, Path, Query
@@ -46,7 +47,7 @@ class BaseService:
 class Retrofit:
     base_url: Optional[str] = None
     resolver: Resolver = HttpxResolver()
-    converter: Converter = HttpxJsonConverter()
+    converter: Converter = IdentityConverter()
 
     def create(self, protocol: Type[T], /) -> T:
         specifications: Dict[str, Specification] = get_specifications(protocol)
@@ -84,8 +85,10 @@ class Retrofit:
     def _method(
         self, specification: Specification, method: Callable[PT, RT], /
     ) -> Callable[PT, RT]:
+        signature: Signature = inspect.signature(method)
+
         @functools.wraps(method)
-        def wrapper(*args: PT.args, **kwargs: PT.kwargs) -> Any:
+        def wrapper(*args: PT.args, **kwargs: PT.kwargs) -> Union[Any, NoReturn]:
             arguments: Dict[str, Any] = Arguments(*args, **kwargs).bind(method).asdict()
 
             argument_name: str
@@ -143,29 +146,57 @@ class Retrofit:
                     for key, val in body_params.items()
                 }
 
-            return self.converter.convert(
-                self.resolver.resolve(
-                    Request(
-                        method=specification.method,
-                        url=self._url(specification.url).format(
-                            **destinations.get(ParamType.PATH, {})
-                        ),
-                        params={
-                            **specification.params,
-                            **destinations.get(ParamType.QUERY, {}),
-                        },
-                        headers={
-                            **specification.headers,
-                            **destinations.get(ParamType.HEADER, {}),
-                        },
-                        cookies={
-                            **specification.cookies,
-                            **destinations.get(ParamType.COOKIE, {}),
-                        },
-                        json=json,
-                    )
-                )
+            request: Request = Request(
+                method=specification.method,
+                url=self._url(specification.url).format(
+                    **destinations.get(ParamType.PATH, {})
+                ),
+                params={
+                    **specification.params,
+                    **destinations.get(ParamType.QUERY, {}),
+                },
+                headers={
+                    **specification.headers,
+                    **destinations.get(ParamType.HEADER, {}),
+                },
+                cookies={
+                    **specification.cookies,
+                    **destinations.get(ParamType.COOKIE, {}),
+                },
+                json=json,
             )
+
+            return_annotation: Any = signature.return_annotation
+            
+            if return_annotation is Request:
+                return request
+
+            response: Response = self.converter.convert(self.resolver.resolve(request))
+
+            if return_annotation is Response:
+                return response
+            if issubclass(return_annotation, BaseModel):
+                return return_annotation.parse_obj(response.json())
+            if return_annotation is str:
+                return response.text
+            if return_annotation is bytes:
+                return response.content
+            if return_annotation is int:
+                return int(response.text)
+            if return_annotation is float:
+                return float(response.text)
+            if return_annotation is dict:
+                return response.json()
+            if return_annotation is list:
+                return response.json()
+            if return_annotation is tuple:
+                return response.json()
+            if return_annotation is set:
+                return response.json()
+            if return_annotation is bool:
+                return response.text == "True"
+            
+            raise Exception(f"Unknown return annotation {return_annotation!r}, cannot convert response")
 
         return wrapper
 

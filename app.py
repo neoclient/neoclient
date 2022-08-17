@@ -16,8 +16,9 @@ from retrofit import (
 )
 from retrofit.converters import IdentityConverter, IdentityResolver
 from typing import Any, Dict, List, Protocol, Optional, Set
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from retrofit.models import Request
+from httpx import Response
 
 class Model(BaseModel):
     id: int
@@ -26,6 +27,15 @@ class Model(BaseModel):
 class User(Model): pass
 class Item(Model): pass
 
+class Resp(BaseModel):
+    args: dict
+    data: str
+    files: dict
+    form: dict
+    headers: dict
+    json_: dict = Field(alias="json")
+    url: str
+    origin: str
 
 class HttpBinService(Protocol):
     ## Request Inspection
@@ -59,8 +69,8 @@ class HttpBinService(Protocol):
     # def get_user(self, id: str = Path("id")) -> dict:
     #     ...
 
-    @post("/users/")
-    def create_user(self, user: User, item: Item) -> Request:
+    @post("post")
+    def create_user(self, user: User, item: Item) -> Resp:
         ...
 
     # @headers({"User-Agent": "robototron", "X-Who-Am-I": "Sam"})
@@ -76,10 +86,10 @@ class HttpBinService(Protocol):
 
 retrofit: Retrofit = Retrofit(
     base_url="https://httpbin.org/",
-    resolver=IdentityResolver(),
-    converter=IdentityConverter(),
+    # resolver=IdentityResolver(),
+    # converter=IdentityConverter(),
 )
 
 httpbin: HttpBinService = retrofit.create(HttpBinService)  # type: ignore
 
-req: Request = httpbin.create_user(User(id=1, name="User"), Item(id=1, name="Item"))
+r: Resp = httpbin.create_user(User(id=1, name="user"), Item(id=1, name="item"))
