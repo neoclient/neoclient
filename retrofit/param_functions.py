@@ -7,30 +7,30 @@ T = TypeVar("T")
 
 
 def Header(
-    name: Optional[str] = None, *, default: Union[T, MissingType] = Missing
+    alias: Optional[str] = None, *, default: Union[T, MissingType] = Missing
 ) -> params.Header[T]:
-    return params.Header(name=name, default=default)
+    return params.Header(alias=alias, default=default)
 
 
 def Query(
-    name: Optional[str] = None,
+    alias: Optional[str] = None,
     *,
     default: Union[T, MissingType] = Missing,
     required: bool = False
 ) -> params.Query[T]:
-    return params.Query(name=name, default=default, required=required)
+    return params.Query(alias=alias, default=default, required=required)
 
 
 def Path(
-    name: Optional[str] = None, *, default: Union[T, MissingType] = Missing
+    alias: Optional[str] = None, *, default: Union[T, MissingType] = Missing
 ) -> params.Path[T]:
-    return params.Path(name=name, default=default)
+    return params.Path(alias=alias, default=default)
 
 
 def Cookie(
-    name: Optional[str] = None, *, default: Union[T, MissingType] = Missing
+    alias: Optional[str] = None, *, default: Union[T, MissingType] = Missing
 ) -> params.Cookie[T]:
-    return params.Cookie(name=name, default=default)
+    return params.Cookie(alias=alias, default=default)
 
 
 def Body(

@@ -36,56 +36,56 @@ class Body(Info):
 
 @dataclass(init=False)
 class Param(Info[T]):
-    name: Optional[str]
+    alias: Optional[str]
     required: bool = False
 
     def __init__(
         self,
-        name: Optional[str] = None,
+        alias: Optional[str] = None,
         *,
         default: Union[T, MissingType] = Missing,
         required: bool = False,
     ):
         super().__init__(default=default)
 
-        self.name = name
+        self.alias = alias
         self.required = required
 
     @staticmethod
-    def generate_name(name: str):
-        return name
+    def generate_alias(alias: str):
+        return alias
 
 
 class Path(Param[T]):
     type: ParamType = ParamType.PATH
 
     @staticmethod
-    def generate_name(name: str):
-        return name.lower().replace("_", "-")
+    def generate_alias(alias: str):
+        return alias.lower().replace("_", "-")
 
 
 class Query(Param[T]):
     type: ParamType = ParamType.QUERY
 
     @staticmethod
-    def generate_name(name: str):
-        return name.lower().replace("_", "-")
+    def generate_alias(alias: str):
+        return alias.lower().replace("_", "-")
 
 
 class Header(Param[T]):
     type: ParamType = ParamType.HEADER
 
     @staticmethod
-    def generate_name(name: str):
-        return name.title().replace("_", "-")
+    def generate_alias(alias: str):
+        return alias.title().replace("_", "-")
 
 
 class Cookie(Param[T]):
     type: ParamType = ParamType.COOKIE
 
     @staticmethod
-    def generate_name(name: str):
-        return name.upper()
+    def generate_alias(alias: str):
+        return alias.upper()
 
 
 class Params(Info[Dict[str, Any]]):

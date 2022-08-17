@@ -18,7 +18,7 @@ def request(
 ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
     def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
         uri: str = (
-            endpoint if endpoint is not None else Path.generate_name(func.__name__)
+            endpoint if endpoint is not None else Path.generate_alias(func.__name__)
         )
 
         spec: Specification = api.build_request_specification(

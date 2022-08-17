@@ -43,7 +43,7 @@ class HttpBinService(Protocol):
     #     ...
 
     @get("get")
-    def get(self, q: Optional[str] = Query(default=None, required=True)) -> dict:
+    def get(self, q: Optional[str] = Query(default=None)) -> dict:
         ...
 
     # @headers({"User-Agent": "robototron", "X-Who-Am-I": "Sam"})

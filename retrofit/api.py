@@ -109,9 +109,9 @@ class Retrofit:
 
                 if isinstance(field, Param):
                     field_name: str = (
-                        field.name
-                        if field.name is not None
-                        else field.generate_name(parameter)
+                        field.alias
+                        if field.alias is not None
+                        else field.generate_alias(parameter)
                     )
 
                     # The field is not required, it can be omitted
@@ -173,8 +173,8 @@ def build_request_specification(
 
         field: Info = default
 
-        if isinstance(field, Param) and field.name is None:
-            field.name = field.generate_name(parameter.name)
+        if isinstance(field, Param) and field.alias is None:
+            field.alias = field.generate_alias(parameter.name)
 
         fields[parameter.name] = field
 
@@ -186,7 +186,7 @@ def build_request_specification(
         param_cls: Type[Param]
 
         if parameter_name in expected_path_params and not any(
-            isinstance(field, Path) and field.name in expected_path_params
+            isinstance(field, Path) and field.alias in expected_path_params
             for field in fields.values()
         ):
             param_cls = Path
@@ -201,9 +201,9 @@ def build_request_specification(
         )
 
     actual_path_params: Set[str] = {
-        field.name
+        field.alias
         for field in fields.values()
-        if isinstance(field, Path) and field.name is not None
+        if isinstance(field, Path) and field.alias is not None
     }
 
     # Validate that only expected path params provided
