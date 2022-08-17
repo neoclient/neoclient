@@ -17,6 +17,7 @@ def Header(
         alias=alias, default=default, default_factory=default_factory, required=required
     )
 
+
 def Query(
     alias: Optional[str] = None,
     *,
@@ -27,6 +28,7 @@ def Query(
     return params.Query(
         alias=alias, default=default, default_factory=default_factory, required=required
     )
+
 
 def Path(
     alias: Optional[str] = None,
@@ -39,6 +41,7 @@ def Path(
         alias=alias, default=default, default_factory=default_factory, required=required
     )
 
+
 def Cookie(
     alias: Optional[str] = None,
     *,
@@ -49,6 +52,7 @@ def Cookie(
     return params.Cookie(
         alias=alias, default=default, default_factory=default_factory, required=required
     )
+
 
 def Body(
     alias: Optional[str] = None,

@@ -20,12 +20,19 @@ from pydantic import BaseModel, Field
 from retrofit.models import Request
 from httpx import Response
 
+
 class Model(BaseModel):
     id: int
     name: str
 
-class User(Model): pass
-class Item(Model): pass
+
+class User(Model):
+    pass
+
+
+class Item(Model):
+    pass
+
 
 class Resp(BaseModel):
     args: dict
@@ -36,6 +43,7 @@ class Resp(BaseModel):
     json_: dict = Field(alias="json")
     url: str
     origin: str
+
 
 class HttpBinService(Protocol):
     ## Request Inspection
@@ -70,7 +78,7 @@ class HttpBinService(Protocol):
     #     ...
 
     @post("post")
-    def create_user(self, user: User, item: Item) -> Resp:
+    def create_user(self, user: User, item: Item):
         ...
 
     # @headers({"User-Agent": "robototron", "X-Who-Am-I": "Sam"})

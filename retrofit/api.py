@@ -3,7 +3,18 @@ import inspect
 from dataclasses import dataclass
 from inspect import Parameter, Signature
 from types import FunctionType
-from typing import Any, Callable, Dict, List, NoReturn, Optional, Set, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    NoReturn,
+    Optional,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import annotate
 import furl
@@ -13,7 +24,12 @@ from pydantic import BaseModel
 from httpx import Response
 
 from .sentinels import Missing
-from .converters import Converter, HttpxJsonConverter, HttpxResolver, IdentityConverter, Resolver
+from .converters import (
+    Converter,
+    HttpxResolver,
+    IdentityConverter,
+    Resolver,
+)
 from .enums import Annotation, ParamType
 from .models import Request, Specification
 from .params import Body, Info, Param, Params, Path, Query
@@ -122,8 +138,12 @@ class Retrofit:
                     if value is None and not field.required:
                         continue
 
-                    if field.type is ParamType.BODY and not isinstance(value, BaseModel):
-                        raise Exception("Can only currently accept pydantic request bodies")
+                    if field.type is ParamType.BODY and not isinstance(
+                        value, BaseModel
+                    ):
+                        raise Exception(
+                            "Can only currently accept pydantic request bodies"
+                        )
 
                     destinations.setdefault(field.type, {})[field_name] = value
                 elif isinstance(field, Params):
@@ -141,10 +161,7 @@ class Retrofit:
             # If there are zero or multiple body params, construct a multi-level dict
             # of each body parameter. E.g. (user: User, item: Item) -> {"user": ..., "item": ...}
             else:
-                json = {
-                    key: val.dict()
-                    for key, val in body_params.items()
-                }
+                json = {key: val.dict() for key, val in body_params.items()}
 
             request: Request = Request(
                 method=specification.method,
@@ -167,12 +184,14 @@ class Retrofit:
             )
 
             return_annotation: Any = signature.return_annotation
-            
+
             if return_annotation is Request:
                 return request
 
             response: Response = self.converter.convert(self.resolver.resolve(request))
 
+            if return_annotation is signature.empty or return_annotation is None:
+                return None
             if return_annotation is Response:
                 return response
             if issubclass(return_annotation, BaseModel):
@@ -195,8 +214,10 @@ class Retrofit:
                 return response.json()
             if return_annotation is bool:
                 return response.text == "True"
-            
-            raise Exception(f"Unknown return annotation {return_annotation!r}, cannot convert response")
+
+            raise Exception(
+                f"Unknown return annotation {return_annotation!r}, cannot convert response"
+            )
 
         return wrapper
 
@@ -243,16 +264,16 @@ def build_request_specification(
             for field in fields.values()
         ):
             param_cls = Path
-        elif issubclass(param_annotation, BaseModel) or isinstance(param_default, BaseModel):
+        elif issubclass(param_annotation, BaseModel) or isinstance(
+            param_default, BaseModel
+        ):
             param_cls = Body
         else:
             param_cls = Query
 
         fields[param_name] = param_cls(
             param_name,
-            default=param_default
-            if param_default is not parameter.empty
-            else Missing,
+            default=param_default if param_default is not parameter.empty else Missing,
         )
 
     actual_path_params: Set[str] = {

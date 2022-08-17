@@ -88,7 +88,7 @@ class Cookie(Param[T]):
 class Body(Param[T]):
     type: ParamType = ParamType.BODY
 
-    # TODO: Override `generate_alias` to return camel case
+    # TODO: Override `generate_alias` to return camel case? Or expect them to use an alias.
 
 
 class Params(Info[Dict[str, Any]]):

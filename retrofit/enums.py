@@ -30,3 +30,4 @@ class ParamType(NoValue):
     BODY = enum.auto()
     # FIELD = enum.auto()
     # PART = enum.auto()
+    # FORM = enum.auto()
