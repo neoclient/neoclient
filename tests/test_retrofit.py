@@ -1,9 +1,9 @@
 from typing import Optional, Protocol
 
 import pytest
-from retrofit import Path, Query, Body, Retrofit, get, post
-from retrofit.converters import IdentityConverter, IdentityResolver
-from retrofit.models import Request
+from fastclient import Path, Query, Body, FastClient, get, post
+from fastclient.converters import IdentityConverter, IdentityResolver
+from fastclient.models import Request
 from pydantic import BaseModel
 
 
@@ -21,15 +21,15 @@ class Item(Model):
 
 
 @pytest.fixture
-def retrofit() -> Retrofit:
-    return Retrofit(
+def retrofit() -> FastClient:
+    return FastClient(
         base_url="http://localhost:8080/",
         resolver=IdentityResolver(),
         converter=IdentityConverter(),
     )
 
 
-def test_query_not_required_omitted(retrofit: Retrofit):
+def test_query_not_required_omitted(retrofit: FastClient):
     class Service(Protocol):
         @get("get")
         def get(
@@ -49,7 +49,7 @@ def test_query_not_required_omitted(retrofit: Retrofit):
     )
 
 
-def test_query_required_not_omitted(retrofit: Retrofit):
+def test_query_required_not_omitted(retrofit: FastClient):
     class Service(Protocol):
         @get("get")
         def get(self, q: Optional[str] = Query(default=None, required=True)) -> Request:
@@ -67,7 +67,7 @@ def test_query_required_not_omitted(retrofit: Retrofit):
     )
 
 
-def test_error_if_missing_path_param(retrofit: Retrofit):
+def test_error_if_missing_path_param(retrofit: FastClient):
     with pytest.raises(ValueError):
 
         class Service(Protocol):
@@ -76,7 +76,7 @@ def test_error_if_missing_path_param(retrofit: Retrofit):
                 ...
 
 
-def test_error_if_extra_path_param(retrofit: Retrofit):
+def test_error_if_extra_path_param(retrofit: FastClient):
     with pytest.raises(ValueError):
 
         class Service(Protocol):
@@ -85,7 +85,7 @@ def test_error_if_extra_path_param(retrofit: Retrofit):
                 ...
 
 
-def test_single_body_param(retrofit: Retrofit):
+def test_single_body_param(retrofit: FastClient):
     class Service(Protocol):
         @post("/items/")
         def create_item(self, item: Item = Body()) -> Request:
@@ -103,7 +103,7 @@ def test_single_body_param(retrofit: Retrofit):
     )
 
 
-def test_multiple_body_params(retrofit: Retrofit):
+def test_multiple_body_params(retrofit: FastClient):
     class Service(Protocol):
         @post("/items/")
         def create_item(self, user: User = Body(), item: Item = Body()) -> Request:

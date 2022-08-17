@@ -60,7 +60,7 @@ class BaseService:
 
 
 @dataclass
-class Retrofit:
+class FastClient:
     base_url: Optional[str] = None
     resolver: Resolver = HttpxResolver()
     converter: Converter = IdentityConverter()
@@ -190,7 +190,9 @@ class Retrofit:
 
             response: Response = self.converter.convert(self.resolver.resolve(request))
 
-            if return_annotation is signature.empty or return_annotation is None:
+            if return_annotation is signature.empty:
+                return response.json()
+            if return_annotation is None:
                 return None
             if return_annotation is Response:
                 return response

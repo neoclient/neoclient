@@ -1,4 +1,4 @@
-from retrofit import Retrofit, get
+from fastclient import FastClient, get
 from typing import Protocol
 from pydantic import BaseModel
 
@@ -16,6 +16,6 @@ class Httpbin(Protocol):
         ...
 
 
-retrofit: Retrofit = Retrofit("https://httpbin.org/")
+retrofit: FastClient = FastClient("https://httpbin.org/")
 
 httpbin: Httpbin = retrofit.create(Httpbin)  # type: ignore

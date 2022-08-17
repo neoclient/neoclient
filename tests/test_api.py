@@ -1,7 +1,7 @@
-from retrofit.annotators import request
-from retrofit.models import Request, Specification
-from retrofit.param_functions import Query
-from retrofit.enums import Annotation
+from fastclient.annotators import request
+from fastclient.models import Request, Specification
+from fastclient.param_functions import Query
+from fastclient.enums import Annotation
 from typing import Protocol
 import annotate
 

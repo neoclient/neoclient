@@ -1,10 +1,10 @@
-# retrofit
+# fastclient
 :rocket: Fast HTTP clients for Python inspired by [FastAPI](https://github.com/tiangolo/fastapi) and [Retrofit](https://square.github.io/retrofit/)
 
 ## Introduction
 Retrofit turns your HTTP API into a Python protocol.
 ```python
-from retrofit import Retrofit, get
+from fastclient import FastClient, get
 from typing import Protocol
 
 class Httpbin(Protocol):
@@ -12,7 +12,7 @@ class Httpbin(Protocol):
     def get(self, message: str) -> dict:
         ...
 
-httpbin: Httpbin = Retrofit("https://httpbin.org/").create(Httpbin)  # type: ignore
+httpbin: Httpbin = FastClient("https://httpbin.org/").create(Httpbin)  # type: ignore
 ```
 ```python
 >>> httpbin.get("Hello, World!")

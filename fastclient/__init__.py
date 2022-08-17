@@ -10,7 +10,7 @@ from .annotators import (
     headers,
     query_params,
 )
-from .api import Retrofit
+from .api import FastClient
 from .param_functions import (
     Header,
     Path,
@@ -21,3 +21,6 @@ from .param_functions import (
     Cookies,
     Body,
 )
+from .models import Specification, Request
+from .sentinels import Missing
+from .enums import HttpMethod, ParamType

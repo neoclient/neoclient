@@ -1,7 +1,7 @@
 import pytest
 
-from retrofit.params import Query
-from retrofit.enums import ParamType
+from fastclient.params import Query
+from fastclient.enums import ParamType
 
 
 def test_field_no_default() -> None:

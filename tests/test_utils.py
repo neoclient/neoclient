@@ -1,4 +1,4 @@
-from retrofit import utils
+from fastclient import utils
 import pytest
 
 
