@@ -2,7 +2,7 @@
 :rocket: Fast HTTP clients for Python inspired by [FastAPI](https://github.com/tiangolo/fastapi) and [Retrofit](https://square.github.io/retrofit/)
 
 ## Introduction
-Retrofit turns your HTTP API into a Python protocol.
+FastClient turns your HTTP API into a Python protocol.
 ```python
 from fastclient import FastClient, get
 from typing import Protocol
