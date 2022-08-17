@@ -1,5 +1,5 @@
 # retrofit
-HTTP client for Python inspired by [Retrofit](https://square.github.io/retrofit/)
+HTTP client for Python inspired by [FastAPI](https://github.com/tiangolo/fastapi) and [Retrofit](https://square.github.io/retrofit/)
 
 ## Introduction
 Retrofit turns your HTTP API into a Python protocol.

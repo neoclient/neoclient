@@ -27,7 +27,7 @@ class Info(ABC, Generic[T]):
         return self._default.get()
 
     def has_default(self) -> bool:
-        return self._default.present()
+        return self._default.is_present()
 
 
 class Body(Info):
@@ -37,13 +37,19 @@ class Body(Info):
 @dataclass(init=False)
 class Param(Info[T]):
     name: Optional[str]
+    required: bool = False
 
     def __init__(
-        self, name: Optional[str] = None, *, default: Union[T, MissingType] = Missing
+        self,
+        name: Optional[str] = None,
+        *,
+        default: Union[T, MissingType] = Missing,
+        required: bool = False,
     ):
         super().__init__(default=default)
 
         self.name = name
+        self.required = required
 
     @staticmethod
     def generate_name(name: str):

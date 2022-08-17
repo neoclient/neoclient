@@ -13,9 +13,12 @@ def Header(
 
 
 def Query(
-    name: Optional[str] = None, *, default: Union[T, MissingType] = Missing
+    name: Optional[str] = None,
+    *,
+    default: Union[T, MissingType] = Missing,
+    required: bool = False
 ) -> params.Query[T]:
-    return params.Query(name=name, default=default)
+    return params.Query(name=name, default=default, required=required)
 
 
 def Path(

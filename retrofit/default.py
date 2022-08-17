@@ -1,4 +1,4 @@
-from typing import Callable, Generic, NoReturn, TypeVar, Union, Literal
+from typing import Callable, Generic, NoReturn, TypeVar, Union
 from .sentinels import Missing, MissingType
 
 
@@ -31,5 +31,5 @@ class Default(Generic[T]):
 
         raise Exception("There is no default")
 
-    def present(self) -> bool:
+    def is_present(self) -> bool:
         return self._value is not Missing or self._factory is not Missing

@@ -107,10 +107,6 @@ class Retrofit:
             for parameter, field in specification.fields.items():
                 value: Any = arguments[parameter]
 
-                # Consciously choose to omit field with `None` value as it's likely not wanted
-                if value is None:
-                    continue
-
                 if isinstance(field, Param):
                     field_name: str = (
                         field.name
@@ -118,13 +114,15 @@ class Retrofit:
                         else field.generate_name(parameter)
                     )
 
+                    # The field is not required, it can be omitted
+                    if value is None and not field.required:
+                        continue
+
                     destinations.setdefault(field.type, {})[field_name] = value
                 elif isinstance(field, Params):
                     destinations.setdefault(field.type, {}).update(value)
                 elif isinstance(field, Body):
                     destinations[field.type] = value
-
-            print("destinations:", destinations)
 
             return self.converter.convert(
                 self.resolver.resolve(
