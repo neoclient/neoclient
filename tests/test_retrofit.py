@@ -44,7 +44,7 @@ def test_query_not_required_omitted(retrofit: Retrofit):
         url="http://localhost:8080/get",
         params={},
         headers={},
-        json={},
+        json=None,
         cookies={},
     )
 
@@ -62,7 +62,7 @@ def test_query_required_not_omitted(retrofit: Retrofit):
         url="http://localhost:8080/get",
         params={"q": None},
         headers={},
-        json={},
+        json=None,
         cookies={},
     )
 
