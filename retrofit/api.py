@@ -9,6 +9,7 @@ import annotate
 import furl
 from arguments import Arguments
 from typing_extensions import ParamSpec
+from pydantic import BaseModel
 
 from .sentinels import Missing
 from .converters import Converter, HttpxJsonConverter, HttpxResolver, Resolver
@@ -100,7 +101,7 @@ class Retrofit:
 
                 arguments[argument_name] = argument.default
 
-            destinations: Dict[ParamType, Dict[str, Info]] = {}
+            destinations: Dict[ParamType, Dict[str, Any]] = {}
 
             parameter: str
             field: Info
@@ -118,11 +119,29 @@ class Retrofit:
                     if value is None and not field.required:
                         continue
 
+                    if field.type is ParamType.BODY and not isinstance(value, BaseModel):
+                        raise Exception("Can only currently accept pydantic request bodies")
+
                     destinations.setdefault(field.type, {})[field_name] = value
                 elif isinstance(field, Params):
                     destinations.setdefault(field.type, {}).update(value)
-                elif isinstance(field, Body):
-                    destinations[field.type] = value
+                else:
+                    raise Exception(f"Unknown field type: {field}")
+
+            body_params: Dict[str, Any] = destinations.get(ParamType.BODY, {})
+
+            json: dict
+
+            # If there's only onw body param, make it the entire JSON request body
+            if len(body_params) == 1:
+                json = list(body_params.values())[0].dict()
+            # If there are zero or multiple body params, construct a multi-level dict
+            # of each body parameter. E.g. (user: User, item: Item) -> {"user": ..., "item": ...}
+            else:
+                json = {
+                    key: val.dict()
+                    for key, val in body_params.items()
+                }
 
             return self.converter.convert(
                 self.resolver.resolve(
@@ -143,7 +162,7 @@ class Retrofit:
                             **specification.cookies,
                             **destinations.get(ParamType.COOKIE, {}),
                         },
-                        body=destinations.get(ParamType.BODY, {}),
+                        json=json,
                     )
                 )
             )
@@ -160,14 +179,14 @@ def build_request_specification(
     parameters: List[Parameter] = list(signature.parameters.values())[1:]
 
     fields: Dict[str, Info] = {}
-    fields_to_infer: Dict[str, Any] = {}
+    fields_to_infer: List[inspect.Parameter] = []
 
     parameter: inspect.Parameter
     for parameter in parameters:
         default: Any = parameter.default
 
         if not isinstance(default, Info):
-            fields_to_infer[parameter.name] = default
+            fields_to_infer.append(parameter)
 
             continue
 
@@ -180,23 +199,28 @@ def build_request_specification(
 
     expected_path_params: Set[str] = utils.get_path_params(endpoint)
 
-    parameter_name: str
-    parameter_default: Any
-    for parameter_name, parameter_default in fields_to_infer.items():
+    param: inspect.Parameter
+    for param in fields_to_infer:
+        param_name: str = param.name
+        param_default: Any = param.default
+        param_annotation: type = param.annotation
+
         param_cls: Type[Param]
 
-        if parameter_name in expected_path_params and not any(
+        if param_name in expected_path_params and not any(
             isinstance(field, Path) and field.alias in expected_path_params
             for field in fields.values()
         ):
             param_cls = Path
+        elif issubclass(param_annotation, BaseModel) or isinstance(param_default, BaseModel):
+            param_cls = Body
         else:
             param_cls = Query
 
-        fields[parameter_name] = param_cls(
-            parameter_name,
-            default=parameter_default
-            if parameter_default is not parameter.empty
+        fields[param_name] = param_cls(
+            param_name,
+            default=param_default
+            if param_default is not parameter.empty
             else Missing,
         )
 

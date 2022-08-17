@@ -7,37 +7,59 @@ T = TypeVar("T")
 
 
 def Header(
-    alias: Optional[str] = None, *, default: Union[T, MissingType] = Missing
+    alias: Optional[str] = None,
+    *,
+    default: Union[T, MissingType] = Missing,
+    default_factory: Union[Callable[[], T], MissingType] = Missing,
+    required: bool = False
 ) -> params.Header[T]:
-    return params.Header(alias=alias, default=default)
-
+    return params.Header(
+        alias=alias, default=default, default_factory=default_factory, required=required
+    )
 
 def Query(
     alias: Optional[str] = None,
     *,
     default: Union[T, MissingType] = Missing,
+    default_factory: Union[Callable[[], T], MissingType] = Missing,
     required: bool = False
 ) -> params.Query[T]:
-    return params.Query(alias=alias, default=default, required=required)
-
+    return params.Query(
+        alias=alias, default=default, default_factory=default_factory, required=required
+    )
 
 def Path(
-    alias: Optional[str] = None, *, default: Union[T, MissingType] = Missing
-) -> params.Path[T]:
-    return params.Path(alias=alias, default=default)
-
-
-def Cookie(
-    alias: Optional[str] = None, *, default: Union[T, MissingType] = Missing
-) -> params.Cookie[T]:
-    return params.Cookie(alias=alias, default=default)
-
-
-def Body(
+    alias: Optional[str] = None,
+    *,
     default: Union[T, MissingType] = Missing,
     default_factory: Union[Callable[[], T], MissingType] = Missing,
-) -> params.Body:
-    return params.Body(default=default, default_factory=default_factory)
+    required: bool = False
+) -> params.Path[T]:
+    return params.Path(
+        alias=alias, default=default, default_factory=default_factory, required=required
+    )
+
+def Cookie(
+    alias: Optional[str] = None,
+    *,
+    default: Union[T, MissingType] = Missing,
+    default_factory: Union[Callable[[], T], MissingType] = Missing,
+    required: bool = False
+) -> params.Cookie[T]:
+    return params.Cookie(
+        alias=alias, default=default, default_factory=default_factory, required=required
+    )
+
+def Body(
+    alias: Optional[str] = None,
+    *,
+    default: Union[T, MissingType] = Missing,
+    default_factory: Union[Callable[[], T], MissingType] = Missing,
+    required: bool = False
+) -> params.Body[T]:
+    return params.Body(
+        alias=alias, default=default, default_factory=default_factory, required=required
+    )
 
 
 def Headers() -> params.Headers:

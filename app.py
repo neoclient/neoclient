@@ -16,6 +16,15 @@ from retrofit import (
 )
 from retrofit.converters import IdentityConverter, IdentityResolver
 from typing import Any, Dict, List, Protocol, Optional, Set
+from pydantic import BaseModel
+from retrofit.models import Request
+
+class Model(BaseModel):
+    id: int
+    name: str
+
+class User(Model): pass
+class Item(Model): pass
 
 
 class HttpBinService(Protocol):
@@ -46,8 +55,12 @@ class HttpBinService(Protocol):
     # def get(self, q: Optional[str] = Query(default=None)) -> dict:
     #     ...
 
-    @get("/users/{id}")
-    def get_user(self, id: str = Path("id")) -> dict:
+    # @get("/users/{id}")
+    # def get_user(self, id: str = Path("id")) -> dict:
+    #     ...
+
+    @post("/users/")
+    def create_user(self, user: User, item: Item) -> Request:
         ...
 
     # @headers({"User-Agent": "robototron", "X-Who-Am-I": "Sam"})
@@ -68,3 +81,5 @@ retrofit: Retrofit = Retrofit(
 )
 
 httpbin: HttpBinService = retrofit.create(HttpBinService)  # type: ignore
+
+req: Request = httpbin.create_user(User(id=1, name="User"), Item(id=1, name="Item"))

@@ -30,10 +30,6 @@ class Info(ABC, Generic[T]):
         return self._default.is_present()
 
 
-class Body(Info):
-    type: ParamType = ParamType.BODY
-
-
 @dataclass(init=False)
 class Param(Info[T]):
     alias: Optional[str]
@@ -44,9 +40,10 @@ class Param(Info[T]):
         alias: Optional[str] = None,
         *,
         default: Union[T, MissingType] = Missing,
+        default_factory: Union[Callable[[], T], MissingType] = Missing,
         required: bool = False,
     ):
-        super().__init__(default=default)
+        super().__init__(default=default, default_factory=default_factory)
 
         self.alias = alias
         self.required = required
@@ -86,6 +83,12 @@ class Cookie(Param[T]):
     @staticmethod
     def generate_alias(alias: str):
         return alias.upper()
+
+
+class Body(Param[T]):
+    type: ParamType = ParamType.BODY
+
+    # TODO: Override `generate_alias` to return camel case
 
 
 class Params(Info[Dict[str, Any]]):
