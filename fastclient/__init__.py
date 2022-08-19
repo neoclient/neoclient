@@ -22,5 +22,4 @@ from .param_functions import (
     Body,
 )
 from .models import Specification, Request
-from .sentinels import Missing
 from .enums import HttpMethod, ParamType

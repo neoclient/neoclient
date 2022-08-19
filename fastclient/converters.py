@@ -4,7 +4,7 @@ from httpx import Response
 import httpx
 
 T_co = TypeVar("T_co", covariant=True)
-R_cont = TypeVar("R_cont", contravariant=True)
+R_contra = TypeVar("R_contra", contravariant=True)
 C_co = TypeVar("C_co", covariant=True)
 
 
@@ -13,8 +13,8 @@ class Resolver(Protocol[T_co]):
         ...
 
 
-class Converter(Protocol[R_cont, C_co]):
-    def convert(self, resolved: R_cont, /) -> C_co:
+class Converter(Protocol[R_contra, C_co]):
+    def convert(self, resolved: R_contra, /) -> C_co:
         ...
 
 

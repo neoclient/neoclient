@@ -1,4 +1,4 @@
-from .params import Info
+from .params import Param
 from dataclasses import dataclass, field
 from typing import Dict, Optional
 
@@ -15,4 +15,4 @@ class Request:
 
 @dataclass
 class Specification(Request):
-    fields: Dict[str, Info] = field(default_factory=dict)
+    fields: Dict[str, Param] = field(default_factory=dict)

@@ -23,7 +23,7 @@ from typing_extensions import ParamSpec
 from pydantic import BaseModel
 from httpx import Response
 
-from .sentinels import Missing
+from param import Missing
 from .converters import (
     Converter,
     HttpxResolver,
@@ -32,7 +32,7 @@ from .converters import (
 )
 from .enums import Annotation, ParamType
 from .models import Request, Specification
-from .params import Body, Info, Param, Params, Path, Query
+from .params import Body, Param, Params, Path, Query
 from . import utils
 
 T = TypeVar("T")
@@ -110,7 +110,7 @@ class FastClient:
             argument_name: str
             argument: Any
             for argument_name, argument in arguments.items():
-                if not isinstance(argument, Info):
+                if not isinstance(argument, Param):
                     continue
 
                 if not argument.has_default():
@@ -123,7 +123,7 @@ class FastClient:
             destinations: Dict[ParamType, Dict[str, Any]] = {}
 
             parameter: str
-            field: Info
+            field: Param
             for parameter, field in specification.fields.items():
                 value: Any = arguments[parameter]
 
@@ -232,22 +232,19 @@ def build_request_specification(
 
     parameters: List[Parameter] = list(signature.parameters.values())[1:]
 
-    fields: Dict[str, Info] = {}
+    fields: Dict[str, Param] = {}
     fields_to_infer: List[inspect.Parameter] = []
 
     parameter: inspect.Parameter
     for parameter in parameters:
         default: Any = parameter.default
 
-        if not isinstance(default, Info):
+        if not isinstance(default, Param):
             fields_to_infer.append(parameter)
 
             continue
 
-        field: Info = default
-
-        if isinstance(field, Param) and field.alias is None:
-            field.alias = field.generate_alias(parameter.name)
+        field: Param = default
 
         fields[parameter.name] = field
 
@@ -274,14 +271,18 @@ def build_request_specification(
             param_cls = Query
 
         fields[param_name] = param_cls(
-            param_name,
+            alias=param_name,
             default=param_default if param_default is not parameter.empty else Missing,
         )
 
     actual_path_params: Set[str] = {
-        field.alias
-        for field in fields.values()
-        if isinstance(field, Path) and field.alias is not None
+        (
+            field.alias
+            if field.alias is not None
+            else field.generate_alias(param)
+        )
+        for param, field in fields.items()
+        if isinstance(field, Path)
     }
 
     # Validate that only expected path params provided

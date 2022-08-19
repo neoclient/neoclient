@@ -1,5 +1,5 @@
 from typing import Callable, Optional, TypeVar, Union
-from .sentinels import Missing, MissingType
+from param.sentinels import Missing, MissingType
 from . import params
 
 
