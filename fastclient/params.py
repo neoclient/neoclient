@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union
-from abc import ABC
 
 from .enums import ParamType
 from .default import Default
@@ -9,7 +8,7 @@ from .sentinels import Missing, MissingType
 T = TypeVar("T")
 
 
-class Info(ABC, Generic[T]):
+class Info(Generic[T]):
     _default: Default[T]
 
     type: ParamType

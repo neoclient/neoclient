@@ -1,22 +1,4 @@
 [[package]]
-name = "annotate"
-version = "0.1.11"
-description = "Python Annotation System Inspired by Java Annotations"
-category = "main"
-optional = false
-python-versions = "^3.8"
-develop = false
-
-[package.dependencies]
-attribute = {git = "https://github.com/tombulled/attribute.git", tag = "v0.1.4"}
-
-[package.source]
-type = "git"
-url = "https://github.com/tombulled/annotate"
-reference = "v0.1.11"
-resolved_reference = "3695f1c3e6285e2de41da36fc9c918b7b9c988bb"
-
-[[package]]
 name = "anyio"
 version = "3.6.1"
 description = "High level compatibility layer for multiple asynchronous event loop implementations"
@@ -34,24 +16,6 @@ test = ["coverage[toml] (>=4.5)", "hypothesis (>=4.0)", "pytest (>=7.0)", "pytes
 trio = ["trio (>=0.16)"]
 
 [[package]]
-name = "arguments"
-version = "0.1.5"
-description = "Arguments manager"
-category = "main"
-optional = false
-python-versions = "^3.8"
-develop = false
-
-[package.dependencies]
-typing-extensions = "^4.1.1"
-
-[package.source]
-type = "git"
-url = "https://github.com/tombulled/arguments"
-reference = "v0.1.5"
-resolved_reference = "ce3eaa7e82fbc71ccca68baf9237abb30ab788ea"
-
-[[package]]
 name = "atomicwrites"
 version = "1.4.1"
 description = "Atomic file writes."
@@ -65,14 +29,7 @@ version = "0.1.4"
 description = "Attribute management made easy"
 category = "main"
 optional = false
-python-versions = "^3.8"
-develop = false
-
-[package.source]
-type = "git"
-url = "https://github.com/tombulled/attribute.git"
-reference = "v0.1.4"
-resolved_reference = "44628fcf4e0e6f855564deb475e702d0c7b7e77a"
+python-versions = ">=3.8,<4.0"
 
 [[package]]
 name = "attrs"
@@ -362,6 +319,36 @@ optional = false
 python-versions = ">=3.5"
 
 [[package]]
+name = "tombulled-annotate"
+version = "0.1.11"
+description = "Python Annotation System Inspired by Java Annotations"
+category = "main"
+optional = false
+python-versions = ">=3.8,<4.0"
+
+[package.dependencies]
+attribute = ">=0.1.4,<0.2.0"
+
+[[package]]
+name = "tombulled-arguments"
+version = "0.1.5"
+description = "Arguments manager"
+category = "main"
+optional = false
+python-versions = ">=3.8,<4.0"
+
+[package.dependencies]
+typing-extensions = ">=4.1.1,<5.0.0"
+
+[[package]]
+name = "tombulled-param"
+version = "0.1.0"
+description = "Enhanced function parameters"
+category = "main"
+optional = false
+python-versions = ">=3.8,<4.0"
+
+[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -380,15 +367,13 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "696ef332096597eee1d29b144f4e30dde81edc8b816844eaeeab2be50b4d7240"
+content-hash = "f74d80ad78d171dc7d71dffcc9cc111f4837467feb2aa5f3214a26854e6a61d1"
 
 [metadata.files]
-annotate = []
 anyio = [
     {file = "anyio-3.6.1-py3-none-any.whl", hash = "sha256:cb29b9c70620506a9a8f87a309591713446953302d7d995344d0d7c6c0c9a7be"},
     {file = "anyio-3.6.1.tar.gz", hash = "sha256:413adf95f93886e442aea925f3ee43baa5a765a64a0f52c6081894f9992fdd0b"},
 ]
-arguments = []
 atomicwrites = []
 attribute = []
 attrs = []
@@ -463,6 +448,9 @@ sniffio = [
     {file = "sniffio-1.2.0-py3-none-any.whl", hash = "sha256:471b71698eac1c2112a40ce2752bb2f4a4814c22a54a3eed3676bc0f5ca9f663"},
     {file = "sniffio-1.2.0.tar.gz", hash = "sha256:c4666eecec1d3f50960c6bdf61ab7bc350648da6c126e3cf6898d8cd4ddcd3de"},
 ]
+tombulled-annotate = []
+tombulled-arguments = []
+tombulled-param = []
 tomli = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
     {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
