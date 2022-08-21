@@ -7,6 +7,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     NoReturn,
     Optional,
@@ -120,7 +121,7 @@ class FastClient:
 
             parameter: str
             field: Param
-            for parameter, field in specification.param_specs.items():
+            for parameter, field in specification.params.items():
                 value: Any = arguments[parameter]
 
                 if isinstance(field, Param):
@@ -219,8 +220,33 @@ class FastClient:
 
         return wrapper
 
+def _build_parameter(parameter: Parameter, spec: Param) -> param.Parameter:
+    return param.Parameter(
+        name=parameter.name,
+        annotation=parameter.annotation,
+        type=getattr(param.ParameterType, parameter.kind.name),
+        spec=spec,
+    )
 
-def get_params(func: Callable, /, path_params: Set[str]) -> Dict[str, param.Parameter]:
+def _extract_path_params(parameters: Iterable[param.Parameter]) -> Set[str]:
+    return {
+        (
+            parameter.spec.alias
+            if parameter.spec.alias is not None
+            else parameter.spec.generate_alias(parameter.name)
+        )
+        for parameter in parameters
+        if isinstance(parameter.spec, Path)
+    }
+
+
+def get_params(
+    func: Callable, /, *, request: Optional[Request] = None
+) -> Dict[str, param.Parameter]:
+    path_params: Set[str] = (
+        utils.get_path_params(request.url) if request is not None else set()
+    )
+
     raw_parameters: List[Parameter] = list(inspect.signature(func).parameters.values())[
         1:
     ]
@@ -229,23 +255,14 @@ def get_params(func: Callable, /, path_params: Set[str]) -> Dict[str, param.Para
     parameters_to_infer: List[Parameter] = []
 
     parameter: Parameter
+
     for parameter in raw_parameters:
-        if not isinstance(parameter.default, Param):
+        if isinstance(parameter.default, Param):
+            parameters[parameter.name] = _build_parameter(parameter, parameter.default)
+        else:
             parameters_to_infer.append(parameter)
 
-            continue
-
-        parameters[parameter.name] = param.Parameter(
-            name=parameter.name,
-            annotation=parameter.annotation,
-            type=getattr(param.ParameterType, parameter.kind.name),
-            spec=parameter.default,
-        )
-
     for parameter in parameters_to_infer:
-        param_default: Any = parameter.default
-        param_annotation: type = parameter.annotation
-
         param_cls: Type[Param]
 
         if parameter.name in path_params and not any(
@@ -253,8 +270,8 @@ def get_params(func: Callable, /, path_params: Set[str]) -> Dict[str, param.Para
             for field in parameters.values()
         ):
             param_cls = Path
-        elif issubclass(param_annotation, BaseModel) or isinstance(
-            param_default, BaseModel
+        elif issubclass(parameter.annotation, BaseModel) or isinstance(
+            parameter.default, BaseModel
         ):
             param_cls = Body
         else:
@@ -262,25 +279,12 @@ def get_params(func: Callable, /, path_params: Set[str]) -> Dict[str, param.Para
 
         param_spec: Param = param_cls(
             alias=parameter.name,
-            default=param_default if param_default is not parameter.empty else Missing,
+            default=parameter.default if parameter.default is not parameter.empty else Missing,
         )
 
-        parameters[parameter.name] = param.Parameter(
-            name=parameter.name,
-            annotation=parameter.annotation,
-            type=getattr(param.ParameterType, parameter.kind.name),
-            spec=param_spec,
-        )
+        parameters[parameter.name] = _build_parameter(parameter, param_spec)
 
-    actual_path_params: Set[str] = {
-        (
-            parameter.spec.alias
-            if parameter.spec.alias is not None
-            else parameter.spec.generate_alias(parameter.name)
-        )
-        for parameter in parameters.values()
-        if isinstance(parameter.spec, Path)
-    }
+    actual_path_params: Set[str] = _extract_path_params(parameters.values())
 
     # Validate that only expected path params provided
     if path_params != actual_path_params:
@@ -294,17 +298,18 @@ def get_params(func: Callable, /, path_params: Set[str]) -> Dict[str, param.Para
 def build_request_specification(
     func: Callable, method: str, endpoint: str
 ) -> Specification:
-    expected_path_params: Set[str] = utils.get_path_params(endpoint)
-    parameters: Dict[str, param.Parameter] = get_params(func, expected_path_params)
+    request: Request = Request(
+        method=method,
+        url=endpoint,
+    )
+
+    parameters: Dict[str, param.Parameter] = get_params(func, request=request)
 
     param_specs: Dict[str, Param] = {
         parameter.name: parameter.spec for parameter in parameters.values()
     }
 
     return Specification(
-        request=Request(
-            method=method,
-            url=endpoint,
-        ),
-        param_specs=param_specs,
+        request=request,
+        params=param_specs,
     )
