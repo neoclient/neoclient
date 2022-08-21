@@ -83,8 +83,8 @@ def static(
             )
 
         destinations: Dict[ParamType, Dict[str, Any]] = {
-            ParamType.QUERY: specification.params,
-            ParamType.HEADER: specification.headers,
+            ParamType.QUERY: specification.request.params,
+            ParamType.HEADER: specification.request.headers,
         }
 
         destinations[field_type].update(data)

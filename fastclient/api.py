@@ -74,9 +74,9 @@ class FastClient:
             # Validate url is a fully qualified url if no base url
             if (
                 self.base_url is None or not furl.has_netloc(self.base_url)
-            ) and not furl.has_netloc(specification.url):
+            ) and not furl.has_netloc(specification.request.url):
                 raise Exception(
-                    f"Cannot construct fully-qualified URL from: base_url={self.base_url!r}, endpoint={specification.url!r}"
+                    f"Cannot construct fully-qualified URL from: base_url={self.base_url!r}, endpoint={specification.request.url!r}"
                 )
 
             attributes[func_name] = self._method(specification, func)
@@ -160,20 +160,20 @@ class FastClient:
                 json = {key: val.dict() for key, val in body_params.items()}
 
             request: Request = Request(
-                method=specification.method,
-                url=self._url(specification.url).format(
+                method=specification.request.method,
+                url=self._url(specification.request.url).format(
                     **destinations.get(ParamType.PATH, {})
                 ),
                 params={
-                    **specification.params,
+                    **specification.request.params,
                     **destinations.get(ParamType.QUERY, {}),
                 },
                 headers={
-                    **specification.headers,
+                    **specification.request.headers,
                     **destinations.get(ParamType.HEADER, {}),
                 },
                 cookies={
-                    **specification.cookies,
+                    **specification.request.cookies,
                     **destinations.get(ParamType.COOKIE, {}),
                 },
                 json=json,
@@ -225,7 +225,7 @@ def get_params(func: Callable, /, path_params: Set[str]) -> Dict[str, param.Para
         1:
     ]
 
-    parameters: Dict[str, parameter.Parameter] = {}
+    parameters: Dict[str, param.Parameter] = {}
     parameters_to_infer: List[Parameter] = []
 
     parameter: Parameter
@@ -302,7 +302,9 @@ def build_request_specification(
     }
 
     return Specification(
-        method=method,
-        url=endpoint,
+        request=Request(
+            method=method,
+            url=endpoint,
+        ),
         param_specs=param_specs,
     )

@@ -14,5 +14,6 @@ class Request:
 
 
 @dataclass
-class Specification(Request):
+class Specification:
+    request: Request
     param_specs: Dict[str, Param] = field(default_factory=dict)
