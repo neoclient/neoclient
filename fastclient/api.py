@@ -153,7 +153,10 @@ class FastClient:
             # If there are multiple body params, construct a multi-level dict
             # of each body parameter. E.g. (user: User, item: Item) -> {"user": ..., "item": ...}
             elif body_params:
-                json = {key: fastapi.encoders.jsonable_encoder(val) for key, val in body_params.items()}
+                json = {
+                    key: fastapi.encoders.jsonable_encoder(val)
+                    for key, val in body_params.items()
+                }
 
             request: Request = Request(
                 method=specification.request.method,
@@ -188,7 +191,9 @@ class FastClient:
                 return None
             if return_annotation is Response:
                 return response
-            if isinstance(return_annotation, type) and issubclass(return_annotation, BaseModel):
+            if isinstance(return_annotation, type) and issubclass(
+                return_annotation, BaseModel
+            ):
                 return return_annotation.parse_obj(response.json())
 
             return pydantic.parse_raw_as(return_annotation, response.text)
@@ -232,6 +237,7 @@ class FastClient:
     def options(self, endpoint: str, /):
         return self.request(HttpMethod.OPTIONS.name, endpoint)
 
+
 def _build_parameter(parameter: Parameter, spec: Param) -> param.Parameter:
     return param.Parameter(
         name=parameter.name,
@@ -239,6 +245,7 @@ def _build_parameter(parameter: Parameter, spec: Param) -> param.Parameter:
         type=getattr(param.ParameterType, parameter.kind.name),
         spec=spec,
     )
+
 
 def _extract_path_params(parameters: Iterable[param.Parameter]) -> Set[str]:
     return {
@@ -282,14 +289,17 @@ def get_params(
             for field in parameters.values()
         ):
             param_cls = Path
-        elif (isinstance(parameter.annotation, type) and issubclass(parameter.annotation, BaseModel)) or isinstance(
-            parameter.default, BaseModel
-        ):
+        elif (
+            isinstance(parameter.annotation, type)
+            and issubclass(parameter.annotation, BaseModel)
+        ) or isinstance(parameter.default, BaseModel):
             param_cls = Body
 
         param_spec: Param = param_cls(
             alias=parameter.name,
-            default=parameter.default if parameter.default is not parameter.empty else Missing,
+            default=parameter.default
+            if parameter.default is not parameter.empty
+            else Missing,
         )
 
         parameters[parameter.name] = _build_parameter(parameter, param_spec)

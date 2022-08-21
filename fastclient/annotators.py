@@ -1,3 +1,4 @@
+import abc
 from types import FunctionType
 from typing import Any, Callable, Dict, Optional, TypeVar
 
@@ -34,41 +35,37 @@ def request(
             ),
         )
 
-        return func
+        return abc.abstractmethod(func)
 
     return decorator
 
 
-def _method(
-    method: HttpMethod, /
-) -> Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]]:
-    def proxy(url: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-        return request(method.name, url)
-
-    return proxy
+def put(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.PUT.name, endpoint)
 
 
-put: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
-    HttpMethod.PUT
-)
-get: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
-    HttpMethod.GET
-)
-post: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
-    HttpMethod.POST
-)
-head: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
-    HttpMethod.HEAD
-)
-patch: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
-    HttpMethod.PATCH
-)
-delete: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
-    HttpMethod.DELETE
-)
-options: Callable[[str], Callable[[Callable[PS, RT]], Callable[PS, RT]]] = _method(
-    HttpMethod.OPTIONS
-)
+def get(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.GET.name, endpoint)
+
+
+def post(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.POST.name, endpoint)
+
+
+def head(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.HEAD.name, endpoint)
+
+
+def patch(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.PATCH.name, endpoint)
+
+
+def delete(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.DELETE.name, endpoint)
+
+
+def options(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.OPTIONS.name, endpoint)
 
 
 def static(
@@ -94,12 +91,11 @@ def static(
     return decorator
 
 
-def _static_for_field(field_type: ParamType):
-    def outer(data: Dict[str, Any], /):
-        return static(field_type, data)
-
-    return outer
+def headers(data: Dict[str, Any], /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return static(ParamType.HEADER, data)
 
 
-headers = _static_for_field(ParamType.HEADER)
-query_params = _static_for_field(ParamType.QUERY)
+def query_params(
+    data: Dict[str, Any], /
+) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return static(ParamType.QUERY, data)

@@ -5,18 +5,22 @@ from dataclasses import dataclass
 from pydantic import BaseModel
 from enum import Enum, auto
 
+
 @dataclass
 class User:
     id: int
     name: str
 
+
 class Item(BaseModel):
     id: int
     name: str
 
+
 class Animal(Enum):
     CAT = auto()
     DOG = auto()
+
 
 class Httpbin(Protocol):
     @get("/str")
