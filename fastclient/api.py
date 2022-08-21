@@ -30,7 +30,7 @@ from typing_extensions import ParamSpec
 
 from . import utils
 from .converters import Converter, HttpxResolver, IdentityConverter, Resolver
-from .enums import Annotation, ParamType
+from .enums import Annotation, HttpMethod, ParamType
 from .models import Request, Specification
 from .params import Body, Param, Params, Path, Query
 
@@ -188,12 +188,49 @@ class FastClient:
                 return None
             if return_annotation is Response:
                 return response
-            if issubclass(return_annotation, BaseModel):
+            if isinstance(return_annotation, type) and issubclass(return_annotation, BaseModel):
                 return return_annotation.parse_obj(response.json())
 
             return pydantic.parse_raw_as(return_annotation, response.text)
 
         return wrapper
+
+    def request(self, method: str, endpoint: Optional[str] = None, /):
+        def decorator(func: Callable[PT, RT], /) -> Callable[PT, RT]:
+            uri: str = (
+                endpoint if endpoint is not None else Path.generate_alias(func.__name__)
+            )
+
+            specification: Specification = build_request_specification(
+                func,
+                method,
+                uri,
+            )
+
+            return self._method(specification, func)
+
+        return decorator
+
+    def put(self, endpoint: str, /):
+        return self.request(HttpMethod.PUT.name, endpoint)
+
+    def get(self, endpoint: str, /):
+        return self.request(HttpMethod.GET.name, endpoint)
+
+    def post(self, endpoint: str, /):
+        return self.request(HttpMethod.POST.name, endpoint)
+
+    def head(self, endpoint: str, /):
+        return self.request(HttpMethod.HEAD.name, endpoint)
+
+    def patch(self, endpoint: str, /):
+        return self.request(HttpMethod.PATCH.name, endpoint)
+
+    def delete(self, endpoint: str, /):
+        return self.request(HttpMethod.DELETE.name, endpoint)
+
+    def options(self, endpoint: str, /):
+        return self.request(HttpMethod.OPTIONS.name, endpoint)
 
 def _build_parameter(parameter: Parameter, spec: Param) -> param.Parameter:
     return param.Parameter(
@@ -245,7 +282,7 @@ def get_params(
             for field in parameters.values()
         ):
             param_cls = Path
-        elif issubclass(parameter.annotation, BaseModel) or isinstance(
+        elif (isinstance(parameter.annotation, type) and issubclass(parameter.annotation, BaseModel)) or isinstance(
             parameter.default, BaseModel
         ):
             param_cls = Body

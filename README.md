@@ -1,8 +1,27 @@
 # fastclient
 :rocket: Fast HTTP clients for Python inspired by [FastAPI](https://github.com/tiangolo/fastapi) and [Retrofit](https://square.github.io/retrofit/)
 
-## Introduction
-FastClient turns your HTTP API into a Python protocol.
+## Installation
+```console
+pip install git+https://github.com/tombulled/fastclient.git@main
+```
+
+## Usage
+```python
+from fastclient import FastClient
+
+app = FastClient("https://httpbin.org/")
+
+@app.get("/ip")
+def ip() -> dict:
+    ...
+```
+```python
+>>> ip()
+{'origin': '1.2.3.4'}
+```
+
+FastClient can turn your HTTP API into a Python protocol.
 ```python
 from fastclient import FastClient, get
 from typing import Protocol
