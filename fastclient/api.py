@@ -21,6 +21,7 @@ from typing import (
 import annotate
 import furl
 import param
+import fastapi.encoders
 from arguments import Arguments
 from httpx import Response
 from param import Missing
@@ -136,13 +137,6 @@ class FastClient:
                     if value is None and not field.required:
                         continue
 
-                    if field.type is ParamType.BODY and not isinstance(
-                        value, BaseModel
-                    ):
-                        raise Exception(
-                            "Can only currently accept pydantic request bodies"
-                        )
-
                     destinations.setdefault(field.type, {})[field_name] = value
                 elif isinstance(field, Params):
                     destinations.setdefault(field.type, {}).update(value)
@@ -151,15 +145,15 @@ class FastClient:
 
             body_params: Dict[str, Any] = destinations.get(ParamType.BODY, {})
 
-            json: Optional[dict] = None
+            json: Any = None
 
-            # If there's only onw body param, make it the entire JSON request body
+            # If there's only one body param, make it the entire JSON request body
             if len(body_params) == 1:
-                json = list(body_params.values())[0].dict()
+                json = fastapi.encoders.jsonable_encoder(list(body_params.values())[0])
             # If there are multiple body params, construct a multi-level dict
             # of each body parameter. E.g. (user: User, item: Item) -> {"user": ..., "item": ...}
             elif body_params:
-                json = {key: val.dict() for key, val in body_params.items()}
+                json = {key: fastapi.encoders.jsonable_encoder(val) for key, val in body_params.items()}
 
             request: Request = Request(
                 method=specification.request.method,
@@ -192,14 +186,10 @@ class FastClient:
                 return response.json()
             if return_annotation is None:
                 return None
-            if isinstance(return_annotation, Response):
+            if return_annotation is Response:
                 return response
             if issubclass(return_annotation, BaseModel):
                 return return_annotation.parse_obj(response.json())
-            if isinstance(return_annotation, str):
-                return response.text
-            if isinstance(return_annotation, bytes):
-                return response.content
 
             return pydantic.parse_raw_as(return_annotation, response.text)
 
