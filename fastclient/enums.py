@@ -26,8 +26,9 @@ class ParamType(NoValue):
     PATH = enum.auto()
     COOKIE = enum.auto()
 
-    # TODO: Remove/move
     BODY = enum.auto()
+
+    # TODO: Implement
     # FIELD = enum.auto()
     # PART = enum.auto()
     # FORM = enum.auto()

@@ -14,6 +14,6 @@ def test_request_no_url() -> None:
 
     assert annotate.get_annotations(Service.operation) == {
         Annotation.SPECIFICATION: Specification(
-            method="GET", url="operation", fields={"param": Query("param")}
+            method="GET", url="operation", param_specs={"param": Query("param")}
         )
     }

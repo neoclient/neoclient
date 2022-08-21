@@ -320,7 +320,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "tombulled-annotate"
-version = "0.1.11"
+version = "0.1.14"
 description = "Python Annotation System Inspired by Java Annotations"
 category = "main"
 optional = false
@@ -328,6 +328,7 @@ python-versions = ">=3.8,<4.0"
 
 [package.dependencies]
 attribute = ">=0.1.4,<0.2.0"
+typing-extensions = ">=4.3.0,<5.0.0"
 
 [[package]]
 name = "tombulled-arguments"
@@ -367,7 +368,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "f74d80ad78d171dc7d71dffcc9cc111f4837467feb2aa5f3214a26854e6a61d1"
+content-hash = "f2dda840c3d660f96b7f11692ce6f08173ac7f3650876e41d05b594ce0d69c5a"
 
 [metadata.files]
 anyio = [

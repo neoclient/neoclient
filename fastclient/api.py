@@ -18,22 +18,18 @@ from typing import (
 
 import annotate
 import furl
+import param
 from arguments import Arguments
-from typing_extensions import ParamSpec
-from pydantic import BaseModel
 from httpx import Response
-
 from param import Missing
-from .converters import (
-    Converter,
-    HttpxResolver,
-    IdentityConverter,
-    Resolver,
-)
+from pydantic import BaseModel
+from typing_extensions import ParamSpec
+
+from . import utils
+from .converters import Converter, HttpxResolver, IdentityConverter, Resolver
 from .enums import Annotation, ParamType
 from .models import Request, Specification
 from .params import Body, Param, Params, Path, Query
-from . import utils
 
 T = TypeVar("T")
 
@@ -124,7 +120,7 @@ class FastClient:
 
             parameter: str
             field: Param
-            for parameter, field in specification.fields.items():
+            for parameter, field in specification.param_specs.items():
                 value: Any = arguments[parameter]
 
                 if isinstance(field, Param):
@@ -224,43 +220,37 @@ class FastClient:
         return wrapper
 
 
-def build_request_specification(
-    method: str, endpoint: str, signature: inspect.Signature
-) -> Specification:
-    if not signature.parameters:
-        raise Exception("Method must have at least one parameter")
+def get_params(func: Callable, /, path_params: Set[str]) -> Dict[str, param.Parameter]:
+    raw_parameters: List[Parameter] = list(inspect.signature(func).parameters.values())[
+        1:
+    ]
 
-    parameters: List[Parameter] = list(signature.parameters.values())[1:]
+    parameters: Dict[str, parameter.Parameter] = {}
+    parameters_to_infer: List[Parameter] = []
 
-    fields: Dict[str, Param] = {}
-    fields_to_infer: List[inspect.Parameter] = []
-
-    parameter: inspect.Parameter
-    for parameter in parameters:
-        default: Any = parameter.default
-
-        if not isinstance(default, Param):
-            fields_to_infer.append(parameter)
+    parameter: Parameter
+    for parameter in raw_parameters:
+        if not isinstance(parameter.default, Param):
+            parameters_to_infer.append(parameter)
 
             continue
 
-        field: Param = default
+        parameters[parameter.name] = param.Parameter(
+            name=parameter.name,
+            annotation=parameter.annotation,
+            type=getattr(param.ParameterType, parameter.kind.name),
+            spec=parameter.default,
+        )
 
-        fields[parameter.name] = field
-
-    expected_path_params: Set[str] = utils.get_path_params(endpoint)
-
-    param: inspect.Parameter
-    for param in fields_to_infer:
-        param_name: str = param.name
-        param_default: Any = param.default
-        param_annotation: type = param.annotation
+    for parameter in parameters_to_infer:
+        param_default: Any = parameter.default
+        param_annotation: type = parameter.annotation
 
         param_cls: Type[Param]
 
-        if param_name in expected_path_params and not any(
-            isinstance(field, Path) and field.alias in expected_path_params
-            for field in fields.values()
+        if parameter.name in path_params and not any(
+            isinstance(field, Path) and field.alias in path_params
+            for field in parameters.values()
         ):
             param_cls = Path
         elif issubclass(param_annotation, BaseModel) or isinstance(
@@ -270,29 +260,49 @@ def build_request_specification(
         else:
             param_cls = Query
 
-        fields[param_name] = param_cls(
-            alias=param_name,
+        param_spec: Param = param_cls(
+            alias=parameter.name,
             default=param_default if param_default is not parameter.empty else Missing,
+        )
+
+        parameters[parameter.name] = param.Parameter(
+            name=parameter.name,
+            annotation=parameter.annotation,
+            type=getattr(param.ParameterType, parameter.kind.name),
+            spec=param_spec,
         )
 
     actual_path_params: Set[str] = {
         (
-            field.alias
-            if field.alias is not None
-            else field.generate_alias(param)
+            parameter.spec.alias
+            if parameter.spec.alias is not None
+            else parameter.spec.generate_alias(parameter.name)
         )
-        for param, field in fields.items()
-        if isinstance(field, Path)
+        for parameter in parameters.values()
+        if isinstance(parameter.spec, Path)
     }
 
     # Validate that only expected path params provided
-    if expected_path_params != actual_path_params:
+    if path_params != actual_path_params:
         raise ValueError(
-            f"Incompatible path params. Got: {actual_path_params}, expected: {expected_path_params}"
+            f"Incompatible path params. Got: {actual_path_params}, expected: {path_params}"
         )
+
+    return parameters
+
+
+def build_request_specification(
+    func: Callable, method: str, endpoint: str
+) -> Specification:
+    expected_path_params: Set[str] = utils.get_path_params(endpoint)
+    parameters: Dict[str, param.Parameter] = get_params(func, expected_path_params)
+
+    param_specs: Dict[str, Param] = {
+        parameter.name: parameter.spec for parameter in parameters.values()
+    }
 
     return Specification(
         method=method,
         url=endpoint,
-        fields=fields,
+        param_specs=param_specs,
     )

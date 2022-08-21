@@ -1,12 +1,12 @@
 from types import FunctionType
 from typing import Any, Callable, Dict, Optional, TypeVar
+
+import annotate
 from typing_extensions import ParamSpec
 
-from .models import Specification
-from .enums import Annotation, ParamType, HttpMethod
 from . import api
-import inspect
-import annotate
+from .enums import Annotation, HttpMethod, ParamType
+from .models import Specification
 from .params import Path
 
 PS = ParamSpec("PS")
@@ -22,13 +22,15 @@ def request(
         )
 
         spec: Specification = api.build_request_specification(
-            method, uri, inspect.signature(func)
+            func,
+            method,
+            uri,
         )
 
         annotate.annotate(
             func,
             annotate.Annotation(
-                Annotation.SPECIFICATION, spec, targets=(FunctionType,)
+                key=Annotation.SPECIFICATION, value=spec, targets=(FunctionType,)
             ),
         )
 
