@@ -10,9 +10,6 @@ def get_path_params(url: str, /) -> Set[str]:
         if field_name is None:
             continue
 
-        if not field_name:
-            raise ValueError("Field name is empty")
-
         if not field_name.isidentifier():
             raise ValueError(f"Field name {field_name!r} is not a valid identifier")
 

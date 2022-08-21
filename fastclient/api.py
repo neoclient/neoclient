@@ -1,5 +1,6 @@
 import functools
 import inspect
+import pydantic
 from dataclasses import dataclass
 from inspect import Parameter, Signature
 from types import FunctionType
@@ -191,32 +192,16 @@ class FastClient:
                 return response.json()
             if return_annotation is None:
                 return None
-            if return_annotation is Response:
+            if isinstance(return_annotation, Response):
                 return response
             if issubclass(return_annotation, BaseModel):
                 return return_annotation.parse_obj(response.json())
-            if return_annotation is str:
+            if isinstance(return_annotation, str):
                 return response.text
-            if return_annotation is bytes:
+            if isinstance(return_annotation, bytes):
                 return response.content
-            if return_annotation is int:
-                return int(response.text)
-            if return_annotation is float:
-                return float(response.text)
-            if return_annotation is dict:
-                return response.json()
-            if return_annotation is list:
-                return response.json()
-            if return_annotation is tuple:
-                return response.json()
-            if return_annotation is set:
-                return response.json()
-            if return_annotation is bool:
-                return response.text == "True"
 
-            raise Exception(
-                f"Unknown return annotation {return_annotation!r}, cannot convert response"
-            )
+            return pydantic.parse_raw_as(return_annotation, response.text)
 
         return wrapper
 
@@ -263,7 +248,7 @@ def get_params(
             parameters_to_infer.append(parameter)
 
     for parameter in parameters_to_infer:
-        param_cls: Type[Param]
+        param_cls: Type[Param] = Query
 
         if parameter.name in path_params and not any(
             isinstance(field, Path) and field.alias in path_params
@@ -274,8 +259,6 @@ def get_params(
             parameter.default, BaseModel
         ):
             param_cls = Body
-        else:
-            param_cls = Query
 
         param_spec: Param = param_cls(
             alias=parameter.name,
