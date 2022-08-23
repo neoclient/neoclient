@@ -1,7 +1,7 @@
 import functools
 import inspect
 import pydantic
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from inspect import Parameter, Signature
 from types import FunctionType
 from typing import (
@@ -20,6 +20,7 @@ from typing import (
 
 import annotate
 import furl
+import httpx
 import param
 from arguments import Arguments
 from httpx import Response
@@ -28,7 +29,6 @@ from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
 from . import utils, encoders
-from .converters import Converter, HttpxResolver, IdentityConverter, Resolver
 from .enums import Annotation, HttpMethod, ParamType
 from .models import Request, Specification
 from .params import Body, Param, Params, Path, Query
@@ -60,8 +60,9 @@ class BaseService:
 @dataclass
 class FastClient:
     base_url: Optional[str] = None
-    resolver: Resolver = HttpxResolver()
-    converter: Converter = IdentityConverter()
+
+    # TODO: Clients should not all share the same session.
+    client: httpx.Client = field(default_factory=httpx.Client)
 
     def create(self, protocol: Type[T], /) -> T:
         specifications: Dict[str, Specification] = get_specifications(protocol)
@@ -97,13 +98,13 @@ class FastClient:
         return furl.urljoin(self.base_url, endpoint)
 
     def _method(
-        self, specification: Specification, method: Callable[PT, RT], /
+        self, specification: Specification, func: Callable[PT, RT], /
     ) -> Callable[PT, RT]:
-        signature: Signature = inspect.signature(method)
+        signature: Signature = inspect.signature(func)
 
-        @functools.wraps(method)
+        @functools.wraps(func)
         def wrapper(*args: PT.args, **kwargs: PT.kwargs) -> Union[Any, NoReturn]:
-            arguments: Dict[str, Any] = Arguments(*args, **kwargs).bind(method).asdict()
+            arguments: Dict[str, Any] = Arguments(*args, **kwargs).bind(func).asdict()
 
             argument_name: str
             argument: Any
@@ -113,7 +114,7 @@ class FastClient:
 
                 if not argument.has_default():
                     raise ValueError(
-                        f"{method.__name__}() missing argument: {argument_name!r}"
+                        f"{func.__name__}() missing argument: {argument_name!r}"
                     )
 
                 arguments[argument_name] = argument.default
@@ -157,23 +158,38 @@ class FastClient:
                     for key, val in body_params.items()
                 }
 
-            request: Request = Request(
-                method=specification.request.method,
-                url=self._url(specification.request.url).format(
+            method: str = specification.request.method
+            url: str = self._url(specification.request.url).format(
                     **destinations.get(ParamType.PATH, {})
-                ),
-                params={
+                )
+            params: dict = {
                     **specification.request.params,
                     **destinations.get(ParamType.QUERY, {}),
-                },
-                headers={
+                }
+            headers: dict = {
                     **specification.request.headers,
                     **destinations.get(ParamType.HEADER, {}),
-                },
-                cookies={
+                }
+            cookies: dict = {
                     **specification.request.cookies,
                     **destinations.get(ParamType.COOKIE, {}),
-                },
+                }
+
+            request: Request = Request(
+                method=method,
+                url=url,
+                params=params,
+                headers=headers,
+                cookies=cookies,
+                json=json,
+            )
+
+            httpx_request: httpx.Request = self.client.build_request(
+                method=method,
+                url=url,
+                params=params,
+                headers=headers,
+                cookies=cookies,
                 json=json,
             )
 
@@ -181,8 +197,10 @@ class FastClient:
 
             if return_annotation is Request:
                 return request
+            if return_annotation is httpx.Request:
+                return httpx_request
 
-            response: Response = self.converter.convert(self.resolver.resolve(request))
+            response: Response = self.client.send(httpx_request)
 
             if return_annotation is signature.empty:
                 return response.json()

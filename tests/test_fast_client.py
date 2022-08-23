@@ -2,7 +2,6 @@ from typing import Optional, Protocol
 
 import pytest
 from fastclient import Path, Query, Body, FastClient, get, post
-from fastclient.converters import IdentityConverter, IdentityResolver
 from fastclient.models import Request
 from pydantic import BaseModel
 
@@ -22,11 +21,7 @@ class Item(Model):
 
 @pytest.fixture
 def fast_client() -> FastClient:
-    return FastClient(
-        base_url="http://localhost:8080/",
-        resolver=IdentityResolver(),
-        converter=IdentityConverter(),
-    )
+    return FastClient(base_url="http://localhost:8080/")
 
 
 def test_query_not_required_omitted(fast_client: FastClient):
