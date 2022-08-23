@@ -21,14 +21,13 @@ from typing import (
 import annotate
 import furl
 import param
-import fastapi.encoders
 from arguments import Arguments
 from httpx import Response
 from param import Missing
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from . import utils
+from . import utils, encoders
 from .converters import Converter, HttpxResolver, IdentityConverter, Resolver
 from .enums import Annotation, HttpMethod, ParamType
 from .models import Request, Specification
@@ -149,12 +148,12 @@ class FastClient:
 
             # If there's only one body param, make it the entire JSON request body
             if len(body_params) == 1:
-                json = fastapi.encoders.jsonable_encoder(list(body_params.values())[0])
+                json = encoders.jsonable_encoder(list(body_params.values())[0])
             # If there are multiple body params, construct a multi-level dict
             # of each body parameter. E.g. (user: User, item: Item) -> {"user": ..., "item": ...}
             elif body_params:
                 json = {
-                    key: fastapi.encoders.jsonable_encoder(val)
+                    key: encoders.jsonable_encoder(val)
                     for key, val in body_params.items()
                 }
 
