@@ -79,3 +79,8 @@ class Headers(Params):
 
 class Cookies(Params):
     type: ParamType = ParamType.COOKIE
+
+
+@dataclass
+class Depends:
+    dependency: Optional[Callable[..., Any]] = None

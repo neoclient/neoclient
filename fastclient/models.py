@@ -1,6 +1,6 @@
 from .params import Param
 from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 
 @dataclass
@@ -16,4 +16,5 @@ class Request:
 @dataclass
 class Specification:
     request: Request
+    response: Optional[Callable[..., Any]] = None
     params: Dict[str, Param] = field(default_factory=dict)

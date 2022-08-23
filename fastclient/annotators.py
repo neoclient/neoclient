@@ -15,7 +15,7 @@ RT = TypeVar("RT")
 
 
 def request(
-    method: str, endpoint: Optional[str] = None, /
+    method: str, endpoint: Optional[str] = None, /, *, response: Optional[Callable[..., Any]] = None
 ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
     def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
         uri: str = (
@@ -26,6 +26,7 @@ def request(
             func,
             method,
             uri,
+            response=response
         )
 
         annotate.annotate(
@@ -40,32 +41,32 @@ def request(
     return decorator
 
 
-def put(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return request(HttpMethod.PUT.name, endpoint)
+def put(endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.PUT.name, endpoint, response=response)
 
 
-def get(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return request(HttpMethod.GET.name, endpoint)
+def get(endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.GET.name, endpoint, response=response)
 
 
-def post(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return request(HttpMethod.POST.name, endpoint)
+def post(endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.POST.name, endpoint, response=response)
 
 
-def head(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return request(HttpMethod.HEAD.name, endpoint)
+def head(endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.HEAD.name, endpoint, response=response)
 
 
-def patch(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return request(HttpMethod.PATCH.name, endpoint)
+def patch(endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.PATCH.name, endpoint, response=response)
 
 
-def delete(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return request(HttpMethod.DELETE.name, endpoint)
+def delete(endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.DELETE.name, endpoint, response=response)
 
 
-def options(endpoint: str, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return request(HttpMethod.OPTIONS.name, endpoint)
+def options(endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return request(HttpMethod.OPTIONS.name, endpoint, response=response)
 
 
 def static(

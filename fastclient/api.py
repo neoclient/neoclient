@@ -160,20 +160,20 @@ class FastClient:
 
             method: str = specification.request.method
             url: str = self._url(specification.request.url).format(
-                    **destinations.get(ParamType.PATH, {})
-                )
+                **destinations.get(ParamType.PATH, {})
+            )
             params: dict = {
-                    **specification.request.params,
-                    **destinations.get(ParamType.QUERY, {}),
-                }
+                **specification.request.params,
+                **destinations.get(ParamType.QUERY, {}),
+            }
             headers: dict = {
-                    **specification.request.headers,
-                    **destinations.get(ParamType.HEADER, {}),
-                }
+                **specification.request.headers,
+                **destinations.get(ParamType.HEADER, {}),
+            }
             cookies: dict = {
-                    **specification.request.cookies,
-                    **destinations.get(ParamType.COOKIE, {}),
-                }
+                **specification.request.cookies,
+                **destinations.get(ParamType.COOKIE, {}),
+            }
 
             request: Request = Request(
                 method=method,
@@ -192,6 +192,9 @@ class FastClient:
                 cookies=cookies,
                 json=json,
             )
+
+            if specification.response is not None:
+                raise Exception("TODO: Support parsing the response")
 
             return_annotation: Any = signature.return_annotation
 
@@ -217,7 +220,14 @@ class FastClient:
 
         return wrapper
 
-    def request(self, method: str, endpoint: Optional[str] = None, /):
+    def request(
+        self,
+        method: str,
+        endpoint: Optional[str] = None,
+        /,
+        *,
+        response: Optional[Callable[..., Any]] = None,
+    ):
         def decorator(func: Callable[PT, RT], /) -> Callable[PT, RT]:
             uri: str = (
                 endpoint if endpoint is not None else Path.generate_alias(func.__name__)
@@ -227,32 +237,37 @@ class FastClient:
                 func,
                 method,
                 uri,
+                response=response,
             )
 
             return self._method(specification, func)
 
         return decorator
 
-    def put(self, endpoint: str, /):
-        return self.request(HttpMethod.PUT.name, endpoint)
+    def put(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
+        return self.request(HttpMethod.PUT.name, endpoint, response=response)
 
-    def get(self, endpoint: str, /):
-        return self.request(HttpMethod.GET.name, endpoint)
+    def get(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
+        return self.request(HttpMethod.GET.name, endpoint, response=response)
 
-    def post(self, endpoint: str, /):
-        return self.request(HttpMethod.POST.name, endpoint)
+    def post(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
+        return self.request(HttpMethod.POST.name, endpoint, response=response)
 
-    def head(self, endpoint: str, /):
-        return self.request(HttpMethod.HEAD.name, endpoint)
+    def head(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
+        return self.request(HttpMethod.HEAD.name, endpoint, response=response)
 
-    def patch(self, endpoint: str, /):
-        return self.request(HttpMethod.PATCH.name, endpoint)
+    def patch(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
+        return self.request(HttpMethod.PATCH.name, endpoint, response=response)
 
-    def delete(self, endpoint: str, /):
-        return self.request(HttpMethod.DELETE.name, endpoint)
+    def delete(
+        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+    ):
+        return self.request(HttpMethod.DELETE.name, endpoint, response=response)
 
-    def options(self, endpoint: str, /):
-        return self.request(HttpMethod.OPTIONS.name, endpoint)
+    def options(
+        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+    ):
+        return self.request(HttpMethod.OPTIONS.name, endpoint, response=response)
 
 
 def _build_parameter(parameter: Parameter, spec: Param) -> param.Parameter:
@@ -333,7 +348,11 @@ def get_params(
 
 
 def build_request_specification(
-    func: Callable, method: str, endpoint: str
+    func: Callable,
+    method: str,
+    endpoint: str,
+    *,
+    response: Optional[Callable[..., Any]] = None,
 ) -> Specification:
     request: Request = Request(
         method=method,
@@ -348,5 +367,6 @@ def build_request_specification(
 
     return Specification(
         request=request,
+        response=response,
         params=param_specs,
     )
