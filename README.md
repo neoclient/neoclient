@@ -1,5 +1,5 @@
 # fastclient
-:rocket: Fast HTTP clients for Python inspired by [FastAPI](https://github.com/tiangolo/fastapi) and [Retrofit](https://square.github.io/retrofit/)
+:rocket: Fast API clients for Python inspired by [FastAPI](https://github.com/tiangolo/fastapi) and [Retrofit](https://square.github.io/retrofit/)
 
 ## Installation
 ```console
