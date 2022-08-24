@@ -13,6 +13,7 @@ from typing import (
     NoReturn,
     Optional,
     Set,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -22,16 +23,17 @@ import annotate
 import furl
 import httpx
 import param
+import parse
 from arguments import Arguments
 from httpx import Response
-from param import Missing
+from param import Missing, ParameterType
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
 from . import utils, encoders
 from .enums import Annotation, HttpMethod, ParamType
 from .models import Request, Specification
-from .params import Body, Param, Params, Path, Query
+from .params import Body, Depends, Param, Params, Path, Query
 
 T = TypeVar("T")
 
@@ -42,6 +44,9 @@ RT = TypeVar("RT")
 def get_specification(obj: Any, /) -> Optional[Specification]:
     return annotate.get_annotations(obj).get(Annotation.SPECIFICATION)
 
+def has_specification(obj: Any, /) -> bool:
+    return Annotation.SPECIFICATION in annotate.get_annotations(obj)
+
 
 def get_specifications(cls: type, /) -> Dict[str, Specification]:
     return {
@@ -51,6 +56,61 @@ def get_specifications(cls: type, /) -> Dict[str, Specification]:
         and Annotation.SPECIFICATION in annotate.get_annotations(member)
     }
 
+def get_response_arguments(response: Response, parameters: Dict[str, param.Parameter], request: Request, /) -> Arguments:
+    args: List[Any] = []
+    kwargs: Dict[str, Any] = {}
+
+    parameter: param.Parameter
+    for parameter in parameters.values():
+        value: Any = None
+
+        if isinstance(parameter.spec, Params):
+            if parameter.spec.type is ParamType.QUERY:
+                value = dict(response.request.url.params)
+            elif parameter.spec.type is ParamType.HEADER:
+                value = dict(response.headers) # TODO: Respect httpx use of `Headers` object that allows multiple entries of same key
+            elif parameter.spec.type is ParamType.COOKIE:
+                value = dict(response.cookies) # TODO: Respect httpx use of `Cookies` object that contains more cookie metadata
+            else:
+                raise Exception(f"Unknown multi-param of type {parameter.spec.type}")
+        elif isinstance(parameter.spec, Param):
+            parameter_alias: str = (
+                parameter.spec.alias
+                if parameter.spec.alias is not None
+                else parameter.spec.generate_alias(parameter.name)
+            )
+
+            if parameter.spec.type is ParamType.QUERY:
+                value = response.request.url.params[parameter_alias]
+            elif parameter.spec.type is ParamType.HEADER:
+                value = response.headers[parameter_alias]
+            elif parameter.spec.type is ParamType.PATH:
+                parse_result: Optional[parse.Result] = parse.parse(request.url, response.request.url.path)
+
+                if parse_result is None:
+                    raise Exception(f"Failed to parse uri {response.request.url.path!r} against format spec {request.url!r}")
+
+                value = parse_result.named[parameter_alias]
+            elif parameter.spec.type is ParamType.COOKIE:
+                value = response.cookies[parameter_alias]
+            elif parameter.spec.type is ParamType.BODY:
+                if parameter.annotation is not inspect._empty:
+                    value = pydantic.parse_raw_as(parameter.annotation, response.text)
+                else:
+                    value = response.json()
+            else:
+                raise Exception(f"Unknown ParamType: {parameter.spec.type}")
+        elif isinstance(parameter.spec, Depends):
+            raise Exception("TODO: Support dependencies!")
+        else:
+            raise Exception(f"Unknown parameter spec class: {type(parameter.spec)}")
+
+        if parameter.type in (ParameterType.POSITIONAL_ONLY, ParameterType.VAR_POSITIONAL):
+            args.append(value)
+        else:
+            kwargs[parameter.name] = value
+
+    return Arguments(*args, **kwargs)
 
 class BaseService:
     def __repr__(self) -> str:
@@ -193,9 +253,6 @@ class FastClient:
                 json=json,
             )
 
-            if specification.response is not None:
-                raise Exception("TODO: Support parsing the response")
-
             return_annotation: Any = signature.return_annotation
 
             if return_annotation is Request:
@@ -204,6 +261,12 @@ class FastClient:
                 return httpx_request
 
             response: Response = self.client.send(httpx_request)
+
+            if specification.response is not None:
+                response_params: Dict[str, param.Parameter] = get_params(specification.response, request=specification.request)
+                response_arguments: Arguments = get_response_arguments(response, response_params, specification.request)
+
+                return response_arguments.call(specification.response)
 
             if return_annotation is signature.empty:
                 return response.json()
@@ -290,7 +353,6 @@ def _extract_path_params(parameters: Iterable[param.Parameter]) -> Set[str]:
         if isinstance(parameter.spec, Path)
     }
 
-
 def get_params(
     func: Callable, /, *, request: Optional[Request] = None
 ) -> Dict[str, param.Parameter]:
@@ -298,9 +360,14 @@ def get_params(
         utils.get_path_params(request.url) if request is not None else set()
     )
 
-    raw_parameters: List[Parameter] = list(inspect.signature(func).parameters.values())[
-        1:
-    ]
+    _inspect_params: List[Parameter] = list(inspect.signature(func).parameters.values())
+
+    # Dealing with a request
+    if has_specification(func):
+        raw_parameters = _inspect_params[1:] # ignore first arg (self)
+    # Dealing with a non-request, likely a converter
+    else:
+        raw_parameters = _inspect_params
 
     parameters: Dict[str, param.Parameter] = {}
     parameters_to_infer: List[Parameter] = []
@@ -316,15 +383,18 @@ def get_params(
     for parameter in parameters_to_infer:
         param_cls: Type[Param] = Query
 
+        parameter_type: type = (
+            parameter.annotation
+        )
+
+        body_types: Tuple[type, ...] = (BaseModel, dict)
+
         if parameter.name in path_params and not any(
             isinstance(field, Path) and field.alias in path_params
             for field in parameters.values()
         ):
             param_cls = Path
-        elif (
-            isinstance(parameter.annotation, type)
-            and issubclass(parameter.annotation, BaseModel)
-        ) or isinstance(parameter.default, BaseModel):
+        elif parameter.annotation is not parameter.empty and isinstance(parameter_type, type) and any(issubclass(parameter_type, body_type) for body_type in body_types):
             param_cls = Body
 
         param_spec: Param = param_cls(
