@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union
 
-from .enums import ParamType
 import param
 from param.sentinels import Missing, MissingType
+
+from .enums import ParamType
 
 T = TypeVar("T")
 
@@ -81,6 +82,6 @@ class Cookies(Params):
     type: ParamType = ParamType.COOKIE
 
 
-@dataclass
-class Depends:
-    dependency: Optional[Callable[..., Any]] = None
+@dataclass(frozen=True)
+class Depends(Generic[T]):
+    dependency: Optional[Callable[..., T]] = None

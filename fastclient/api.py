@@ -101,7 +101,13 @@ def get_response_arguments(response: Response, parameters: Dict[str, param.Param
             else:
                 raise Exception(f"Unknown ParamType: {parameter.spec.type}")
         elif isinstance(parameter.spec, Depends):
-            raise Exception("TODO: Support dependencies!")
+            if parameter.spec.dependency is None:
+                raise Exception("TODO: Support dependencies with no explicit dependency")
+
+            sub_parameters: Dict[str, param.Parameter] = get_params(parameter.spec.dependency, request=request)
+            sub_arguments: Arguments = get_response_arguments(response, sub_parameters, request)
+
+            value = sub_arguments.call(parameter.spec.dependency)
         else:
             raise Exception(f"Unknown parameter spec class: {type(parameter.spec)}")
 
@@ -375,7 +381,8 @@ def get_params(
     parameter: Parameter
 
     for parameter in raw_parameters:
-        if isinstance(parameter.default, Param):
+        # NOTE: `Depends` doesn't subclass `Param`. This needs to be fixed.
+        if isinstance(parameter.default, (Param, Depends)):
             parameters[parameter.name] = _build_parameter(parameter, parameter.default)
         else:
             parameters_to_infer.append(parameter)

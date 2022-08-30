@@ -1,4 +1,4 @@
-from typing import Callable, Optional, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 from param.sentinels import Missing, MissingType
 from . import params
 
@@ -11,7 +11,7 @@ def Header(
     *,
     default: Union[T, MissingType] = Missing,
     default_factory: Union[Callable[[], T], MissingType] = Missing,
-    required: bool = False
+    required: bool = False,
 ) -> params.Header[T]:
     return params.Header(
         alias=alias, default=default, default_factory=default_factory, required=required
@@ -23,7 +23,7 @@ def Query(
     *,
     default: Union[T, MissingType] = Missing,
     default_factory: Union[Callable[[], T], MissingType] = Missing,
-    required: bool = False
+    required: bool = False,
 ) -> params.Query[T]:
     return params.Query(
         alias=alias, default=default, default_factory=default_factory, required=required
@@ -35,7 +35,7 @@ def Path(
     *,
     default: Union[T, MissingType] = Missing,
     default_factory: Union[Callable[[], T], MissingType] = Missing,
-    required: bool = False
+    required: bool = False,
 ) -> params.Path[T]:
     return params.Path(
         alias=alias, default=default, default_factory=default_factory, required=required
@@ -47,7 +47,7 @@ def Cookie(
     *,
     default: Union[T, MissingType] = Missing,
     default_factory: Union[Callable[[], T], MissingType] = Missing,
-    required: bool = False
+    required: bool = False,
 ) -> params.Cookie[T]:
     return params.Cookie(
         alias=alias, default=default, default_factory=default_factory, required=required
@@ -59,7 +59,7 @@ def Body(
     *,
     default: Union[T, MissingType] = Missing,
     default_factory: Union[Callable[[], T], MissingType] = Missing,
-    required: bool = False
+    required: bool = False,
 ) -> params.Body[T]:
     return params.Body(
         alias=alias, default=default, default_factory=default_factory, required=required
@@ -76,3 +76,7 @@ def Queries() -> params.Queries:
 
 def Cookies() -> params.Cookies:
     return params.Cookies()
+
+
+def Depends(dependency: Optional[Callable[..., T]] = None, /) -> params.Depends[T]:
+    return params.Depends(dependency)

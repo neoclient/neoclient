@@ -1,25 +1,7 @@
-from .annotators import (
-    delete,
-    get,
-    head,
-    options,
-    patch,
-    post,
-    put,
-    request,
-    headers,
-    query_params,
-)
+from .annotators import (delete, get, head, headers, options, patch, post, put,
+                         query_params, request)
 from .api import FastClient
-from .param_functions import (
-    Header,
-    Path,
-    Query,
-    Cookie,
-    Headers,
-    Queries,
-    Cookies,
-    Body,
-)
-from .models import Specification, Request
 from .enums import HttpMethod, ParamType
+from .models import Request, Specification
+from .param_functions import (Body, Cookie, Cookies, Depends, Header, Headers,
+                              Path, Queries, Query)
