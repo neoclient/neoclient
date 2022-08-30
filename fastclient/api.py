@@ -103,11 +103,11 @@ def get_response_arguments(response: Response, parameters: Dict[str, param.Param
         elif isinstance(parameter.spec, Depends):
             if parameter.spec.dependency is None:
                 raise Exception("TODO: Support dependencies with no explicit dependency")
+            else:
+                sub_parameters: Dict[str, param.Parameter] = get_params(parameter.spec.dependency, request=request)
+                sub_arguments: Arguments = get_response_arguments(response, sub_parameters, request)
 
-            sub_parameters: Dict[str, param.Parameter] = get_params(parameter.spec.dependency, request=request)
-            sub_arguments: Arguments = get_response_arguments(response, sub_parameters, request)
-
-            value = sub_arguments.call(parameter.spec.dependency)
+                value = sub_arguments.call(parameter.spec.dependency)
         else:
             raise Exception(f"Unknown parameter spec class: {type(parameter.spec)}")
 
