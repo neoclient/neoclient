@@ -1,6 +1,7 @@
 from .params import Param
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
+import httpx
 
 
 @dataclass
@@ -18,3 +19,30 @@ class Specification:
     request: Request
     response: Optional[Callable[..., Any]] = None
     params: Dict[str, Param] = field(default_factory=dict)
+
+
+@dataclass
+class ClientConfig:
+    base_url: Union[httpx.URL, str] = ""
+    headers: Union[
+        httpx.Headers,
+        Dict[str, str],
+        Dict[bytes, bytes],
+        Sequence[Tuple[str, str]],
+        Sequence[Tuple[bytes, bytes]],
+        None,
+    ] = None
+
+    def build(self) -> httpx.Client:
+        return httpx.Client(
+            base_url=self.base_url,
+            headers=self.headers,
+        )
+
+    def is_default(self) -> bool:
+        return all(
+            (
+                self.base_url == "",
+                self.headers == None,
+            )
+        )

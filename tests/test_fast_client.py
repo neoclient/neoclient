@@ -36,7 +36,7 @@ def test_query_not_required_omitted(fast_client: FastClient):
 
     assert service.get() == Request(
         method="GET",
-        url="http://localhost:8080/get",
+        url="get",
         params={},
         headers={},
         json=None,
@@ -54,7 +54,7 @@ def test_query_required_not_omitted(fast_client: FastClient):
 
     assert service.get() == Request(
         method="GET",
-        url="http://localhost:8080/get",
+        url="get",
         params={"q": None},
         headers={},
         json=None,
@@ -90,7 +90,7 @@ def test_single_body_param(fast_client: FastClient):
 
     assert service.create_item(Item(id=1, name="item")) == Request(
         method="POST",
-        url="http://localhost:8080/items/",
+        url="/items/",
         params={},
         headers={},
         json={"id": 1, "name": "item"},
@@ -110,7 +110,7 @@ def test_multiple_body_params(fast_client: FastClient):
         User(id=1, name="user"), Item(id=1, name="item")
     ) == Request(
         method="POST",
-        url="http://localhost:8080/items/",
+        url="/items/",
         params={},
         headers={},
         json={

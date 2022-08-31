@@ -1,7 +1,6 @@
 import functools
 import inspect
 import pydantic
-from dataclasses import dataclass, field
 from inspect import Parameter, Signature
 from types import FunctionType
 from typing import (
@@ -12,6 +11,7 @@ from typing import (
     List,
     NoReturn,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Type,
@@ -20,19 +20,19 @@ from typing import (
 )
 
 import annotate
-import furl
 import httpx
 import param
 import parse
 from arguments import Arguments
 from httpx import Response
-from param import Missing, ParameterType
+from param import ParameterType
+from param.sentinels import Missing, MissingType
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
 from . import utils, encoders
 from .enums import Annotation, HttpMethod, ParamType
-from .models import Request, Specification
+from .models import ClientConfig, Request, Specification
 from .params import Body, Depends, Param, Params, Path, Query
 
 T = TypeVar("T")
@@ -165,12 +165,52 @@ class BaseService:
         return f"<{type(self).__name__}()>"
 
 
-@dataclass
 class FastClient:
-    base_url: Optional[str] = None
+    _client_config: ClientConfig
+    _client: Optional[httpx.Client]
 
-    # TODO: Clients should not all share the same session.
-    client: httpx.Client = field(default_factory=httpx.Client)
+    def __init__(
+        self,
+        base_url: Union[httpx.URL, str] = "",
+        *,
+        client: Union[None, httpx.Client, MissingType] = Missing,
+        headers: Union[
+            httpx.Headers,
+            Dict[str, str],
+            Dict[bytes, bytes],
+            Sequence[Tuple[str, str]],
+            Sequence[Tuple[bytes, bytes]],
+            None,
+        ] = None,
+    ) -> None:
+        # TODO: Add other named params and use proper types beyond just `headers`
+
+        self._client_config = ClientConfig(
+            base_url=base_url,
+            headers=headers,
+        )
+
+        if client is Missing:
+            self._client = self._client_config.build()
+        elif client is None:
+            if not self._client_config.is_default():
+                raise Exception(
+                    "Cannot specify both `client` and other config options."
+                )
+
+            self._client = None
+        else:
+            self._client = client
+
+    @property
+    def client(self) -> httpx.Client:
+        if self._client is None:
+            return self._client_config.build()
+
+        return self._client
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(client={self.client!r})"
 
     def create(self, protocol: Type[T], /) -> T:
         specifications: Dict[str, Specification] = get_specifications(protocol)
@@ -182,28 +222,9 @@ class FastClient:
         for func_name, specification in specifications.items():
             func: FunctionType = getattr(protocol, func_name)
 
-            # Validate url is a fully qualified url if no base url
-            if (
-                self.base_url is None or not furl.has_netloc(self.base_url)
-            ) and not furl.has_netloc(specification.request.url):
-                raise Exception(
-                    f"Cannot construct fully-qualified URL from: base_url={self.base_url!r}, endpoint={specification.request.url!r}"
-                )
-
             attributes[func_name] = self._method(specification, func)
 
         return type(protocol.__name__, (BaseService,), attributes)()
-
-    def _url(self, endpoint: str, /) -> str:
-        if furl.has_netloc(endpoint):
-            return endpoint
-
-        if self.base_url is None or not furl.has_netloc(self.base_url):
-            raise Exception(
-                f"Cannot construct fully-qualified URL from: base_url={self.base_url!r}, endpoint={endpoint!r}"
-            )
-
-        return furl.urljoin(self.base_url, endpoint)
 
     def _method(
         self, specification: Specification, func: Callable[PT, RT], /
@@ -267,7 +288,7 @@ class FastClient:
                 }
 
             method: str = specification.request.method
-            url: str = self._url(specification.request.url).format(
+            url: str = specification.request.url.format(
                 **destinations.get(ParamType.PATH, {})
             )
             params: dict = {
