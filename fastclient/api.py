@@ -44,6 +44,7 @@ RT = TypeVar("RT")
 def get_specification(obj: Any, /) -> Optional[Specification]:
     return annotate.get_annotations(obj).get(Annotation.SPECIFICATION)
 
+
 def has_specification(obj: Any, /) -> bool:
     return Annotation.SPECIFICATION in annotate.get_annotations(obj)
 
@@ -56,9 +57,20 @@ def get_specifications(cls: type, /) -> Dict[str, Specification]:
         and Annotation.SPECIFICATION in annotate.get_annotations(member)
     }
 
-def get_response_arguments(response: Response, parameters: Dict[str, param.Parameter], request: Request, /) -> Arguments:
+
+def get_response_arguments(
+    response: Response,
+    parameters: Dict[str, param.Parameter],
+    request: Request,
+    /,
+    *,
+    cached_dependencies: Optional[Dict[Callable[..., Any], Any]] = None,
+) -> Arguments:
     args: List[Any] = []
     kwargs: Dict[str, Any] = {}
+
+    if cached_dependencies is None:
+        cached_dependencies = {}
 
     parameter: param.Parameter
     for parameter in parameters.values():
@@ -68,9 +80,13 @@ def get_response_arguments(response: Response, parameters: Dict[str, param.Param
             if parameter.spec.type is ParamType.QUERY:
                 value = dict(response.request.url.params)
             elif parameter.spec.type is ParamType.HEADER:
-                value = dict(response.headers) # TODO: Respect httpx use of `Headers` object that allows multiple entries of same key
+                value = dict(
+                    response.headers
+                )  # TODO: Respect httpx use of `Headers` object that allows multiple entries of same key
             elif parameter.spec.type is ParamType.COOKIE:
-                value = dict(response.cookies) # TODO: Respect httpx use of `Cookies` object that contains more cookie metadata
+                value = dict(
+                    response.cookies
+                )  # TODO: Respect httpx use of `Cookies` object that contains more cookie metadata
             else:
                 raise Exception(f"Unknown multi-param of type {parameter.spec.type}")
         elif isinstance(parameter.spec, Param):
@@ -85,10 +101,14 @@ def get_response_arguments(response: Response, parameters: Dict[str, param.Param
             elif parameter.spec.type is ParamType.HEADER:
                 value = response.headers[parameter_alias]
             elif parameter.spec.type is ParamType.PATH:
-                parse_result: Optional[parse.Result] = parse.parse(request.url, response.request.url.path)
+                parse_result: Optional[parse.Result] = parse.parse(
+                    request.url, response.request.url.path
+                )
 
                 if parse_result is None:
-                    raise Exception(f"Failed to parse uri {response.request.url.path!r} against format spec {request.url!r}")
+                    raise Exception(
+                        f"Failed to parse uri {response.request.url.path!r} against format spec {request.url!r}"
+                    )
 
                 value = parse_result.named[parameter_alias]
             elif parameter.spec.type is ParamType.COOKIE:
@@ -101,22 +121,44 @@ def get_response_arguments(response: Response, parameters: Dict[str, param.Param
             else:
                 raise Exception(f"Unknown ParamType: {parameter.spec.type}")
         elif isinstance(parameter.spec, Depends):
-            if parameter.spec.dependency is None:
-                raise Exception("TODO: Support dependencies with no explicit dependency")
+            if (
+                cached_dependencies is not None
+                and parameter.spec.use_cache
+                and parameter.spec.dependency in cached_dependencies
+            ):
+                value = cached_dependencies[parameter.spec.dependency]
             else:
-                sub_parameters: Dict[str, param.Parameter] = get_params(parameter.spec.dependency, request=request)
-                sub_arguments: Arguments = get_response_arguments(response, sub_parameters, request)
+                if parameter.spec.dependency is None:
+                    raise Exception(
+                        "TODO: Support dependencies with no explicit dependency"
+                    )
+                else:
+                    sub_parameters: Dict[str, param.Parameter] = get_params(
+                        parameter.spec.dependency, request=request
+                    )
+                    sub_arguments: Arguments = get_response_arguments(
+                        response,
+                        sub_parameters,
+                        request,
+                        cached_dependencies=cached_dependencies,
+                    )
 
-                value = sub_arguments.call(parameter.spec.dependency)
+                    value = sub_arguments.call(parameter.spec.dependency)
+
+                cached_dependencies[parameter.spec.dependency] = value
         else:
             raise Exception(f"Unknown parameter spec class: {type(parameter.spec)}")
 
-        if parameter.type in (ParameterType.POSITIONAL_ONLY, ParameterType.VAR_POSITIONAL):
+        if parameter.type in (
+            ParameterType.POSITIONAL_ONLY,
+            ParameterType.VAR_POSITIONAL,
+        ):
             args.append(value)
         else:
             kwargs[parameter.name] = value
 
     return Arguments(*args, **kwargs)
+
 
 class BaseService:
     def __repr__(self) -> str:
@@ -269,8 +311,12 @@ class FastClient:
             response: Response = self.client.send(httpx_request)
 
             if specification.response is not None:
-                response_params: Dict[str, param.Parameter] = get_params(specification.response, request=specification.request)
-                response_arguments: Arguments = get_response_arguments(response, response_params, specification.request)
+                response_params: Dict[str, param.Parameter] = get_params(
+                    specification.response, request=specification.request
+                )
+                response_arguments: Arguments = get_response_arguments(
+                    response, response_params, specification.request
+                )
 
                 return response_arguments.call(specification.response)
 
@@ -359,6 +405,7 @@ def _extract_path_params(parameters: Iterable[param.Parameter]) -> Set[str]:
         if isinstance(parameter.spec, Path)
     }
 
+
 def get_params(
     func: Callable, /, *, request: Optional[Request] = None
 ) -> Dict[str, param.Parameter]:
@@ -370,7 +417,7 @@ def get_params(
 
     # Dealing with a request
     if has_specification(func):
-        raw_parameters = _inspect_params[1:] # ignore first arg (self)
+        raw_parameters = _inspect_params[1:]  # ignore first arg (self)
     # Dealing with a non-request, likely a converter
     else:
         raw_parameters = _inspect_params
@@ -390,9 +437,7 @@ def get_params(
     for parameter in parameters_to_infer:
         param_cls: Type[Param] = Query
 
-        parameter_type: type = (
-            parameter.annotation
-        )
+        parameter_type: type = parameter.annotation
 
         body_types: Tuple[type, ...] = (BaseModel, dict)
 
@@ -401,7 +446,11 @@ def get_params(
             for field in parameters.values()
         ):
             param_cls = Path
-        elif parameter.annotation is not parameter.empty and isinstance(parameter_type, type) and any(issubclass(parameter_type, body_type) for body_type in body_types):
+        elif (
+            parameter.annotation is not parameter.empty
+            and isinstance(parameter_type, type)
+            and any(issubclass(parameter_type, body_type) for body_type in body_types)
+        ):
             param_cls = Body
 
         param_spec: Param = param_cls(

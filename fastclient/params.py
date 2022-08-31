@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union
 
 import param
@@ -85,3 +85,4 @@ class Cookies(Params):
 @dataclass(frozen=True)
 class Depends(Generic[T]):
     dependency: Optional[Callable[..., T]] = None
+    use_cache: bool = True

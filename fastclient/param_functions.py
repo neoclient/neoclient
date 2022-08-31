@@ -78,5 +78,7 @@ def Cookies() -> params.Cookies:
     return params.Cookies()
 
 
-def Depends(dependency: Optional[Callable[..., T]] = None, /) -> params.Depends[T]:
-    return params.Depends(dependency)
+def Depends(
+    dependency: Optional[Callable[..., T]] = None, /, *, use_cache: bool = True
+) -> params.Depends[T]:
+    return params.Depends(dependency, use_cache=use_cache)

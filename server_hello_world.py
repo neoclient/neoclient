@@ -39,6 +39,7 @@ def get_headers() -> Response:
 def get_cookies() -> Response:
     return Response(headers={"set-cookie": "CONSENT=yes"})
 
+
 @app.get("/queries")
 def get_queries(request: Request) -> dict:
     return {"queries": request.query_params}
