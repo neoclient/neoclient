@@ -21,6 +21,7 @@ from .param_functions import (
     Header,
     Headers,
     Path,
+    Promise,
     Queries,
     Query,
 )

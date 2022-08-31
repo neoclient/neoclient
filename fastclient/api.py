@@ -33,7 +33,7 @@ from typing_extensions import ParamSpec
 from . import utils, encoders
 from .enums import Annotation, HttpMethod, ParamType
 from .models import ClientConfig, Request, Specification
-from .params import Body, Depends, Param, Params, Path, Query
+from .params import Body, Depends, Param, Params, Path, Promise, Query
 
 T = TypeVar("T")
 
@@ -71,6 +71,8 @@ def get_response_arguments(
 
     if cached_dependencies is None:
         cached_dependencies = {}
+
+    print("parameters:", parameters)
 
     parameter: param.Parameter
     for parameter in parameters.values():
@@ -146,6 +148,23 @@ def get_response_arguments(
                     value = sub_arguments.call(parameter.spec.dependency)
 
                 cached_dependencies[parameter.spec.dependency] = value
+        elif isinstance(parameter.spec, Promise):
+            promised_type: type
+
+            if parameter.spec.promised_type is not None:
+                promised_type = parameter.spec.promised_type
+            elif parameter.annotation is not inspect._empty:
+                promised_type = parameter.annotation
+            else:
+                raise Exception("Cannot promise no type!")
+
+            # TODO: Support more promised types
+            if promised_type is httpx.Response:
+                value = response
+            elif promised_type is httpx.Request:
+                value = request
+            else:
+                raise Exception(f"Unsupported promised type: {parameter.spec.promised_type!r}") 
         else:
             raise Exception(f"Unknown parameter spec class: {type(parameter.spec)}")
 
@@ -450,7 +469,8 @@ def get_params(
 
     for parameter in raw_parameters:
         # NOTE: `Depends` doesn't subclass `Param`. This needs to be fixed.
-        if isinstance(parameter.default, (Param, Depends)):
+        # "responses" (e.g. `responses.status_code`) also don't subclass `Param`...
+        if isinstance(parameter.default, (Param, Depends, Promise)):
             parameters[parameter.name] = _build_parameter(parameter, parameter.default)
         else:
             parameters_to_infer.append(parameter)

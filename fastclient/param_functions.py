@@ -82,3 +82,7 @@ def Depends(
     dependency: Optional[Callable[..., T]] = None, /, *, use_cache: bool = True
 ) -> params.Depends[T]:
     return params.Depends(dependency, use_cache=use_cache)
+
+
+def Promise(promised_type: Optional[T] = None, /) -> params.Promise[T]:
+    return params.Promise(promised_type)

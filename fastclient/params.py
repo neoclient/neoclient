@@ -87,3 +87,8 @@ class Cookies(Params):
 class Depends(Generic[T]):
     dependency: Optional[Callable[..., T]] = None
     use_cache: bool = True
+
+
+@dataclass(frozen=True)
+class Promise(Generic[T]):
+    promised_type: Optional[T] = None
