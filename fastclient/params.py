@@ -82,6 +82,7 @@ class Cookies(Params):
     type: ParamType = ParamType.COOKIE
 
 
+# NOTE: Don't use @dataclass, this way can make `use_cache` keyword-only? (FastAPI does it this way)
 @dataclass(frozen=True)
 class Depends(Generic[T]):
     dependency: Optional[Callable[..., T]] = None

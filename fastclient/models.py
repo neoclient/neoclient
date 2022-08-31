@@ -46,3 +46,10 @@ class ClientConfig:
                 self.headers == None,
             )
         )
+
+    @classmethod
+    def from_client(cls, client: httpx.Client, /) -> "ClientConfig":
+        return cls(
+            base_url=client.base_url,
+            headers=client.headers,
+        )

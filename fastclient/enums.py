@@ -1,26 +1,29 @@
 import enum
 
 
-class NoValue(enum.Enum):
+class HiddenValue(enum.Enum):
     def __repr__(self) -> str:
         return f"<{type(self).__name__}.{self.name}>"
 
 
-class HttpMethod(NoValue):
-    PUT = enum.auto()
-    GET = enum.auto()
-    POST = enum.auto()
-    HEAD = enum.auto()
-    PATCH = enum.auto()
-    DELETE = enum.auto()
-    OPTIONS = enum.auto()
+class HttpMethod(str, HiddenValue):
+    def __str__(self) -> str:
+        return self.value
+
+    PUT = "PUT"
+    GET = "GET"
+    POST = "POST"
+    HEAD = "HEAD"
+    PATCH = "PATCH"
+    DELETE = "DELETE"
+    OPTIONS = "OPTIONS"
 
 
-class Annotation(NoValue):
+class Annotation(HiddenValue):
     SPECIFICATION = enum.auto()
 
 
-class ParamType(NoValue):
+class ParamType(HiddenValue):
     QUERY = enum.auto()
     HEADER = enum.auto()
     PATH = enum.auto()
