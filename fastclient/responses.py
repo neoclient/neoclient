@@ -38,3 +38,15 @@ def status_name(response: httpx.Response = Promise()) -> str:
 
 def status_description(response: httpx.Response = Promise()) -> str:
     return HTTPStatus(response.status_code).description
+
+
+def text(response: httpx.Response = Promise()) -> str:
+    return response.text
+
+
+def content(response: httpx.Response = Promise()) -> bytes:
+    return response.content
+
+
+def is_success(response: httpx.Response = Promise()) -> bool:
+    return response.is_success
