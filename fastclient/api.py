@@ -30,7 +30,7 @@ from param.sentinels import Missing, MissingType
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from . import utils, encoders
+from . import utils, encoders, annotators
 from .enums import Annotation, HttpMethod, ParamType
 from .models import ClientConfig, Request, Specification
 from .params import Body, Depends, Param, Params, Path, Promise, Query
@@ -71,8 +71,6 @@ def get_response_arguments(
 
     if cached_dependencies is None:
         cached_dependencies = {}
-
-    print("parameters:", parameters)
 
     parameter: param.Parameter
     for parameter in parameters.values():
@@ -395,7 +393,9 @@ class FastClient:
                 response=response,
             )
 
-            return self._method(specification, func)
+            generated_method: Callable[PT, RT] = self._method(specification, func)
+
+            return annotators.request(method, endpoint, response=response)(generated_method)
 
         return decorator
 
@@ -450,7 +450,7 @@ def get_params(
     func: Callable, /, *, request: Optional[Request] = None
 ) -> Dict[str, param.Parameter]:
     path_params: Set[str] = (
-        utils.get_path_params(request.url) if request is not None else set()
+        utils.get_path_params(str(request.url)) if request is not None else set()
     )
 
     _inspect_params: List[Parameter] = list(inspect.signature(func).parameters.values())

@@ -13,7 +13,6 @@ from fastclient import FastClient
 
 app = FastClient("https://httpbin.org/")
 
-
 @app.get("/ip")
 def ip():
     ...
@@ -30,7 +29,6 @@ You can declare path "parameters" or "variables" with the same syntax used by Py
 from fastclient import FastClient
 
 app = FastClient("https://jsonplaceholder.typicode.com/")
-
 
 @app.get("/posts/{post_id}")
 def get_post(post_id):
@@ -53,7 +51,6 @@ from fastclient import FastClient
 
 app = FastClient("https://jsonplaceholder.typicode.com/")
 
-
 @app.get("/posts/{post_id}")
 def get_post(post_id: int):
     ...
@@ -66,7 +63,6 @@ When you declare other function parameters that are not part of the path paramet
 from fastclient import FastClient
 
 app = FastClient("https://httpbin.org/")
-
 
 @app.get("/get")
 def get(message: str):
