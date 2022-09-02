@@ -2,12 +2,10 @@ from .annotators import (
     delete,
     get,
     head,
-    headers,
     options,
     patch,
     post,
     put,
-    query_params,
     request,
 )
 from .api import FastClient
@@ -24,4 +22,14 @@ from .param_functions import (
     Promise,
     Queries,
     Query,
+)
+from .configurators import (
+    params,
+    headers,
+    cookies,
+    content,
+    data,
+    files,
+    json,
+    timeout,
 )

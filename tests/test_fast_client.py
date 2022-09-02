@@ -47,7 +47,9 @@ def test_query_not_required_omitted(fast_client: FastClient):
 def test_query_required_not_omitted(fast_client: FastClient):
     class Service(Protocol):
         @get("get")
-        def get(self, q: Optional[str] = Query(default=None, required=True)) -> RequestOptions:
+        def get(
+            self, q: Optional[str] = Query(default=None, required=True)
+        ) -> RequestOptions:
             ...
 
     service: Service = fast_client.create(Service)  # type: ignore
@@ -101,7 +103,9 @@ def test_single_body_param(fast_client: FastClient):
 def test_multiple_body_params(fast_client: FastClient):
     class Service(Protocol):
         @post("/items/")
-        def create_item(self, user: User = Body(), item: Item = Body()) -> RequestOptions:
+        def create_item(
+            self, user: User = Body(), item: Item = Body()
+        ) -> RequestOptions:
             ...
 
     service: Service = fast_client.create(Service)  # type: ignore

@@ -1,12 +1,12 @@
 import abc
 from types import FunctionType
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 import annotate
 from typing_extensions import ParamSpec
 
 from . import api
-from .enums import Annotation, HttpMethod, ParamType
+from .enums import Annotation, HttpMethod
 from .models import Specification
 from .params import Path
 
@@ -82,36 +82,3 @@ def options(
     endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
 ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
     return request(HttpMethod.OPTIONS.name, endpoint, response=response)
-
-
-def static(
-    field_type: ParamType, data: Dict[str, Any]
-) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
-        specification: Optional[Specification] = api.get_specification(func)
-
-        if specification is None:
-            raise Exception(
-                f"{func!r} has no specification. Cannot add static {field_type.name} fields"
-            )
-
-        destinations: Dict[ParamType, Dict[str, Any]] = {
-            ParamType.QUERY: specification.request.params,
-            ParamType.HEADER: specification.request.headers,
-        }
-
-        destinations[field_type].update(data)
-
-        return func
-
-    return decorator
-
-
-def headers(data: Dict[str, Any], /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return static(ParamType.HEADER, data)
-
-
-def query_params(
-    data: Dict[str, Any], /
-) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return static(ParamType.QUERY, data)

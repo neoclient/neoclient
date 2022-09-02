@@ -1,7 +1,8 @@
 from typing import Any, Callable, Optional, TypeVar, Union
-from param.sentinels import Missing, MissingType
-from . import params
 
+from param.sentinels import Missing, MissingType
+
+from . import params
 
 T = TypeVar("T")
 

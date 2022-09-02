@@ -1,6 +1,5 @@
 import functools
 import inspect
-import pydantic
 from inspect import Parameter, Signature
 from types import FunctionType
 from typing import (
@@ -23,6 +22,7 @@ import annotate
 import httpx
 import param
 import parse
+import pydantic
 from arguments import Arguments
 from httpx import Response
 from param import ParameterType
@@ -30,7 +30,7 @@ from param.sentinels import Missing, MissingType
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from . import utils, encoders, annotators
+from . import annotators, encoders, utils
 from .enums import Annotation, HttpMethod, ParamType
 from .models import ClientOptions, RequestOptions, Specification
 from .params import Body, Depends, Param, Params, Path, Promise, Query
@@ -162,7 +162,9 @@ def get_response_arguments(
             elif promised_type is httpx.Request:
                 value = request
             else:
-                raise Exception(f"Unsupported promised type: {parameter.spec.promised_type!r}") 
+                raise Exception(
+                    f"Unsupported promised type: {parameter.spec.promised_type!r}"
+                )
         else:
             raise Exception(f"Unknown parameter spec class: {type(parameter.spec)}")
 
@@ -395,7 +397,9 @@ class FastClient:
 
             generated_method: Callable[PT, RT] = self._method(specification, func)
 
-            return annotators.request(method, endpoint, response=response)(generated_method)
+            return annotators.request(method, endpoint, response=response)(
+                generated_method
+            )
 
         return decorator
 

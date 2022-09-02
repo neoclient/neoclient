@@ -1,5 +1,5 @@
-from typing import Optional, Set
 import string
+from typing import Optional, Set
 
 
 def get_path_params(url: str, /) -> Set[str]:

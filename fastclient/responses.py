@@ -1,7 +1,9 @@
 from dataclasses import dataclass
-from .param_functions import Cookies, Headers, Promise
-import httpx
 from http import HTTPStatus
+
+import httpx
+
+from .param_functions import Cookies, Headers, Promise
 
 
 @dataclass
