@@ -32,7 +32,7 @@ from typing_extensions import ParamSpec
 
 from . import utils, encoders, annotators
 from .enums import Annotation, HttpMethod, ParamType
-from .models import ClientConfig, Request, Specification
+from .models import ClientOptions, RequestOptions, Specification
 from .params import Body, Depends, Param, Params, Path, Promise, Query
 
 T = TypeVar("T")
@@ -61,7 +61,7 @@ def get_specifications(cls: type, /) -> Dict[str, Specification]:
 def get_response_arguments(
     response: Response,
     parameters: Dict[str, param.Parameter],
-    request: Request,
+    request: RequestOptions,
     /,
     *,
     cached_dependencies: Optional[Dict[Callable[..., Any], Any]] = None,
@@ -183,7 +183,7 @@ class BaseService:
 
 
 class FastClient:
-    _client_config: ClientConfig
+    _client_config: ClientOptions
     _client: Optional[httpx.Client]
 
     def __init__(
@@ -202,7 +202,7 @@ class FastClient:
     ) -> None:
         # TODO: Add other named params and use proper types beyond just `headers`
 
-        self._client_config = ClientConfig(
+        self._client_config = ClientOptions(
             base_url=base_url,
             headers=headers,
         )
@@ -305,7 +305,7 @@ class FastClient:
                 }
 
             method: str = specification.request.method
-            url: str = specification.request.url.format(
+            url: str = str(specification.request.url).format(
                 **destinations.get(ParamType.PATH, {})
             )
             params: dict = {
@@ -321,7 +321,7 @@ class FastClient:
                 **destinations.get(ParamType.COOKIE, {}),
             }
 
-            request: Request = Request(
+            request: RequestOptions = RequestOptions(
                 method=method,
                 url=url,
                 params=params,
@@ -341,7 +341,7 @@ class FastClient:
 
             return_annotation: Any = signature.return_annotation
 
-            if return_annotation is Request:
+            if return_annotation is RequestOptions:
                 return request
             if return_annotation is httpx.Request:
                 return httpx_request
@@ -447,7 +447,7 @@ def _extract_path_params(parameters: Iterable[param.Parameter]) -> Set[str]:
 
 
 def get_params(
-    func: Callable, /, *, request: Optional[Request] = None
+    func: Callable, /, *, request: Optional[RequestOptions] = None
 ) -> Dict[str, param.Parameter]:
     path_params: Set[str] = (
         utils.get_path_params(str(request.url)) if request is not None else set()
@@ -521,7 +521,7 @@ def build_request_specification(
     *,
     response: Optional[Callable[..., Any]] = None,
 ) -> Specification:
-    request: Request = Request(
+    request: RequestOptions = RequestOptions(
         method=method,
         url=endpoint,
     )

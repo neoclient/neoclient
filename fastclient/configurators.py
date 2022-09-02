@@ -2,14 +2,14 @@ from typing import Callable, Optional, TypeVar
 from typing_extensions import ParamSpec
 from . import api
 from .models import Specification
-from .types import HeadersType, TimeoutType
+from .types import HeaderTypes, TimeoutTypes
 from httpx import Timeout, Headers
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
 
 
-def timeout(value: TimeoutType, /):
+def timeout(value: TimeoutTypes, /):
     def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
         spec: Optional[Specification] = api.get_specification(func)
 
@@ -23,7 +23,7 @@ def timeout(value: TimeoutType, /):
     return decorator
 
 
-def headers(value: HeadersType, /):
+def headers(value: HeaderTypes, /):
     def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
         spec: Optional[Specification] = api.get_specification(func)
 

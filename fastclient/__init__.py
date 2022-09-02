@@ -12,7 +12,7 @@ from .annotators import (
 )
 from .api import FastClient
 from .enums import HttpMethod, ParamType
-from .models import Request, Specification
+from .models import RequestOptions, Specification
 from .param_functions import (
     Body,
     Cookie,
