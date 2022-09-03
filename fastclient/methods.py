@@ -1,15 +1,14 @@
 import abc
-from types import FunctionType
+import functools
 from typing import Any, Callable, Optional, TypeVar
 
-import annotate
 from typing_extensions import ParamSpec
 
 from . import api
-from .enums import Annotation, HttpMethod
+from .enums import HttpMethod
 from .models import OperationSpecification
 from .params import Path
-from .api import Operation
+from .operations import Operation, UnboundOperation
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
@@ -21,26 +20,25 @@ def request(
     /,
     *,
     response: Optional[Callable[..., Any]] = None,
-) -> Callable[[Callable[PS, RT]], Operation[PS, RT]]:
-    def decorator(func: Callable[PS, RT], /) -> Operation[PS, RT]:
+) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
         uri: str = (
             endpoint if endpoint is not None else Path.generate_alias(func.__name__)
         )
 
-        spec: OperationSpecification = api.build_request_specification(
+        specification: OperationSpecification = api.build_request_specification(
             func, method, uri, response=response
         )
 
-        annotate.annotate(
-            func,
-            annotate.Annotation(
-                key=Annotation.SPECIFICATION, value=spec, targets=(FunctionType,)
-            ),
-        )
+        operation: Operation = UnboundOperation(func, specification)
 
-        operation: Operation = Operation(func)
+        setattr(func, "operation", operation)
 
-        return abc.abstractmethod(operation)
+        @functools.wraps(func)
+        def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> RT:
+            return operation(*args, **kwargs)
+
+        return abc.abstractmethod(wrapper)
 
     return decorator
 

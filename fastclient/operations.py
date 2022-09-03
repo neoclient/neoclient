@@ -1,11 +1,9 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-import functools
 import inspect
-from inspect import Signature
-from typing import Any, Callable, Dict, Generic, TypeVar
+from typing import Any, Callable, Dict, Generic, Optional, TypeVar
 from typing_extensions import ParamSpec
 
-import annotate
 from arguments import Arguments
 import param
 import pydantic
@@ -17,43 +15,43 @@ from httpx import Response, Client
 from . import api
 from .errors import UnboundOperationException
 from .models import OperationSpecification, RequestOptions
-from .enums import Annotation, ParamType
+from .enums import ParamType
 from .params import Param, Params
 
-PT = ParamSpec("PT")
+PS = ParamSpec("PS")
 RT = TypeVar("RT")
 
 
-@dataclass
-class Operation(Generic[PT, RT]):
-    func: Callable[PT, RT]
+def get_operation(obj: Any, /) -> Optional["Operation"]:
+    return getattr(obj, "operation", None)
 
-    def __call__(self, *args: PT.args, **kwargs: PT.kwargs) -> RT:
+
+@dataclass
+class Operation(ABC, Generic[PS, RT]):
+    func: Callable[PS, RT]
+    specification: OperationSpecification
+
+    @abstractmethod
+    def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
+        raise NotImplementedError
+
+
+class UnboundOperation(Operation[PS, RT]):
+    def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
         raise UnboundOperationException(
             f"Operation `{self.func.__name__}` has not been bound to a client"
         )
 
-    @property
-    def specification(self) -> OperationSpecification:
-        return annotate.get_annotations(self.func)[Annotation.SPECIFICATION]
-
-    def bind(self, client: Client, /) -> "BoundOperation":
-        bound_operation: BoundOperation = BoundOperation(self.func, client=client)
-
-        return functools.wraps(self.func)(bound_operation)
-
 
 @dataclass
-class BoundOperation(Operation[PT, RT]):
+class BoundOperation(Operation[PS, RT]):
     client: Client
 
-    def __call__(self, *args: PT.args, **kwargs: PT.kwargs) -> Any:
-        signature: Signature = inspect.signature(self.func)
-
+    def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
         arguments: Dict[str, Any]
 
         # TODO: Find a better fix for instance methods!
-        if self.specification.params and list(self.specification.params)[0] == "self":
+        if self._is_method():
             arguments = Arguments(None, *args, **kwargs).bind(self.func).asdict()
         else:
             arguments = Arguments(*args, **kwargs).bind(self.func).asdict()
@@ -145,7 +143,7 @@ class BoundOperation(Operation[PT, RT]):
             json=json,
         )
 
-        return_annotation: Any = signature.return_annotation
+        return_annotation: Any = self.specification.response_type
 
         if return_annotation is RequestOptions:
             return request
@@ -164,7 +162,7 @@ class BoundOperation(Operation[PT, RT]):
 
             return response_arguments.call(self.specification.response)
 
-        if return_annotation is signature.empty:
+        if return_annotation is inspect._empty:
             return response.json()
         if return_annotation is None:
             return None
@@ -176,3 +174,8 @@ class BoundOperation(Operation[PT, RT]):
             return return_annotation.parse_obj(response.json())
 
         return pydantic.parse_raw_as(return_annotation, response.text)
+
+    def _is_method(self) -> bool:
+        return bool(
+            self.specification.params and list(self.specification.params)[0] == "self"
+        )

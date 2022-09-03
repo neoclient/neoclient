@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Union
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
+from param.sentinels import Missing, MissingType
 
 from .params import Param
 from .types import (
@@ -184,6 +185,8 @@ class RequestOptions:
 
 @dataclass
 class OperationSpecification:
+    # name: str
     request: RequestOptions
     response: Optional[Callable[..., Any]] = None
-    params: Dict[str, Param] = field(default_factory=dict)
+    # params: Dict[str, Param] = field(default_factory=dict)
+    # response_type: Union[MissingType, type] = Missing

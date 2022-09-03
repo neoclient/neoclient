@@ -26,16 +26,14 @@ from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
 from . import utils
-from .enums import Annotation, ParamType
+from .enums import ParamType
 from .models import RequestOptions, OperationSpecification
 from .params import Body, Depends, Param, Params, Path, Promise, Query
-from .operations import Operation
 
 T = TypeVar("T")
 
 PT = ParamSpec("PT")
 RT = TypeVar("RT")
-
 
 def get_specification(obj: Any, /) -> Optional[OperationSpecification]:
     return annotate.get_annotations(obj).get(Annotation.SPECIFICATION)
@@ -45,10 +43,10 @@ def has_specification(obj: Any, /) -> bool:
     return Annotation.SPECIFICATION in annotate.get_annotations(obj)
 
 
-def get_operations(cls: type, /) -> List[Operation]:
-    return [
-        member for _, member in inspect.getmembers(cls) if isinstance(member, Operation)
-    ]
+def get_operations(cls: type, /) -> Dict[str, Callable]:
+    return {
+        member_name: member for member_name, member in inspect.getmembers(cls) if hasattr(member, "operation")
+    }
 
 
 def get_response_arguments(
@@ -287,5 +285,5 @@ def build_request_specification(
     return OperationSpecification(
         request=request,
         response=response,
-        params=param_specs,
+        # params=param_specs,
     )
