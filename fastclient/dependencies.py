@@ -130,3 +130,23 @@ def text(response: httpx.Response = Promise()) -> str:
 
 def url(response: httpx.Response = Promise()) -> httpx.URL:
     return response.url
+
+
+def request_content(request: httpx.Request = Promise()) -> bytes:
+    return request.content
+
+
+def request_headers(request: httpx.Request = Promise()) -> httpx.Headers:
+    return request.headers
+
+
+def request_method(request: httpx.Request = Promise()) -> str:
+    return request.method
+
+
+def request_stream(request: httpx.Request = Promise()) -> StreamTypes:
+    return request.stream
+
+
+def request_url(request: httpx.Request = Promise()) -> httpx.URL:
+    return request.url

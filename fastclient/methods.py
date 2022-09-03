@@ -38,9 +38,9 @@ def request(
             ),
         )
 
-        abstract_func: Callable[PS, RT] = abc.abstractmethod(func)
+        operation: Operation = Operation(func)
 
-        return Operation(abstract_func)
+        return abc.abstractmethod(operation)
 
     return decorator
 
