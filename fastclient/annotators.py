@@ -9,6 +9,7 @@ from . import api
 from .enums import Annotation, HttpMethod
 from .models import Specification
 from .params import Path
+from .api import Operation
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
@@ -20,8 +21,8 @@ def request(
     /,
     *,
     response: Optional[Callable[..., Any]] = None,
-) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
+) -> Callable[[Callable[PS, RT]], Operation[PS, RT]]:
+    def decorator(func: Callable[PS, RT], /) -> Operation[PS, RT]:
         uri: str = (
             endpoint if endpoint is not None else Path.generate_alias(func.__name__)
         )
@@ -37,7 +38,9 @@ def request(
             ),
         )
 
-        return abc.abstractmethod(func)
+        abstract_func: Callable[PS, RT] = abc.abstractmethod(func)
+
+        return Operation(abstract_func)
 
     return decorator
 

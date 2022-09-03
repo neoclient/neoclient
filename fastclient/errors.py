@@ -1,0 +1,1 @@
+class UnboundOperationException(Exception): pass
