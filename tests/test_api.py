@@ -1,5 +1,5 @@
 from fastclient.annotators import request
-from fastclient.models import RequestOptions, Specification
+from fastclient.models import RequestOptions, OperationSpecification
 from fastclient.param_functions import Query
 from fastclient.enums import Annotation
 from typing import Protocol
@@ -13,7 +13,7 @@ def test_request_no_url() -> None:
             ...
 
     assert annotate.get_annotations(Service.operation) == {
-        Annotation.SPECIFICATION: Specification(
+        Annotation.SPECIFICATION: OperationSpecification(
             request=RequestOptions(method="GET", url="operation"),
             params={"param": Query("param")},
         )

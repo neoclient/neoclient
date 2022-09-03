@@ -4,7 +4,7 @@ from httpx import Cookies, Headers, QueryParams, Timeout
 from typing_extensions import ParamSpec
 
 from . import api
-from .models import Specification
+from .models import OperationSpecification
 from .types import (
     CookieTypes,
     HeaderTypes,
@@ -23,7 +23,7 @@ RT = TypeVar("RT")
 
 def params(value: QueryParamTypes, /):
     def decorator(operation: Operation[PS, RT], /) -> Operation[PS, RT]:
-        spec: Optional[Specification] = api.get_specification(operation.func)
+        spec: Optional[OperationSpecification] = api.get_specification(operation.func)
 
         if spec is None:
             raise Exception("Cannot configure callable without a spec")
@@ -37,7 +37,7 @@ def params(value: QueryParamTypes, /):
 
 def headers(value: HeaderTypes, /):
     def decorator(operation: Operation[PS, RT], /) -> Operation[PS, RT]:
-        spec: Optional[Specification] = api.get_specification(operation.func)
+        spec: Optional[OperationSpecification] = api.get_specification(operation.func)
 
         if spec is None:
             raise Exception("Cannot configure callable without a spec")
@@ -51,7 +51,7 @@ def headers(value: HeaderTypes, /):
 
 def cookies(value: CookieTypes, /):
     def decorator(operation: Operation[PS, RT], /) -> Operation[PS, RT]:
-        spec: Optional[Specification] = api.get_specification(operation.func)
+        spec: Optional[OperationSpecification] = api.get_specification(operation.func)
 
         if spec is None:
             raise Exception("Cannot configure callable without a spec")
@@ -65,7 +65,7 @@ def cookies(value: CookieTypes, /):
 
 def content(value: RequestContent, /):
     def decorator(operation: Operation[PS, RT], /) -> Operation[PS, RT]:
-        spec: Optional[Specification] = api.get_specification(operation.func)
+        spec: Optional[OperationSpecification] = api.get_specification(operation.func)
 
         if spec is None:
             raise Exception("Cannot configure callable without a spec")
@@ -79,7 +79,7 @@ def content(value: RequestContent, /):
 
 def data(value: RequestData, /):
     def decorator(operation: Operation[PS, RT], /) -> Operation[PS, RT]:
-        spec: Optional[Specification] = api.get_specification(operation.func)
+        spec: Optional[OperationSpecification] = api.get_specification(operation.func)
 
         if spec is None:
             raise Exception("Cannot configure callable without a spec")
@@ -93,7 +93,7 @@ def data(value: RequestData, /):
 
 def files(value: RequestFiles, /):
     def decorator(operation: Operation[PS, RT], /) -> Operation[PS, RT]:
-        spec: Optional[Specification] = api.get_specification(operation.func)
+        spec: Optional[OperationSpecification] = api.get_specification(operation.func)
 
         if spec is None:
             raise Exception("Cannot configure callable without a spec")
@@ -107,7 +107,7 @@ def files(value: RequestFiles, /):
 
 def json(value: JsonTypes, /):
     def decorator(operation: Operation[PS, RT], /) -> Operation[PS, RT]:
-        spec: Optional[Specification] = api.get_specification(operation.func)
+        spec: Optional[OperationSpecification] = api.get_specification(operation.func)
 
         if spec is None:
             raise Exception("Cannot configure callable without a spec")
@@ -121,7 +121,7 @@ def json(value: JsonTypes, /):
 
 def timeout(value: TimeoutTypes, /):
     def decorator(operation: Operation[PS, RT], /) -> Operation[PS, RT]:
-        spec: Optional[Specification] = api.get_specification(operation.func)
+        spec: Optional[OperationSpecification] = api.get_specification(operation.func)
 
         if spec is None:
             raise Exception("Cannot configure callable without a spec")

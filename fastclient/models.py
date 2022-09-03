@@ -183,7 +183,7 @@ class RequestOptions:
 
 
 @dataclass
-class Specification:
+class OperationSpecification:
     request: RequestOptions
     response: Optional[Callable[..., Any]] = None
     params: Dict[str, Param] = field(default_factory=dict)

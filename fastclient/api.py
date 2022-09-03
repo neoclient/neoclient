@@ -2,7 +2,6 @@ from dataclasses import dataclass
 import functools
 import inspect
 from inspect import Parameter, Signature
-from types import FunctionType
 from typing import (
     Any,
     Callable,
@@ -10,7 +9,6 @@ from typing import (
     Generic,
     Iterable,
     List,
-    NoReturn,
     Optional,
     Sequence,
     Set,
@@ -34,7 +32,7 @@ from typing_extensions import ParamSpec
 
 from . import annotators, encoders, utils
 from .enums import Annotation, HttpMethod, ParamType
-from .models import ClientOptions, RequestOptions, Specification
+from .models import ClientOptions, RequestOptions, OperationSpecification
 from .params import Body, Depends, Param, Params, Path, Promise, Query
 from .errors import UnboundOperationException
 
@@ -44,7 +42,7 @@ PT = ParamSpec("PT")
 RT = TypeVar("RT")
 
 
-def get_specification(obj: Any, /) -> Optional[Specification]:
+def get_specification(obj: Any, /) -> Optional[OperationSpecification]:
     return annotate.get_annotations(obj).get(Annotation.SPECIFICATION)
 
 
@@ -252,6 +250,9 @@ class FastClient:
 
         return type(protocol.__name__, (BaseService,), attributes)()
 
+    def bind(self, operation: "Operation", /) -> "BoundOperation":
+        return operation.bind(self)
+
     def request(
         self,
         method: str,
@@ -387,7 +388,7 @@ def build_request_specification(
     endpoint: str,
     *,
     response: Optional[Callable[..., Any]] = None,
-) -> Specification:
+) -> OperationSpecification:
     request: RequestOptions = RequestOptions(
         method=method,
         url=endpoint,
@@ -399,7 +400,7 @@ def build_request_specification(
         parameter.name: parameter.spec for parameter in parameters.values()
     }
 
-    return Specification(
+    return OperationSpecification(
         request=request,
         response=response,
         params=param_specs,
@@ -410,10 +411,10 @@ class Operation(Generic[PT, RT]):
     func: Callable[PT, RT]
 
     def __call__(self, *args: PT.args, **kwargs: PT.kwargs) -> RT:
-        raise UnboundOperationException("Operation is unbound")
+        raise UnboundOperationException(f"Operation `{self.func.__name__}` has not been bound to a client")
 
     @property
-    def specification(self) -> Specification:
+    def specification(self) -> OperationSpecification:
         return annotate.get_annotations(self.func)[Annotation.SPECIFICATION]
 
     def bind(self, client: FastClient, /) -> "BoundOperation":

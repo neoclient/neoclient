@@ -7,7 +7,7 @@ from typing_extensions import ParamSpec
 
 from . import api
 from .enums import Annotation, HttpMethod
-from .models import Specification
+from .models import OperationSpecification
 from .params import Path
 from .api import Operation
 
@@ -27,7 +27,7 @@ def request(
             endpoint if endpoint is not None else Path.generate_alias(func.__name__)
         )
 
-        spec: Specification = api.build_request_specification(
+        spec: OperationSpecification = api.build_request_specification(
             func, method, uri, response=response
         )
 

@@ -7,7 +7,7 @@ license = "MIT"
 readme = "README.md"
 homepage = "https://pypi.org/project/retrofit/"
 repository = "https://github.com/tombulled/retrofit"
-keywords = ["retrofit", "http", "client"]
+keywords = ["python", "api", "http", "client", "json", "framework", "web", "rest"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
