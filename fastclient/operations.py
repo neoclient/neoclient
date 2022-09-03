@@ -36,13 +36,6 @@ class Operation(ABC, Generic[PS, RT]):
         raise NotImplementedError
 
 
-class UnboundOperation(Operation[PS, RT]):
-    def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
-        raise UnboundOperationException(
-            f"Operation `{self.func.__name__}` has not been bound to a client"
-        )
-
-
 @dataclass
 class BoundOperation(Operation[PS, RT]):
     client: Client
@@ -178,4 +171,16 @@ class BoundOperation(Operation[PS, RT]):
     def _is_method(self) -> bool:
         return bool(
             self.specification.params and list(self.specification.params)[0] == "self"
+        )
+
+
+class UnboundOperation(Operation[PS, RT]):
+    def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
+        raise UnboundOperationException(
+            f"Operation `{self.func.__name__}` has not been bound to a client"
+        )
+
+    def bind(self, client: Client, /) -> BoundOperation:
+        return BoundOperation(
+            func=self.func, specification=self.specification, client=client
         )
