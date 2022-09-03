@@ -28,10 +28,4 @@ class ParamType(HiddenValue):
     HEADER = enum.auto()
     PATH = enum.auto()
     COOKIE = enum.auto()
-
     BODY = enum.auto()
-
-    # TODO: Implement
-    # FIELD = enum.auto()
-    # PART = enum.auto()
-    # FORM = enum.auto()

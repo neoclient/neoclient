@@ -30,7 +30,8 @@ from param.sentinels import Missing, MissingType
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from . import annotators, encoders, utils
+from . import methods, utils
+from fastapi import encoders
 from .enums import Annotation, HttpMethod, ParamType
 from .models import ClientOptions, RequestOptions, OperationSpecification
 from .params import Body, Depends, Param, Params, Path, Promise, Query
@@ -266,7 +267,7 @@ class FastClient:
                 endpoint if endpoint is not None else Path.generate_alias(func.__name__)
             )
 
-            return annotators.request(method, uri, response=response)(
+            return methods.request(method, uri, response=response)(
                 func
             ).bind(self)
 

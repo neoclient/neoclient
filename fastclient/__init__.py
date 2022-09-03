@@ -1,4 +1,4 @@
-from .annotators import (
+from .methods import (
     delete,
     get,
     head,
@@ -23,7 +23,7 @@ from .param_functions import (
     Queries,
     Query,
 )
-from .configurators import (
+from .composers import (
     params,
     headers,
     cookies,

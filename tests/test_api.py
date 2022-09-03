@@ -1,4 +1,4 @@
-from fastclient.annotators import request
+from fastclient.methods import request
 from fastclient.models import RequestOptions, OperationSpecification
 from fastclient.param_functions import Query
 from fastclient.enums import Annotation

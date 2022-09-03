@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import timedelta
-from http import HTTPStatus
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -23,9 +22,6 @@ class CookieResponse:
 
     def __call__(self, cookies: httpx.Cookies = Cookies()) -> str:
         return cookies[self.name]
-
-
-### HTTPX
 
 
 def charset_encoding(response: httpx.Response = Promise()) -> Optional[str]:
@@ -134,22 +130,3 @@ def text(response: httpx.Response = Promise()) -> str:
 
 def url(response: httpx.Response = Promise()) -> httpx.URL:
     return response.url
-
-
-### Custom ###
-
-
-def status(response: httpx.Response = Promise()) -> HTTPStatus:
-    return HTTPStatus(response.status_code)
-
-
-def status_phrase(response: httpx.Response = Promise()) -> str:
-    return HTTPStatus(response.status_code).phrase
-
-
-def status_name(response: httpx.Response = Promise()) -> str:
-    return HTTPStatus(response.status_code).name
-
-
-def status_description(response: httpx.Response = Promise()) -> str:
-    return HTTPStatus(response.status_code).description
