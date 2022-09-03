@@ -24,6 +24,7 @@ from param import ParameterType
 from param.sentinels import Missing
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
+import urllib.parse
 
 from . import utils
 from .enums import ParamType
@@ -205,7 +206,7 @@ def get_params(
     func: Callable, /, *, request: Optional[RequestOptions] = None
 ) -> Dict[str, param.Parameter]:
     path_params: Set[str] = (
-        utils.get_path_params(str(request.url)) if request is not None else set()
+        utils.get_path_params(urllib.parse.unquote(str(request.url))) if request is not None else set()
     )
 
     _inspect_params: List[Parameter] = list(inspect.signature(func).parameters.values())

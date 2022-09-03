@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import inspect
-from typing import Any, Callable, Dict, Generic, Optional, TypeVar
+from typing import Any, Callable, Dict, Generic, Mapping, Optional, TypeVar, Union
 from typing_extensions import ParamSpec
+import urllib.parse
 
 from arguments import Arguments
 import param
@@ -41,109 +42,21 @@ class BoundOperation(Operation[PS, RT]):
     client: Client
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
-        arguments: Dict[str, Any]
+        arguments: Dict[str, Any] = self._get_arguments(*args, **kwargs)
 
-        # TODO: Find a better fix for instance methods!
-        if self._is_method():
-            arguments = Arguments(None, *args, **kwargs).bind(self.func).asdict()
-        else:
-            arguments = Arguments(*args, **kwargs).bind(self.func).asdict()
+        new_request_options: RequestOptions = self.build_request_options(arguments)
+        request_options: RequestOptions = self.specification.request.merge(new_request_options)
 
-        argument_name: str
-        argument: Any
-        for argument_name, argument in arguments.items():
-            if not isinstance(argument, Param):
-                continue
+        request: httpx.Request = request_options.build_request(self.client)
 
-            if not argument.has_default():
-                raise ValueError(
-                    f"{self.func.__name__}() missing argument: {argument_name!r}"
-                )
-
-            arguments[argument_name] = argument.default
-
-        destinations: Dict[ParamType, Dict[str, Any]] = {}
-
-        parameter: str
-        field: Param
-        for parameter, field in self.specification.params.items():
-            value: Any = arguments[parameter]
-
-            if isinstance(field, Param):
-                field_name: str = (
-                    field.alias
-                    if field.alias is not None
-                    else field.generate_alias(parameter)
-                )
-
-                # The field is not required, it can be omitted
-                if value is None and not field.required:
-                    continue
-
-                destinations.setdefault(field.type, {})[field_name] = value
-            elif isinstance(field, Params):
-                destinations.setdefault(field.type, {}).update(value)
-            else:
-                raise Exception(f"Unknown field type: {field}")
-
-        body_params: Dict[str, Any] = destinations.get(ParamType.BODY, {})
-
-        json: Any = None
-
-        # If there's only one body param, make it the entire JSON request body
-        if len(body_params) == 1:
-            json = fastapi.encoders.jsonable_encoder(list(body_params.values())[0])
-        # If there are multiple body params, construct a multi-level dict
-        # of each body parameter. E.g. (user: User, item: Item) -> {"user": ..., "item": ...}
-        elif body_params:
-            json = {
-                key: fastapi.encoders.jsonable_encoder(val)
-                for key, val in body_params.items()
-            }
-
-        method: str = self.specification.request.method
-        url: str = str(self.specification.request.url).format(
-            **destinations.get(ParamType.PATH, {})
-        )
-        params: dict = {
-            **self.specification.request.params,
-            **destinations.get(ParamType.QUERY, {}),
-        }
-        headers: dict = {
-            **self.specification.request.headers,
-            **destinations.get(ParamType.HEADER, {}),
-        }
-        cookies: dict = {
-            **self.specification.request.cookies,
-            **destinations.get(ParamType.COOKIE, {}),
-        }
-
-        request: RequestOptions = RequestOptions(
-            method=method,
-            url=url,
-            params=params,
-            headers=headers,
-            cookies=cookies,
-            json=json,
-        )
-
-        httpx_request: httpx.Request = self.client.build_request(
-            method=method,
-            url=url,
-            params=params,
-            headers=headers,
-            cookies=cookies,
-            json=json,
-        )
-
-        return_annotation: Any = self.specification.response_type
+        return_annotation: Any = self.response_type
 
         if return_annotation is RequestOptions:
-            return request
+            return request_options
         if return_annotation is httpx.Request:
-            return httpx_request
+            return request
 
-        response: Response = self.client.send(httpx_request)
+        response: Response = self.client.send(request)
 
         if self.specification.response is not None:
             response_params: Dict[str, param.Parameter] = api.get_params(
@@ -168,10 +81,113 @@ class BoundOperation(Operation[PS, RT]):
 
         return pydantic.parse_raw_as(return_annotation, response.text)
 
-    def _is_method(self) -> bool:
-        return bool(
-            self.specification.params and list(self.specification.params)[0] == "self"
+    def build_request_options(self, arguments: Dict[str, Any], /) -> RequestOptions:
+        query_params: httpx.QueryParams = httpx.QueryParams()
+        path_params: Dict[str, Any] = {}
+        headers: httpx.Headers = httpx.Headers()
+        cookies: httpx.Cookies = httpx.Cookies()
+        body_params: Dict[str, Any] = {}
+
+        parameter: str
+        field: Param
+        for parameter, field in self.params.items():
+            value: Any = arguments[parameter]
+
+            if isinstance(field, Param):
+                field_name: str = (
+                    field.alias
+                    if field.alias is not None
+                    else field.generate_alias(parameter)
+                )
+
+                # The field is not required, it can be omitted
+                if value is None and not field.required:
+                    continue
+
+                if field.type is ParamType.QUERY:
+                    query_params = query_params.set(field_name, value)
+                elif field.type is ParamType.HEADER:
+                    headers[field_name] = value
+                elif field.type is ParamType.PATH:
+                    path_params[field_name] = value
+                elif field.type is ParamType.COOKIE:
+                    cookies[field_name] = value
+                elif field.type is ParamType.BODY:
+                    body_params[field_name] = value
+                else:
+                    raise Exception(f"Unknown ParamType: {field.type!r}")
+            elif isinstance(field, Params):
+                if field.type is ParamType.QUERY:
+                    query_params = query_params.merge(value)
+                elif field.type is ParamType.HEADER:
+                    headers.update(value)
+                elif field.type is ParamType.COOKIE:
+                    cookies.update(value)
+            else:
+                raise Exception(f"Unknown field type: {field}")
+
+        json: Any = None
+
+        # If there's only one body param, make it the entire JSON request body
+        if len(body_params) == 1:
+            json = fastapi.encoders.jsonable_encoder(list(body_params.values())[0])
+        # If there are multiple body params, construct a multi-level dict
+        # of each body parameter. E.g. (user: User, item: Item) -> {"user": ..., "item": ...}
+        elif body_params:
+            json = {
+                key: fastapi.encoders.jsonable_encoder(val)
+                for key, val in body_params.items()
+            }
+
+        return RequestOptions(
+            method=self.specification.request.method,
+            url=urllib.parse.unquote(str(self.specification.request.url)).format(**path_params),
+            params=query_params,
+            headers=headers,
+            cookies=cookies,
+            json=json,
         )
+
+    def _is_method(self) -> bool:
+        return bool(self.params and list(self.params)[0] == "self")
+
+    def _get_arguments(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        arguments: Dict[str, Any]
+
+        # TODO: Find a better fix for instance methods!
+        if self._is_method():
+            arguments = Arguments(None, *args, **kwargs).bind(self.func).asdict()
+        else:
+            arguments = Arguments(*args, **kwargs).bind(self.func).asdict()
+
+        argument_name: str
+        argument: Any
+        for argument_name, argument in arguments.items():
+            if not isinstance(argument, Param):
+                continue
+
+            if not argument.has_default():
+                raise ValueError(
+                    f"{self.func.__name__}() missing argument: {argument_name!r}"
+                )
+
+            arguments[argument_name] = argument.default
+
+        return arguments
+
+    @property
+    def params(self) -> Dict[str, Param]:
+        parameters: Dict[str, param.Parameter] = api.get_params(
+            self.func, request=self.specification.request
+        )
+        
+        return {
+            parameter.name: parameter.spec for parameter in parameters.values()
+        }
+
+    @property
+    def response_type(self) -> Any:
+        return inspect.signature(self.func).return_annotation
 
 
 class UnboundOperation(Operation[PS, RT]):
