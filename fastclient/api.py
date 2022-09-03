@@ -80,13 +80,19 @@ def get_response_arguments(
             if parameter.spec.type is ParamType.QUERY:
                 value = dict(response.request.url.params)
             elif parameter.spec.type is ParamType.HEADER:
-                value = dict(
-                    response.headers
-                )  # TODO: Respect httpx use of `Headers` object that allows multiple entries of same key
+                if parameter.annotation in (inspect._empty, Missing, httpx.Headers):
+                    value = response.headers
+                elif parameter.annotation is dict:
+                    value = dict(response.headers)
+                else:
+                    raise Exception(f"Headers dependency has incompatible annotation: {parameter.annotation!r}")
             elif parameter.spec.type is ParamType.COOKIE:
-                value = dict(
-                    response.cookies
-                )  # TODO: Respect httpx use of `Cookies` object that contains more cookie metadata
+                if parameter.annotation in (inspect._empty, Missing, httpx.Cookies):
+                    value = response.cookies
+                elif parameter.annotation is dict:
+                    value = dict(response.cookies)
+                else:
+                    raise Exception(f"Cookies dependency has incompatible annotation: {parameter.annotation!r}")
             else:
                 raise Exception(f"Unknown multi-param of type {parameter.spec.type}")
         elif isinstance(parameter.spec, Param):
