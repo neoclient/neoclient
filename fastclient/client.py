@@ -111,7 +111,9 @@ class FastClient:
                 endpoint if endpoint is not None else Path.generate_alias(func.__name__)
             )
 
-            return methods.request(method, uri, response=response)(func).bind(self.client)
+            return methods.request(method, uri, response=response)(func).bind(
+                self.client
+            )
 
         return decorator
 

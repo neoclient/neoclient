@@ -47,9 +47,7 @@ def has_specification(obj: Any, /) -> bool:
 
 def get_operations(cls: type, /) -> List[Operation]:
     return [
-        member
-        for _, member in inspect.getmembers(cls)
-        if isinstance(member, Operation)
+        member for _, member in inspect.getmembers(cls) if isinstance(member, Operation)
     ]
 
 
@@ -80,14 +78,18 @@ def get_response_arguments(
                 elif parameter.annotation is dict:
                     value = dict(response.headers)
                 else:
-                    raise Exception(f"Headers dependency has incompatible annotation: {parameter.annotation!r}")
+                    raise Exception(
+                        f"Headers dependency has incompatible annotation: {parameter.annotation!r}"
+                    )
             elif parameter.spec.type is ParamType.COOKIE:
                 if parameter.annotation in (inspect._empty, Missing, httpx.Cookies):
                     value = response.cookies
                 elif parameter.annotation is dict:
                     value = dict(response.cookies)
                 else:
-                    raise Exception(f"Cookies dependency has incompatible annotation: {parameter.annotation!r}")
+                    raise Exception(
+                        f"Cookies dependency has incompatible annotation: {parameter.annotation!r}"
+                    )
             else:
                 raise Exception(f"Unknown multi-param of type {parameter.spec.type}")
         elif isinstance(parameter.spec, Param):

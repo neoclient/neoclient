@@ -29,7 +29,9 @@ class Operation(Generic[PT, RT]):
     func: Callable[PT, RT]
 
     def __call__(self, *args: PT.args, **kwargs: PT.kwargs) -> RT:
-        raise UnboundOperationException(f"Operation `{self.func.__name__}` has not been bound to a client")
+        raise UnboundOperationException(
+            f"Operation `{self.func.__name__}` has not been bound to a client"
+        )
 
     @property
     def specification(self) -> OperationSpecification:

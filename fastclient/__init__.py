@@ -9,8 +9,7 @@ from .methods import (
     request,
 )
 from .client import FastClient
-from .enums import HttpMethod, ParamType
-from .models import RequestOptions, OperationSpecification
+from .enums import HttpMethod
 from .param_functions import (
     Body,
     Cookie,

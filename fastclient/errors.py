@@ -1,1 +1,2 @@
-class UnboundOperationException(Exception): pass
+class UnboundOperationException(Exception):
+    pass
