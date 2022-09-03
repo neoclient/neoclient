@@ -1,7 +1,6 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import inspect
-from typing import Any, Callable, Dict, Generic, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, Optional, TypeVar
 from typing_extensions import ParamSpec
 import urllib.parse
 
@@ -14,7 +13,6 @@ import httpx
 from httpx import Response, Client
 
 from . import api
-from .errors import UnboundOperationException
 from .models import OperationSpecification, RequestOptions
 from .enums import ParamType
 from .params import Param, Params
@@ -28,18 +26,10 @@ def get_operation(obj: Any, /) -> Optional["Operation"]:
 
 
 @dataclass
-class Operation(ABC, Generic[PS, RT]):
+class Operation(Generic[PS, RT]):
     func: Callable[PS, RT]
     specification: OperationSpecification
-
-    @abstractmethod
-    def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
-        raise NotImplementedError
-
-
-@dataclass
-class BoundOperation(Operation[PS, RT]):
-    client: Client
+    client: Optional[Client]
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
         arguments: Dict[str, Any] = self._get_arguments(*args, **kwargs)
@@ -56,7 +46,9 @@ class BoundOperation(Operation[PS, RT]):
         if return_annotation is httpx.Request:
             return request
 
-        response: Response = self.client.send(request)
+        client: Client = self.client if self.client is not None else Client()
+
+        response: Response = client.send(request)
 
         if self.specification.response is not None:
             response_params: Dict[str, param.Parameter] = api.get_params(
@@ -152,13 +144,7 @@ class BoundOperation(Operation[PS, RT]):
         return bool(self.params and list(self.params)[0] == "self")
 
     def _get_arguments(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
-        arguments: Dict[str, Any]
-
-        # TODO: Find a better fix for instance methods!
-        if self._is_method():
-            arguments = Arguments(None, *args, **kwargs).bind(self.func).asdict()
-        else:
-            arguments = Arguments(*args, **kwargs).bind(self.func).asdict()
+        arguments: Dict[str, Any] = Arguments(*args, **kwargs).bind(self.func).asdict()
 
         argument_name: str
         argument: Any
@@ -188,15 +174,3 @@ class BoundOperation(Operation[PS, RT]):
     @property
     def response_type(self) -> Any:
         return inspect.signature(self.func).return_annotation
-
-
-class UnboundOperation(Operation[PS, RT]):
-    def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
-        raise UnboundOperationException(
-            f"Operation `{self.func.__name__}` has not been bound to a client"
-        )
-
-    def bind(self, client: Client, /) -> BoundOperation:
-        return BoundOperation(
-            func=self.func, specification=self.specification, client=client
-        )

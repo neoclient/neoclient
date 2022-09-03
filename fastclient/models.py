@@ -178,7 +178,7 @@ class RequestOptions:
                 data=self.data,
                 files=self.files,
                 json=self.json,
-                extensions=dict(timeout=self.timeout),
+                extensions=dict(timeout=self.timeout.as_dict()) if self.timeout is not None else {},
             )
         else:
             return client.build_request(

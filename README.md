@@ -7,13 +7,11 @@ pip install git+https://github.com/tombulled/fastclient.git@main
 ```
 
 ## Getting Started
-The simplest FastClient file could look like this:
+The simplest FastClient file looks like this:
 ```python
-from fastclient import FastClient
+from fastclient import get
 
-app = FastClient("https://httpbin.org/")
-
-@app.get("/ip")
+@get("https://httpbin.org/ip")
 def ip():
     ...
 ```

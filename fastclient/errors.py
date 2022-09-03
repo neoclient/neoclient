@@ -1,2 +1,0 @@
-class UnboundOperationException(Exception):
-    pass

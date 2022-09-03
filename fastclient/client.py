@@ -4,7 +4,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     Optional,
     Sequence,
     Tuple,
@@ -17,15 +16,14 @@ import httpx
 from param.sentinels import Missing, MissingType
 from typing_extensions import ParamSpec
 
-from . import api, methods
+from . import api
 from .enums import HttpMethod
-from .models import ClientOptions
-from .operations import Operation, BoundOperation, get_operation
-from .params import Path
+from .models import ClientOptions, OperationSpecification
+from .operations import Operation, get_operation
 
 T = TypeVar("T")
 
-PT = ParamSpec("PT")
+PS = ParamSpec("PS")
 RT = TypeVar("RT")
 
 
@@ -35,8 +33,7 @@ class BaseService:
 
 
 class FastClient:
-    _client_options: ClientOptions
-    _client: Optional[httpx.Client]
+    client: Optional[httpx.Client]
 
     def __init__(
         self,
@@ -54,29 +51,20 @@ class FastClient:
     ) -> None:
         # TODO: Add other named params and use proper types beyond just `headers`
 
-        self._client_options = ClientOptions(
+        client_options: ClientOptions = ClientOptions(
             base_url=base_url,
             headers=headers,
         )
 
         if client is Missing:
-            self._client = self._client_options.build()
-        elif client is None:
-            if not self._client_options.is_default():
+            self.client = client_options.build()
+        else:
+            if not client_options.is_default():
                 raise Exception(
                     "Cannot specify both `client` and other config options."
                 )
 
-            self._client = None
-        else:
-            self._client = client
-
-    @property
-    def client(self) -> httpx.Client:
-        if self._client is None:
-            return self._client_options.build()
-
-        return self._client
+            self.client = client
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}(client={self.client!r})"
@@ -86,51 +74,47 @@ class FastClient:
 
         attributes: dict = {"__module__": protocol.__module__}
 
-        method: Callable
-        for method in operations.values():
-            operation.bind(self.client)
-
-            attributes[operation.func.__name__] = functools.wraps(operation.func)(
-                bound_operation
-            )
+        func: Callable
+        for func in operations.values():
+            attributes[func.__name__] = self.bind(func)
 
         return type(protocol.__name__, (BaseService,), attributes)()
 
-    def bind(self, func: Callable[PT, RT], /) -> Callable[PT, RT]:
-        operation: Optional[Operation] = get_operation(func)
+    def _wrap(self, operation: Operation[PS, RT], /) -> Callable[PS, RT]:
+        @functools.wraps(operation.func)
+        def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> RT:
+            return operation(*args, **kwargs)
+
+        setattr(wrapper, "operation", operation)
+
+        return abc.abstractmethod(wrapper)
+
+    def bind(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
+        operation: Optional[Operation[PS, RT]] = get_operation(func)
 
         if operation is None:
             raise Exception("Cannot bind client to non-operation")
 
-        if isinstance(operation, BoundOperation):
-            raise Exception("Operation has already been bound")
+        bound_operation: Operation[PS, RT] = Operation(operation.func, operation.specification, self.client)
 
-        bound_operation: BoundOperation = BoundOperation(operation.func, operation.specification, client=self.client)
-
-        @functools.wraps(func)
-        def wrapper(*args: PT.args, **kwargs: PT.kwargs) -> RT:
-            return bound_operation(*args, **kwargs)
-
-        setattr(wrapper, "operation", bound_operation)
-
-        return wrapper
+        return self._wrap(bound_operation)
 
     def request(
         self,
         method: str,
-        endpoint: Optional[str] = None,
+        endpoint: str,
         /,
         *,
         response: Optional[Callable[..., Any]] = None,
     ):
-        def decorator(func: Callable[PT, RT], /) -> Callable[PT, RT]:
-            uri: str = (
-                endpoint if endpoint is not None else Path.generate_alias(func.__name__)
+        def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
+            specification: OperationSpecification = api.build_request_specification(
+                func, method, endpoint, response=response
             )
 
-            unbound_func: Callable[PT, RT] = methods.request(method, uri, response=response)(func)
+            operation: Operation[PS, RT] = Operation(func, specification, self.client)
 
-            return self.bind(unbound_func)
+            return self._wrap(operation)
 
         return decorator
 
