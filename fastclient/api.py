@@ -1,21 +1,16 @@
-from dataclasses import dataclass
-import functools
 import inspect
-from inspect import Parameter, Signature
+from inspect import Parameter
 from typing import (
     Any,
     Callable,
     Dict,
-    Generic,
     Iterable,
     List,
     Optional,
-    Sequence,
     Set,
     Tuple,
     Type,
     TypeVar,
-    Union,
 )
 
 import annotate
@@ -26,16 +21,15 @@ import pydantic
 from arguments import Arguments
 from httpx import Response
 from param import ParameterType
-from param.sentinels import Missing, MissingType
+from param.sentinels import Missing
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from . import methods, utils
-from fastapi import encoders
-from .enums import Annotation, HttpMethod, ParamType
-from .models import ClientOptions, RequestOptions, OperationSpecification
+from . import utils
+from .enums import Annotation, ParamType
+from .models import RequestOptions, OperationSpecification
 from .params import Body, Depends, Param, Params, Path, Promise, Query
-from .errors import UnboundOperationException
+from .operations import Operation
 
 T = TypeVar("T")
 
@@ -51,7 +45,7 @@ def has_specification(obj: Any, /) -> bool:
     return Annotation.SPECIFICATION in annotate.get_annotations(obj)
 
 
-def get_operations(cls: type, /) -> List["Operation"]:
+def get_operations(cls: type, /) -> List[Operation]:
     return [
         member
         for _, member in inspect.getmembers(cls)
@@ -186,119 +180,6 @@ def get_response_arguments(
     return Arguments(*args, **kwargs)
 
 
-class BaseService:
-    def __repr__(self) -> str:
-        return f"<{type(self).__name__}()>"
-
-
-class FastClient:
-    _client_config: ClientOptions
-    _client: Optional[httpx.Client]
-
-    def __init__(
-        self,
-        base_url: Union[httpx.URL, str] = "",
-        *,
-        client: Union[None, httpx.Client, MissingType] = Missing,
-        headers: Union[
-            httpx.Headers,
-            Dict[str, str],
-            Dict[bytes, bytes],
-            Sequence[Tuple[str, str]],
-            Sequence[Tuple[bytes, bytes]],
-            None,
-        ] = None,
-    ) -> None:
-        # TODO: Add other named params and use proper types beyond just `headers`
-
-        self._client_config = ClientOptions(
-            base_url=base_url,
-            headers=headers,
-        )
-
-        if client is Missing:
-            self._client = self._client_config.build()
-        elif client is None:
-            if not self._client_config.is_default():
-                raise Exception(
-                    "Cannot specify both `client` and other config options."
-                )
-
-            self._client = None
-        else:
-            self._client = client
-
-    @property
-    def client(self) -> httpx.Client:
-        if self._client is None:
-            return self._client_config.build()
-
-        return self._client
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}(client={self.client!r})"
-
-    def create(self, protocol: Type[T], /) -> T:
-        operations: List["Operation"] = get_operations(protocol)
-
-        attributes: dict = {"__module__": protocol.__module__}
-
-        operation: "Operation"
-        for operation in operations:
-            bound_operation: BoundOperation = operation.bind(self)
-
-            attributes[operation.func.__name__] = functools.wraps(operation.func)(bound_operation)
-
-        return type(protocol.__name__, (BaseService,), attributes)()
-
-    def bind(self, operation: "Operation", /) -> "BoundOperation":
-        return operation.bind(self)
-
-    def request(
-        self,
-        method: str,
-        endpoint: Optional[str] = None,
-        /,
-        *,
-        response: Optional[Callable[..., Any]] = None,
-    ):
-        def decorator(func: Callable[PT, RT], /) -> BoundOperation[PT, RT]:
-            uri: str = (
-                endpoint if endpoint is not None else Path.generate_alias(func.__name__)
-            )
-
-            return methods.request(method, uri, response=response)(
-                func
-            ).bind(self)
-
-        return decorator
-
-    def put(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
-        return self.request(HttpMethod.PUT.name, endpoint, response=response)
-
-    def get(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
-        return self.request(HttpMethod.GET.name, endpoint, response=response)
-
-    def post(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
-        return self.request(HttpMethod.POST.name, endpoint, response=response)
-
-    def head(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
-        return self.request(HttpMethod.HEAD.name, endpoint, response=response)
-
-    def patch(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
-        return self.request(HttpMethod.PATCH.name, endpoint, response=response)
-
-    def delete(
-        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-    ):
-        return self.request(HttpMethod.DELETE.name, endpoint, response=response)
-
-    def options(
-        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-    ):
-        return self.request(HttpMethod.OPTIONS.name, endpoint, response=response)
-
-
 def _build_parameter(parameter: Parameter, spec: Param) -> param.Parameter:
     return param.Parameter(
         name=parameter.name,
@@ -406,154 +287,3 @@ def build_request_specification(
         response=response,
         params=param_specs,
     )
-
-@dataclass
-class Operation(Generic[PT, RT]):
-    func: Callable[PT, RT]
-
-    def __call__(self, *args: PT.args, **kwargs: PT.kwargs) -> RT:
-        raise UnboundOperationException(f"Operation `{self.func.__name__}` has not been bound to a client")
-
-    @property
-    def specification(self) -> OperationSpecification:
-        return annotate.get_annotations(self.func)[Annotation.SPECIFICATION]
-
-    def bind(self, client: FastClient, /) -> "BoundOperation":
-        bound_operation: BoundOperation = BoundOperation(self.func, client=client)
-
-        return functools.wraps(self.func)(bound_operation)
-
-
-@dataclass
-class BoundOperation(Operation[PT, RT]):
-    client: FastClient
-
-    def __call__(self, *args: PT.args, **kwargs: PT.kwargs) -> Any:
-        signature: Signature = inspect.signature(self.func)
-
-        arguments: Dict[str, Any]
-
-        # TODO: Find a better fix for instance methods!
-        if self.specification.params and list(self.specification.params)[0] == "self":
-            arguments = Arguments(None, *args, **kwargs).bind(self.func).asdict()
-        else:
-            arguments = Arguments(*args, **kwargs).bind(self.func).asdict()
-
-        argument_name: str
-        argument: Any
-        for argument_name, argument in arguments.items():
-            if not isinstance(argument, Param):
-                continue
-
-            if not argument.has_default():
-                raise ValueError(
-                    f"{self.func.__name__}() missing argument: {argument_name!r}"
-                )
-
-            arguments[argument_name] = argument.default
-
-        destinations: Dict[ParamType, Dict[str, Any]] = {}
-
-        parameter: str
-        field: Param
-        for parameter, field in self.specification.params.items():
-            value: Any = arguments[parameter]
-
-            if isinstance(field, Param):
-                field_name: str = (
-                    field.alias
-                    if field.alias is not None
-                    else field.generate_alias(parameter)
-                )
-
-                # The field is not required, it can be omitted
-                if value is None and not field.required:
-                    continue
-
-                destinations.setdefault(field.type, {})[field_name] = value
-            elif isinstance(field, Params):
-                destinations.setdefault(field.type, {}).update(value)
-            else:
-                raise Exception(f"Unknown field type: {field}")
-
-        body_params: Dict[str, Any] = destinations.get(ParamType.BODY, {})
-
-        json: Any = None
-
-        # If there's only one body param, make it the entire JSON request body
-        if len(body_params) == 1:
-            json = encoders.jsonable_encoder(list(body_params.values())[0])
-        # If there are multiple body params, construct a multi-level dict
-        # of each body parameter. E.g. (user: User, item: Item) -> {"user": ..., "item": ...}
-        elif body_params:
-            json = {
-                key: encoders.jsonable_encoder(val)
-                for key, val in body_params.items()
-            }
-
-        method: str = self.specification.request.method
-        url: str = str(self.specification.request.url).format(
-            **destinations.get(ParamType.PATH, {})
-        )
-        params: dict = {
-            **self.specification.request.params,
-            **destinations.get(ParamType.QUERY, {}),
-        }
-        headers: dict = {
-            **self.specification.request.headers,
-            **destinations.get(ParamType.HEADER, {}),
-        }
-        cookies: dict = {
-            **self.specification.request.cookies,
-            **destinations.get(ParamType.COOKIE, {}),
-        }
-
-        request: RequestOptions = RequestOptions(
-            method=method,
-            url=url,
-            params=params,
-            headers=headers,
-            cookies=cookies,
-            json=json,
-        )
-
-        httpx_request: httpx.Request = self.client.client.build_request(
-            method=method,
-            url=url,
-            params=params,
-            headers=headers,
-            cookies=cookies,
-            json=json,
-        )
-
-        return_annotation: Any = signature.return_annotation
-
-        if return_annotation is RequestOptions:
-            return request
-        if return_annotation is httpx.Request:
-            return httpx_request
-
-        response: Response = self.client.client.send(httpx_request)
-
-        if self.specification.response is not None:
-            response_params: Dict[str, param.Parameter] = get_params(
-                self.specification.response, request=self.specification.request
-            )
-            response_arguments: Arguments = get_response_arguments(
-                response, response_params, self.specification.request
-            )
-
-            return response_arguments.call(self.specification.response)
-
-        if return_annotation is signature.empty:
-            return response.json()
-        if return_annotation is None:
-            return None
-        if return_annotation is Response:
-            return response
-        if isinstance(return_annotation, type) and issubclass(
-            return_annotation, BaseModel
-        ):
-            return return_annotation.parse_obj(response.json())
-
-        return pydantic.parse_raw_as(return_annotation, response.text)

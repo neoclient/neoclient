@@ -8,7 +8,7 @@ from .methods import (
     put,
     request,
 )
-from .api import FastClient
+from .client import FastClient
 from .enums import HttpMethod, ParamType
 from .models import RequestOptions, OperationSpecification
 from .param_functions import (
