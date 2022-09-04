@@ -276,7 +276,7 @@ def resolve_dependency(
     return arguments.call(dependency.dependency)
 
 
-def _build_parameter(parameter: Parameter, spec: Param) -> param.Parameter:
+def _build_parameter(parameter: Parameter, spec: param.ParameterSpecification) -> param.Parameter:
     return param.Parameter(
         name=parameter.name,
         annotation=parameter.annotation,

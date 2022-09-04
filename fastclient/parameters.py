@@ -11,7 +11,7 @@ T = TypeVar("T")
 
 
 @dataclass(frozen=True)
-class Param(param.ParameterSpecification[T]):
+class Param(param.Param[T]):
     alias: Optional[str] = None
     required: bool = False
 
@@ -56,6 +56,7 @@ class Body(Param[T]):
     type: ParamType = ParamType.BODY
 
 
+# NOTE: Should use custom generic types for each subclass. E.g. `Headers` should have a `T` bound to `HeaderTypes`
 class Params(Param[Dict[str, Any]]):
     def __init__(
         self,
@@ -83,11 +84,11 @@ class Cookies(Params):
 
 # NOTE: Don't use @dataclass, this way can make `use_cache` keyword-only? (FastAPI does it this way)
 @dataclass(frozen=True)
-class Depends(Generic[T]):
+class Depends(param.ParameterSpecification, Generic[T]):
     dependency: Optional[Callable[..., T]] = None
     use_cache: bool = True
 
 
 @dataclass(frozen=True)
-class Promise:
+class Promise(param.ParameterSpecification):
     promised_type: Union[None, Type[Request], Type[Response]] = None
