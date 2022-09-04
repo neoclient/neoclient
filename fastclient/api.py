@@ -193,24 +193,3 @@ def get_params(
                 raise DuplicateParameter(f"Duplicate parameters: {parameter_outer!r} and {parameter_inner!r}")
 
     return parameters
-
-
-def build_operation_specification(
-    func: Callable,
-    method: str,
-    endpoint: str,
-    *,
-    response: Optional[Callable[..., Any]] = None,
-) -> OperationSpecification:
-    request: RequestOptions = RequestOptions(
-        method=method,
-        url=endpoint,
-    )
-
-    # Assert params are valid
-    get_params(func, request=request)
-
-    return OperationSpecification(
-        request=request,
-        response=response,
-    )

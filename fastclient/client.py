@@ -11,7 +11,7 @@ from typing_extensions import ParamSpec
 from . import api
 from .enums import HttpMethod
 from .errors import NotAnOperation
-from .models import ClientOptions, OperationSpecification
+from .models import ClientOptions, OperationSpecification, RequestOptions
 from .operations import Operation, get_operation
 from .types import (
     AuthTypes,
@@ -121,10 +121,17 @@ class FastClient:
         *,
         response: Optional[Callable[..., Any]] = None,
     ):
+        specification: OperationSpecification = OperationSpecification(
+            request=RequestOptions(
+                method=method,
+                url=endpoint,
+            ),
+            response=response,
+        )
+
         def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
-            specification: OperationSpecification = api.build_operation_specification(
-                func, method, endpoint, response=response
-            )
+            # Assert params are valid
+            api.get_params(func, request=specification.request)
 
             operation: Operation[PS, RT] = Operation(func, specification, self.client)
 
