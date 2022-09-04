@@ -122,7 +122,7 @@ class FastClient:
         response: Optional[Callable[..., Any]] = None,
     ):
         def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
-            specification: OperationSpecification = api.build_request_specification(
+            specification: OperationSpecification = api.build_operation_specification(
                 func, method, endpoint, response=response
             )
 

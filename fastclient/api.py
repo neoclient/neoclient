@@ -17,11 +17,10 @@ from typing import (
 
 import httpx
 import param
-import parse
 import pydantic
 from httpx import Request, Response
 from param import ParameterType
-from param.sentinels import Missing
+from param.sentinels import Missing, MissingType
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
@@ -45,7 +44,7 @@ def get_operations(cls: type, /) -> Dict[str, Callable]:
     }
 
 
-def _get_parameter_alias(parameter: param.Parameter, /) -> str:
+def get_alias(parameter: param.Parameter, /) -> str:
     return (
         parameter.spec.alias
         if parameter.spec.alias is not None
@@ -53,85 +52,56 @@ def _get_parameter_alias(parameter: param.Parameter, /) -> str:
     )
 
 
-def resolve_query_params(
-    response: Response, parameter: param.Parameter, /
-) -> Union[httpx.QueryParams, Dict[str, str]]:
-    if parameter.annotation in (inspect._empty, Missing, httpx.QueryParams):
-        return response.url.params
-    elif parameter.annotation is dict:
-        return dict(response.url.params)
+def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
+    if type(obj) is annotation or annotation in (inspect._empty, Missing):
+        return obj
+
+    return pydantic.parse_obj_as(annotation, obj)
+
+
+def resolve_query_param(
+    response: Response, key: str, /, *, annotation: Union[Any, MissingType] = Missing
+) -> Optional[str]:
+    return _parse_obj(annotation, response.request.url.params.get(key))
+
+
+def resolve_header(
+    response: Response, key: str, /, *, annotation: Union[Any, MissingType] = Missing
+) -> Optional[str]:
+    return _parse_obj(annotation, response.headers.get(key))
+
+
+def resolve_cookie(
+    response: Response, key: str, /, *, annotation: Union[Any, MissingType] = Missing
+) -> Optional[str]:
+    return _parse_obj(annotation, response.cookies.get(key))
+
+
+def resolve_body(
+    response: Response, /, *, annotation: Union[Any, MissingType] = Missing
+) -> Any:
+    # TODO: Massively improve this implementation
+    if annotation in (inspect._empty, Missing):
+        return response.json()
     else:
-        raise Exception(
-            f"{parameter!r} has incompatible annotation: {parameter.annotation!r}"
-        )
-
-
-def resolve_headers(
-    response: Response, parameter: param.Parameter, /
-) -> Union[httpx.Headers, Dict[str, str]]:
-    if parameter.annotation in (inspect._empty, Missing, httpx.Headers):
-        return response.headers
-    elif parameter.annotation is dict:
-        return dict(response.headers)
-    else:
-        raise Exception(
-            f"{parameter!r} has incompatible annotation: {parameter.annotation!r}"
-        )
-
-
-def resolve_cookies(
-    response: Response, parameter: param.Parameter, /
-) -> Union[httpx.Cookies, Dict[str, str]]:
-    if parameter.annotation in (inspect._empty, Missing, httpx.Cookies):
-        return response.cookies
-    elif parameter.annotation is dict:
-        return dict(response.cookies)
-    else:
-        raise Exception(
-            f"{parameter!r} has incompatible annotation: {parameter.annotation!r}"
-        )
-
-
-def resolve_query_param(response: Response, parameter: param.Parameter, /) -> str:
-    parameter_alias: str = _get_parameter_alias(parameter)
-
-    return response.request.url.params[parameter_alias]
-
-
-def resolve_header(response: Response, parameter: param.Parameter, /) -> str:
-    parameter_alias: str = _get_parameter_alias(parameter)
-
-    return response.headers[parameter_alias]
+        return pydantic.parse_raw_as(annotation, response.text)
 
 
 def resolve_path_param(
-    response: Response, parameter: param.Parameter, request: RequestOptions, /
+    response: Response,
+    key: str,
+    /,
+    *,
+    annotation: Union[Any, MissingType] = Missing,
+    request: RequestOptions,
 ) -> str:
-    parameter_alias: str = _get_parameter_alias(parameter)
-
-    parse_result: Optional[parse.Result] = parse.parse(
-        request.url, response.request.url.path
+    return _parse_obj(
+        annotation,
+        utils.extract_path_params(
+            urllib.parse.unquote(str(request.url)),
+            urllib.parse.unquote(str(response.request.url)),
+        )[key],
     )
-
-    if parse_result is None:
-        raise Exception(
-            f"Failed to parse uri {response.request.url.path!r} against format spec {request.url!r}"
-        )
-
-    return parse_result.named[parameter_alias]
-
-
-def resolve_cookie(response: Response, parameter: param.Parameter, /) -> str:
-    parameter_alias: str = _get_parameter_alias(parameter)
-
-    return response.cookies[parameter_alias]
-
-
-def resolve_body(response: Response, parameter: param.Parameter, /) -> Any:
-    if parameter.annotation is not inspect._empty:
-        return pydantic.parse_raw_as(parameter.annotation, response.text)
-    else:
-        return response.json()
 
 
 def resolve_promise(
@@ -155,36 +125,43 @@ def resolve_promise(
         raise Exception(f"Unsupported promised type: {parameter.spec.promised_type!r}")
 
 
-def resolve_params(response: Response, parameter: param.Parameter, /) -> Any:
-    if parameter.spec.type is ParamType.QUERY:
-        return resolve_query_params(response, parameter)
-    elif parameter.spec.type is ParamType.HEADER:
-        return resolve_headers(response, parameter)
-    elif parameter.spec.type is ParamType.COOKIE:
-        return resolve_cookies(response, parameter)
-    else:
-        raise Exception(f"Unknown multi-param of type {parameter.spec.type}")
+def resolve_multi_param(
+    response: Response,
+    param_type: ParamType,
+    /,
+    *,
+    annotation: Union[Any, MissingType] = Missing,
+) -> Any:
+    values: Dict[ParamType, Any] = {
+        ParamType.QUERY: response.url.params,
+        ParamType.HEADER: response.headers,
+        ParamType.COOKIE: response.cookies,
+    }
+
+    return _parse_obj(annotation, values[param_type])
 
 
 def resolve_param(
     response: Response,
-    parameter: param.Parameter,
+    param_type: ParamType,
+    key: str,
     /,
     *,
+    annotation: Union[Any, MissingType] = Missing,
     request: RequestOptions,
 ) -> Any:
-    if parameter.spec.type is ParamType.QUERY:
-        return resolve_query_param(response, parameter)
-    elif parameter.spec.type is ParamType.HEADER:
-        return resolve_header(response, parameter)
-    elif parameter.spec.type is ParamType.PATH:
-        return resolve_path_param(response, parameter, request)
-    elif parameter.spec.type is ParamType.COOKIE:
-        return resolve_cookie(response, parameter)
-    elif parameter.spec.type is ParamType.BODY:
-        return resolve_body(response, parameter)
+    if param_type is ParamType.QUERY:
+        return resolve_query_param(response, key, annotation=annotation)
+    elif param_type is ParamType.HEADER:
+        return resolve_header(response, key, annotation=annotation)
+    elif param_type is ParamType.PATH:
+        return resolve_path_param(response, key, annotation=annotation, request=request)
+    elif param_type is ParamType.COOKIE:
+        return resolve_cookie(response, key, annotation=annotation)
+    elif param_type is ParamType.BODY:
+        return resolve_body(response, annotation=annotation)
     else:
-        raise Exception(f"Unknown ParamType: {parameter.spec.type}")
+        raise Exception(f"Unknown ParamType: {param_type}")
 
 
 def resolve_dependency(
@@ -220,9 +197,19 @@ def resolve_dependency(
         value: Any = None
 
         if isinstance(parameter.spec, Params):
-            value = resolve_params(response, parameter)
+            value = resolve_multi_param(
+                response, parameter.spec.type, annotation=parameter.annotation
+            )
         elif isinstance(parameter.spec, Param):
-            value = resolve_param(response, parameter, request=request)
+            parameter_alias: str = get_alias(parameter)
+
+            value = resolve_param(
+                response,
+                parameter.spec.type,
+                parameter_alias,
+                annotation=parameter.annotation,
+                request=request,
+            )
         elif isinstance(parameter.spec, Depends):
             parameter_dependency_callable: Callable
 
@@ -404,7 +391,7 @@ def get_params(
     return parameters
 
 
-def build_request_specification(
+def build_operation_specification(
     func: Callable,
     method: str,
     endpoint: str,

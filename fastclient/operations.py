@@ -7,7 +7,6 @@ import fastapi.encoders
 import httpx
 import param
 import pydantic
-from arguments import Arguments
 from httpx import Client, Response
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
