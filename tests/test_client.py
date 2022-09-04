@@ -3,6 +3,7 @@ from typing import Optional, Protocol
 import pytest
 from fastclient import Path, Query, Body, FastClient, get, post
 from fastclient.models import RequestOptions
+from fastclient.errors import IncompatiblePathParameters
 from pydantic import BaseModel
 
 
@@ -58,7 +59,7 @@ def test_query_required_not_omitted(client: FastClient):
 
 
 def test_error_if_missing_path_param(client: FastClient):
-    with pytest.raises(ValueError):
+    with pytest.raises(IncompatiblePathParameters):
 
         class Service(Protocol):
             @get("/users/{id}")
@@ -67,7 +68,7 @@ def test_error_if_missing_path_param(client: FastClient):
 
 
 def test_error_if_extra_path_param(client: FastClient):
-    with pytest.raises(ValueError):
+    with pytest.raises(IncompatiblePathParameters):
 
         class Service(Protocol):
             @get("/users/")

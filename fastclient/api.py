@@ -18,6 +18,7 @@ from param.sentinels import Missing
 from pydantic import BaseModel
 
 from . import utils
+from .errors import DuplicateParameter, IncompatiblePathParameters
 from .models import OperationSpecification, RequestOptions
 from .parameters import (
     Body,
@@ -26,6 +27,7 @@ from .parameters import (
     Path,
     Promise,
     Query,
+    Params,
 )
 from .parameter_functions import Headers, Cookies, QueryParams
 
@@ -170,9 +172,23 @@ def get_params(
 
     # Validate that only expected path params provided
     if path_params != actual_path_params:
-        raise ValueError(
+        raise IncompatiblePathParameters(
             f"Incompatible path params. Got: {actual_path_params}, expected: {path_params}"
         )
+
+    # Validate no duplicate parameters provided
+    parameter_outer: param.Parameter
+    for parameter_outer in parameters.values():
+        if not isinstance(parameter_outer.spec, Param) or isinstance(parameter_outer.spec, Params) or parameter_outer.spec.alias is None:
+            continue
+
+        parameter_inner: param.Parameter
+        for parameter_inner in parameters.values():
+            if parameter_outer is parameter_inner:
+                continue
+            
+            if parameter_outer.spec.type is parameter_inner.spec.type and parameter_outer.spec.alias == parameter_inner.spec.alias:
+                raise DuplicateParameter(f"Duplicate parameters: {parameter_outer!r} and {parameter_inner!r}")
 
     return parameters
 
