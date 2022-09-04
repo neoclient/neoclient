@@ -144,6 +144,10 @@ def request_method(request: httpx.Request = Promise()) -> str:
     return request.method
 
 
+def request_params(request: httpx.Request = Promise()) -> httpx.QueryParams:
+    return request.url.params
+
+
 def request_stream(request: httpx.Request = Promise()) -> StreamTypes:
     return request.stream
 

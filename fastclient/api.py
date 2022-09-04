@@ -25,7 +25,7 @@ from param.sentinels import Missing
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from . import utils
+from . import utils, dependencies
 from .enums import ParamType
 from .models import OperationSpecification, RequestOptions
 from .parameters import Body, Depends, Param, Params, Path, Promise, Query
@@ -162,6 +162,10 @@ def get_response_arguments(
                     f"Unsupported promised type: {parameter.spec.promised_type!r}"
                 )
         else:
+            # Going to have to infer the parameter type
+            print("Trying to infer parameter")
+            print(parameter)
+
             raise Exception(f"Unknown parameter spec class: {type(parameter.spec)}")
 
         if parameter.type in (
@@ -223,30 +227,75 @@ def get_params(
             parameters_to_infer.append(parameter)
 
     for parameter in parameters_to_infer:
-        param_cls: Type[Param] = Query
+        param_spec: Any
 
         parameter_type: type = parameter.annotation
 
         body_types: Tuple[type, ...] = (BaseModel, dict)
+        httpx_types: Tuple[type, ...] = (
+            httpx.Headers,
+            httpx.Cookies,
+            httpx.QueryParams,
+            httpx.URL,
+        )
 
         if parameter.name in path_params and not any(
             isinstance(field, Path) and field.alias in path_params
             for field in parameters.values()
         ):
-            param_cls = Path
+            param_spec = Path(
+                alias=parameter.name,
+                default=(
+                    parameter.default
+                    if parameter.default is not parameter.empty
+                    else Missing
+                ),
+            )
         elif (
-            parameter.annotation is not parameter.empty
+            parameter_type is not parameter.empty
             and isinstance(parameter_type, type)
             and any(issubclass(parameter_type, body_type) for body_type in body_types)
         ):
-            param_cls = Body
+            param_spec = Body(
+                alias=parameter.name,
+                default=(
+                    parameter.default
+                    if parameter.default is not parameter.empty
+                    else Missing
+                ),
+            )
+        elif (
+            parameter_type is not parameter.empty
+            and isinstance(parameter_type, type)
+            and any(
+                issubclass(parameter_type, httpx_type) for httpx_type in httpx_types
+            )
+        ):
+            dependency: Callable
 
-        param_spec: Param = param_cls(
-            alias=parameter.name,
-            default=parameter.default
-            if parameter.default is not parameter.empty
-            else Missing,
-        )
+            if parameter_type is httpx.Headers:
+                dependency = dependencies.headers
+            elif parameter_type is httpx.Cookies:
+                dependency = dependencies.cookies
+            elif parameter_type is httpx.QueryParams:
+                dependency = dependencies.request_params
+            elif parameter_type is httpx.URL:
+                dependency = dependencies.request_url
+            else:
+                raise Exception(
+                    f"Unknown httpx dependency type: {parameter.annotation!r}"
+                )
+
+            param_spec = Depends(dependency)
+        else:
+            param_spec = Query(
+                alias=parameter.name,
+                default=(
+                    parameter.default
+                    if parameter.default is not parameter.empty
+                    else Missing
+                ),
+            )
 
         parameters[parameter.name] = _build_parameter(parameter, param_spec)
 
@@ -273,14 +322,10 @@ def build_request_specification(
         url=endpoint,
     )
 
-    parameters: Dict[str, param.Parameter] = get_params(func, request=request)
-
-    param_specs: Dict[str, Param] = {
-        parameter.name: parameter.spec for parameter in parameters.values()
-    }
+    # Assert params are valid
+    get_params(func, request=request)
 
     return OperationSpecification(
         request=request,
         response=response,
-        # params=param_specs,
     )
