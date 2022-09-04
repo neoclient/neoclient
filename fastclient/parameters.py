@@ -1,5 +1,15 @@
 from dataclasses import dataclass
-from typing import Any, Callable, ClassVar, Dict, Generic, Optional, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Generic,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from httpx import Request, Response
 import param.models

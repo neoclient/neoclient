@@ -68,7 +68,7 @@ class Operation(Generic[PS, RT]):
                 dependency=self.specification.response
             )
 
-            return api.resolve_dependency(
+            return api.resolve(
                 response, response_dependency, request=self.specification.request
             )
 
