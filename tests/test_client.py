@@ -20,11 +20,11 @@ class Item(Model):
 
 
 @pytest.fixture
-def fast_client() -> FastClient:
+def client() -> FastClient:
     return FastClient(base_url="http://localhost:8080/")
 
 
-def test_query_not_required_omitted(fast_client: FastClient):
+def test_query_not_required_omitted(client: FastClient):
     class Service(Protocol):
         @get("get")
         def get(
@@ -32,19 +32,15 @@ def test_query_not_required_omitted(fast_client: FastClient):
         ) -> RequestOptions:
             ...
 
-    service: Service = fast_client.create(Service)  # type: ignore
+    service: Service = client.create(Service)  # type: ignore
 
     assert service.get() == RequestOptions(
         method="GET",
         url="get",
-        params={},
-        headers={},
-        json=None,
-        cookies={},
     )
 
 
-def test_query_required_not_omitted(fast_client: FastClient):
+def test_query_required_not_omitted(client: FastClient):
     class Service(Protocol):
         @get("get")
         def get(
@@ -52,7 +48,7 @@ def test_query_required_not_omitted(fast_client: FastClient):
         ) -> RequestOptions:
             ...
 
-    service: Service = fast_client.create(Service)  # type: ignore
+    service: Service = client.create(Service)  # type: ignore
 
     assert service.get() == RequestOptions(
         method="GET",
@@ -64,7 +60,7 @@ def test_query_required_not_omitted(fast_client: FastClient):
     )
 
 
-def test_error_if_missing_path_param(fast_client: FastClient):
+def test_error_if_missing_path_param(client: FastClient):
     with pytest.raises(ValueError):
 
         class Service(Protocol):
@@ -73,7 +69,7 @@ def test_error_if_missing_path_param(fast_client: FastClient):
                 ...
 
 
-def test_error_if_extra_path_param(fast_client: FastClient):
+def test_error_if_extra_path_param(client: FastClient):
     with pytest.raises(ValueError):
 
         class Service(Protocol):
@@ -82,13 +78,13 @@ def test_error_if_extra_path_param(fast_client: FastClient):
                 ...
 
 
-def test_single_body_param(fast_client: FastClient):
+def test_single_body_param(client: FastClient):
     class Service(Protocol):
         @post("/items/")
         def create_item(self, item: Item = Body()) -> RequestOptions:
             ...
 
-    service: Service = fast_client.create(Service)  # type: ignore
+    service: Service = client.create(Service)  # type: ignore
 
     assert service.create_item(Item(id=1, name="item")) == RequestOptions(
         method="POST",
@@ -100,7 +96,7 @@ def test_single_body_param(fast_client: FastClient):
     )
 
 
-def test_multiple_body_params(fast_client: FastClient):
+def test_multiple_body_params(client: FastClient):
     class Service(Protocol):
         @post("/items/")
         def create_item(
@@ -108,7 +104,7 @@ def test_multiple_body_params(fast_client: FastClient):
         ) -> RequestOptions:
             ...
 
-    service: Service = fast_client.create(Service)  # type: ignore
+    service: Service = client.create(Service)  # type: ignore
 
     assert service.create_item(
         User(id=1, name="user"), Item(id=1, name="item")
