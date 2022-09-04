@@ -11,7 +11,7 @@ from httpx import Client, Response
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from . import api
+from . import resolvers, api
 from .enums import ParamType
 from .models import OperationSpecification, RequestOptions
 from .parameters import Depends, Param, Params
@@ -68,7 +68,7 @@ class Operation(Generic[PS, RT]):
                 dependency=self.specification.response
             )
 
-            return api.resolve(
+            return resolvers.resolve(
                 response, response_dependency, request=self.specification.request
             )
 
