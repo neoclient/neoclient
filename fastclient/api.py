@@ -26,10 +26,11 @@ from param.sentinels import Missing
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from . import dependencies, utils
+from . import utils
 from .enums import ParamType
 from .models import OperationSpecification, RequestOptions
 from .parameters import Body, Depends, Param, Params, Path, Promise, Query
+from .parameter_functions import Headers, Cookies, QueryParams
 
 T = TypeVar("T")
 
@@ -316,7 +317,10 @@ def get_params(
             httpx.Headers,
             httpx.Cookies,
             httpx.QueryParams,
-            httpx.URL,
+        )
+        promise_types: Tuple[type, ...] = (
+            httpx.Request,
+            httpx.Response,
         )
 
         if parameter.name in path_params and not any(
@@ -348,25 +352,27 @@ def get_params(
             parameter_type is not parameter.empty
             and isinstance(parameter_type, type)
             and any(
+                issubclass(parameter_type, promise_type) for promise_type in promise_types
+            )
+        ):
+            param_spec = Promise(parameter_type)
+        elif (
+            parameter_type is not parameter.empty
+            and isinstance(parameter_type, type)
+            and any(
                 issubclass(parameter_type, httpx_type) for httpx_type in httpx_types
             )
         ):
-            dependency: Callable
-
             if parameter_type is httpx.Headers:
-                dependency = dependencies.headers
+                param_spec = Headers()
             elif parameter_type is httpx.Cookies:
-                dependency = dependencies.cookies
+                param_spec = Cookies()
             elif parameter_type is httpx.QueryParams:
-                dependency = dependencies.request_params
-            elif parameter_type is httpx.URL:
-                dependency = dependencies.request_url
+                param_spec = QueryParams()
             else:
                 raise Exception(
                     f"Unknown httpx dependency type: {parameter.annotation!r}"
                 )
-
-            param_spec = Depends(dependency)
         else:
             param_spec = Query(
                 alias=parameter.name,
