@@ -1,4 +1,5 @@
 import inspect
+import urllib.parse
 from inspect import Parameter
 from typing import (
     Any,
@@ -13,7 +14,6 @@ from typing import (
     TypeVar,
 )
 
-import annotate
 import httpx
 import param
 import parse
@@ -24,29 +24,23 @@ from param import ParameterType
 from param.sentinels import Missing
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
-import urllib.parse
 
 from . import utils
 from .enums import ParamType
-from .models import RequestOptions, OperationSpecification
-from .params import Body, Depends, Param, Params, Path, Promise, Query
+from .models import OperationSpecification, RequestOptions
+from .parameters import Body, Depends, Param, Params, Path, Promise, Query
 
 T = TypeVar("T")
 
 PT = ParamSpec("PT")
 RT = TypeVar("RT")
 
-def get_specification(obj: Any, /) -> Optional[OperationSpecification]:
-    return annotate.get_annotations(obj).get(Annotation.SPECIFICATION)
-
-
-def has_specification(obj: Any, /) -> bool:
-    return Annotation.SPECIFICATION in annotate.get_annotations(obj)
-
 
 def get_operations(cls: type, /) -> Dict[str, Callable]:
     return {
-        member_name: member for member_name, member in inspect.getmembers(cls) if hasattr(member, "operation")
+        member_name: member
+        for member_name, member in inspect.getmembers(cls)
+        if hasattr(member, "operation")
     }
 
 
@@ -206,7 +200,9 @@ def get_params(
     func: Callable, /, *, request: Optional[RequestOptions] = None
 ) -> Dict[str, param.Parameter]:
     path_params: Set[str] = (
-        utils.get_path_params(urllib.parse.unquote(str(request.url))) if request is not None else set()
+        utils.get_path_params(urllib.parse.unquote(str(request.url)))
+        if request is not None
+        else set()
     )
 
     _inspect_params: List[Parameter] = list(inspect.signature(func).parameters.values())

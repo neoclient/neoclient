@@ -1,4 +1,4 @@
-from fastclient.params import Query
+from fastclient.parameters import Query
 from fastclient.enums import ParamType
 from param import Missing
 

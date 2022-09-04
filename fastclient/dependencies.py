@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import httpx
 
-from .param_functions import Cookies, Headers, Promise
+from .parameter_functions import Cookies, Headers, Promise
 from .types import StreamTypes
 
 

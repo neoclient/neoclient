@@ -1,3 +1,14 @@
+from .client import FastClient
+from .composers import (
+    params,
+    headers,
+    cookies,
+    content,
+    data,
+    files,
+    json,
+    timeout,
+)
 from .methods import (
     delete,
     get,
@@ -8,8 +19,7 @@ from .methods import (
     put,
     request,
 )
-from .client import FastClient
-from .param_functions import (
+from .parameter_functions import (
     Body,
     Cookie,
     Cookies,
@@ -20,14 +30,4 @@ from .param_functions import (
     Promise,
     Queries,
     Query,
-)
-from .composers import (
-    params,
-    headers,
-    cookies,
-    content,
-    data,
-    files,
-    json,
-    timeout,
 )

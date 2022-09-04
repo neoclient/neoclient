@@ -1,13 +1,10 @@
-from dataclasses import dataclass, field
-from http.cookiejar import CookieJar
-from typing import Any, Callable, Dict, Optional, Union
+from dataclasses import dataclass
+from typing import Any, Callable, Optional
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
-from param.sentinels import Missing, MissingType
 
-from .params import Param
 from .types import (
     AuthTypes,
     CookieTypes,
@@ -24,17 +21,6 @@ from .types import (
     URLTypes,
 )
 
-
-def merge_query_params(lhs: QueryParams, rhs: QueryParams, /) -> QueryParams:
-    return lhs.merge(rhs)
-
-
-def merge_headers(lhs: Headers, rhs: Headers, /) -> Headers:
-    return httpx.Headers({**lhs, **rhs})
-
-
-def merge_cookies(lhs: Cookies, rhs: Cookies, /) -> Cookies:
-    return httpx.Cookies({**lhs, **rhs})
 
 @dataclass(init=False)
 class ClientOptions:
@@ -178,7 +164,9 @@ class RequestOptions:
                 data=self.data,
                 files=self.files,
                 json=self.json,
-                extensions=dict(timeout=self.timeout.as_dict()) if self.timeout is not None else {},
+                extensions=dict(timeout=self.timeout.as_dict())
+                if self.timeout is not None
+                else {},
             )
         else:
             return client.build_request(
@@ -198,21 +186,28 @@ class RequestOptions:
         return self.__class__(
             method=request_options.method,
             url=request_options.url,
-            params=merge_query_params(self.params, request_options.params),
-            headers=merge_headers(self.headers, request_options.headers),
-            cookies=merge_cookies(self.cookies, request_options.cookies),
-            content=request_options.content if request_options.content is not None else self.content,
-            data=request_options.data if request_options.data is not None else self.data,
-            files=request_options.files if request_options.files is not None else self.files,
-            json=request_options.json if request_options.json is not None else self.json,
-            timeout=request_options.timeout if request_options.timeout is not None else self.timeout,
+            params=self.params.merge(request_options.params),
+            headers=httpx.Headers({**self.headers, **request_options.headers}),
+            cookies=httpx.Cookies({**self.cookies, **request_options.cookies}),
+            content=request_options.content
+            if request_options.content is not None
+            else self.content,
+            data=request_options.data
+            if request_options.data is not None
+            else self.data,
+            files=request_options.files
+            if request_options.files is not None
+            else self.files,
+            json=request_options.json
+            if request_options.json is not None
+            else self.json,
+            timeout=request_options.timeout
+            if request_options.timeout is not None
+            else self.timeout,
         )
 
 
 @dataclass
 class OperationSpecification:
-    # name: str
     request: RequestOptions
     response: Optional[Callable[..., Any]] = None
-    # params: Dict[str, Param] = field(default_factory=dict)
-    # response_type: Union[MissingType, type] = Missing

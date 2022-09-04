@@ -19,10 +19,6 @@ class HttpMethod(str, HiddenValue):
     OPTIONS = "OPTIONS"
 
 
-# class Annotation(HiddenValue):
-#     OPERATION = enum.auto()
-
-
 class ParamType(HiddenValue):
     QUERY = enum.auto()
     HEADER = enum.auto()

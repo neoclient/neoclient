@@ -1,21 +1,21 @@
-from dataclasses import dataclass
 import inspect
-from typing import Any, Callable, Dict, Generic, Optional, TypeVar
-from typing_extensions import ParamSpec
 import urllib.parse
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, Generic, Optional, TypeVar
 
-from arguments import Arguments
-import param
-import pydantic
-from pydantic import BaseModel
 import fastapi.encoders
 import httpx
-from httpx import Response, Client
+import param
+import pydantic
+from arguments import Arguments
+from httpx import Client, Response
+from pydantic import BaseModel
+from typing_extensions import ParamSpec
 
 from . import api
-from .models import OperationSpecification, RequestOptions
 from .enums import ParamType
-from .params import Param, Params
+from .models import OperationSpecification, RequestOptions
+from .parameters import Param, Params
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
@@ -35,7 +35,9 @@ class Operation(Generic[PS, RT]):
         arguments: Dict[str, Any] = self._get_arguments(*args, **kwargs)
 
         new_request_options: RequestOptions = self.build_request_options(arguments)
-        request_options: RequestOptions = self.specification.request.merge(new_request_options)
+        request_options: RequestOptions = self.specification.request.merge(
+            new_request_options
+        )
 
         request: httpx.Request = request_options.build_request(self.client)
 
@@ -133,7 +135,9 @@ class Operation(Generic[PS, RT]):
 
         return RequestOptions(
             method=self.specification.request.method,
-            url=urllib.parse.unquote(str(self.specification.request.url)).format(**path_params),
+            url=urllib.parse.unquote(str(self.specification.request.url)).format(
+                **path_params
+            ),
             params=query_params,
             headers=headers,
             cookies=cookies,
@@ -166,10 +170,8 @@ class Operation(Generic[PS, RT]):
         parameters: Dict[str, param.Parameter] = api.get_params(
             self.func, request=self.specification.request
         )
-        
-        return {
-            parameter.name: parameter.spec for parameter in parameters.values()
-        }
+
+        return {parameter.name: parameter.spec for parameter in parameters.values()}
 
     @property
     def response_type(self) -> Any:

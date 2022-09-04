@@ -1,8 +1,8 @@
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Callable, Optional, TypeVar, Union
 
 from param.sentinels import Missing, MissingType
 
-from . import params
+from . import parameters
 
 T = TypeVar("T")
 
@@ -13,8 +13,8 @@ def Header(
     default: Union[T, MissingType] = Missing,
     default_factory: Union[Callable[[], T], MissingType] = Missing,
     required: bool = False,
-) -> params.Header[T]:
-    return params.Header(
+) -> parameters.Header[T]:
+    return parameters.Header(
         alias=alias, default=default, default_factory=default_factory, required=required
     )
 
@@ -25,8 +25,8 @@ def Query(
     default: Union[T, MissingType] = Missing,
     default_factory: Union[Callable[[], T], MissingType] = Missing,
     required: bool = False,
-) -> params.Query[T]:
-    return params.Query(
+) -> parameters.Query[T]:
+    return parameters.Query(
         alias=alias, default=default, default_factory=default_factory, required=required
     )
 
@@ -37,8 +37,8 @@ def Path(
     default: Union[T, MissingType] = Missing,
     default_factory: Union[Callable[[], T], MissingType] = Missing,
     required: bool = False,
-) -> params.Path[T]:
-    return params.Path(
+) -> parameters.Path[T]:
+    return parameters.Path(
         alias=alias, default=default, default_factory=default_factory, required=required
     )
 
@@ -49,8 +49,8 @@ def Cookie(
     default: Union[T, MissingType] = Missing,
     default_factory: Union[Callable[[], T], MissingType] = Missing,
     required: bool = False,
-) -> params.Cookie[T]:
-    return params.Cookie(
+) -> parameters.Cookie[T]:
+    return parameters.Cookie(
         alias=alias, default=default, default_factory=default_factory, required=required
     )
 
@@ -61,29 +61,29 @@ def Body(
     default: Union[T, MissingType] = Missing,
     default_factory: Union[Callable[[], T], MissingType] = Missing,
     required: bool = False,
-) -> params.Body[T]:
-    return params.Body(
+) -> parameters.Body[T]:
+    return parameters.Body(
         alias=alias, default=default, default_factory=default_factory, required=required
     )
 
 
-def Headers() -> params.Headers:
-    return params.Headers()
+def Headers() -> parameters.Headers:
+    return parameters.Headers()
 
 
-def Queries() -> params.Queries:
-    return params.Queries()
+def Queries() -> parameters.Queries:
+    return parameters.Queries()
 
 
-def Cookies() -> params.Cookies:
-    return params.Cookies()
+def Cookies() -> parameters.Cookies:
+    return parameters.Cookies()
 
 
 def Depends(
     dependency: Optional[Callable[..., T]] = None, /, *, use_cache: bool = True
-) -> params.Depends[T]:
-    return params.Depends(dependency, use_cache=use_cache)
+) -> parameters.Depends[T]:
+    return parameters.Depends(dependency, use_cache=use_cache)
 
 
-def Promise(promised_type: Optional[T] = None, /) -> params.Promise[T]:
-    return params.Promise(promised_type)
+def Promise(promised_type: Optional[T] = None, /) -> parameters.Promise[T]:
+    return parameters.Promise(promised_type)

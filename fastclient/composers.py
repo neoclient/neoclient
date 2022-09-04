@@ -3,8 +3,8 @@ from typing import Callable, Optional, TypeVar
 from httpx import Cookies, Headers, QueryParams, Timeout
 from typing_extensions import ParamSpec
 
-from . import api
 from .models import RequestOptions
+from .operations import Operation, get_operation
 from .types import (
     CookieTypes,
     HeaderTypes,
@@ -15,7 +15,6 @@ from .types import (
     RequestFiles,
     TimeoutTypes,
 )
-from .operations import Operation, get_operation
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
@@ -37,9 +36,7 @@ def _composer(
     return decorator
 
 
-def params(
-    value: QueryParamTypes, /
-) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+def params(value: QueryParamTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
     def composer(request: RequestOptions, /) -> None:
         request.params = QueryParams(value)
 
@@ -60,9 +57,7 @@ def cookies(value: CookieTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, 
     return _composer(composer)
 
 
-def content(
-    value: RequestContent, /
-) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+def content(value: RequestContent, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
     def composer(request: RequestOptions, /) -> None:
         request.content = value
 
