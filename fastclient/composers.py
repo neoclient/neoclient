@@ -1,9 +1,8 @@
-from typing import Callable, Optional, TypeVar
+from typing import Callable, TypeVar
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 from typing_extensions import ParamSpec
 
-from .errors import NotAnOperation
 from .models import RequestOptions
 from .operations import Operation, get_operation
 from .types import (
