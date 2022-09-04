@@ -1,4 +1,4 @@
-from typing import Callable, Optional, TypeVar, Union
+from typing import Callable, Optional, Type, TypeVar, Union
 
 from httpx import Request, Response
 from param.sentinels import Missing, MissingType
@@ -87,6 +87,6 @@ def Depends(
 
 
 def Promise(
-    promised_type: Union[None, Request, Response] = None, /
+    promised_type: Union[None, Type[Request], Type[Response]] = None, /
 ) -> parameters.Promise:
     return parameters.Promise(promised_type)

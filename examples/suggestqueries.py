@@ -1,10 +1,10 @@
 from typing import Optional, Protocol
 
-from fastclient import FastClient, Query, get, query_params
+from fastclient import FastClient, Query, get, params
 
 
 class SuggestQueries(Protocol):
-    @query_params({"xhr": "t", "hjson": "t"})
+    @params({"xhr": "t", "hjson": "t"})
     @get("/complete/search")
     def complete_search(
         self,
