@@ -19,7 +19,6 @@ import httpx
 import param
 import parse
 import pydantic
-from arguments import Arguments
 from httpx import Request, Response
 from param import ParameterType
 from param.sentinels import Missing
@@ -44,6 +43,14 @@ def get_operations(cls: type, /) -> Dict[str, Callable]:
         for member_name, member in inspect.getmembers(cls)
         if hasattr(member, "operation")
     }
+
+
+def _get_parameter_alias(parameter: param.Parameter, /) -> str:
+    return (
+        parameter.spec.alias
+        if parameter.spec.alias is not None
+        else parameter.spec.generate_alias(parameter.name)
+    )
 
 
 def resolve_query_params(
@@ -86,21 +93,13 @@ def resolve_cookies(
 
 
 def resolve_query_param(response: Response, parameter: param.Parameter, /) -> str:
-    parameter_alias: str = (
-        parameter.spec.alias
-        if parameter.spec.alias is not None
-        else parameter.spec.generate_alias(parameter.name)
-    )
+    parameter_alias: str = _get_parameter_alias(parameter)
 
     return response.request.url.params[parameter_alias]
 
 
 def resolve_header(response: Response, parameter: param.Parameter, /) -> str:
-    parameter_alias: str = (
-        parameter.spec.alias
-        if parameter.spec.alias is not None
-        else parameter.spec.generate_alias(parameter.name)
-    )
+    parameter_alias: str = _get_parameter_alias(parameter)
 
     return response.headers[parameter_alias]
 
@@ -108,11 +107,7 @@ def resolve_header(response: Response, parameter: param.Parameter, /) -> str:
 def resolve_path_param(
     response: Response, parameter: param.Parameter, request: RequestOptions, /
 ) -> str:
-    parameter_alias: str = (
-        parameter.spec.alias
-        if parameter.spec.alias is not None
-        else parameter.spec.generate_alias(parameter.name)
-    )
+    parameter_alias: str = _get_parameter_alias(parameter)
 
     parse_result: Optional[parse.Result] = parse.parse(
         request.url, response.request.url.path
@@ -127,11 +122,7 @@ def resolve_path_param(
 
 
 def resolve_cookie(response: Response, parameter: param.Parameter, /) -> str:
-    parameter_alias: str = (
-        parameter.spec.alias
-        if parameter.spec.alias is not None
-        else parameter.spec.generate_alias(parameter.name)
-    )
+    parameter_alias: str = _get_parameter_alias(parameter)
 
     return response.cookies[parameter_alias]
 
@@ -271,12 +262,12 @@ def resolve_dependency(
         else:
             kwargs[parameter.name] = value
 
-    arguments: Arguments = Arguments(*args, **kwargs)
-
-    return arguments.call(dependency.dependency)
+    return dependency.dependency(*args, **kwargs)
 
 
-def _build_parameter(parameter: Parameter, spec: param.ParameterSpecification) -> param.Parameter:
+def _build_parameter(
+    parameter: Parameter, spec: param.ParameterSpecification
+) -> param.Parameter:
     return param.Parameter(
         name=parameter.name,
         annotation=parameter.annotation,

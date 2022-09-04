@@ -327,17 +327,6 @@ typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""
 full = ["itsdangerous", "jinja2", "python-multipart", "pyyaml", "requests"]
 
 [[package]]
-name = "tombulled-arguments"
-version = "0.1.5"
-description = "Arguments manager"
-category = "main"
-optional = false
-python-versions = ">=3.8,<4.0"
-
-[package.dependencies]
-typing-extensions = ">=4.1.1,<5.0.0"
-
-[[package]]
 name = "tombulled-param"
 version = "0.1.1"
 description = "Enhanced function parameters"
@@ -364,7 +353,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "29862a76571d186e1763dbb1fe94eb97325ce6d7bb93842e0218b9b4cc92c9be"
+content-hash = "d61e39e95d78d16f247d760ac38c7ed902698a71d3ec0602c3243e5c04b93e17"
 
 [metadata.files]
 anyio = [
@@ -435,7 +424,6 @@ rfc3986 = [
 ]
 sniffio = []
 starlette = []
-tombulled-arguments = []
 tombulled-param = []
 tomli = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},

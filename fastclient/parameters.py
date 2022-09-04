@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, Generic, Optional, Type, TypeVar, Union
 
 from httpx import Request, Response
-import param
+import param.models
 from param.sentinels import Missing, MissingType
 
 from .enums import ParamType
@@ -11,7 +11,7 @@ T = TypeVar("T")
 
 
 @dataclass(frozen=True)
-class Param(param.Param[T]):
+class Param(param.models.Param[T]):
     alias: Optional[str] = None
     required: bool = False
 
@@ -84,11 +84,11 @@ class Cookies(Params):
 
 # NOTE: Don't use @dataclass, this way can make `use_cache` keyword-only? (FastAPI does it this way)
 @dataclass(frozen=True)
-class Depends(param.ParameterSpecification, Generic[T]):
+class Depends(param.models.ParameterSpecification, Generic[T]):
     dependency: Optional[Callable[..., T]] = None
     use_cache: bool = True
 
 
 @dataclass(frozen=True)
-class Promise(param.ParameterSpecification):
+class Promise(param.models.ParameterSpecification):
     promised_type: Union[None, Type[Request], Type[Response]] = None

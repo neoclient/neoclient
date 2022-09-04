@@ -13,7 +13,6 @@ keywords = ["python", "api", "http", "client", "json", "framework", "web", "rest
 python = "^3.8"
 httpx = "^0.23.0"
 typing-extensions = "^4.3.0"
-tombulled-arguments = "^0.1.5"
 tombulled-param = "^0.1.1"
 pydantic = "^1.9.2"
 fastapi = "^0.79.1"

@@ -7,7 +7,7 @@ import fastapi.encoders
 import httpx
 import param
 import pydantic
-from arguments import Arguments, BoundArguments
+from arguments import Arguments
 from httpx import Client, Response
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
@@ -159,7 +159,13 @@ class Operation(Generic[PS, RT]):
         return bool(self.params and list(self.params)[0] == "self")
 
     def _get_arguments(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
-        arguments: Dict[str, Any] = Arguments(*args, **kwargs).bind(self.func).asdict()
+        bound_arguments: inspect.BoundArguments = inspect.signature(self.func).bind(
+            *args, **kwargs
+        )
+
+        bound_arguments.apply_defaults()
+
+        arguments: Dict[str, Any] = bound_arguments.arguments
 
         # TODO: Find a better fix for instance methods
         if arguments and list(arguments)[0] == "self":
