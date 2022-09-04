@@ -1,5 +1,6 @@
 from typing import Callable, Optional, TypeVar, Union
 
+from httpx import Request, Response
 from param.sentinels import Missing, MissingType
 
 from . import parameters
@@ -71,8 +72,8 @@ def Headers() -> parameters.Headers:
     return parameters.Headers()
 
 
-def Queries() -> parameters.Queries:
-    return parameters.Queries()
+def QueryParams() -> parameters.QueryParams:
+    return parameters.QueryParams()
 
 
 def Cookies() -> parameters.Cookies:
@@ -85,5 +86,7 @@ def Depends(
     return parameters.Depends(dependency, use_cache=use_cache)
 
 
-def Promise(promised_type: Optional[T] = None, /) -> parameters.Promise[T]:
+def Promise(
+    promised_type: Union[None, Request, Response] = None, /
+) -> parameters.Promise:
     return parameters.Promise(promised_type)

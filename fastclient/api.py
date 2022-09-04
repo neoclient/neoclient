@@ -12,6 +12,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
 )
 
 import httpx
@@ -19,13 +20,13 @@ import param
 import parse
 import pydantic
 from arguments import Arguments
-from httpx import Response
+from httpx import Request, Response
 from param import ParameterType
 from param.sentinels import Missing
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from . import utils, dependencies
+from . import dependencies, utils
 from .enums import ParamType
 from .models import OperationSpecification, RequestOptions
 from .parameters import Body, Depends, Param, Params, Path, Promise, Query
@@ -44,14 +45,178 @@ def get_operations(cls: type, /) -> Dict[str, Callable]:
     }
 
 
-def get_response_arguments(
+def resolve_query_params(
+    response: Response, parameter: param.Parameter, /
+) -> Union[httpx.QueryParams, Dict[str, str]]:
+    if parameter.annotation in (inspect._empty, Missing, httpx.QueryParams):
+        return response.url.params
+    elif parameter.annotation is dict:
+        return dict(response.url.params)
+    else:
+        raise Exception(
+            f"{parameter!r} has incompatible annotation: {parameter.annotation!r}"
+        )
+
+
+def resolve_headers(
+    response: Response, parameter: param.Parameter, /
+) -> Union[httpx.Headers, Dict[str, str]]:
+    if parameter.annotation in (inspect._empty, Missing, httpx.Headers):
+        return response.headers
+    elif parameter.annotation is dict:
+        return dict(response.headers)
+    else:
+        raise Exception(
+            f"{parameter!r} has incompatible annotation: {parameter.annotation!r}"
+        )
+
+
+def resolve_cookies(
+    response: Response, parameter: param.Parameter, /
+) -> Union[httpx.Cookies, Dict[str, str]]:
+    if parameter.annotation in (inspect._empty, Missing, httpx.Cookies):
+        return response.cookies
+    elif parameter.annotation is dict:
+        return dict(response.cookies)
+    else:
+        raise Exception(
+            f"{parameter!r} has incompatible annotation: {parameter.annotation!r}"
+        )
+
+
+def resolve_query_param(response: Response, parameter: param.Parameter, /) -> str:
+    parameter_alias: str = (
+        parameter.spec.alias
+        if parameter.spec.alias is not None
+        else parameter.spec.generate_alias(parameter.name)
+    )
+
+    return response.request.url.params[parameter_alias]
+
+
+def resolve_header(response: Response, parameter: param.Parameter, /) -> str:
+    parameter_alias: str = (
+        parameter.spec.alias
+        if parameter.spec.alias is not None
+        else parameter.spec.generate_alias(parameter.name)
+    )
+
+    return response.headers[parameter_alias]
+
+
+def resolve_path_param(
+    response: Response, parameter: param.Parameter, request: RequestOptions, /
+) -> str:
+    parameter_alias: str = (
+        parameter.spec.alias
+        if parameter.spec.alias is not None
+        else parameter.spec.generate_alias(parameter.name)
+    )
+
+    parse_result: Optional[parse.Result] = parse.parse(
+        request.url, response.request.url.path
+    )
+
+    if parse_result is None:
+        raise Exception(
+            f"Failed to parse uri {response.request.url.path!r} against format spec {request.url!r}"
+        )
+
+    return parse_result.named[parameter_alias]
+
+
+def resolve_cookie(response: Response, parameter: param.Parameter, /) -> str:
+    parameter_alias: str = (
+        parameter.spec.alias
+        if parameter.spec.alias is not None
+        else parameter.spec.generate_alias(parameter.name)
+    )
+
+    return response.cookies[parameter_alias]
+
+
+def resolve_body(response: Response, parameter: param.Parameter, /) -> Any:
+    if parameter.annotation is not inspect._empty:
+        return pydantic.parse_raw_as(parameter.annotation, response.text)
+    else:
+        return response.json()
+
+
+def resolve_promise(
+    response: Response, parameter: param.Parameter, /
+) -> Union[Request, Response]:
+    promised_type: Union[Type[Request], Type[Response]]
+
+    if parameter.spec.promised_type is not None:
+        promised_type = parameter.spec.promised_type
+    elif parameter.annotation not in (inspect._empty, Missing):
+        promised_type = parameter.annotation
+    else:
+        raise Exception("Cannot promise no type!")
+
+    # TODO: Support more promised types?
+    if promised_type is Response:
+        return response
+    elif promised_type is Request:
+        return response.request
+    else:
+        raise Exception(f"Unsupported promised type: {parameter.spec.promised_type!r}")
+
+
+def resolve_params(response: Response, parameter: param.Parameter, /) -> Any:
+    if parameter.spec.type is ParamType.QUERY:
+        return resolve_query_params(response, parameter)
+    elif parameter.spec.type is ParamType.HEADER:
+        return resolve_headers(response, parameter)
+    elif parameter.spec.type is ParamType.COOKIE:
+        return resolve_cookies(response, parameter)
+    else:
+        raise Exception(f"Unknown multi-param of type {parameter.spec.type}")
+
+
+def resolve_param(
     response: Response,
-    parameters: Dict[str, param.Parameter],
-    request: RequestOptions,
+    parameter: param.Parameter,
     /,
     *,
+    request: Optional[RequestOptions] = None,
+) -> Any:
+    if parameter.spec.type is ParamType.QUERY:
+        return resolve_query_param(response, parameter)
+    elif parameter.spec.type is ParamType.HEADER:
+        return resolve_header(response, parameter)
+    elif parameter.spec.type is ParamType.PATH:
+        return resolve_path_param(response, parameter, request)
+    elif parameter.spec.type is ParamType.COOKIE:
+        return resolve_cookie(response, parameter)
+    elif parameter.spec.type is ParamType.BODY:
+        return resolve_body(response, parameter)
+    else:
+        raise Exception(f"Unknown ParamType: {parameter.spec.type}")
+
+
+def resolve_dependency(
+    response: Response,
+    dependency: Depends,
+    /,
+    *,
+    request: Optional[RequestOptions] = None,
     cached_dependencies: Optional[Dict[Callable[..., Any], Any]] = None,
-) -> Arguments:
+) -> Any:
+    if dependency.dependency is None:
+        raise Exception("TODO: Support dependencies with no explicit dependency")
+
+    if (
+        cached_dependencies is not None
+        and dependency.use_cache
+        and dependency.dependency in cached_dependencies
+    ):
+        return cached_dependencies[dependency.dependency]
+
+    parameters: Dict[str, param.Parameter] = get_params(
+        dependency.dependency, request=request
+    )
+
     args: List[Any] = []
     kwargs: Dict[str, Any] = {}
 
@@ -63,109 +228,22 @@ def get_response_arguments(
         value: Any = None
 
         if isinstance(parameter.spec, Params):
-            if parameter.spec.type is ParamType.QUERY:
-                value = dict(response.request.url.params)
-            elif parameter.spec.type is ParamType.HEADER:
-                if parameter.annotation in (inspect._empty, Missing, httpx.Headers):
-                    value = response.headers
-                elif parameter.annotation is dict:
-                    value = dict(response.headers)
-                else:
-                    raise Exception(
-                        f"Headers dependency has incompatible annotation: {parameter.annotation!r}"
-                    )
-            elif parameter.spec.type is ParamType.COOKIE:
-                if parameter.annotation in (inspect._empty, Missing, httpx.Cookies):
-                    value = response.cookies
-                elif parameter.annotation is dict:
-                    value = dict(response.cookies)
-                else:
-                    raise Exception(
-                        f"Cookies dependency has incompatible annotation: {parameter.annotation!r}"
-                    )
-            else:
-                raise Exception(f"Unknown multi-param of type {parameter.spec.type}")
+            value = resolve_params(response, parameter)
         elif isinstance(parameter.spec, Param):
-            parameter_alias: str = (
-                parameter.spec.alias
-                if parameter.spec.alias is not None
-                else parameter.spec.generate_alias(parameter.name)
+            value = resolve_param(response, parameter, request=request)
+        elif isinstance(parameter.spec, Depends):
+            value = resolve_dependency(
+                response,
+                parameter.spec,
+                request=request,
+                cached_dependencies=cached_dependencies,
             )
 
-            if parameter.spec.type is ParamType.QUERY:
-                value = response.request.url.params[parameter_alias]
-            elif parameter.spec.type is ParamType.HEADER:
-                value = response.headers[parameter_alias]
-            elif parameter.spec.type is ParamType.PATH:
-                parse_result: Optional[parse.Result] = parse.parse(
-                    request.url, response.request.url.path
-                )
-
-                if parse_result is None:
-                    raise Exception(
-                        f"Failed to parse uri {response.request.url.path!r} against format spec {request.url!r}"
-                    )
-
-                value = parse_result.named[parameter_alias]
-            elif parameter.spec.type is ParamType.COOKIE:
-                value = response.cookies[parameter_alias]
-            elif parameter.spec.type is ParamType.BODY:
-                if parameter.annotation is not inspect._empty:
-                    value = pydantic.parse_raw_as(parameter.annotation, response.text)
-                else:
-                    value = response.json()
-            else:
-                raise Exception(f"Unknown ParamType: {parameter.spec.type}")
-        elif isinstance(parameter.spec, Depends):
-            if (
-                cached_dependencies is not None
-                and parameter.spec.use_cache
-                and parameter.spec.dependency in cached_dependencies
-            ):
-                value = cached_dependencies[parameter.spec.dependency]
-            else:
-                if parameter.spec.dependency is None:
-                    raise Exception(
-                        "TODO: Support dependencies with no explicit dependency"
-                    )
-                else:
-                    sub_parameters: Dict[str, param.Parameter] = get_params(
-                        parameter.spec.dependency, request=request
-                    )
-                    sub_arguments: Arguments = get_response_arguments(
-                        response,
-                        sub_parameters,
-                        request,
-                        cached_dependencies=cached_dependencies,
-                    )
-
-                    value = sub_arguments.call(parameter.spec.dependency)
-
-                cached_dependencies[parameter.spec.dependency] = value
+            # Cache resolved dependency
+            cached_dependencies[parameter.spec.dependency] = value
         elif isinstance(parameter.spec, Promise):
-            promised_type: type
-
-            if parameter.spec.promised_type is not None:
-                promised_type = parameter.spec.promised_type
-            elif parameter.annotation is not inspect._empty:
-                promised_type = parameter.annotation
-            else:
-                raise Exception("Cannot promise no type!")
-
-            # TODO: Support more promised types
-            if promised_type is httpx.Response:
-                value = response
-            elif promised_type is httpx.Request:
-                value = request
-            else:
-                raise Exception(
-                    f"Unsupported promised type: {parameter.spec.promised_type!r}"
-                )
+            value = resolve_promise(response, parameter)
         else:
-            # Going to have to infer the parameter type
-            print("Trying to infer parameter")
-            print(parameter)
-
             raise Exception(f"Unknown parameter spec class: {type(parameter.spec)}")
 
         if parameter.type in (
@@ -176,7 +254,9 @@ def get_response_arguments(
         else:
             kwargs[parameter.name] = value
 
-    return Arguments(*args, **kwargs)
+    arguments: Arguments = Arguments(*args, **kwargs)
+
+    return arguments.call(dependency.dependency)
 
 
 def _build_parameter(parameter: Parameter, spec: Param) -> param.Parameter:

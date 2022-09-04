@@ -15,7 +15,7 @@ from typing_extensions import ParamSpec
 from . import api
 from .enums import ParamType
 from .models import OperationSpecification, RequestOptions
-from .parameters import Param, Params
+from .parameters import Depends, Param, Params
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
@@ -23,6 +23,18 @@ RT = TypeVar("RT")
 
 def get_operation(obj: Any, /) -> Optional["Operation"]:
     return getattr(obj, "operation", None)
+
+
+def has_operation(obj: Any, /) -> bool:
+    return get_operation(obj) is not None
+
+
+def set_operation(obj: Any, operation: "Operation", /) -> None:
+    setattr(obj, "operation", operation)
+
+
+def del_operation(obj: Any, /) -> None:
+    delattr(obj, "operation")
 
 
 @dataclass
@@ -53,14 +65,13 @@ class Operation(Generic[PS, RT]):
         response: Response = client.send(request)
 
         if self.specification.response is not None:
-            response_params: Dict[str, param.Parameter] = api.get_params(
-                self.specification.response, request=self.specification.request
-            )
-            response_arguments: Arguments = api.get_response_arguments(
-                response, response_params, self.specification.request
+            response_dependency: Depends = Depends(
+                dependency=self.specification.response
             )
 
-            return response_arguments.call(self.specification.response)
+            return api.resolve_dependency(
+                response, response_dependency, request=self.specification.request
+            )
 
         if return_annotation is inspect._empty:
             return response.json()

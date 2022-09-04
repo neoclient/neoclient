@@ -28,6 +28,6 @@ from .parameter_functions import (
     Headers,
     Path,
     Promise,
-    Queries,
+    QueryParams,
     Query,
 )

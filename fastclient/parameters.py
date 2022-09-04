@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, Optional, Type, TypeVar, Union
 
+from httpx import Request, Response
 import param
 from param.sentinels import Missing, MissingType
 
@@ -68,7 +69,7 @@ class Params(Param[Dict[str, Any]]):
         )
 
 
-class Queries(Params):
+class QueryParams(Params):
     type: ParamType = ParamType.QUERY
 
 
@@ -88,5 +89,5 @@ class Depends(Generic[T]):
 
 
 @dataclass(frozen=True)
-class Promise(Generic[T]):
-    promised_type: Optional[T] = None
+class Promise:
+    promised_type: Union[None, Type[Request], Type[Response]] = None
