@@ -1,1 +1,2 @@
-class NotAnOperation(Exception): pass
+class NotAnOperation(Exception):
+    pass

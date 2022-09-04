@@ -103,7 +103,9 @@ class FastClient:
         operation: Optional[Operation[PS, RT]] = get_operation(func)
 
         if operation is None:
-            raise NotAnOperation(f"{func!r} is not an operation, a client cannot be bound to it.")
+            raise NotAnOperation(
+                f"{func!r} is not an operation, a client cannot be bound to it."
+            )
 
         bound_operation: Operation[PS, RT] = Operation(
             operation.func, operation.specification, self.client

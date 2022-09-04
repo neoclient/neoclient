@@ -54,9 +54,6 @@ def test_query_required_not_omitted(client: FastClient):
         method="GET",
         url="get",
         params={"q": None},
-        headers={},
-        json=None,
-        cookies={},
     )
 
 
@@ -89,10 +86,7 @@ def test_single_body_param(client: FastClient):
     assert service.create_item(Item(id=1, name="item")) == RequestOptions(
         method="POST",
         url="/items/",
-        params={},
-        headers={},
         json={"id": 1, "name": "item"},
-        cookies={},
     )
 
 
@@ -111,11 +105,8 @@ def test_multiple_body_params(client: FastClient):
     ) == RequestOptions(
         method="POST",
         url="/items/",
-        params={},
-        headers={},
         json={
             "user": {"id": 1, "name": "user"},
             "item": {"id": 1, "name": "item"},
         },
-        cookies={},
     )

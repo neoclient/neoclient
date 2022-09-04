@@ -205,7 +205,7 @@ def resolve_dependency(
     cached_dependencies: Optional[Dict[Callable[..., Any], Any]] = None,
 ) -> Any:
     if dependency.dependency is None:
-        raise Exception("TODO: Support dependencies with no explicit dependency")
+        raise Exception("Cannot resolve empty dependency")
 
     if (
         cached_dependencies is not None
@@ -233,15 +233,31 @@ def resolve_dependency(
         elif isinstance(parameter.spec, Param):
             value = resolve_param(response, parameter, request=request)
         elif isinstance(parameter.spec, Depends):
+            parameter_dependency_callable: Callable
+
+            if parameter.spec.dependency is not None:
+                parameter_dependency_callable = parameter.spec.dependency
+            elif parameter.annotation not in (inspect._empty, Missing):
+                if not callable(parameter.annotation):
+                    raise Exception("Dependency has non-callable annotation")
+
+                parameter_dependency_callable = parameter.annotation
+            else:
+                raise Exception("Cannot depend on nothing!")
+
+            parameter_dependency: Depends = Depends(
+                parameter_dependency_callable, use_cache=parameter.spec.use_cache
+            )
+
             value = resolve_dependency(
                 response,
-                parameter.spec,
+                parameter_dependency,
                 request=request,
                 cached_dependencies=cached_dependencies,
             )
 
             # Cache resolved dependency
-            cached_dependencies[parameter.spec.dependency] = value
+            cached_dependencies[parameter_dependency_callable] = value
         elif isinstance(parameter.spec, Promise):
             value = resolve_promise(response, parameter)
         else:
@@ -279,6 +295,7 @@ def _extract_path_params(parameters: Iterable[param.Parameter]) -> Set[str]:
         for parameter in parameters
         if isinstance(parameter.spec, Path)
     }
+
 
 def _infer_parameter(parameter: Parameter, /, *, path_params: Set[str] = set()):
     parameter_type: type = parameter.annotation
@@ -322,17 +339,14 @@ def _infer_parameter(parameter: Parameter, /, *, path_params: Set[str] = set()):
         parameter_type is not parameter.empty
         and isinstance(parameter_type, type)
         and any(
-            issubclass(parameter_type, promise_type)
-            for promise_type in promise_types
+            issubclass(parameter_type, promise_type) for promise_type in promise_types
         )
     ):
         return Promise(parameter_type)
     elif (
         parameter_type is not parameter.empty
         and isinstance(parameter_type, type)
-        and any(
-            issubclass(parameter_type, httpx_type) for httpx_type in httpx_types
-        )
+        and any(issubclass(parameter_type, httpx_type) for httpx_type in httpx_types)
     ):
         if parameter_type is httpx.Headers:
             return Headers()
@@ -341,9 +355,7 @@ def _infer_parameter(parameter: Parameter, /, *, path_params: Set[str] = set()):
         elif parameter_type is httpx.QueryParams:
             return QueryParams()
         else:
-            raise Exception(
-                f"Unknown httpx dependency type: {parameter.annotation!r}"
-            )
+            raise Exception(f"Unknown httpx dependency type: {parameter.annotation!r}")
     else:
         return Query(
             alias=parameter.name,
