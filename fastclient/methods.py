@@ -8,13 +8,11 @@ from .client import FastClient
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
 
-DEFAULT_CLIENT: FastClient = FastClient(client=None)
-
 
 def request(
     method: str, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
 ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return DEFAULT_CLIENT.request(method, endpoint, response=response)
+    return FastClient(client=None).request(method, endpoint, response=response)
 
 
 def put(
