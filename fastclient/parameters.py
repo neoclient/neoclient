@@ -78,9 +78,7 @@ class Params(Param[Dict[str, Any]]):
         default_factory: Union[Callable[[], Dict[str, Any]], MissingType] = Missing,
     ):
         super().__init__(
-            default_factory=default_factory
-            if default_factory is not Missing
-            else dict
+            default_factory=default_factory if default_factory is not Missing else dict
         )
 
 

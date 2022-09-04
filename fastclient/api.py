@@ -165,7 +165,10 @@ def get_params(
 
     return parameters
 
-def validate_params(params: Dict[str, param.Parameter], *, request: Optional[RequestOptions] = None) -> None:
+
+def validate_params(
+    params: Dict[str, param.Parameter], *, request: Optional[RequestOptions] = None
+) -> None:
     expected_path_params: Set[str] = (
         utils.get_path_params(urllib.parse.unquote(str(request.url)))
         if request is not None
@@ -176,7 +179,9 @@ def validate_params(params: Dict[str, param.Parameter], *, request: Optional[Req
 
     # Validate that only expected path params provided
     # In the event a `PathParams` parameter is being used, will have to defer this check for invokation.
-    if expected_path_params != actual_path_params and not any(isinstance(parameter.spec, PathParams) for parameter in params.values()):
+    if expected_path_params != actual_path_params and not any(
+        isinstance(parameter.spec, PathParams) for parameter in params.values()
+    ):
         raise IncompatiblePathParameters(
             f"Incompatible path params. Got: {actual_path_params}, expected: {expected_path_params}"
         )
@@ -184,13 +189,22 @@ def validate_params(params: Dict[str, param.Parameter], *, request: Optional[Req
     # Validate no duplicate parameters provided
     parameter_outer: param.Parameter
     for parameter_outer in params.values():
-        if not isinstance(parameter_outer.spec, Param) or isinstance(parameter_outer.spec, Params) or parameter_outer.spec.alias is None:
+        if (
+            not isinstance(parameter_outer.spec, Param)
+            or isinstance(parameter_outer.spec, Params)
+            or parameter_outer.spec.alias is None
+        ):
             continue
 
         parameter_inner: param.Parameter
         for parameter_inner in params.values():
             if parameter_outer is parameter_inner:
                 continue
-            
-            if parameter_outer.spec.type is parameter_inner.spec.type and parameter_outer.spec.alias == parameter_inner.spec.alias:
-                raise DuplicateParameter(f"Duplicate parameters: {parameter_outer!r} and {parameter_inner!r}")
+
+            if (
+                parameter_outer.spec.type is parameter_inner.spec.type
+                and parameter_outer.spec.alias == parameter_inner.spec.alias
+            ):
+                raise DuplicateParameter(
+                    f"Duplicate parameters: {parameter_outer!r} and {parameter_inner!r}"
+                )

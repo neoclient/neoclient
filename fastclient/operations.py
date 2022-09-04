@@ -23,9 +23,7 @@ RT = TypeVar("RT")
 
 def get_operation(obj: Any, /) -> "Operation":
     if not has_operation(obj):
-        raise NotAnOperation(
-            f"{obj!r} is not an operation"
-        )
+        raise NotAnOperation(f"{obj!r} is not an operation")
 
     return getattr(obj, "operation")
 
@@ -153,12 +151,16 @@ class Operation(Generic[PS, RT]):
                 for key, val in body_params.items()
             }
 
-        expected_path_params: Set[str] = utils.get_path_params(urllib.parse.unquote(str(self.specification.request.url)))
+        expected_path_params: Set[str] = utils.get_path_params(
+            urllib.parse.unquote(str(self.specification.request.url))
+        )
         actual_path_params: Set[str] = set(path_params)
 
         # Validate path params are correct
         if actual_path_params != expected_path_params:
-            raise IncompatiblePathParameters(f"Incompatible path params. Got: {actual_path_params}, expected: {expected_path_params}")
+            raise IncompatiblePathParameters(
+                f"Incompatible path params. Got: {actual_path_params}, expected: {expected_path_params}"
+            )
 
         return RequestOptions(
             method=self.specification.request.method,

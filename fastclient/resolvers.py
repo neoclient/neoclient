@@ -32,6 +32,7 @@ from .parameters import (
     Cookie,
 )
 
+
 def _get_alias(parameter: param.Parameter, /) -> str:
     return (
         parameter.spec.alias
@@ -199,10 +200,14 @@ def resolve_multi_param(
     annotation: Union[Any, MissingType] = Missing,
     request: Optional[RequestOptions] = None,
 ) -> Any:
-    path_params: Dict[str, Any] = (utils.extract_path_params(
-        urllib.parse.unquote(str(request.url)),
-        urllib.parse.unquote(str(response.request.url)),
-    ) if request is not None else {})
+    path_params: Dict[str, Any] = (
+        utils.extract_path_params(
+            urllib.parse.unquote(str(request.url)),
+            urllib.parse.unquote(str(response.request.url)),
+        )
+        if request is not None
+        else {}
+    )
 
     values: Dict[ParamType, Any] = {
         ParamType.QUERY: response.url.params,

@@ -11,9 +11,8 @@ from typing_extensions import ParamSpec
 
 from . import api
 from .enums import HttpMethod
-from .errors import NotAnOperation
 from .models import ClientOptions, OperationSpecification, RequestOptions
-from .operations import Operation, get_operation, has_operation
+from .operations import Operation, get_operation, has_operation, set_operation
 from .types import (
     AuthTypes,
     CookieTypes,
@@ -100,7 +99,7 @@ class FastClient:
         def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> RT:
             return operation(*args, **kwargs)
 
-        setattr(wrapper, "operation", operation)
+        set_operation(wrapper, operation)
 
         return abc.abstractmethod(wrapper)
 

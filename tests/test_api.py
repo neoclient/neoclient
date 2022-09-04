@@ -56,9 +56,14 @@ def test_get_params_implicit():
         ),
     }
 
+
 def test_get_params_explicit():
     @get("/foo/{foo_path}")
-    def foo(path: str = Path("foo_path"), query: str = Query("foo_query"), body: dict = Body("foo_body")) -> None:
+    def foo(
+        path: str = Path("foo_path"),
+        query: str = Query("foo_query"),
+        body: dict = Body("foo_body"),
+    ) -> None:
         ...
 
     assert api.get_params(foo, request=foo.operation.specification.request) == {
