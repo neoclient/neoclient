@@ -116,6 +116,10 @@ def request(response: httpx.Response = Promise()) -> httpx.Request:
     return response.request
 
 
+def response(response: httpx.Response = Promise()) -> httpx.Response:
+    return response
+
+
 def status_code(response: httpx.Response = Promise()) -> int:
     return response.status_code
 
