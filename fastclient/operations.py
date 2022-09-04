@@ -13,7 +13,7 @@ from typing_extensions import ParamSpec
 
 from . import resolvers, api, utils
 from .enums import ParamType
-from .errors import IncompatiblePathParameters
+from .errors import IncompatiblePathParameters, NotAnOperation
 from .models import OperationSpecification, RequestOptions
 from .parameters import Depends, Param, Params
 
@@ -21,12 +21,17 @@ PS = ParamSpec("PS")
 RT = TypeVar("RT")
 
 
-def get_operation(obj: Any, /) -> Optional["Operation"]:
-    return getattr(obj, "operation", None)
+def get_operation(obj: Any, /) -> "Operation":
+    if not has_operation(obj):
+        raise NotAnOperation(
+            f"{obj!r} is not an operation"
+        )
+
+    return getattr(obj, "operation")
 
 
 def has_operation(obj: Any, /) -> bool:
-    return get_operation(obj) is not None
+    return hasattr(obj, "operation")
 
 
 def set_operation(obj: Any, operation: "Operation", /) -> None:

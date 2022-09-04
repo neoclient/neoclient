@@ -105,12 +105,7 @@ class FastClient:
         return abc.abstractmethod(wrapper)
 
     def bind(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
-        operation: Optional[Operation[PS, RT]] = get_operation(func)
-
-        if operation is None:
-            raise NotAnOperation(
-                f"{func!r} is not an operation, a client cannot be bound to it."
-            )
+        operation: Operation[PS, RT] = get_operation(func)
 
         bound_operation: Operation[PS, RT] = Operation(
             operation.func, operation.specification, self.client

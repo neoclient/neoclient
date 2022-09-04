@@ -25,12 +25,7 @@ def _composer(
     composer: Callable[[RequestOptions], None], /
 ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
     def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
-        operation: Optional[Operation] = get_operation(func)
-
-        if operation is None:
-            raise NotAnOperation(
-                f"{func!r} is not an operation, it cannot be composed."
-            )
+        operation: Operation = get_operation(func)
 
         composer(operation.specification.request)
 
