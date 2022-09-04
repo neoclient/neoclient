@@ -10,6 +10,7 @@ from typing_extensions import ParamSpec
 
 from . import api
 from .enums import HttpMethod
+from .errors import NotAnOperation
 from .models import ClientOptions, OperationSpecification
 from .operations import Operation, get_operation
 from .types import (
@@ -102,7 +103,7 @@ class FastClient:
         operation: Optional[Operation[PS, RT]] = get_operation(func)
 
         if operation is None:
-            raise Exception("Cannot bind client to non-operation")
+            raise NotAnOperation(f"{func!r} is not an operation, a client cannot be bound to it.")
 
         bound_operation: Operation[PS, RT] = Operation(
             operation.func, operation.specification, self.client

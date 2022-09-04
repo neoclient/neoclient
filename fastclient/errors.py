@@ -1,0 +1,1 @@
+class NotAnOperation(Exception): pass

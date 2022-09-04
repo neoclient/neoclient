@@ -3,6 +3,7 @@ from typing import Callable, Optional, TypeVar
 from httpx import Cookies, Headers, QueryParams, Timeout
 from typing_extensions import ParamSpec
 
+from .errors import NotAnOperation
 from .models import RequestOptions
 from .operations import Operation, get_operation
 from .types import (
@@ -27,7 +28,9 @@ def _composer(
         operation: Optional[Operation] = get_operation(func)
 
         if operation is None:
-            raise Exception("Callable is not an operation, cannot be composed.")
+            raise NotAnOperation(
+                f"{func!r} is not an operation, it cannot be composed."
+            )
 
         composer(operation.specification.request)
 
