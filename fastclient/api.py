@@ -7,7 +7,6 @@ from typing import (
     Dict,
     Iterable,
     List,
-    NoReturn,
     Optional,
     Set,
     Tuple,
@@ -20,7 +19,7 @@ from pydantic import BaseModel
 
 from . import utils
 from .errors import DuplicateParameter, IncompatiblePathParameters
-from .models import OperationSpecification, RequestOptions
+from .models import RequestOptions
 from .parameters import (
     Body,
     Depends,
@@ -32,14 +31,6 @@ from .parameters import (
     PathParams,
 )
 from .parameter_functions import Headers, Cookies, QueryParams
-
-
-def get_operations(cls: type, /) -> Dict[str, Callable]:
-    return {
-        member_name: member
-        for member_name, member in inspect.getmembers(cls)
-        if hasattr(member, "operation")
-    }
 
 
 def _build_parameter(

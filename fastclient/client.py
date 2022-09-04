@@ -1,5 +1,6 @@
 import abc
 import functools
+import inspect
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
 
@@ -12,7 +13,7 @@ from . import api
 from .enums import HttpMethod
 from .errors import NotAnOperation
 from .models import ClientOptions, OperationSpecification, RequestOptions
-from .operations import Operation, get_operation
+from .operations import Operation, get_operation, has_operation
 from .types import (
     AuthTypes,
     CookieTypes,
@@ -80,7 +81,11 @@ class FastClient:
             self.client = client
 
     def create(self, protocol: Type[T], /) -> T:
-        operations: Dict[str, Callable] = api.get_operations(protocol)
+        operations: Dict[str, Callable] = {
+            member_name: member
+            for member_name, member in inspect.getmembers(protocol)
+            if has_operation(member)
+        }
 
         attributes: dict = {"__module__": protocol.__module__}
 

@@ -6,18 +6,6 @@ from fastclient.parameter_functions import Query, Body, Path
 from fastclient.errors import DuplicateParameter, IncompatiblePathParameters
 
 
-def test_get_operations():
-    class Service:
-        @get("/foo")
-        def method_operation(self):
-            ...
-
-        def method_not_operation(self):
-            ...
-
-    assert api.get_operations(Service) == {"method_operation": Service.method_operation}
-
-
 def test_get_params_duplicate_explicit():
     with pytest.raises(DuplicateParameter):
 
