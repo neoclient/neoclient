@@ -80,6 +80,10 @@ def Cookies() -> parameters.Cookies:
     return parameters.Cookies()
 
 
+def PathParams() -> parameters.PathParams:
+    return parameters.PathParams()
+
+
 def Depends(
     dependency: Optional[Callable[..., T]] = None, /, *, use_cache: bool = True
 ) -> parameters.Depends[T]:

@@ -80,7 +80,7 @@ class Params(Param[Dict[str, Any]]):
         super().__init__(
             default_factory=default_factory
             if default_factory is not Missing
-            else lambda: dict()
+            else dict
         )
 
 
@@ -94,6 +94,10 @@ class Headers(Params):
 
 class Cookies(Params):
     type: ClassVar[ParamType] = ParamType.COOKIE
+
+
+class PathParams(Params):
+    type: ClassVar[ParamType] = ParamType.PATH
 
 
 # NOTE: Don't use @dataclass, this way can make `use_cache` keyword-only? (FastAPI does it this way)

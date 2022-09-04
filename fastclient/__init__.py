@@ -30,4 +30,5 @@ from .parameter_functions import (
     Promise,
     QueryParams,
     Query,
+    PathParams,
 )

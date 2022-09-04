@@ -62,6 +62,7 @@ def resolve(
             response,
             param,
             annotation=target_type,
+            request=request,
         )
     elif isinstance(param, Param):
         resolved = resolve_param(
@@ -196,11 +197,18 @@ def resolve_multi_param(
     /,
     *,
     annotation: Union[Any, MissingType] = Missing,
+    request: Optional[RequestOptions] = None,
 ) -> Any:
+    path_params: Dict[str, Any] = (utils.extract_path_params(
+        urllib.parse.unquote(str(request.url)),
+        urllib.parse.unquote(str(response.request.url)),
+    ) if request is not None else {})
+
     values: Dict[ParamType, Any] = {
         ParamType.QUERY: response.url.params,
         ParamType.HEADER: response.headers,
         ParamType.COOKIE: response.cookies,
+        ParamType.PATH: path_params,
     }
 
     return _parse_obj(annotation, values[param.type])

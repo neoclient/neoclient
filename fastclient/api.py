@@ -28,6 +28,7 @@ from .parameters import (
     Promise,
     Query,
     Params,
+    PathParams,
 )
 from .parameter_functions import Headers, Cookies, QueryParams
 
@@ -171,7 +172,8 @@ def get_params(
     actual_path_params: Set[str] = _extract_path_params(parameters.values())
 
     # Validate that only expected path params provided
-    if path_params != actual_path_params:
+    # In the event a `PathParams` parameter is being used, will have to defer this check for invokation.
+    if path_params != actual_path_params and not any(isinstance(parameter.spec, PathParams) for parameter in parameters.values()):
         raise IncompatiblePathParameters(
             f"Incompatible path params. Got: {actual_path_params}, expected: {path_params}"
         )

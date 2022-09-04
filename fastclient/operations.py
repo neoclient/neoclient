@@ -1,7 +1,7 @@
 import inspect
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Generic, Optional, TypeVar
+from typing import Any, Callable, Dict, Generic, Optional, Set, TypeVar
 
 import fastapi.encoders
 import httpx
@@ -11,8 +11,9 @@ from httpx import Client, Response
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from . import resolvers, api
+from . import resolvers, api, utils
 from .enums import ParamType
+from .errors import IncompatiblePathParameters
 from .models import OperationSpecification, RequestOptions
 from .parameters import Depends, Param, Params
 
@@ -97,7 +98,18 @@ class Operation(Generic[PS, RT]):
         for parameter, field in self.params.items():
             value: Any = arguments[parameter]
 
-            if isinstance(field, Param):
+            if isinstance(field, Params):
+                if field.type is ParamType.QUERY:
+                    query_params = query_params.merge(value)
+                elif field.type is ParamType.HEADER:
+                    headers.update(value)
+                elif field.type is ParamType.COOKIE:
+                    cookies.update(value)
+                elif field.type is ParamType.PATH:
+                    path_params.update(value)
+                else:
+                    raise Exception(f"Unknown multi-param: {field.type!r}")
+            elif isinstance(field, Param):
                 field_name: str = (
                     field.alias
                     if field.alias is not None
@@ -120,13 +132,6 @@ class Operation(Generic[PS, RT]):
                     body_params[field_name] = value
                 else:
                     raise Exception(f"Unknown ParamType: {field.type!r}")
-            elif isinstance(field, Params):
-                if field.type is ParamType.QUERY:
-                    query_params = query_params.merge(value)
-                elif field.type is ParamType.HEADER:
-                    headers.update(value)
-                elif field.type is ParamType.COOKIE:
-                    cookies.update(value)
             else:
                 raise Exception(f"Unknown field type: {field}")
 
@@ -142,6 +147,13 @@ class Operation(Generic[PS, RT]):
                 key: fastapi.encoders.jsonable_encoder(val)
                 for key, val in body_params.items()
             }
+
+        expected_path_params: Set[str] = utils.get_path_params(urllib.parse.unquote(str(self.specification.request.url)))
+        actual_path_params: Set[str] = set(path_params)
+
+        # Validate path params are correct
+        if actual_path_params != expected_path_params:
+            raise IncompatiblePathParameters(f"Incompatible path params. Got: {actual_path_params}, expected: {expected_path_params}")
 
         return RequestOptions(
             method=self.specification.request.method,
@@ -181,7 +193,7 @@ class Operation(Generic[PS, RT]):
                     f"{self.func.__name__}() missing argument: {argument_name!r}"
                 )
 
-            arguments[argument_name] = argument.default
+            arguments[argument_name] = argument.get_default()
 
         return arguments
 
