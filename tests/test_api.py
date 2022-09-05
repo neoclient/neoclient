@@ -2,6 +2,7 @@ import pytest
 import param
 from fastclient import api
 from fastclient.methods import get
+from fastclient.operations import get_operation
 from fastclient.parameter_functions import Query, Body, Path
 from fastclient.errors import DuplicateParameter, IncompatiblePathParameters
 
@@ -35,7 +36,7 @@ def test_get_params_implicit():
     def foo(path: str, query: str, body: dict) -> None:
         ...
 
-    assert api.get_params(foo, request=foo.operation.specification.request) == {
+    assert api.get_params(foo, request=get_operation(foo).specification.request) == {
         "path": param.Parameter(
             name="path",
             annotation=str,
@@ -66,7 +67,7 @@ def test_get_params_explicit():
     ) -> None:
         ...
 
-    assert api.get_params(foo, request=foo.operation.specification.request) == {
+    assert api.get_params(foo, request=get_operation(foo).specification.request) == {
         "path": param.Parameter(
             name="path",
             annotation=str,

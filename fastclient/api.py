@@ -151,7 +151,7 @@ def get_params(
     for parameter in raw_parameters:
         # NOTE: `Depends` doesn't subclass `Param`. This needs to be fixed.
         # "responses" (e.g. `responses.status_code`) also don't subclass `Param`...
-        if isinstance(parameter.default, (Param, Depends, Promise)):
+        if isinstance(parameter.default, (Param, Params, Depends, Promise)):
             parameters[parameter.name] = _build_parameter(parameter, parameter.default)
         else:
             parameters_to_infer.append(parameter)
@@ -191,7 +191,6 @@ def validate_params(
     for parameter_outer in params.values():
         if (
             not isinstance(parameter_outer.spec, Param)
-            or isinstance(parameter_outer.spec, Params)
             or parameter_outer.spec.alias is None
         ):
             continue

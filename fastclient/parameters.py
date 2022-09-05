@@ -69,7 +69,7 @@ class Body(Param[T]):
 
 
 # NOTE: Should use custom generic types for each subclass. E.g. `Headers` should have a `T` bound to `HeaderTypes`
-class Params(Param[Dict[str, Any]]):
+class Params(param.models.Param[Dict[str, Any]]):
     type: ClassVar[ParamType]
 
     def __init__(

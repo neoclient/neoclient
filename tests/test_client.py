@@ -6,6 +6,8 @@ from fastclient.models import RequestOptions
 from fastclient.errors import IncompatiblePathParameters
 from pydantic import BaseModel
 
+from fastclient.parameter_functions import QueryParams
+
 
 class Model(BaseModel):
     id: int
@@ -110,4 +112,37 @@ def test_multiple_body_params(client: FastClient):
             "user": {"id": 1, "name": "user"},
             "item": {"id": 1, "name": "item"},
         },
+    )
+
+
+def test_single_query_param(client: FastClient):
+    class Service(Protocol):
+        @get("/items/")
+        def create_item(self, sort: str = Query()) -> RequestOptions:
+            ...
+
+    service: Service = client.create(Service)  # type: ignore
+
+    assert service.create_item("ascending") == RequestOptions(
+        method="GET",
+        url="/items/",
+        params={
+            "sort": "ascending",
+        }
+    )
+
+def test_multiple_query_params(client: FastClient):
+    class Service(Protocol):
+        @get("/items/")
+        def create_item(self, params: dict = QueryParams()) -> RequestOptions:
+            ...
+
+    service: Service = client.create(Service)  # type: ignore
+
+    assert service.create_item({"sort": "ascending"}) == RequestOptions(
+        method="GET",
+        url="/items/",
+        params={
+            "sort": "ascending",
+        }
     )
