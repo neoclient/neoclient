@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, Generic, Optional, Set, TypeVar, Union
 import fastapi.encoders
 import httpx
 import param
+from param import ParameterType
 import param.models
 from param.sentinels import Missing, MissingType
 import pydantic
@@ -16,7 +17,11 @@ from typing_extensions import ParamSpec
 
 from . import resolvers, api, utils
 from .enums import ParamType
-from .errors import IncompatiblePathParameters, NotAnOperation, InvalidParameterSpecification
+from .errors import (
+    IncompatiblePathParameters,
+    NotAnOperation,
+    InvalidParameterSpecification,
+)
 from .models import OperationSpecification, RequestOptions
 from .parameters import (
     Body,
@@ -35,6 +40,7 @@ from .types import HeaderTypes, QueryParamTypes, CookieTypes
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
+
 
 def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
     if type(obj) is annotation or annotation in (inspect._empty, Missing):
@@ -62,9 +68,7 @@ def del_operation(obj: Any, /) -> None:
     delattr(obj, "operation")
 
 
-def feed_request_query_param(
-    request: RequestOptions, param: Query, value: str
-) -> None:
+def feed_request_query_param(request: RequestOptions, param: Query, value: str) -> None:
     if param.alias is None:
         raise Exception(f"Cannot feed param {param!r} if it has no alias")
 
@@ -73,9 +77,7 @@ def feed_request_query_param(
     request.params = request.params.set(param.alias, resolved_value)
 
 
-def feed_request_header(
-    request: RequestOptions, param: Header, value: str
-) -> None:
+def feed_request_header(request: RequestOptions, param: Header, value: str) -> None:
     if param.alias is None:
         raise Exception(f"Cannot feed param {param!r} if it has no alias")
 
@@ -84,9 +86,7 @@ def feed_request_header(
     request.headers[param.alias] = resolved_value
 
 
-def feed_request_cookie(
-    request: RequestOptions, param: Cookie, value: str
-) -> None:
+def feed_request_cookie(request: RequestOptions, param: Cookie, value: str) -> None:
     if param.alias is None:
         raise Exception(f"Cannot feed param {param!r} if it has no alias")
 
@@ -95,9 +95,7 @@ def feed_request_cookie(
     request.cookies[param.alias] = resolved_value
 
 
-def feed_request_path_param(
-    request: RequestOptions, param: Path, value: str
-) -> None:
+def feed_request_path_param(request: RequestOptions, param: Path, value: str) -> None:
     if param.alias is None:
         raise Exception(f"Cannot feed param {param!r} if it has no alias")
 
@@ -110,9 +108,7 @@ def feed_request_path_param(
     )
 
 
-def feed_request_body(
-    request: RequestOptions, param: Body, value: Any
-) -> None:
+def feed_request_body(request: RequestOptions, param: Body, value: Any) -> None:
     resolved_value: Any = fastapi.encoders.jsonable_encoder(
         value if value is not None else param.get_default()
     )
@@ -180,7 +176,10 @@ def feed_request_path_params(
         utils.partially_format(urllib.parse.unquote(str(request.url)), **resolved_value)
     )
 
-def feed_request_param(request: RequestOptions, parameter: param.Parameter, value: Any) -> None:
+
+def feed_request_param(
+    request: RequestOptions, parameter: param.Parameter, value: Any
+) -> None:
     spec: Param
 
     if not isinstance(parameter.spec, Param):
@@ -189,9 +188,7 @@ def feed_request_param(request: RequestOptions, parameter: param.Parameter, valu
         spec = parameter.spec
 
     field_name: str = (
-        spec.alias
-        if spec.alias is not None
-        else spec.generate_alias(parameter.name)
+        spec.alias if spec.alias is not None else spec.generate_alias(parameter.name)
     )
 
     # Ensure the parameter has an alias
@@ -226,7 +223,10 @@ def feed_request_param(request: RequestOptions, parameter: param.Parameter, valu
     else:
         raise Exception(f"Unknown ParamType: {spec.type!r}")
 
-def feed_request_params(request: RequestOptions, parameter: param.Parameter, value: Any) -> None:
+
+def feed_request_params(
+    request: RequestOptions, parameter: param.Parameter, value: Any
+) -> None:
     spec: Params
 
     if not isinstance(parameter.spec, Params):
@@ -245,21 +245,29 @@ def feed_request_params(request: RequestOptions, parameter: param.Parameter, val
     else:
         raise Exception(f"Unknown multi-param: {spec.type!r}")
 
-whitelisted_operation_params: Dict[type, Callable[[RequestOptions, param.Parameter, Any], None]] = {
+
+whitelisted_operation_params: Dict[
+    type, Callable[[RequestOptions, param.Parameter, Any], None]
+] = {
     Param: feed_request_param,
     Params: feed_request_params,
 }
 
-def get_operation_params(func: Callable, /, *, request: Optional[RequestOptions] = None
+
+def get_operation_params(
+    func: Callable, /, *, request: Optional[RequestOptions] = None
 ) -> Dict[str, param.Parameter]:
     params: Dict[str, param.Parameter] = api.get_params(func, request=request)
 
     parameter: param.Parameter
     for parameter in params.values():
         if not isinstance(parameter.spec, tuple(whitelisted_operation_params)):
-            raise InvalidParameterSpecification(f"Invalid operation parameter specification: {parameter.spec!r}")
+            raise InvalidParameterSpecification(
+                f"Invalid operation parameter specification: {parameter.spec!r}"
+            )
 
     return params
+
 
 @dataclass
 class Operation(Generic[PS, RT]):
@@ -289,12 +297,18 @@ class Operation(Generic[PS, RT]):
         response: Response = client.send(request)
 
         if self.specification.response is not None:
-            response_dependency: Depends = Depends(
-                dependency=self.specification.response
+            # TODO: Find a much better way of doing this! This is janky af
+            fake_parameter: param.Parameter = param.Parameter(
+                name="fake_parameter",
+                annotation=Missing,
+                type=ParameterType.POSITIONAL_OR_KEYWORD,
+                spec=Depends(dependency=self.specification.response),
             )
 
             return resolvers.resolve(
-                response, response_dependency, request=self.specification.request
+                response,
+                fake_parameter,
+                request=self.specification.request,
             )
 
         if return_annotation is inspect._empty:
@@ -333,7 +347,9 @@ class Operation(Generic[PS, RT]):
 
                     break
             else:
-                raise InvalidParameterSpecification(f"Invalid operation parameter specification: {parameter.spec!r}")
+                raise InvalidParameterSpecification(
+                    f"Invalid operation parameter specification: {parameter.spec!r}"
+                )
 
         self._validate_request_options(request)
 
@@ -343,7 +359,7 @@ class Operation(Generic[PS, RT]):
         missing_path_params: Set[str] = utils.get_path_params(
             urllib.parse.unquote(str(request.url))
         )
-        
+
         # Validate path params are correct
         if missing_path_params:
             raise IncompatiblePathParameters(

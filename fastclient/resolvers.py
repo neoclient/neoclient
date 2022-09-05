@@ -1,15 +1,7 @@
 import dataclasses
 import inspect
 import urllib.parse
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Dict, List, Optional, Type, Union, Protocol
 
 import param
 from param import ParameterSpecification
@@ -19,6 +11,7 @@ from param import ParameterType
 from param.sentinels import Missing, MissingType
 
 from . import utils, api
+from .errors import InvalidParameterSpecification
 from .enums import ParamType
 from .models import RequestOptions
 from .parameters import (
@@ -31,6 +24,17 @@ from .parameters import (
     Header,
     Cookie,
 )
+
+
+class Resolver(Protocol):
+    def __call__(
+        self,
+        response: Response,
+        parameter: param.Parameter,
+        *,
+        request: Optional[RequestOptions] = None,
+    ) -> Any:
+        ...
 
 
 def _get_alias(parameter: param.Parameter, /) -> str:
@@ -48,43 +52,118 @@ def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
     return pydantic.parse_obj_as(annotation, obj)
 
 
-def resolve(
+def resolve_response_param(
     response: Response,
-    param: ParameterSpecification,
-    /,
+    parameter: param.Parameter,
     *,
-    target_type: Union[Any, MissingType] = Missing,
     request: Optional[RequestOptions] = None,
 ) -> Any:
-    resolved: Any
+    spec: Param
 
-    if isinstance(param, Params):
-        resolved = resolve_multi_param(
-            response,
-            param,
-            annotation=target_type,
-            request=request,
-        )
-    elif isinstance(param, Param):
-        resolved = resolve_param(
-            response,
-            param,
-            annotation=target_type,
-            request=request,
-        )
-    elif isinstance(param, Depends):
-        resolved = resolve_dependency(
-            response,
-            param,
-            annotation=target_type,
-            request=request,
-        )
-    elif isinstance(param, Promise):
-        resolved = resolve_promise(response, param, annotation=target_type)
+    if not isinstance(parameter.spec, Param):
+        raise Exception("Parameter is not a Param")
     else:
-        raise Exception(f"Unknown parameter spec class: {type(param)!r}")
+        spec = parameter.spec
 
-    return resolved
+    # Enrich parameter specification alias
+    spec = dataclasses.replace(parameter.spec, alias=_get_alias(parameter))
+
+    return resolve_param(
+        response,
+        spec,
+        annotation=parameter.annotation,
+        request=request,
+    )
+
+
+def resolve_response_params(
+    response: Response,
+    parameter: param.Parameter,
+    *,
+    request: Optional[RequestOptions] = None,
+) -> Any:
+    spec: Params
+
+    if not isinstance(parameter.spec, Params):
+        raise Exception("Parameter is not a Params")
+    else:
+        spec = parameter.spec
+
+    return resolve_multi_param(
+        response,
+        spec,
+        annotation=parameter.annotation,
+        request=request,
+    )
+
+
+def resolve_response_depends(
+    response: Response,
+    parameter: param.Parameter,
+    *,
+    request: Optional[RequestOptions] = None,
+) -> Any:
+    spec: Depends
+
+    if not isinstance(parameter.spec, Depends):
+        raise Exception("Parameter is not a Depends")
+    else:
+        spec = parameter.spec
+
+    return resolve_dependency(
+        response,
+        spec,
+        annotation=parameter.annotation,
+        request=request,
+    )
+
+
+def resolve_response_promise(
+    response: Response,
+    parameter: param.Parameter,
+    *,
+    request: Optional[RequestOptions] = None,
+) -> Any:
+    spec: Promise
+
+    if not isinstance(parameter.spec, Promise):
+        raise Exception("Parameter is not a Promise")
+    else:
+        spec = parameter.spec
+
+    return resolve_promise(
+        response,
+        spec,
+        annotation=parameter.annotation,
+    )
+
+
+whitelisted_response_resolvers: Dict[type, Resolver] = {
+    Param: resolve_response_param,
+    Params: resolve_response_params,
+    Depends: resolve_response_depends,
+    Promise: resolve_response_promise,
+}
+
+
+def resolve(
+    response: Response,
+    parameter: param.Parameter,
+    *,
+    request: Optional[RequestOptions] = None,
+) -> Any:
+    if isinstance(parameter.spec, Param):
+        return resolve_response_param(response, parameter, request=request)
+    elif isinstance(parameter.spec, Params):
+        return resolve_response_params(response, parameter, request=request)
+    elif isinstance(parameter.spec, Depends):
+        return resolve_response_depends(response, parameter, request=request)
+    elif isinstance(parameter.spec, Promise):
+        return resolve_response_promise(response, parameter, request=request)
+    else:
+        raise InvalidParameterSpecification(
+            f"Invalid response parameter specification: {parameter.spec!r}"
+        )
 
 
 def resolve_query_param(
@@ -100,7 +179,7 @@ def resolve_query_param(
     if param.alias in response.request.url.params:
         return _parse_obj(annotation, response.request.url.params[param.alias])
     else:
-        return param.default
+        return param.get_default()
 
 
 def resolve_header(
@@ -116,7 +195,7 @@ def resolve_header(
     if param.alias in response.headers:
         return _parse_obj(annotation, response.headers[param.alias])
     else:
-        return param.default
+        return param.get_default()
 
 
 def resolve_cookie(
@@ -132,7 +211,7 @@ def resolve_cookie(
     if param.alias in response.cookies:
         return _parse_obj(annotation, response.cookies[param.alias])
     else:
-        return param.default
+        return param.get_default()
 
 
 def resolve_body(
@@ -164,7 +243,7 @@ def resolve_path_param(
     if param.alias in path_params:
         return _parse_obj(annotation, path_params[param.alias])
     else:
-        return param.default
+        return param.get_default()
 
 
 def resolve_promise(
@@ -288,11 +367,6 @@ def resolve_dependency(
     for parameter in parameters.values():
         parameter_spec: ParameterSpecification = parameter.spec
 
-        if isinstance(parameter_spec, Param) and not isinstance(parameter_spec, Params):
-            parameter_alias: str = _get_alias(parameter)
-
-            parameter_spec = dataclasses.replace(parameter.spec, alias=parameter_alias)
-
         value: Any
 
         if isinstance(parameter_spec, Depends):
@@ -306,8 +380,7 @@ def resolve_dependency(
         else:
             value = resolve(
                 response,
-                parameter_spec,
-                target_type=parameter.annotation,
+                parameter,
                 request=request,
             )
 
