@@ -30,7 +30,7 @@ from .parameters import (
     Params,
     PathParams,
 )
-from .parameter_functions import Headers, Cookies, QueryParams
+from .parameter_functions import Headers, Cookies, QueryParams    
 
 
 def _build_parameter(

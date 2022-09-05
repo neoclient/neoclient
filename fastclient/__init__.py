@@ -32,3 +32,7 @@ from .parameter_functions import (
     Query,
     PathParams,
 )
+from httpx import (
+    Request,
+    Response
+)

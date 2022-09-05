@@ -47,15 +47,24 @@ def Cookie(
     required: bool = False,
 ) -> T: ...
 @overload
-def Body(alias: Optional[str] = None, *, required: bool = False) -> Any: ...
+def Body(
+    alias: Optional[str] = None, *, required: bool = False, embed: bool = False
+) -> Any: ...
 @overload
-def Body(alias: Optional[str] = None, *, default: T, required: bool = False) -> T: ...
+def Body(
+    alias: Optional[str] = None,
+    *,
+    default: T,
+    required: bool = False,
+    embed: bool = False,
+) -> T: ...
 @overload
 def Body(
     alias: Optional[str] = None,
     *,
     default_factory: Callable[[], T],
     required: bool = False,
+    embed: bool = False,
 ) -> T: ...
 def Headers() -> Any: ...
 def QueryParams() -> Any: ...

@@ -64,8 +64,11 @@ class Cookie(Param[T]):
         return alias.upper()
 
 
+@dataclass(frozen=True)
 class Body(Param[T]):
     type: ClassVar[ParamType] = ParamType.BODY
+
+    embed: bool = False
 
 
 # NOTE: Should use custom generic types for each subclass. E.g. `Headers` should have a `T` bound to `HeaderTypes`

@@ -1,11 +1,14 @@
+import dataclasses
 import inspect
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Generic, Optional, Set, TypeVar
+from typing import Any, Callable, Dict, Generic, Optional, Set, TypeVar, Union
 
 import fastapi.encoders
 import httpx
 import param
+import param.models
+from param.sentinels import Missing, MissingType
 import pydantic
 from httpx import Client, Response
 from pydantic import BaseModel
@@ -15,10 +18,29 @@ from . import resolvers, api, utils
 from .enums import ParamType
 from .errors import IncompatiblePathParameters, NotAnOperation
 from .models import OperationSpecification, RequestOptions
-from .parameters import Depends, Param, Params
+from .parameters import (
+    Body,
+    Depends,
+    Param,
+    Params,
+    Header,
+    Headers,
+    Path,
+    QueryParams,
+    Query,
+    Cookie,
+    Cookies,
+)
+from .types import HeaderTypes, QueryParamTypes, CookieTypes
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
+
+def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
+    if type(obj) is annotation or annotation in (inspect._empty, Missing):
+        return obj
+
+    return pydantic.parse_obj_as(annotation, obj)
 
 
 def get_operation(obj: Any, /) -> "Operation":
@@ -39,6 +61,205 @@ def set_operation(obj: Any, operation: "Operation", /) -> None:
 def del_operation(obj: Any, /) -> None:
     delattr(obj, "operation")
 
+
+def feed_request_query_param(
+    request: RequestOptions, param: Query, value: str
+) -> None:
+    if param.alias is None:
+        raise Exception(f"Cannot feed param {param!r} if it has no alias")
+
+    resolved_value: str = value if value is not Missing else param.get_default()
+
+    request.params = request.params.set(param.alias, resolved_value)
+
+
+def feed_request_header(
+    request: RequestOptions, param: Header, value: str
+) -> None:
+    if param.alias is None:
+        raise Exception(f"Cannot feed param {param!r} if it has no alias")
+
+    resolved_value: str = value if value is not Missing else param.get_default()
+
+    request.headers[param.alias] = resolved_value
+
+
+def feed_request_cookie(
+    request: RequestOptions, param: Cookie, value: str
+) -> None:
+    if param.alias is None:
+        raise Exception(f"Cannot feed param {param!r} if it has no alias")
+
+    resolved_value: str = value if value is not Missing else param.get_default()
+
+    request.cookies[param.alias] = resolved_value
+
+
+def feed_request_path_param(
+    request: RequestOptions, param: Path, value: str
+) -> None:
+    if param.alias is None:
+        raise Exception(f"Cannot feed param {param!r} if it has no alias")
+
+    resolved_value: str = value if value is not Missing else param.get_default()
+
+    request.url = httpx.URL(
+        utils.partially_format(
+            urllib.parse.unquote(str(request.url)), **{param.alias: resolved_value}
+        )
+    )
+
+
+def feed_request_body(
+    request: RequestOptions, param: Body, value: Any
+) -> None:
+    resolved_value: Any = fastapi.encoders.jsonable_encoder(
+        value if value is not None else param.get_default()
+    )
+
+    if param.embed:
+        if param.alias is None:
+            raise Exception(f"Cannot embed body param {param!r} if it has no alias")
+
+        resolved_value = {param.alias: resolved_value}
+
+    # If there's only one body param, or this param shouln't be embedded in any pre-existing json,
+    # make it the entire JSON request body
+    if request.json is None or not param.embed:
+        request.json = resolved_value
+    else:
+        request.json.update(resolved_value)
+
+
+def feed_request_query_params(
+    request: RequestOptions,
+    param: QueryParams,
+    value: QueryParamTypes,
+) -> None:
+    resolved_value: httpx.QueryParams = (
+        httpx.QueryParams(value) if value is not Missing else param.get_default()
+    )
+
+    request.params = request.params.merge(resolved_value)
+
+
+def feed_request_headers(
+    request: RequestOptions,
+    param: Headers,
+    value: HeaderTypes,
+) -> None:
+    resolved_value: httpx.Headers = (
+        httpx.Headers(value) if value is not Missing else param.get_default()
+    )
+
+    request.headers.update(resolved_value)
+
+
+def feed_request_cookies(
+    request: RequestOptions,
+    param: Cookies,
+    value: CookieTypes,
+) -> None:
+    resolved_value: httpx.Cookies = (
+        httpx.Cookies(value) if value is not Missing else param.get_default()
+    )
+
+    request.cookies.update(resolved_value)
+
+
+def feed_request_path_params(
+    request: RequestOptions,
+    param: Cookies,
+    value: Dict[str, Any],
+) -> None:
+    resolved_value: Dict[str, Any] = (
+        value if value is not Missing else param.get_default()
+    )
+
+    request.url = httpx.URL(
+        utils.partially_format(urllib.parse.unquote(str(request.url)), **resolved_value)
+    )
+
+def feed_request_param(request: RequestOptions, parameter: param.Parameter, value: Any) -> None:
+    spec: Param
+
+    if not isinstance(parameter.spec, Param):
+        raise Exception("Parameter is not a Param")
+    else:
+        spec = parameter.spec
+
+    field_name: str = (
+        spec.alias
+        if spec.alias is not None
+        else spec.generate_alias(parameter.name)
+    )
+
+    # Ensure the parameter has an alias
+    spec = dataclasses.replace(spec, alias=field_name)
+
+    # The field is not required, it can be omitted
+    if value is None and not spec.required:
+        return
+
+    if spec.type is ParamType.QUERY:
+        # Convert the value
+        value = _parse_obj(str, value)
+
+        feed_request_query_param(request, spec, value)
+    elif spec.type is ParamType.HEADER:
+        # Convert the value
+        value = _parse_obj(str, value)
+
+        feed_request_header(request, spec, value)
+    elif spec.type is ParamType.COOKIE:
+        # Convert the value
+        value = _parse_obj(str, value)
+
+        feed_request_cookie(request, spec, value)
+    elif spec.type is ParamType.PATH:
+        # Convert the value
+        value = _parse_obj(str, value)
+
+        feed_request_path_param(request, spec, value)
+    elif spec.type is ParamType.BODY:
+        feed_request_body(request, spec, value)
+    else:
+        raise Exception(f"Unknown ParamType: {spec.type!r}")
+
+def feed_request_params(request: RequestOptions, parameter: param.Parameter, value: Any) -> None:
+    spec: Params
+
+    if not isinstance(parameter.spec, Params):
+        raise Exception("Parameter is not a Params")
+    else:
+        spec = parameter.spec
+
+    if spec.type is ParamType.QUERY:
+        feed_request_query_params(request, spec, value)
+    elif spec.type is ParamType.HEADER:
+        feed_request_headers(request, spec, value)
+    elif spec.type is ParamType.COOKIE:
+        feed_request_cookies(request, spec, value)
+    elif spec.type is ParamType.PATH:
+        feed_request_path_params(request, spec, value)
+    else:
+        raise Exception(f"Unknown multi-param: {spec.type!r}")
+
+whitelisted_operation_params: Dict[type, Callable[[RequestOptions, param.Parameter, Any], None]] = {
+    Param: feed_request_param,
+    Params: feed_request_params,
+}
+
+def get_operation_params(func: Callable, /, *, request: Optional[RequestOptions] = None
+) -> Dict[str, param.Parameter]:
+    params: Dict[str, param.Parameter] = api.get_params(func, request=request)
+
+    parameter: param.Parameter
+    for parameter in params.values():
+        if not isinstance(parameter.spec, tuple(whitelisted_operation_params)):
+            raise Exception(f"Invalid operation parameter specification: {parameter.spec!r}")
+
+    return params
 
 @dataclass
 class Operation(Generic[PS, RT]):
@@ -90,91 +311,46 @@ class Operation(Generic[PS, RT]):
         return pydantic.parse_raw_as(return_annotation, response.text)
 
     def build_request_options(self, arguments: Dict[str, Any], /) -> RequestOptions:
-        query_params: httpx.QueryParams = httpx.QueryParams()
-        path_params: Dict[str, Any] = {}
-        headers: httpx.Headers = httpx.Headers()
-        cookies: httpx.Cookies = httpx.Cookies()
-        body_params: Dict[str, Any] = {}
-
-        parameter: str
-        field: Param
-        for parameter, field in self.params.items():
-            value: Any = arguments[parameter]
-
-            if isinstance(field, Params):
-                if field.type is ParamType.QUERY:
-                    query_params = query_params.merge(value)
-                elif field.type is ParamType.HEADER:
-                    headers.update(value)
-                elif field.type is ParamType.COOKIE:
-                    cookies.update(value)
-                elif field.type is ParamType.PATH:
-                    path_params.update(value)
-                else:
-                    raise Exception(f"Unknown multi-param: {field.type!r}")
-            elif isinstance(field, Param):
-                field_name: str = (
-                    field.alias
-                    if field.alias is not None
-                    else field.generate_alias(parameter)
-                )
-
-                # The field is not required, it can be omitted
-                if value is None and not field.required:
-                    continue
-
-                if field.type is ParamType.QUERY:
-                    query_params = query_params.set(field_name, value)
-                elif field.type is ParamType.HEADER:
-                    headers[field_name] = value
-                elif field.type is ParamType.PATH:
-                    path_params[field_name] = value
-                elif field.type is ParamType.COOKIE:
-                    cookies[field_name] = value
-                elif field.type is ParamType.BODY:
-                    body_params[field_name] = value
-                else:
-                    raise Exception(f"Unknown ParamType: {field.type!r}")
-            else:
-                raise Exception(f"Unknown field type: {field}")
-
-        json: Any = None
-
-        # If there's only one body param, make it the entire JSON request body
-        if len(body_params) == 1:
-            json = fastapi.encoders.jsonable_encoder(list(body_params.values())[0])
-        # If there are multiple body params, construct a multi-level dict
-        # of each body parameter. E.g. (user: User, item: Item) -> {"user": ..., "item": ...}
-        elif body_params:
-            json = {
-                key: fastapi.encoders.jsonable_encoder(val)
-                for key, val in body_params.items()
-            }
-
-        expected_path_params: Set[str] = utils.get_path_params(
-            urllib.parse.unquote(str(self.specification.request.url))
+        request: RequestOptions = RequestOptions(
+            method=self.specification.request.method,
+            url=self.specification.request.url,
         )
-        actual_path_params: Set[str] = set(path_params)
+
+        parameter_name: str
+        parameter: param.Parameter
+        for parameter_name, parameter in self.params.items():
+            value: Any = arguments[parameter_name]
+
+            spec_type: type
+            feeder_function: Callable[[RequestOptions, param.Parameter, Any], None]
+            for spec_type, feeder_function in whitelisted_operation_params.items():
+                if isinstance(parameter.spec, spec_type):
+                    feeder_function(request, parameter, value)
+
+                    break
+            else:
+                raise Exception(f"Invalid operation parameter specification: {parameter.spec!r}")
+
+        missing_path_params: Set[str] = utils.get_path_params(
+            urllib.parse.unquote(str(request.url))
+        )
 
         # Validate path params are correct
-        if actual_path_params != expected_path_params:
+        if missing_path_params:
             raise IncompatiblePathParameters(
-                f"Incompatible path params. Got: {actual_path_params}, expected: {expected_path_params}"
+                f"Incompatible path params. Missing: {missing_path_params}"
             )
 
-        return RequestOptions(
-            method=self.specification.request.method,
-            url=urllib.parse.unquote(str(self.specification.request.url)).format(
-                **path_params
-            ),
-            params=query_params,
-            headers=headers,
-            cookies=cookies,
-            json=json,
-        )
+        return request
 
     def _is_method(self) -> bool:
         return bool(self.params and list(self.params)[0] == "self")
+
+    @property
+    def params(self) -> Dict[str, param.Parameter]:
+        return get_operation_params(
+            self.func, request=self.specification.request
+        )
 
     def _get_arguments(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         bound_arguments: inspect.BoundArguments = inspect.signature(self.func).bind(
@@ -192,25 +368,15 @@ class Operation(Generic[PS, RT]):
         argument_name: str
         argument: Any
         for argument_name, argument in arguments.items():
-            if not isinstance(argument, Param):
-                continue
+            if isinstance(argument, param.models.Param):
+                if not argument.has_default():
+                    raise ValueError(
+                        f"{self.func.__name__}() missing argument: {argument_name!r}"
+                    )
 
-            if not argument.has_default():
-                raise ValueError(
-                    f"{self.func.__name__}() missing argument: {argument_name!r}"
-                )
-
-            arguments[argument_name] = argument.get_default()
+                arguments[argument_name] = argument.get_default()
 
         return arguments
-
-    @property
-    def params(self) -> Dict[str, Param]:
-        parameters: Dict[str, param.Parameter] = api.get_params(
-            self.func, request=self.specification.request
-        )
-
-        return {parameter.name: parameter.spec for parameter in parameters.values()}
 
     @property
     def response_type(self) -> Any:

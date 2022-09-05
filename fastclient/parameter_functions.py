@@ -62,9 +62,10 @@ def Body(
     default: Union[T, MissingType] = Missing,
     default_factory: Union[Callable[[], T], MissingType] = Missing,
     required: bool = False,
+    embed: bool = False,
 ) -> parameters.Body[T]:
     return parameters.Body(
-        alias=alias, default=default, default_factory=default_factory, required=required
+        alias=alias, default=default, default_factory=default_factory, required=required, embed=embed
     )
 
 
