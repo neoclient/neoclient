@@ -152,18 +152,15 @@ def resolve(
     *,
     request: Optional[RequestOptions] = None,
 ) -> Any:
-    if isinstance(parameter.spec, Param):
-        return resolve_response_param(response, parameter, request=request)
-    elif isinstance(parameter.spec, Params):
-        return resolve_response_params(response, parameter, request=request)
-    elif isinstance(parameter.spec, Depends):
-        return resolve_response_depends(response, parameter, request=request)
-    elif isinstance(parameter.spec, Promise):
-        return resolve_response_promise(response, parameter, request=request)
-    else:
-        raise InvalidParameterSpecification(
-            f"Invalid response parameter specification: {parameter.spec!r}"
-        )
+    spec_type: type
+    resolver: Resolver
+    for spec_type, resolver in whitelisted_response_resolvers.items():
+        if isinstance(parameter.spec, spec_type):
+            return resolver(response, parameter, request=request)
+
+    raise InvalidParameterSpecification(
+        f"Invalid response parameter specification: {parameter.spec!r}"
+    )
 
 
 def resolve_query_param(
