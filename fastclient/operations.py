@@ -2,12 +2,11 @@ import dataclasses
 import inspect
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Generic, Mapping, Optional, Set, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, Optional, Protocol, Set, TypeVar, Union
 
 import fastapi.encoders
 import httpx
 import param
-from param import ParameterType
 import param.models
 from param.sentinels import Missing, MissingType
 import pydantic
@@ -35,11 +34,21 @@ from .parameters import (
     Query,
     Cookie,
     Cookies,
+    PathParams,
 )
 from .types import HeaderTypes, QueryParamTypes, CookieTypes
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
+
+class Composer(Protocol):
+    def __call__(
+        self,
+        request: RequestOptions,
+        parameter: param.Parameter,
+        value: Any
+    ) -> None:
+        ...
 
 
 def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
@@ -67,43 +76,6 @@ def set_operation(obj: Any, operation: "Operation", /) -> None:
 def del_operation(obj: Any, /) -> None:
     delattr(obj, "operation")
 
-# TODO: Move `add_xxx` methods to `models.RequestOptions`? (e.g. `models.RequestOptions.set_cookie("foo", "bar")`)
-
-def add_query_param(request: RequestOptions, key: str, value: Any) -> None:
-    request.params = request.params.set(key, value)
-
-
-def add_header(request: RequestOptions, key: str, value: str) -> None:
-    request.headers[key] = value
-
-
-def add_cookie(request: RequestOptions, key: str, value: str) -> None:
-    request.cookies[key] = value
-
-
-def add_path_param(request: RequestOptions, key: str, value: Any) -> None:
-    request.url = httpx.URL(
-        utils.partially_format(urllib.parse.unquote(str(request.url)), **{key: value})
-    )
-
-
-def add_query_params(request: RequestOptions, query_params: QueryParamTypes) -> None:
-    request.params = request.params.merge(httpx.QueryParams(query_params))
-
-
-def add_headers(request: RequestOptions, headers: HeaderTypes) -> None:
-    request.headers.update(httpx.Headers(headers))
-
-
-def add_cookies(request: RequestOptions, cookies: CookieTypes) -> None:
-    request.cookies.update(httpx.Cookies(cookies))
-
-
-def add_path_params(request: RequestOptions, path_params: Mapping[str, Any]) -> None:
-    request.url = httpx.URL(
-        utils.partially_format(urllib.parse.unquote(str(request.url)), **path_params)
-    )
-
 
 def feed_request_query_param(request: RequestOptions, param: Query, value: str) -> None:
     if param.alias is None:
@@ -111,7 +83,7 @@ def feed_request_query_param(request: RequestOptions, param: Query, value: str) 
 
     resolved_value: str = value if value is not Missing else param.get_default()
 
-    add_query_param(request, param.alias, resolved_value)
+    request.add_query_param(param.alias, resolved_value)
 
 
 def feed_request_header(request: RequestOptions, param: Header, value: str) -> None:
@@ -120,7 +92,7 @@ def feed_request_header(request: RequestOptions, param: Header, value: str) -> N
 
     resolved_value: str = value if value is not Missing else param.get_default()
 
-    add_header(request, param.alias, resolved_value)
+    request.add_header(param.alias, resolved_value)
 
 
 def feed_request_cookie(request: RequestOptions, param: Cookie, value: str) -> None:
@@ -129,7 +101,7 @@ def feed_request_cookie(request: RequestOptions, param: Cookie, value: str) -> N
 
     resolved_value: str = value if value is not Missing else param.get_default()
 
-    add_cookie(request, param.alias, resolved_value)
+    request.add_cookie(param.alias, resolved_value)
 
 
 def feed_request_path_param(request: RequestOptions, param: Path, value: str) -> None:
@@ -138,7 +110,7 @@ def feed_request_path_param(request: RequestOptions, param: Path, value: str) ->
 
     resolved_value: str = value if value is not Missing else param.get_default()
 
-    add_path_param(request, param.alias, resolved_value)
+    request.add_path_param(param.alias, resolved_value)
 
 
 def feed_request_body(request: RequestOptions, param: Body, value: Any) -> None:
@@ -169,7 +141,7 @@ def feed_request_query_params(
         httpx.QueryParams(value) if value is not Missing else param.get_default()
     )
 
-    add_query_params(request, resolved_value)
+    request.add_query_params(resolved_value)
 
 
 def feed_request_headers(
@@ -181,7 +153,7 @@ def feed_request_headers(
         httpx.Headers(value) if value is not Missing else param.get_default()
     )
 
-    add_headers(request, resolved_value)
+    request.add_headers(resolved_value)
 
 
 def feed_request_cookies(
@@ -193,7 +165,7 @@ def feed_request_cookies(
         httpx.Cookies(value) if value is not Missing else param.get_default()
     )
 
-    add_cookies(request, resolved_value)
+    request.add_cookies(resolved_value)
 
 
 def feed_request_path_params(
@@ -205,7 +177,7 @@ def feed_request_path_params(
         value if value is not Missing else param.get_default()
     )
 
-    add_path_params(request, resolved_value)
+    request.add_path_params(resolved_value)
 
 
 def feed_request_param(
@@ -278,10 +250,17 @@ def feed_request_params(
 
 
 whitelisted_operation_params: Dict[
-    type, Callable[[RequestOptions, param.Parameter, Any], None]
+    type, Composer
 ] = {
-    Param: feed_request_param,
-    Params: feed_request_params,
+    Query: feed_request_param,
+    Header: feed_request_param,
+    Cookie: feed_request_param,
+    Path: feed_request_param,
+    Body: feed_request_param,
+    QueryParams: feed_request_params,
+    Headers: feed_request_params,
+    Cookies: feed_request_params,
+    PathParams: feed_request_params,
 }
 
 
@@ -328,19 +307,7 @@ class Operation(Generic[PS, RT]):
         response: Response = client.send(request)
 
         if self.specification.response is not None:
-            # TODO: Find a much better way of doing this! This is janky af
-            fake_parameter: param.Parameter = param.Parameter(
-                name="fake_parameter",
-                annotation=Missing,
-                type=ParameterType.POSITIONAL_OR_KEYWORD,
-                spec=Depends(dependency=self.specification.response),
-            )
-
-            return resolvers.resolve(
-                response,
-                fake_parameter,
-                request=self.specification.request,
-            )
+            return resolvers.resolve_dependency(response, Depends(dependency=self.specification.response), annotation=return_annotation)
 
         if return_annotation is inspect._empty:
             return response.json()
@@ -371,7 +338,7 @@ class Operation(Generic[PS, RT]):
             value: Any = arguments[parameter_name]
 
             spec_type: type
-            feeder_function: Callable[[RequestOptions, param.Parameter, Any], None]
+            feeder_function: Composer
             for spec_type, feeder_function in whitelisted_operation_params.items():
                 if isinstance(parameter.spec, spec_type):
                     feeder_function(request, parameter, value)

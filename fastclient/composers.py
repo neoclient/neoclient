@@ -4,7 +4,7 @@ from httpx import Timeout
 from typing_extensions import ParamSpec
 
 from .models import RequestOptions
-from .operations import Operation, get_operation, add_query_params, add_headers, add_cookies
+from .operations import Operation, get_operation
 from .types import (
     CookieTypes,
     HeaderTypes,
@@ -35,21 +35,21 @@ def _composer(
 
 def params(value: QueryParamTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
     def composer(request: RequestOptions, /) -> None:
-        add_query_params(request, value)
+        request.add_query_params(value)
 
     return _composer(composer)
 
 
 def headers(value: HeaderTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
     def composer(request: RequestOptions, /) -> None:
-        add_headers(request, value)
+        request.add_headers(value)
 
     return _composer(composer)
 
 
 def cookies(value: CookieTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
     def composer(request: RequestOptions, /) -> None:
-        add_cookies(request, value)
+        request.add_cookies(value)
 
     return _composer(composer)
 

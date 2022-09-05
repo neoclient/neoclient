@@ -32,14 +32,6 @@ class Param(param.models.Param[T]):
         return alias
 
 
-class Path(Param[T]):
-    type: ClassVar[ParamType] = ParamType.PATH
-
-    @staticmethod
-    def generate_alias(alias: str):
-        return alias.lower().replace("_", "-")
-
-
 class Query(Param[T]):
     type: ClassVar[ParamType] = ParamType.QUERY
 
@@ -62,6 +54,14 @@ class Cookie(Param[T]):
     @staticmethod
     def generate_alias(alias: str):
         return alias.upper()
+
+
+class Path(Param[T]):
+    type: ClassVar[ParamType] = ParamType.PATH
+
+    @staticmethod
+    def generate_alias(alias: str):
+        return alias.lower().replace("_", "-")
 
 
 @dataclass(frozen=True)

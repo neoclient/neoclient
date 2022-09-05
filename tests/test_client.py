@@ -108,6 +108,25 @@ def test_multiple_body_params(client: FastClient):
     ) == RequestOptions(
         method="POST",
         url="/items/",
+        json={"id": 1, "name": "item"},
+    )
+
+
+def test_multiple_body_params_embedded(client: FastClient):
+    class Service(Protocol):
+        @post("/items/")
+        def create_item(
+            self, user: User = Body(embed=True), item: Item = Body(embed=True)
+        ) -> RequestOptions:
+            ...
+
+    service: Service = client.create(Service)  # type: ignore
+
+    assert service.create_item(
+        User(id=1, name="user"), Item(id=1, name="item")
+    ) == RequestOptions(
+        method="POST",
+        url="/items/",
         json={
             "user": {"id": 1, "name": "user"},
             "item": {"id": 1, "name": "item"},
@@ -128,8 +147,9 @@ def test_single_query_param(client: FastClient):
         url="/items/",
         params={
             "sort": "ascending",
-        }
+        },
     )
+
 
 def test_multiple_query_params(client: FastClient):
     class Service(Protocol):
@@ -144,5 +164,5 @@ def test_multiple_query_params(client: FastClient):
         url="/items/",
         params={
             "sort": "ascending",
-        }
+        },
     )
