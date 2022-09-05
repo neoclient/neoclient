@@ -8,3 +8,7 @@ class DuplicateParameter(Exception):
 
 class IncompatiblePathParameters(Exception):
     pass
+
+
+class InvalidParameterSpecification(Exception):
+    pass

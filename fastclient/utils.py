@@ -1,5 +1,6 @@
+import inspect
 import string
-from typing import Any, Dict, Optional, Set
+from typing import Any, Callable, Dict, Optional, Set, Tuple
 
 import parse
 
@@ -37,3 +38,12 @@ def partially_format(string: str, /, **kwargs: Any) -> str:
     }
 
     return string.format(**{**default_kwargs, **kwargs})
+
+def bind_arguments(func: Callable, args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    bound_arguments: inspect.BoundArguments = inspect.signature(func).bind(
+        *args, **kwargs
+    )
+
+    bound_arguments.apply_defaults()
+
+    return bound_arguments.arguments

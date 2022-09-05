@@ -16,7 +16,7 @@ from typing_extensions import ParamSpec
 
 from . import resolvers, api, utils
 from .enums import ParamType
-from .errors import IncompatiblePathParameters, NotAnOperation
+from .errors import IncompatiblePathParameters, NotAnOperation, InvalidParameterSpecification
 from .models import OperationSpecification, RequestOptions
 from .parameters import (
     Body,
@@ -257,7 +257,7 @@ def get_operation_params(func: Callable, /, *, request: Optional[RequestOptions]
     parameter: param.Parameter
     for parameter in params.values():
         if not isinstance(parameter.spec, tuple(whitelisted_operation_params)):
-            raise Exception(f"Invalid operation parameter specification: {parameter.spec!r}")
+            raise InvalidParameterSpecification(f"Invalid operation parameter specification: {parameter.spec!r}")
 
     return params
 
@@ -277,7 +277,7 @@ class Operation(Generic[PS, RT]):
 
         request: httpx.Request = request_options.build_request(self.client)
 
-        return_annotation: Any = self.response_type
+        return_annotation: Any = inspect.signature(self.func).return_annotation
 
         if return_annotation is RequestOptions:
             return request_options
@@ -316,9 +316,13 @@ class Operation(Generic[PS, RT]):
             url=self.specification.request.url,
         )
 
+        params: Dict[str, param.Parameter] = get_operation_params(
+            self.func, request=self.specification.request
+        )
+
         parameter_name: str
         parameter: param.Parameter
-        for parameter_name, parameter in self.params.items():
+        for parameter_name, parameter in params.items():
             value: Any = arguments[parameter_name]
 
             spec_type: type
@@ -329,37 +333,25 @@ class Operation(Generic[PS, RT]):
 
                     break
             else:
-                raise Exception(f"Invalid operation parameter specification: {parameter.spec!r}")
+                raise InvalidParameterSpecification(f"Invalid operation parameter specification: {parameter.spec!r}")
 
+        self._validate_request_options(request)
+
+        return request
+
+    def _validate_request_options(self, request: RequestOptions, /) -> None:
         missing_path_params: Set[str] = utils.get_path_params(
             urllib.parse.unquote(str(request.url))
         )
-
+        
         # Validate path params are correct
         if missing_path_params:
             raise IncompatiblePathParameters(
                 f"Incompatible path params. Missing: {missing_path_params}"
             )
 
-        return request
-
-    def _is_method(self) -> bool:
-        return bool(self.params and list(self.params)[0] == "self")
-
-    @property
-    def params(self) -> Dict[str, param.Parameter]:
-        return get_operation_params(
-            self.func, request=self.specification.request
-        )
-
     def _get_arguments(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
-        bound_arguments: inspect.BoundArguments = inspect.signature(self.func).bind(
-            *args, **kwargs
-        )
-
-        bound_arguments.apply_defaults()
-
-        arguments: Dict[str, Any] = bound_arguments.arguments
+        arguments: Dict[str, Any] = utils.bind_arguments(self.func, args, kwargs)
 
         # TODO: Find a better fix for instance methods
         if arguments and list(arguments)[0] == "self":
@@ -377,7 +369,3 @@ class Operation(Generic[PS, RT]):
                 arguments[argument_name] = argument.get_default()
 
         return arguments
-
-    @property
-    def response_type(self) -> Any:
-        return inspect.signature(self.func).return_annotation
