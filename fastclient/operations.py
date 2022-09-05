@@ -2,7 +2,7 @@ import dataclasses
 import inspect
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Generic, Optional, Set, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, Mapping, Optional, Set, TypeVar, Union
 
 import fastapi.encoders
 import httpx
@@ -67,6 +67,43 @@ def set_operation(obj: Any, operation: "Operation", /) -> None:
 def del_operation(obj: Any, /) -> None:
     delattr(obj, "operation")
 
+# TODO: Move `add_xxx` methods to `models.RequestOptions`? (e.g. `models.RequestOptions.set_cookie("foo", "bar")`)
+
+def add_query_param(request: RequestOptions, key: str, value: Any) -> None:
+    request.params = request.params.set(key, value)
+
+
+def add_header(request: RequestOptions, key: str, value: str) -> None:
+    request.headers[key] = value
+
+
+def add_cookie(request: RequestOptions, key: str, value: str) -> None:
+    request.cookies[key] = value
+
+
+def add_path_param(request: RequestOptions, key: str, value: Any) -> None:
+    request.url = httpx.URL(
+        utils.partially_format(urllib.parse.unquote(str(request.url)), **{key: value})
+    )
+
+
+def add_query_params(request: RequestOptions, query_params: QueryParamTypes) -> None:
+    request.params = request.params.merge(httpx.QueryParams(query_params))
+
+
+def add_headers(request: RequestOptions, headers: HeaderTypes) -> None:
+    request.headers.update(httpx.Headers(headers))
+
+
+def add_cookies(request: RequestOptions, cookies: CookieTypes) -> None:
+    request.cookies.update(httpx.Cookies(cookies))
+
+
+def add_path_params(request: RequestOptions, path_params: Mapping[str, Any]) -> None:
+    request.url = httpx.URL(
+        utils.partially_format(urllib.parse.unquote(str(request.url)), **path_params)
+    )
+
 
 def feed_request_query_param(request: RequestOptions, param: Query, value: str) -> None:
     if param.alias is None:
@@ -74,7 +111,7 @@ def feed_request_query_param(request: RequestOptions, param: Query, value: str) 
 
     resolved_value: str = value if value is not Missing else param.get_default()
 
-    request.params = request.params.set(param.alias, resolved_value)
+    add_query_param(request, param.alias, resolved_value)
 
 
 def feed_request_header(request: RequestOptions, param: Header, value: str) -> None:
@@ -83,7 +120,7 @@ def feed_request_header(request: RequestOptions, param: Header, value: str) -> N
 
     resolved_value: str = value if value is not Missing else param.get_default()
 
-    request.headers[param.alias] = resolved_value
+    add_header(request, param.alias, resolved_value)
 
 
 def feed_request_cookie(request: RequestOptions, param: Cookie, value: str) -> None:
@@ -92,7 +129,7 @@ def feed_request_cookie(request: RequestOptions, param: Cookie, value: str) -> N
 
     resolved_value: str = value if value is not Missing else param.get_default()
 
-    request.cookies[param.alias] = resolved_value
+    add_cookie(request, param.alias, resolved_value)
 
 
 def feed_request_path_param(request: RequestOptions, param: Path, value: str) -> None:
@@ -101,11 +138,7 @@ def feed_request_path_param(request: RequestOptions, param: Path, value: str) ->
 
     resolved_value: str = value if value is not Missing else param.get_default()
 
-    request.url = httpx.URL(
-        utils.partially_format(
-            urllib.parse.unquote(str(request.url)), **{param.alias: resolved_value}
-        )
-    )
+    add_path_param(request, param.alias, resolved_value)
 
 
 def feed_request_body(request: RequestOptions, param: Body, value: Any) -> None:
@@ -136,7 +169,7 @@ def feed_request_query_params(
         httpx.QueryParams(value) if value is not Missing else param.get_default()
     )
 
-    request.params = request.params.merge(resolved_value)
+    add_query_params(request, resolved_value)
 
 
 def feed_request_headers(
@@ -148,7 +181,7 @@ def feed_request_headers(
         httpx.Headers(value) if value is not Missing else param.get_default()
     )
 
-    request.headers.update(resolved_value)
+    add_headers(request, resolved_value)
 
 
 def feed_request_cookies(
@@ -160,7 +193,7 @@ def feed_request_cookies(
         httpx.Cookies(value) if value is not Missing else param.get_default()
     )
 
-    request.cookies.update(resolved_value)
+    add_cookies(request, resolved_value)
 
 
 def feed_request_path_params(
@@ -172,9 +205,7 @@ def feed_request_path_params(
         value if value is not Missing else param.get_default()
     )
 
-    request.url = httpx.URL(
-        utils.partially_format(urllib.parse.unquote(str(request.url)), **resolved_value)
-    )
+    add_path_params(request, resolved_value)
 
 
 def feed_request_param(
