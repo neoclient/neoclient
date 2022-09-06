@@ -11,7 +11,7 @@ from param import ParameterType
 from param.sentinels import Missing, MissingType
 
 from . import utils, api
-from .errors import InvalidParameterSpecification
+from .errors import InvalidParameterSpecification, ResolutionError
 from .enums import ParamType
 from .models import RequestOptions
 from .parameters import (
@@ -175,8 +175,10 @@ def resolve_query_param(
 
     if param.alias in response.request.url.params:
         return _parse_obj(annotation, response.request.url.params[param.alias])
-    else:
+    elif param.has_default():
         return param.get_default()
+    else:
+        raise ResolutionError(f"Failed to resolve parameter: {param!r}")
 
 
 def resolve_header(
@@ -191,8 +193,10 @@ def resolve_header(
 
     if param.alias in response.headers:
         return _parse_obj(annotation, response.headers[param.alias])
-    else:
+    elif param.has_default():
         return param.get_default()
+    else:
+        raise ResolutionError(f"Failed to resolve parameter: {param!r}")
 
 
 def resolve_cookie(
@@ -207,8 +211,10 @@ def resolve_cookie(
 
     if param.alias in response.cookies:
         return _parse_obj(annotation, response.cookies[param.alias])
-    else:
+    elif param.has_default():
         return param.get_default()
+    else:
+        raise ResolutionError(f"Failed to resolve parameter: {param!r}")
 
 
 def resolve_body(
@@ -239,8 +245,10 @@ def resolve_path_param(
 
     if param.alias in path_params:
         return _parse_obj(annotation, path_params[param.alias])
-    else:
+    elif param.has_default():
         return param.get_default()
+    else:
+        raise ResolutionError(f"Failed to resolve parameter: {param!r}")
 
 
 def resolve_promise(
@@ -395,3 +403,19 @@ def resolve_dependency(
     cached_dependencies[parameter_dependency_callable] = resolved
 
     return resolved
+
+
+def resolve_func(
+    response: Response,
+    func: Callable,
+    /,
+    *,
+    request: Optional[RequestOptions] = None,
+    target_type: Union[Any, MissingType] = Missing,
+):
+    return resolve_dependency(
+        response,
+        Depends(dependency=func),
+        request=request,
+        annotation=target_type,
+    )

@@ -18,7 +18,7 @@ from param.sentinels import Missing
 from pydantic import BaseModel
 
 from . import utils
-from .errors import DuplicateParameter, IncompatiblePathParameters
+from .errors import DuplicateParameter, IncompatiblePathParameters, InvalidParameterSpecification
 from .models import RequestOptions
 from .parameters import (
     Body,
@@ -161,7 +161,9 @@ def get_params(
 
         parameters[parameter.name] = _build_parameter(parameter, param_spec)
 
-    validate_params(parameters, request=request)
+    # NOTE: Validation currently disabled as the checks should differ depending on whether it's checking
+    # an operation or a dependency
+    # validate_params(parameters, request=request)
 
     return parameters
 
