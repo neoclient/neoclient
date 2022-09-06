@@ -151,7 +151,7 @@ def get_params(
     for parameter in raw_parameters:
         # NOTE: `Depends` doesn't subclass `Param`. This needs to be fixed.
         # "responses" (e.g. `responses.status_code`) also don't subclass `Param`...
-        if isinstance(parameter.default, (Param, Params, Depends, Promise)):
+        if isinstance(parameter.default, (Param, Body, Params, Depends, Promise)):
             parameters[parameter.name] = _build_parameter(parameter, parameter.default)
         else:
             parameters_to_infer.append(parameter)

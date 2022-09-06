@@ -80,20 +80,83 @@ def feed_request_path_param(request: RequestOptions, param: Path, value: str) ->
     request.add_path_param(param.alias, resolved_value)
 
 
-def feed_request_body(request: RequestOptions, param: Body, value: Any) -> None:
-    resolved_value: Any = fastapi.encoders.jsonable_encoder(
-        value if value is not None else param.get_default()
+def feed_request_param(
+    request: RequestOptions, parameter: param.Parameter, value: Any
+) -> None:
+    spec: Param
+
+    if not isinstance(parameter.spec, Param):
+        raise Exception("Parameter is not a Param")
+    else:
+        spec = parameter.spec
+
+    field_name: str = (
+        spec.alias if spec.alias is not None else spec.generate_alias(parameter.name)
     )
 
-    if param.embed:
-        if param.alias is None:
-            raise Exception(f"Cannot embed body param {param!r} if it has no alias")
+    # Ensure the parameter has an alias
+    spec = dataclasses.replace(spec, alias=field_name)
 
-        resolved_value = {param.alias: resolved_value}
+    # The field is not required, it can be omitted
+    if value is None and not spec.required:
+        return
+
+    if spec.type is ParamType.QUERY:
+        # Convert the value
+        value = _parse_obj(str, value)
+
+        feed_request_query_param(request, spec, value)
+    elif spec.type is ParamType.HEADER:
+        # Convert the value
+        value = _parse_obj(str, value)
+
+        feed_request_header(request, spec, value)
+    elif spec.type is ParamType.COOKIE:
+        # Convert the value
+        value = _parse_obj(str, value)
+
+        feed_request_cookie(request, spec, value)
+    elif spec.type is ParamType.PATH:
+        # Convert the value
+        value = _parse_obj(str, value)
+
+        feed_request_path_param(request, spec, value)
+    # elif spec.type is ParamType.BODY:
+    #     feed_request_body(request, spec, value)
+    else:
+        raise Exception(f"Unknown ParamType: {spec.type!r}")
+
+
+def feed_request_body(request: RequestOptions, parameter: param.Parameter, value: Any) -> None:
+    if not isinstance(parameter.spec, Body):
+        raise Exception("Parameter is not a Body")
+    else:
+        spec = parameter.spec
+
+    field_name: str = (
+        spec.alias if spec.alias is not None else spec.generate_alias(parameter.name)
+    )
+
+    # Ensure the parameter has an alias
+    spec = dataclasses.replace(spec, alias=field_name)
+
+    # The field is not required, it can be omitted
+    if value is None and not spec.required:
+        return
+
+    resolved_value: Any = fastapi.encoders.jsonable_encoder(
+        value if value is not None else spec.get_default()
+    )
+
+    if spec.embed:
+        if spec.alias is None:
+            raise Exception(f"Cannot embed body param {spec!r} if it has no alias")
+
+        resolved_value = {spec.alias: resolved_value}
 
     # If there's only one body param, or this param shouln't be embedded in any pre-existing json,
     # make it the entire JSON request body
-    if request.json is None or not param.embed:
+    if request.json is None or not spec.embed:
         request.json = resolved_value
     else:
         request.json.update(resolved_value)
@@ -147,53 +210,6 @@ def feed_request_path_params(
     request.add_path_params(resolved_value)
 
 
-def feed_request_param(
-    request: RequestOptions, parameter: param.Parameter, value: Any
-) -> None:
-    spec: Param
-
-    if not isinstance(parameter.spec, Param):
-        raise Exception("Parameter is not a Param")
-    else:
-        spec = parameter.spec
-
-    field_name: str = (
-        spec.alias if spec.alias is not None else spec.generate_alias(parameter.name)
-    )
-
-    # Ensure the parameter has an alias
-    spec = dataclasses.replace(spec, alias=field_name)
-
-    # The field is not required, it can be omitted
-    if value is None and not spec.required:
-        return
-
-    if spec.type is ParamType.QUERY:
-        # Convert the value
-        value = _parse_obj(str, value)
-
-        feed_request_query_param(request, spec, value)
-    elif spec.type is ParamType.HEADER:
-        # Convert the value
-        value = _parse_obj(str, value)
-
-        feed_request_header(request, spec, value)
-    elif spec.type is ParamType.COOKIE:
-        # Convert the value
-        value = _parse_obj(str, value)
-
-        feed_request_cookie(request, spec, value)
-    elif spec.type is ParamType.PATH:
-        # Convert the value
-        value = _parse_obj(str, value)
-
-        feed_request_path_param(request, spec, value)
-    elif spec.type is ParamType.BODY:
-        feed_request_body(request, spec, value)
-    else:
-        raise Exception(f"Unknown ParamType: {spec.type!r}")
-
-
 def feed_request_params(
     request: RequestOptions, parameter: param.Parameter, value: Any
 ) -> None:
@@ -221,7 +237,8 @@ whitelisted_operation_params: Dict[type, Composer] = {
     Header: feed_request_param,
     Cookie: feed_request_param,
     Path: feed_request_param,
-    Body: feed_request_param,
+    # Body: feed_request_param,
+    Body: feed_request_body,
     QueryParams: feed_request_params,
     Headers: feed_request_params,
     Cookies: feed_request_params,
@@ -253,6 +270,7 @@ def _validate_request_options(request: RequestOptions, /) -> None:
         raise IncompatiblePathParameters(
             f"Incompatible path params. Missing: {missing_path_params}"
         )
+
 
 def get_operation_params(
     func: Callable, /, *, request: Optional[RequestOptions] = None

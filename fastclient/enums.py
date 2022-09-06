@@ -22,6 +22,5 @@ class HttpMethod(str, HiddenValue):
 class ParamType(HiddenValue):
     QUERY = enum.auto()
     HEADER = enum.auto()
-    PATH = enum.auto()
     COOKIE = enum.auto()
-    BODY = enum.auto()
+    PATH = enum.auto()

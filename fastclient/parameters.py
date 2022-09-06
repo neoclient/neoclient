@@ -65,10 +65,17 @@ class Path(Param[T]):
 
 
 @dataclass(frozen=True)
-class Body(Param[T]):
-    type: ClassVar[ParamType] = ParamType.BODY
+class Body(param.models.Param[T]):
+    # type: ClassVar[ParamType] = ParamType.BODY
+
+    alias: Optional[str] = None
+    required: bool = False
 
     embed: bool = False
+
+    @staticmethod
+    def generate_alias(alias: str):
+        return alias
 
 
 # NOTE: Should use custom generic types for each subclass. E.g. `Headers` should have a `T` bound to `HeaderTypes`

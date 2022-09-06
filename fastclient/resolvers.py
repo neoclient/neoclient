@@ -23,6 +23,7 @@ from .parameters import (
     Query,
     Header,
     Cookie,
+    Body,
 )
 
 
@@ -138,31 +139,6 @@ def resolve_response_promise(
     )
 
 
-whitelisted_response_resolvers: Dict[type, Resolver] = {
-    Param: resolve_response_param,
-    Params: resolve_response_params,
-    Depends: resolve_response_depends,
-    Promise: resolve_response_promise,
-}
-
-
-def resolve(
-    response: Response,
-    parameter: param.Parameter,
-    *,
-    request: Optional[RequestOptions] = None,
-) -> Any:
-    spec_type: type
-    resolver: Resolver
-    for spec_type, resolver in whitelisted_response_resolvers.items():
-        if isinstance(parameter.spec, spec_type):
-            return resolver(response, parameter, request=request)
-
-    raise InvalidParameterSpecification(
-        f"Invalid response parameter specification: {parameter.spec!r}"
-    )
-
-
 def resolve_query_param(
     response: Response,
     param: Query,
@@ -217,14 +193,21 @@ def resolve_cookie(
         raise ResolutionError(f"Failed to resolve parameter: {param!r}")
 
 
-def resolve_body(
-    response: Response, /, *, annotation: Union[Any, MissingType] = Missing
+def resolve_response_body(
+    response: Response,
+    parameter: param.Parameter,
+    /,
+    *,
+    request: Optional[RequestOptions] = None,
 ) -> Any:
+    if not isinstance(parameter.spec, Body):
+        raise Exception("Parameter is not a Body")
+
     # TODO: Massively improve this implementation
-    if annotation in (inspect._empty, Missing):
+    if parameter.annotation in (inspect._empty, Missing):
         return response.json()
     else:
-        return pydantic.parse_raw_as(annotation, response.text)
+        return pydantic.parse_raw_as(parameter.annotation, response.text)
 
 
 def resolve_path_param(
@@ -324,8 +307,6 @@ def resolve_param(
         )
     elif param.type is ParamType.COOKIE:
         return resolve_cookie(response, param, annotation=annotation)
-    elif param.type is ParamType.BODY:
-        return resolve_body(response, annotation=annotation)
     else:
         raise Exception(f"Unknown ParamType: {param.type}")
 
@@ -403,6 +384,37 @@ def resolve_dependency(
     cached_dependencies[parameter_dependency_callable] = resolved
 
     return resolved
+
+
+whitelisted_response_resolvers: Dict[type, Resolver] = {
+    Query: resolve_response_param,
+    Header: resolve_response_param,
+    Cookie: resolve_response_param,
+    Path: resolve_response_param,
+    Body: resolve_response_body,
+    Params: resolve_response_params,
+    Depends: resolve_response_depends,
+    Promise: resolve_response_promise,
+}
+
+
+def resolve(
+    response: Response,
+    parameter: param.Parameter,
+    *,
+    request: Optional[RequestOptions] = None,
+) -> Any:
+    print("resolving:", response, parameter, request)
+
+    spec_type: type
+    resolver: Resolver
+    for spec_type, resolver in whitelisted_response_resolvers.items():
+        if isinstance(parameter.spec, spec_type):
+            return resolver(response, parameter, request=request)
+
+    raise InvalidParameterSpecification(
+        f"Invalid response parameter specification: {parameter.spec!r}"
+    )
 
 
 def resolve_func(
