@@ -31,15 +31,18 @@ def extract_path_params(url_format: str, url: str, /) -> Dict[str, Any]:
 
     return parse_result.named
 
+
 def partially_format(string: str, /, **kwargs: Any) -> str:
     default_kwargs: Dict[str, str] = {
-        path_param: f"{{{path_param}}}"
-        for path_param in get_path_params(string)
+        path_param: f"{{{path_param}}}" for path_param in get_path_params(string)
     }
 
     return string.format(**{**default_kwargs, **kwargs})
 
-def bind_arguments(func: Callable, args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Dict[str, Any]:
+
+def bind_arguments(
+    func: Callable, args: Tuple[Any, ...], kwargs: Dict[str, Any]
+) -> Dict[str, Any]:
     bound_arguments: inspect.BoundArguments = inspect.signature(func).bind(
         *args, **kwargs
     )

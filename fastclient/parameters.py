@@ -51,10 +51,6 @@ class Header(Param[T]):
 class Cookie(Param[T]):
     type: ClassVar[ParamType] = ParamType.COOKIE
 
-    @staticmethod
-    def generate_alias(alias: str):
-        return alias.upper()
-
 
 class Path(Param[T]):
     type: ClassVar[ParamType] = ParamType.PATH
