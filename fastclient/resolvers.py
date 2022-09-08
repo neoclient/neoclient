@@ -1,20 +1,30 @@
 import inspect
-from typing import Any, Callable, Dict, List, Optional, Union, Protocol
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Type,
+    TypeVar,
+    Union,
+    Protocol,
+)
+import urllib.parse
 
 import param
 import param.models
-from param import ParameterSpecification
 import pydantic
 import httpx
 from httpx import Response
 from param import ParameterType
 from param.sentinels import Missing, MissingType
 
-from . import api
+from . import api, utils
 from .errors import InvalidParameterSpecification, ResolutionError
-from .models import RequestOptions
 from .parameters import (
     Depends,
+    PathParams,
     Promise,
     Query,
     Header,
@@ -24,15 +34,24 @@ from .parameters import (
     QueryParams,
     Headers,
     Cookies,
+    Params,
+    Path,
 )
+from .models import RequestOptions
+
+T = TypeVar("T")
+M = TypeVar("M", bound=Mapping[str, str])
 
 
 class Resolver(Protocol):
     def __call__(
         self,
+        request: RequestOptions,
         response: Response,
-        parameter: param.Parameter,
-    ) -> Any:
+        parameters: List[param.Parameter],
+        *,
+        cached_dependencies: Dict[Callable[..., Any], Any],
+    ) -> Dict[str, Any]:
         ...
 
 
@@ -50,379 +69,308 @@ def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
     return pydantic.parse_obj_as(annotation, obj)
 
 
-def resolve_response_query_param(
-    response: Response,
-    parameter: param.Parameter[Query],
-) -> Any:
-    query_param: Union[str, MissingType] = response.request.url.params.get(
-        _get_alias(parameter), Missing
-    )
+def _get_param(
+    source: Mapping[str, T], parameters: List[param.Parameter[Param]]
+) -> Dict[str, T]:
+    values: Dict[str, str] = {}
 
-    if query_param is not Missing:
-        return query_param
-    elif parameter.spec.has_default():
-        return parameter.spec.get_default()
-    else:
-        raise ResolutionError(f"Failed to resolve parameter: {parameter!r}")
+    parameter: param.Parameter[Query]
+    for parameter in parameters:
+        value: Union[str, MissingType] = source.get(_get_alias(parameter), Missing)
+
+        if value is not Missing:
+            values[parameter.name] = value
+        elif parameter.spec.has_default():
+            values[parameter.name] = parameter.spec.get_default()
+        else:
+            raise ResolutionError(f"Failed to resolve parameter: {parameter!r}")
+
+    return values
+
+
+def resolve_response_query_param(
+    request: RequestOptions,
+    response: Response,
+    parameters: List[param.Parameter[Query]],
+    *,
+    cached_dependencies: Dict[Callable[..., Any], Any],
+) -> Dict[str, str]:
+    return _get_param(response.request.url.params, parameters)
 
 
 def resolve_response_header(
+    request: RequestOptions,
     response: Response,
-    parameter: param.Parameter[Header],
-) -> Any:
-    header: Union[str, MissingType] = response.headers.get(
-        _get_alias(parameter), Missing
-    )
-
-    if header is not Missing:
-        return header
-    elif parameter.spec.has_default():
-        return parameter.spec.get_default()
-    else:
-        raise ResolutionError(f"Failed to resolve parameter: {parameter!r}")
+    parameters: List[param.Parameter[Header]],
+    *,
+    cached_dependencies: Dict[Callable[..., Any], Any],
+) -> Dict[str, str]:
+    return _get_param(response.headers, parameters)
 
 
 def resolve_response_cookie(
+    request: RequestOptions,
     response: Response,
-    parameter: param.Parameter[Cookie],
+    parameters: List[param.Parameter[Cookie]],
+    *,
+    cached_dependencies: Dict[Callable[..., Any], Any],
+) -> Dict[str, str]:
+    return _get_param(response.cookies, parameters)
+
+
+def resolve_response_path_param(
+    request: RequestOptions,
+    response: Response,
+    parameters: List[param.Parameter[Path]],
+    *,
+    cached_dependencies: Dict[Callable[..., Any], Any],
 ) -> Any:
-    cookie: Union[str, MissingType] = response.cookies.get(
-        _get_alias(parameter), Missing
+    path_params: Dict[str, Any] = utils.extract_path_params(
+        urllib.parse.unquote(str(request.url.copy_with(params=None, fragment=None))),
+        urllib.parse.unquote(
+            str(response.request.url.copy_with(params=None, fragment=None))
+        ),
     )
 
-    if cookie is not Missing:
-        return cookie
-    elif parameter.spec.has_default():
-        return parameter.spec.get_default()
-    else:
-        raise ResolutionError(f"Failed to resolve parameter: {parameter!r}")
-
-
-# def resolve_response_path_param(
-#     response: Response,
-#     parameter: param.Parameter[Cookie],
-#     *,
-#     request: Optional[RequestOptions] = None,
-# ) -> Any:
-#     path_params: Mapping[str, Any] = utils.extract_path_params(
-#         urllib.parse.unquote(str(request.url)),
-#         urllib.parse.unquote(str(response.request.url)),
-#     )
-
-#     path_param: Union[str, MissingType] = path_params.get(
-#         _get_alias(parameter), Missing
-#     )
-
-#     if path_param is not Missing:
-#         # return _parse_obj(parameter.annotation, path_param)
-#         return path_param
-#     elif parameter.spec.has_default():
-#         return parameter.spec.get_default()
-#     else:
-#         raise ResolutionError(f"Failed to resolve parameter: {parameter!r}")
+    return _get_param(path_params, parameters)
 
 
 def resolve_response_body(
+    request: RequestOptions,
     response: Response,
-    parameter: param.Parameter[Body],
-) -> Any:
-    # TODO: Massively improve this implementation
-    return response.json()
-
-
-# def resolve_response_params(
-#     response: Response,
-#     parameter: param.Parameter,
-#     *,
-#     request: Optional[RequestOptions] = None,
-# ) -> Any:
-#     spec: Params
-
-#     if not isinstance(parameter.spec, Params):
-#         raise Exception("Parameter is not a Params")
-#     else:
-#         spec = parameter.spec
-
-#     return resolve_multi_param(
-#         response,
-#         spec,
-#         annotation=parameter.annotation,
-#         request=request,
-#     )
-
-
-# def resolve_response_depends(
-#     response: Response,
-#     parameter: param.Parameter,
-#     *,
-#     request: Optional[RequestOptions] = None,
-# ) -> Any:
-#     spec: Depends
-
-#     if not isinstance(parameter.spec, Depends):
-#         raise Exception("Parameter is not a Depends")
-#     else:
-#         spec = parameter.spec
-
-#     return resolve_dependency(
-#         response,
-#         spec,
-#         annotation=parameter.annotation,
-#         request=request,
-#     )
+    parameters: List[param.Parameter[Body]],
+    *,
+    cached_dependencies: Dict[Callable[..., Any], Any],
+) -> Dict[str, Any]:
+    # TODO: Improve this implementation
+    return {parameter.name: response.json() for parameter in parameters}
 
 
 def resolve_response_promise(
+    request: RequestOptions,
     response: Response,
-    parameter: param.Parameter[Promise],
-) -> Any:
-    promised_type: type
+    parameters: List[param.Parameter[Promise]],
+    *,
+    cached_dependencies: Dict[Callable[..., Any], Any],
+) -> Dict[str, Any]:
+    fullfillments: Dict[type, Any] = {
+        httpx.Response: response,
+        httpx.Request: response.request,
+        httpx.URL: response.url,
+        httpx.Headers: response.headers,
+        httpx.Cookies: response.cookies,
+        httpx.QueryParams: response.request.url.params,
+    }
 
-    if parameter.spec.promised_type is not None:
-        promised_type = parameter.spec.promised_type
-    elif parameter.annotation not in (inspect._empty, Missing):
-        promised_type = parameter.annotation
-    else:
-        raise ResolutionError(
-            f"Failed to resolve parameter: {parameter!r}. Promise contains no promised type"
-        )
+    resolved_values: Dict[str, Any] = {}
 
-    if promised_type is httpx.Response:
-        return response
-    elif promised_type is httpx.Request:
-        return response.request
-    elif promised_type is httpx.URL:
-        return response.url
-    elif promised_type is httpx.Headers:
-        return response.headers
-    elif promised_type is httpx.Cookies:
-        return response.cookies
-    elif promised_type is httpx.QueryParams:
-        return response.params
-    else:
-        raise ResolutionError(
-            f"Failed to resolve parameter: {parameter!r}. Unsupported promise type"
-        )
+    parameter: param.Parameter[Promise]
+    for parameter in parameters:
+        promised_type: type
+
+        if parameter.spec.promised_type is not None:
+            promised_type = parameter.spec.promised_type
+        elif parameter.annotation not in (inspect._empty, Missing):
+            promised_type = parameter.annotation
+        else:
+            raise ResolutionError(
+                f"Failed to resolve parameter: {parameter!r}. Promise contains no promised type"
+            )
+
+        if promised_type in fullfillments:
+            resolved_values[parameter.name] = fullfillments[promised_type]
+        else:
+            raise ResolutionError(
+                f"Failed to resolve parameter: {parameter!r}. Unsupported promise type"
+            )
+
+    return resolved_values
+
+
+def _get_params(source: M, parameters: List[param.Parameter[Params]]) -> Dict[str, M]:
+    return {parameter.name: source for parameter in parameters}
 
 
 def resolve_response_query_params(
+    request: RequestOptions,
     response: Response,
-    parameter: param.Parameter[QueryParams],
-) -> Any:
-    return response.params
+    parameters: List[param.Parameter[QueryParams]],
+    *,
+    cached_dependencies: Dict[Callable[..., Any], Any],
+) -> Dict[str, httpx.QueryParams]:
+    return _get_params(response.request.url.params, parameters)
 
 
 def resolve_response_headers(
+    request: RequestOptions,
     response: Response,
-    parameter: param.Parameter[Headers],
-) -> Any:
-    return response.headers
+    parameters: List[param.Parameter[Headers]],
+    *,
+    cached_dependencies: Dict[Callable[..., Any], Any],
+) -> Dict[str, httpx.Headers]:
+    return _get_params(response.headers, parameters)
 
 
 def resolve_response_cookies(
+    request: RequestOptions,
     response: Response,
-    parameter: param.Parameter[Cookies],
-) -> Any:
-    return response.cookies
+    parameters: List[param.Parameter[Cookies]],
+    *,
+    cached_dependencies: Dict[Callable[..., Any], Any],
+) -> Dict[str, httpx.Cookies]:
+    return _get_params(response.cookies, parameters)
 
 
-# def resolve_multi_param(
-#     response: Response,
-#     param: Params,
-#     /,
-#     *,
-#     annotation: Union[Any, MissingType] = Missing,
-#     request: Optional[RequestOptions] = None,
-# ) -> Any:
-#     path_params: Dict[str, Any] = (
-#         utils.extract_path_params(
-#             urllib.parse.unquote(
-#                 str(request.url.copy_with(params=None, fragment=None))
-#             ),
-#             urllib.parse.unquote(
-#                 str(response.request.url.copy_with(params=None, fragment=None))
-#             ),
-#         )
-#         if request is not None
-#         else {}
-#     )
+def resolve_response_path_params(
+    request: RequestOptions,
+    response: Response,
+    parameters: List[param.Parameter[PathParams]],
+    *,
+    cached_dependencies: Dict[Callable[..., Any], Any],
+) -> Dict[str, httpx.Cookies]:
+    path_params: Dict[str, Any] = utils.extract_path_params(
+        urllib.parse.unquote(str(request.url.copy_with(params=None, fragment=None))),
+        urllib.parse.unquote(
+            str(response.request.url.copy_with(params=None, fragment=None))
+        ),
+    )
 
-#     values: Dict[ParamType, Any] = {
-#         ParamType.QUERY: response.url.params,
-#         ParamType.HEADER: response.headers,
-#         ParamType.COOKIE: response.cookies,
-#         ParamType.PATH: path_params,
-#     }
-
-#     # return _parse_obj(annotation, values[param.type])
-#     return values[param.type]
+    return _get_params(path_params, parameters)
 
 
 def resolve_response_depends(
+    request: RequestOptions,
     response: Response,
-    parameter: param.Parameter[Depends],
-) -> Any:
-    # NOTE: What about cached dependencies?
-    raise NotImplementedError
+    parameters: List[param.Parameter[Depends]],
+    *,
+    cached_dependencies: Dict[Callable[..., Any], Any],
+) -> Dict[str, Any]:
+    resolved_values: Dict[str, Any] = {}
 
+    parameter: param.Parameter
+    for parameter in parameters:
+        parameter_dependency_callable: Callable
 
-# def resolve_dependency(
-#     response: Response,
-#     dependency: Depends,
-#     /,
-#     *,
-#     request: Optional[RequestOptions] = None,
-#     annotation: Union[Any, MissingType] = Missing,
-#     cached_dependencies: Optional[Dict[Callable[..., Any], Any]] = None,
-# ) -> Any:
-#     parameter_dependency_callable: Callable
+        if parameter.spec.dependency is not None:
+            parameter_dependency_callable = parameter.spec.dependency
+        elif parameter.annotation not in (inspect._empty, Missing):
+            if not callable(parameter.annotation):
+                raise ResolutionError(
+                    f"Failed to resolve parameter: {parameter!r}. Dependency has non-callable annotation"
+                )
 
-#     if dependency.dependency is not None:
-#         parameter_dependency_callable = dependency.dependency
-#     elif annotation not in (inspect._empty, Missing):
-#         if not callable(annotation):
-#             raise Exception("Dependency has non-callable annotation")
+            parameter_dependency_callable = parameter.annotation
+        else:
+            raise ResolutionError(
+                f"Failed to resolve parameter: {parameter!r}. Dependency is empty"
+            )
 
-#         parameter_dependency_callable = annotation
-#     else:
-#         raise Exception("Cannot resolve empty dependency")
+        if (
+            cached_dependencies is not None
+            and parameter.spec.use_cache
+            and parameter.spec.dependency in cached_dependencies
+        ):
+            return cached_dependencies[parameter.spec.dependency]
 
-#     if (
-#         cached_dependencies is not None
-#         and dependency.use_cache
-#         and dependency.dependency in cached_dependencies
-#     ):
-#         return cached_dependencies[dependency.dependency]
+        resolved: Any = resolve_func(
+            request,
+            response,
+            parameter_dependency_callable,
+            cached_dependencies=cached_dependencies,
+        )
 
-#     parameters: Dict[str, param.Parameter] = api.get_params(
-#         parameter_dependency_callable, request=request
-#     )
+        # Cache resolved dependency
+        cached_dependencies[parameter_dependency_callable] = resolved
 
-#     args: List[Any] = []
-#     kwargs: Dict[str, Any] = {}
+        resolved_values[parameter.name] = resolved
 
-#     if cached_dependencies is None:
-#         cached_dependencies = {}
-
-#     parameter: param.Parameter
-#     for parameter in parameters.values():
-#         parameter_spec: ParameterSpecification = parameter.spec
-
-#         value: Any
-
-#         if isinstance(parameter_spec, Depends):
-#             value = resolve_dependency(
-#                 response,
-#                 parameter_spec,
-#                 request=request,
-#                 annotation=parameter.annotation,
-#                 cached_dependencies=cached_dependencies,
-#             )
-#         else:
-#             value = resolve(
-#                 response,
-#                 parameter,
-#                 request=request,
-#             )
-
-#         if parameter.type in (
-#             ParameterType.POSITIONAL_ONLY,
-#             ParameterType.VAR_POSITIONAL,
-#         ):
-#             args.append(value)
-#         else:
-#             kwargs[parameter.name] = value
-
-#     resolved: Any = parameter_dependency_callable(*args, **kwargs)
-
-#     # Cache resolved dependency
-#     cached_dependencies[parameter_dependency_callable] = resolved
-
-#     return resolved
+    return resolved_values
 
 
 response_resolvers: Dict[type, Resolver] = {
     Query: resolve_response_query_param,
     Header: resolve_response_header,
     Cookie: resolve_response_cookie,
-    # Path: resolve_response_path_param,
+    Path: resolve_response_path_param,
     Body: resolve_response_body,
     QueryParams: resolve_response_query_params,
     Headers: resolve_response_headers,
     Cookies: resolve_response_cookies,
+    PathParams: resolve_response_path_params,
     Depends: resolve_response_depends,
     Promise: resolve_response_promise,
 }
 
 
 def resolve(
+    request: RequestOptions,
     response: Response,
-    parameter: param.Parameter,
-    # *,
-    # request: Optional[RequestOptions] = None,
+    parameter_cls: Type[param.models.Param],
+    parameters: List[param.Parameter],
+    *,
+    cached_dependencies: Dict[Callable[..., Any], Any],
 ) -> Any:
     spec_type: type
     resolver: Resolver
     for spec_type, resolver in response_resolvers.items():
-        if isinstance(parameter.spec, spec_type):
-            # resolved_value: Any = resolver(response, parameter, request=request)
-            # resolved_value: Any = resolver(response, parameter.name, parameter.spec)
-            resolved_value: Any = resolver(response, parameter)
+        if issubclass(parameter_cls, spec_type):
+            resolved_values: Dict[str, Any] = resolver(
+                request, response, parameters, cached_dependencies=cached_dependencies
+            )
 
-            return _parse_obj(parameter.annotation, resolved_value)
+            return {
+                parameter.name: _parse_obj(
+                    parameter.annotation, resolved_values[parameter.name]
+                )
+                for parameter in parameters
+            }
 
-    raise InvalidParameterSpecification(
-        f"Invalid response parameter specification: {parameter.spec!r}"
-    )
+    raise InvalidParameterSpecification(f"Invalid parameter class: {parameter_cls!r}")
+
+
+def aggregate_parameters(
+    parameters: Dict[str, param.Parameter], /
+) -> Dict[Type[param.models.Param], List[param.Parameter]]:
+    aggregated_parameters: Dict[Type[param.models.Param], List[param.Parameter]] = {}
+
+    parameter: param.Parameter
+    for parameter in parameters.values():
+        aggregated_parameters.setdefault(type(parameter.spec), []).append(parameter)
+
+    return aggregated_parameters
 
 
 def resolve_func(
+    request: RequestOptions,
     response: Response,
     func: Callable,
-    # /,
-    # *,
-    # request: Optional[RequestOptions] = None,
-    # target_type: Union[Any, MissingType] = Missing,
-):
-    # TODO: Don't do it this way
-    # return resolve_dependency(
-    #     response,
-    #     Depends(dependency=func),
-    #     request=request,
-    #     annotation=target_type,
-    # )
-
-    parameters: Dict[str, param.Parameter] = api.get_params(func)
+    *,
+    cached_dependencies: Dict[Callable[..., Any], Any],
+) -> Any:
+    aggregated_parameters: Dict[
+        Type[param.models.Param], List[param.Parameter]
+    ] = aggregate_parameters(api.get_params(func, request=request))
 
     args: List[Any] = []
     kwargs: Dict[str, Any] = {}
 
-    parameter: param.Parameter
-    for parameter in parameters.values():
-        value: Any = resolve(response, parameter)
+    parameter_cls: Type[param.models.Param]
+    for parameter_cls, parameters in aggregated_parameters.items():
+        resolved_values: Dict[str, Any] = resolve(
+            request, response, parameter_cls, parameters, cached_dependencies=cached_dependencies
+        )
 
-        # if isinstance(parameter_spec, Depends):
-        #     value = resolve_dependency(
-        #         response,
-        #         parameter_spec,
-        #         request=request,
-        #         annotation=parameter.annotation,
-        #         cached_dependencies=cached_dependencies,
-        #     )
-        # else:
-        #     value = resolve(
-        #         response,
-        #         parameter,
-        #         request=request,
-        #     )
+        parameter: param.Parameter
+        for parameter in parameters:
+            value: Any = resolved_values[parameter.name]
 
-        if parameter.type in (
-            ParameterType.POSITIONAL_ONLY,
-            ParameterType.VAR_POSITIONAL,
-        ):
-            args.append(value)
-        else:
-            kwargs[parameter.name] = value
+            if parameter.type in (
+                ParameterType.POSITIONAL_ONLY,
+                ParameterType.VAR_POSITIONAL,
+            ):
+                args.append(value)
+            else:
+                kwargs[parameter.name] = value
 
     resolved: Any = func(*args, **kwargs)
 
