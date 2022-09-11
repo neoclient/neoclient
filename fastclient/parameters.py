@@ -62,8 +62,6 @@ class Path(Param[T]):
 
 @dataclass(frozen=True)
 class Body(param.parameters.Param[T]):
-    # type: ClassVar[ParamType] = ParamType.BODY
-
     alias: Optional[str] = None
     required: bool = False
 

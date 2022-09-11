@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Optional
+from typing import Any, Callable, Dict, Mapping, Optional
 import urllib.parse
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
+from param.models import Parameter
 
 from . import utils
 from .types import (
@@ -211,32 +212,25 @@ class RequestOptions:
     def add_query_param(self, key: str, value: Any) -> None:
         self.params = self.params.set(key, value)
 
-
     def add_header(self, key: str, value: str) -> None:
         self.headers[key] = value
 
-
     def add_cookie(self, key: str, value: str) -> None:
         self.cookies[key] = value
-
 
     def add_path_param(self, key: str, value: Any) -> None:
         self.url = httpx.URL(
             utils.partially_format(urllib.parse.unquote(str(self.url)), **{key: value})
         )
 
-
     def add_query_params(self, query_params: QueryParamTypes) -> None:
         self.params = self.params.merge(httpx.QueryParams(query_params))
-
 
     def add_headers(self, headers: HeaderTypes) -> None:
         self.headers.update(httpx.Headers(headers))
 
-
     def add_cookies(self, cookies: CookieTypes) -> None:
         self.cookies.update(httpx.Cookies(cookies))
-
 
     def add_path_params(self, path_params: Mapping[str, Any]) -> None:
         self.url = httpx.URL(
@@ -249,6 +243,8 @@ class OperationSpecification:
     request: RequestOptions
     response: Optional[Callable[..., Any]] = None
 
+
 @dataclass(frozen=True)
 class ComposerContext:
     request: RequestOptions
+    parameters: Dict[str, Parameter]

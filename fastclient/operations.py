@@ -72,11 +72,18 @@ class Operation(Generic[PS, RT]):
         response: Response = client.send(request)
 
         if self.specification.response is not None:
-            request_options_with_unpopulated_url = dataclasses.replace(request_options, url=self.specification.request.url)
-            
+            request_options_with_unpopulated_url = dataclasses.replace(
+                request_options, url=self.specification.request.url
+            )
+
             # return resolve_func(response, self.specification.response, request=request_options_with_unpopulated_url, target_type=return_annotation)
             # return resolve_func(response, self.specification.response)
-            return resolve_func(request_options_with_unpopulated_url, response, self.specification.response, cached_dependencies={})
+            return resolve_func(
+                request_options_with_unpopulated_url,
+                response,
+                self.specification.response,
+                cached_dependencies={},
+            )
 
         if return_annotation is inspect._empty:
             return response.json()
@@ -99,14 +106,7 @@ class Operation(Generic[PS, RT]):
             )
         )
 
-        print("before:")
-        print(request)
-        print()
-
         compose_func(request, self.func, arguments)
-
-        print("after:")
-        print(request)
 
         return request
 

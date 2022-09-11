@@ -1,12 +1,11 @@
-import dataclasses
 from dataclasses import dataclass
 import inspect
 import urllib.parse
 from typing import Any, Callable, Dict, Mapping, Set, Union
 
 import fastapi.encoders
-import httpx
 import param
+from param.errors import ResolutionError
 from param.parameters import ParameterSpecification
 from param.models import Arguments
 from param.manager import ParameterManager
@@ -15,7 +14,6 @@ from param.sentinels import Missing, MissingType
 import pydantic
 
 from . import utils
-from .enums import ParamType
 from .errors import IncompatiblePathParameters
 from .models import ComposerContext, RequestOptions
 from .parameters import (
@@ -31,7 +29,6 @@ from .parameters import (
     Cookies,
     PathParams,
 )
-from .types import HeaderTypes, QueryParamTypes, CookieTypes
 
 
 def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
@@ -41,194 +38,171 @@ def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
     return pydantic.parse_obj_as(annotation, obj)
 
 
-def compose_query_param(request: RequestOptions, param: Query, value: str) -> None:
-    print("compose_query_param:", request, param, value)
-
-    if param.alias is None:
-        raise Exception(f"Cannot compose param {param!r} if it has no alias")
-
-    resolved_value: str = value if value is not Missing else param.get_default()
-
-    request.add_query_param(param.alias, resolved_value)
-
-
-def compose_header(request: RequestOptions, param: Header, value: str) -> None:
-    if param.alias is None:
-        raise Exception(f"Cannot compose param {param!r} if it has no alias")
-
-    resolved_value: str = value if value is not Missing else param.get_default()
-
-    request.add_header(param.alias, resolved_value)
-
-
-def compose_cookie(request: RequestOptions, param: Cookie, value: str) -> None:
-    if param.alias is None:
-        raise Exception(f"Cannot compose param {param!r} if it has no alias")
-
-    resolved_value: str = value if value is not Missing else param.get_default()
-
-    request.add_cookie(param.alias, resolved_value)
-
-
-def compose_path_param(request: RequestOptions, param: Path, value: str) -> None:
-    if param.alias is None:
-        raise Exception(f"Cannot compose param {param!r} if it has no alias")
-
-    resolved_value: str = value if value is not Missing else param.get_default()
-
-    request.add_path_param(param.alias, resolved_value)
-
-
-def compose_param(
-    parameter: param.Parameter, context: ComposerContext, value: Union[Any, MissingType]
-) -> None:
-    spec: Param
-
-    if not isinstance(parameter.spec, Param):
-        raise Exception("Parameter is not a Param")
+def _get_alias(parameter: param.Parameter[Param], /) -> str:
+    if parameter.spec.alias is not None:
+        return parameter.spec.alias
     else:
-        spec = parameter.spec
+        return parameter.spec.generate_alias(parameter.name)
 
-    field_name: str = (
-        spec.alias if spec.alias is not None else spec.generate_alias(parameter.name)
-    )
 
-    # Ensure the parameter has an alias
-    spec = dataclasses.replace(spec, alias=field_name)
+def _compose_param(
+    parameter: param.Parameter[Param],
+    value: Union[Any, MissingType],
+    setter: Callable[[str, Any], Any],
+) -> None:
+    true_value: Any
 
-    # The field is not required, it can be omitted
-    if value is None and not spec.required:
+    if value is not Missing:
+        true_value = value
+    elif parameter.spec.has_default():
+        true_value = parameter.spec.get_default()
+    else:
+        raise ResolutionError(
+            f"Failed to compose parameter: {parameter!r} - No default and no value provided"
+        )
+
+    field_name: str = _get_alias(parameter)
+
+    # If the field is not required and has no value, it can be omitted
+    if true_value is None and not parameter.spec.required:
         return
 
-    if spec.type is ParamType.QUERY:
-        # Convert the value
-        value = _parse_obj(str, value)
+    # Convert the value to a string
+    string_value: str = _parse_obj(str, true_value)
 
-        compose_query_param(context.request, spec, value)
-    elif spec.type is ParamType.HEADER:
-        # Convert the value
-        value = _parse_obj(str, value)
+    # Set the value
+    setter(field_name, string_value)
 
-        compose_header(context.request, spec, value)
-    elif spec.type is ParamType.COOKIE:
-        # Convert the value
-        value = _parse_obj(str, value)
 
-        compose_cookie(context.request, spec, value)
-    elif spec.type is ParamType.PATH:
-        # Convert the value
-        value = _parse_obj(str, value)
+def compose_query_param(
+    parameter: param.Parameter[Query],
+    context: ComposerContext,
+    value: Union[Any, MissingType],
+) -> None:
+    return _compose_param(parameter, value, context.request.add_query_param)
 
-        compose_path_param(context.request, spec, value)
-    else:
-        raise Exception(f"Unknown ParamType: {spec.type!r}")
+
+def compose_header(
+    parameter: param.Parameter[Header],
+    context: ComposerContext,
+    value: Union[Any, MissingType],
+) -> None:
+    return _compose_param(parameter, value, context.request.add_header)
+
+
+def compose_cookie(
+    parameter: param.Parameter[Cookie],
+    context: ComposerContext,
+    value: Union[Any, MissingType],
+) -> None:
+    return _compose_param(parameter, value, context.request.add_cookie)
+
+
+def compose_path_param(
+    parameter: param.Parameter[Path],
+    context: ComposerContext,
+    value: Union[Any, MissingType],
+) -> None:
+    return _compose_param(parameter, value, context.request.add_path_param)
 
 
 def compose_body(
-    parameter: param.Parameter, context: ComposerContext, value: Union[Any, MissingType]
+    parameter: param.Parameter[Body],
+    context: ComposerContext,
+    value: Union[Any, MissingType],
 ) -> None:
-    if not isinstance(parameter.spec, Body):
-        raise Exception("Parameter is not a Body")
+    true_value: Any
+
+    if value is not Missing:
+        true_value = value
+    elif parameter.spec.has_default():
+        true_value = parameter.spec.get_default()
     else:
-        spec = parameter.spec
+        raise ResolutionError(
+            f"Failed to compose parameter: {parameter!r} - No default and no value provided"
+        )
 
-    field_name: str = (
-        spec.alias if spec.alias is not None else spec.generate_alias(parameter.name)
-    )
+    field_name: str = _get_alias(parameter)
 
-    # Ensure the parameter has an alias
-    spec = dataclasses.replace(spec, alias=field_name)
-
-    # The field is not required, it can be omitted
-    if value is None and not spec.required:
+    # If the field is not required and has no value, it can be omitted
+    if true_value is None and not parameter.spec.required:
         return
 
-    resolved_value: Any = fastapi.encoders.jsonable_encoder(
-        value if value is not None else spec.get_default()
+    json_value: Any = fastapi.encoders.jsonable_encoder(true_value)
+
+    total_body_params: int = len(
+        [
+            parameter
+            for parameter in context.parameters.values()
+            if type(parameter.spec) is Body
+        ]
     )
 
-    if spec.embed:
-        if spec.alias is None:
-            raise Exception(f"Cannot embed body param {spec!r} if it has no alias")
+    embed: bool = parameter.spec.embed
 
-        resolved_value = {spec.alias: resolved_value}
+    if total_body_params > 1:
+        embed = True
+
+    if embed:
+        json_value = {field_name: json_value}
 
     # If there's only one body param, or this param shouln't be embedded in any pre-existing json,
     # make it the entire JSON request body
-    if context.request.json is None or not spec.embed:
-        context.request.json = resolved_value
+    if context.request.json is None or not embed:
+        context.request.json = json_value
     else:
-        context.request.json.update(resolved_value)
+        context.request.json.update(json_value)
+
+
+def _compose_params(
+    parameter: param.Parameter[Params],
+    value: Union[Any, MissingType],
+    setter: Callable[[Any], Any],
+) -> None:
+    true_value: Any
+
+    if value is not Missing:
+        true_value = value
+    elif parameter.spec.has_default():
+        true_value = parameter.spec.get_default()
+    else:
+        raise ResolutionError(
+            f"Failed to compose parameter: {parameter!r} - No default and no value provided"
+        )
+
+    setter(true_value)
 
 
 def compose_query_params(
-    request: RequestOptions,
-    param: QueryParams,
-    value: QueryParamTypes,
+    parameter: param.Parameter[QueryParams],
+    context: ComposerContext,
+    value: Union[Any, MissingType],
 ) -> None:
-    resolved_value: httpx.QueryParams = (
-        httpx.QueryParams(value) if value is not Missing else param.get_default()
-    )
-
-    request.add_query_params(resolved_value)
+    return _compose_params(parameter, value, context.request.add_query_params)
 
 
 def compose_headers(
-    request: RequestOptions,
-    param: Headers,
-    value: HeaderTypes,
+    parameter: param.Parameter[Headers],
+    context: ComposerContext,
+    value: Union[Any, MissingType],
 ) -> None:
-    resolved_value: httpx.Headers = (
-        httpx.Headers(value) if value is not Missing else param.get_default()
-    )
-
-    request.add_headers(resolved_value)
+    return _compose_params(parameter, value, context.request.add_headers)
 
 
 def compose_cookies(
-    request: RequestOptions,
-    param: Cookies,
-    value: CookieTypes,
+    parameter: param.Parameter[Cookie],
+    context: ComposerContext,
+    value: Union[Any, MissingType],
 ) -> None:
-    resolved_value: httpx.Cookies = (
-        httpx.Cookies(value) if value is not Missing else param.get_default()
-    )
-
-    request.add_cookies(resolved_value)
+    return _compose_params(parameter, value, context.request.add_cookies)
 
 
 def compose_path_params(
-    request: RequestOptions,
-    param: Cookies,
-    value: Dict[str, Any],
+    parameter: param.Parameter[PathParams],
+    context: ComposerContext,
+    value: Union[Any, MissingType],
 ) -> None:
-    resolved_value: Dict[str, Any] = (
-        value if value is not Missing else param.get_default()
-    )
-
-    request.add_path_params(resolved_value)
-
-
-def compose_params(
-    parameter: param.Parameter, context: ComposerContext, value: Union[Any, MissingType]
-) -> None:
-    spec: Params
-
-    if not isinstance(parameter.spec, Params):
-        raise Exception("Parameter is not a Params")
-    else:
-        spec = parameter.spec
-
-    if spec.type is ParamType.QUERY:
-        compose_query_params(context.request, spec, value)
-    elif spec.type is ParamType.HEADER:
-        compose_headers(context.request, spec, value)
-    elif spec.type is ParamType.COOKIE:
-        compose_cookies(context.request, spec, value)
-    elif spec.type is ParamType.PATH:
-        compose_path_params(context.request, spec, value)
-    else:
-        raise Exception(f"Unknown multi-param: {spec.type!r}")
+    return _compose_params(parameter, value, context.request.add_path_params)
 
 
 def _validate_request_options(request: RequestOptions, /) -> None:
@@ -246,7 +220,7 @@ def _validate_request_options(request: RequestOptions, /) -> None:
 @dataclass
 class CompositionParameterManager(ParameterManager[ComposerContext]):
     resolvers: Resolvers[ComposerContext]
-    context: ComposerContext
+    request: RequestOptions
     infer: bool = True
 
     # NOTE: Composition parameter inference should be much more advanced than this.
@@ -263,7 +237,10 @@ class CompositionParameterManager(ParameterManager[ComposerContext]):
     def build_contexts(
         self, parameters: Dict[str, param.Parameter], arguments: Dict[str, Any]
     ) -> Dict[str, ComposerContext]:
-        return {parameter: self.context for parameter in parameters}
+        return {
+            parameter: ComposerContext(request=self.request, parameters=parameters)
+            for parameter in parameters
+        }
 
 
 def compose_func(
@@ -272,18 +249,18 @@ def compose_func(
     manager: ParameterManager[ComposerContext] = CompositionParameterManager(
         resolvers=Resolvers(
             {
-                Query: compose_param,
-                Header: compose_param,
-                Cookie: compose_param,
-                Path: compose_param,
+                Query: compose_query_param,
+                Header: compose_header,
+                Cookie: compose_cookie,
+                Path: compose_path_param,
                 Body: compose_body,
-                QueryParams: compose_params,
-                Headers: compose_params,
-                Cookies: compose_params,
-                PathParams: compose_params,
+                QueryParams: compose_query_params,
+                Headers: compose_headers,
+                Cookies: compose_cookies,
+                PathParams: compose_path_params,
             }
         ),
-        context=ComposerContext(request=request),
+        request=request,
         infer=True,
     )
 

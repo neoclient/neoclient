@@ -1,6 +1,5 @@
 import inspect
 import urllib.parse
-from inspect import Parameter
 from typing import (
     Any,
     Callable,
@@ -18,7 +17,10 @@ from param.sentinels import Missing
 from pydantic import BaseModel
 
 from . import utils
-from .errors import DuplicateParameter, IncompatiblePathParameters, InvalidParameterSpecification
+from .errors import (
+    DuplicateParameter,
+    IncompatiblePathParameters,
+)
 from .models import RequestOptions
 from .parameters import (
     Body,
@@ -30,16 +32,20 @@ from .parameters import (
     Params,
     PathParams,
 )
-from .parameter_functions import Headers, Cookies, QueryParams    
+from .parameter_functions import Headers, Cookies, QueryParams
 
 
 def _build_parameter(
-    parameter: Parameter, spec: param.ParameterSpecification
+    parameter: inspect.Parameter, spec: param.ParameterSpecification
 ) -> param.Parameter:
     return param.Parameter(
         name=parameter.name,
-        annotation=parameter.annotation,
-        type=getattr(param.ParameterType, parameter.kind.name),
+        annotation=(
+            parameter.annotation
+            if parameter.annotation is not inspect._empty
+            else Missing
+        ),
+        type=param.ParameterType.from_kind(parameter.kind.name),
         spec=spec,
     )
 
@@ -56,7 +62,7 @@ def _extract_path_params(parameters: Iterable[param.Parameter]) -> Set[str]:
     }
 
 
-def _infer_parameter(parameter: Parameter, /, *, path_params: Set[str] = set()):
+def _infer_parameter(parameter: inspect.Parameter, /, *, path_params: Set[str] = set()):
     parameter_type: type = parameter.annotation
 
     body_types: Tuple[type, ...] = (BaseModel, dict)
@@ -135,7 +141,9 @@ def get_params(
         else set()
     )
 
-    _inspect_params: List[Parameter] = list(inspect.signature(func).parameters.values())
+    _inspect_params: List[inspect.Parameter] = list(
+        inspect.signature(func).parameters.values()
+    )
 
     # TODO: Find a better fix for methods!
     if _inspect_params and _inspect_params[0].name == "self":
@@ -144,9 +152,9 @@ def get_params(
         raw_parameters = _inspect_params
 
     parameters: Dict[str, param.Parameter] = {}
-    parameters_to_infer: List[Parameter] = []
+    parameters_to_infer: List[inspect.Parameter] = []
 
-    parameter: Parameter
+    parameter: inspect.Parameter
 
     for parameter in raw_parameters:
         # NOTE: `Depends` doesn't subclass `Param`. This needs to be fixed.

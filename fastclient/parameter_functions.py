@@ -65,7 +65,11 @@ def Body(
     embed: bool = False,
 ) -> parameters.Body[T]:
     return parameters.Body(
-        alias=alias, default=default, default_factory=default_factory, required=required, embed=embed
+        alias=alias,
+        default=default,
+        default_factory=default_factory,
+        required=required,
+        embed=embed,
     )
 
 

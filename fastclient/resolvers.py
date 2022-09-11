@@ -331,7 +331,9 @@ def resolve(
 def aggregate_parameters(
     parameters: Dict[str, param.Parameter], /
 ) -> Dict[Type[param.parameters.Param], List[param.Parameter]]:
-    aggregated_parameters: Dict[Type[param.parameters.Param], List[param.Parameter]] = {}
+    aggregated_parameters: Dict[
+        Type[param.parameters.Param], List[param.Parameter]
+    ] = {}
 
     parameter: param.Parameter
     for parameter in parameters.values():
@@ -357,7 +359,11 @@ def resolve_func(
     parameter_cls: Type[param.parameters.Param]
     for parameter_cls, parameters in aggregated_parameters.items():
         resolved_values: Dict[str, Any] = resolve(
-            request, response, parameter_cls, parameters, cached_dependencies=cached_dependencies
+            request,
+            response,
+            parameter_cls,
+            parameters,
+            cached_dependencies=cached_dependencies,
         )
 
         parameter: param.Parameter
