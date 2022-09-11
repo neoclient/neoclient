@@ -12,7 +12,7 @@ from typing import (
 
 import httpx
 import param
-import param.models
+import param.parameters
 import pydantic
 from httpx import Client, Response
 from pydantic import BaseModel
@@ -21,7 +21,7 @@ from typing_extensions import ParamSpec
 from . import utils
 from .errors import NotAnOperation
 from .models import OperationSpecification, RequestOptions
-from .populaters import compose_func
+from .composers import compose_func
 from .resolvers import resolve_func
 
 PS = ParamSpec("PS")
@@ -99,7 +99,14 @@ class Operation(Generic[PS, RT]):
             )
         )
 
+        print("before:")
+        print(request)
+        print()
+
         compose_func(request, self.func, arguments)
+
+        print("after:")
+        print(request)
 
         return request
 
@@ -113,7 +120,7 @@ class Operation(Generic[PS, RT]):
         argument_name: str
         argument: Any
         for argument_name, argument in arguments.items():
-            if isinstance(argument, param.models.Param):
+            if isinstance(argument, param.parameters.Param):
                 if not argument.has_default():
                     raise ValueError(
                         f"{self.func.__name__}() missing argument: {argument_name!r}"

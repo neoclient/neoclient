@@ -248,3 +248,7 @@ class RequestOptions:
 class OperationSpecification:
     request: RequestOptions
     response: Optional[Callable[..., Any]] = None
+
+@dataclass(frozen=True)
+class ComposerContext:
+    request: RequestOptions

@@ -12,7 +12,7 @@ from typing import (
 )
 
 from httpx import Request, Response
-import param.models
+import param.parameters
 from param.sentinels import Missing, MissingType
 
 from .enums import ParamType
@@ -21,7 +21,7 @@ T = TypeVar("T")
 
 
 @dataclass(frozen=True)
-class Param(param.models.Param[T]):
+class Param(param.parameters.Param[T]):
     type: ClassVar[ParamType]
 
     alias: Optional[str] = None
@@ -61,7 +61,7 @@ class Path(Param[T]):
 
 
 @dataclass(frozen=True)
-class Body(param.models.Param[T]):
+class Body(param.parameters.Param[T]):
     # type: ClassVar[ParamType] = ParamType.BODY
 
     alias: Optional[str] = None
@@ -75,7 +75,7 @@ class Body(param.models.Param[T]):
 
 
 # NOTE: Should use custom generic types for each subclass. E.g. `Headers` should have a `T` bound to `HeaderTypes`
-class Params(param.models.Param[Dict[str, Any]]):
+class Params(param.parameters.Param[Dict[str, Any]]):
     type: ClassVar[ParamType]
 
     def __init__(
@@ -106,11 +106,11 @@ class PathParams(Params):
 
 # NOTE: Don't use @dataclass, this way can make `use_cache` keyword-only? (FastAPI does it this way)
 @dataclass(frozen=True)
-class Depends(param.models.ParameterSpecification, Generic[T]):
+class Depends(param.parameters.ParameterSpecification, Generic[T]):
     dependency: Optional[Callable[..., T]] = None
     use_cache: bool = True
 
 
 @dataclass(frozen=True)
-class Promise(param.models.ParameterSpecification):
+class Promise(param.parameters.ParameterSpecification):
     promised_type: Union[None, Type[Request], Type[Response]] = None

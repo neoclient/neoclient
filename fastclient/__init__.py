@@ -1,5 +1,5 @@
 from .client import FastClient
-from .composers import (
+from .decorators import (
     params,
     headers,
     cookies,

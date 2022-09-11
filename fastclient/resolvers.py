@@ -13,7 +13,7 @@ from typing import (
 import urllib.parse
 
 import param
-import param.models
+import param.parameters
 import pydantic
 import httpx
 from httpx import Response
@@ -305,7 +305,7 @@ response_resolvers: Dict[type, Resolver] = {
 def resolve(
     request: RequestOptions,
     response: Response,
-    parameter_cls: Type[param.models.Param],
+    parameter_cls: Type[param.parameters.Param],
     parameters: List[param.Parameter],
     *,
     cached_dependencies: Dict[Callable[..., Any], Any],
@@ -330,8 +330,8 @@ def resolve(
 
 def aggregate_parameters(
     parameters: Dict[str, param.Parameter], /
-) -> Dict[Type[param.models.Param], List[param.Parameter]]:
-    aggregated_parameters: Dict[Type[param.models.Param], List[param.Parameter]] = {}
+) -> Dict[Type[param.parameters.Param], List[param.Parameter]]:
+    aggregated_parameters: Dict[Type[param.parameters.Param], List[param.Parameter]] = {}
 
     parameter: param.Parameter
     for parameter in parameters.values():
@@ -348,13 +348,13 @@ def resolve_func(
     cached_dependencies: Dict[Callable[..., Any], Any],
 ) -> Any:
     aggregated_parameters: Dict[
-        Type[param.models.Param], List[param.Parameter]
+        Type[param.parameters.Param], List[param.Parameter]
     ] = aggregate_parameters(api.get_params(func, request=request))
 
     args: List[Any] = []
     kwargs: Dict[str, Any] = {}
 
-    parameter_cls: Type[param.models.Param]
+    parameter_cls: Type[param.parameters.Param]
     for parameter_cls, parameters in aggregated_parameters.items():
         resolved_values: Dict[str, Any] = resolve(
             request, response, parameter_cls, parameters, cached_dependencies=cached_dependencies
