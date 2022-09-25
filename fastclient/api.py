@@ -40,25 +40,25 @@ def _build_parameter(
 ) -> param.Parameter:
     return param.Parameter(
         name=parameter.name,
+        default=spec,
         annotation=(
             parameter.annotation
-            if parameter.annotation is not inspect._empty
+            if parameter.annotation is not inspect.Parameter.empty
             else Missing
         ),
-        type=param.ParameterType.from_kind(parameter.kind.name),
-        spec=spec,
+        type=param.ParameterType.from_kind(parameter.kind),
     )
 
 
 def _extract_path_params(parameters: Iterable[param.Parameter]) -> Set[str]:
     return {
         (
-            parameter.spec.alias
-            if parameter.spec.alias is not None
-            else parameter.spec.generate_alias(parameter.name)
+            parameter.default.alias
+            if parameter.default.alias is not None
+            else parameter.default.generate_alias(parameter.name)
         )
         for parameter in parameters
-        if isinstance(parameter.spec, Path)
+        if isinstance(parameter.default, Path)
     }
 
 
@@ -190,7 +190,7 @@ def validate_params(
     # Validate that only expected path params provided
     # In the event a `PathParams` parameter is being used, will have to defer this check for invokation.
     if expected_path_params != actual_path_params and not any(
-        isinstance(parameter.spec, PathParams) for parameter in params.values()
+        isinstance(parameter.default, PathParams) for parameter in params.values()
     ):
         raise IncompatiblePathParameters(
             f"Incompatible path params. Got: {actual_path_params}, expected: {expected_path_params}"
@@ -200,8 +200,8 @@ def validate_params(
     parameter_outer: param.Parameter
     for parameter_outer in params.values():
         if (
-            not isinstance(parameter_outer.spec, Param)
-            or parameter_outer.spec.alias is None
+            not isinstance(parameter_outer.default, Param)
+            or parameter_outer.default.alias is None
         ):
             continue
 
@@ -211,8 +211,8 @@ def validate_params(
                 continue
 
             if (
-                parameter_outer.spec.type is parameter_inner.spec.type
-                and parameter_outer.spec.alias == parameter_inner.spec.alias
+                parameter_outer.default.type is parameter_inner.default.type
+                and parameter_outer.default.alias == parameter_inner.default.alias
             ):
                 raise DuplicateParameter(
                     f"Duplicate parameters: {parameter_outer!r} and {parameter_inner!r}"

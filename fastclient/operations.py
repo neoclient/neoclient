@@ -85,7 +85,7 @@ class Operation(Generic[PS, RT]):
                 cached_dependencies={},
             )
 
-        if return_annotation is inspect._empty:
+        if return_annotation is inspect.Parameter.empty:
             return response.json()
         if return_annotation is None:
             return None

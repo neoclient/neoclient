@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import inspect
 import urllib.parse
-from typing import Any, Callable, Dict, Mapping, Set, Union
+from typing import Any, Callable, Dict, Mapping, Protocol, Set, Union
 
 import fastapi.encoders
 import param
@@ -31,18 +31,28 @@ from .parameters import (
 )
 
 
+class Composer(Protocol):
+    def __call__(
+        self,
+        parameter: param.Parameter[ParameterSpecification],
+        context: ComposerContext,
+        value: Union[Any, MissingType],
+    ):
+        ...
+
+
 def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
-    if type(obj) is annotation or annotation in (inspect._empty, Missing):
+    if type(obj) is annotation or annotation in (inspect.Parameter.empty, Missing):
         return obj
 
     return pydantic.parse_obj_as(annotation, obj)
 
 
 def _get_alias(parameter: param.Parameter[Param], /) -> str:
-    if parameter.spec.alias is not None:
-        return parameter.spec.alias
+    if parameter.default.alias is not None:
+        return parameter.default.alias
     else:
-        return parameter.spec.generate_alias(parameter.name)
+        return parameter.default.generate_alias(parameter.name)
 
 
 def _compose_param(
@@ -54,8 +64,8 @@ def _compose_param(
 
     if value is not Missing:
         true_value = value
-    elif parameter.spec.has_default():
-        true_value = parameter.spec.get_default()
+    elif parameter.default.has_default():
+        true_value = parameter.default.get_default()
     else:
         raise ResolutionError(
             f"Failed to compose parameter: {parameter!r} - No default and no value provided"
@@ -64,7 +74,7 @@ def _compose_param(
     field_name: str = _get_alias(parameter)
 
     # If the field is not required and has no value, it can be omitted
-    if true_value is None and not parameter.spec.required:
+    if true_value is None and not parameter.default.required:
         return
 
     # Convert the value to a string
@@ -74,6 +84,10 @@ def _compose_param(
     setter(field_name, string_value)
 
 
+resolvers: Resolvers[Composer] = Resolvers()
+
+
+@resolvers(Query)
 def compose_query_param(
     parameter: param.Parameter[Query],
     context: ComposerContext,
@@ -82,6 +96,7 @@ def compose_query_param(
     return _compose_param(parameter, value, context.request.add_query_param)
 
 
+@resolvers(Header)
 def compose_header(
     parameter: param.Parameter[Header],
     context: ComposerContext,
@@ -90,6 +105,7 @@ def compose_header(
     return _compose_param(parameter, value, context.request.add_header)
 
 
+@resolvers(Cookie)
 def compose_cookie(
     parameter: param.Parameter[Cookie],
     context: ComposerContext,
@@ -98,6 +114,7 @@ def compose_cookie(
     return _compose_param(parameter, value, context.request.add_cookie)
 
 
+@resolvers(Path)
 def compose_path_param(
     parameter: param.Parameter[Path],
     context: ComposerContext,
@@ -106,6 +123,7 @@ def compose_path_param(
     return _compose_param(parameter, value, context.request.add_path_param)
 
 
+@resolvers(Body)
 def compose_body(
     parameter: param.Parameter[Body],
     context: ComposerContext,
@@ -115,8 +133,8 @@ def compose_body(
 
     if value is not Missing:
         true_value = value
-    elif parameter.spec.has_default():
-        true_value = parameter.spec.get_default()
+    elif parameter.default.has_default():
+        true_value = parameter.default.get_default()
     else:
         raise ResolutionError(
             f"Failed to compose parameter: {parameter!r} - No default and no value provided"
@@ -125,7 +143,7 @@ def compose_body(
     field_name: str = _get_alias(parameter)
 
     # If the field is not required and has no value, it can be omitted
-    if true_value is None and not parameter.spec.required:
+    if true_value is None and not parameter.default.required:
         return
 
     json_value: Any = fastapi.encoders.jsonable_encoder(true_value)
@@ -134,11 +152,11 @@ def compose_body(
         [
             parameter
             for parameter in context.parameters.values()
-            if type(parameter.spec) is Body
+            if type(parameter.default) is Body
         ]
     )
 
-    embed: bool = parameter.spec.embed
+    embed: bool = parameter.default.embed
 
     if total_body_params > 1:
         embed = True
@@ -163,8 +181,8 @@ def _compose_params(
 
     if value is not Missing:
         true_value = value
-    elif parameter.spec.has_default():
-        true_value = parameter.spec.get_default()
+    elif parameter.default.has_default():
+        true_value = parameter.default.get_default()
     else:
         raise ResolutionError(
             f"Failed to compose parameter: {parameter!r} - No default and no value provided"
@@ -173,6 +191,7 @@ def _compose_params(
     setter(true_value)
 
 
+@resolvers(QueryParams)
 def compose_query_params(
     parameter: param.Parameter[QueryParams],
     context: ComposerContext,
@@ -181,6 +200,7 @@ def compose_query_params(
     return _compose_params(parameter, value, context.request.add_query_params)
 
 
+@resolvers(Headers)
 def compose_headers(
     parameter: param.Parameter[Headers],
     context: ComposerContext,
@@ -189,6 +209,7 @@ def compose_headers(
     return _compose_params(parameter, value, context.request.add_headers)
 
 
+@resolvers(Cookies)
 def compose_cookies(
     parameter: param.Parameter[Cookie],
     context: ComposerContext,
@@ -197,6 +218,7 @@ def compose_cookies(
     return _compose_params(parameter, value, context.request.add_cookies)
 
 
+@resolvers(PathParams)
 def compose_path_params(
     parameter: param.Parameter[PathParams],
     context: ComposerContext,
@@ -218,23 +240,20 @@ def _validate_request_options(request: RequestOptions, /) -> None:
 
 
 @dataclass
-class CompositionParameterManager(ParameterManager[ComposerContext]):
-    resolvers: Resolvers[ComposerContext]
+class CompositionParameterManager(ParameterManager[Composer]):
+    resolvers: Resolvers[Composer]
     request: RequestOptions
-    infer: bool = True
 
     # NOTE: Composition parameter inference should be much more advanced than this.
     # `api.get_params` contains the current inference logic that should be used.
-    def infer_parameter(
-        self, parameter: inspect.Parameter, /
-    ) -> ParameterSpecification:
+    def infer_spec(self, parameter: inspect.Parameter, /) -> ParameterSpecification:
         return Query(
             default=parameter.default
-            if parameter.default is not inspect._empty
+            if parameter.default is not inspect.Parameter.empty
             else Missing
         )
 
-    def build_contexts(
+    def _build_contexts(
         self, parameters: Dict[str, param.Parameter], arguments: Dict[str, Any]
     ) -> Dict[str, ComposerContext]:
         return {
@@ -242,26 +261,48 @@ class CompositionParameterManager(ParameterManager[ComposerContext]):
             for parameter in parameters
         }
 
+    def resolve_parameters(
+        self, parameters: Dict[str, param.Parameter], arguments: Dict[str, Any], /
+    ) -> Dict[str, Any]:
+
+        # TODO: This method logic is largely copied from params.manager.ParameterManager.resolve_parameters.
+        # The `params` library should be re-coded to make overriding `resolve_parameters` easier.
+
+        contexts: Dict[str, ComposerContext] = self._build_contexts(
+            parameters, arguments
+        )
+
+        resolved_parameters: Dict[str, Any] = {}
+
+        parameter: param.Parameter
+        context: ComposerContext
+        argument: Any
+        for parameter, context, argument in zip(
+            parameters.values(), contexts.values(), arguments.values()
+        ):
+            if (
+                isinstance(argument, ParameterSpecification)
+                and isinstance(parameter.default, ParameterSpecification)
+                and argument is parameter.default
+            ):
+                argument = Missing
+
+            if isinstance(parameter.default, ParameterSpecification):
+                resolved_parameters[parameter.name] = self.get_resolver(
+                    type(parameter.default)
+                )(parameter, context, argument)
+            else:
+                resolved_parameters[parameter.name] = argument
+
+        return resolved_parameters
+
 
 def compose_func(
     request: RequestOptions, func: Callable, arguments: Mapping[str, Any]
 ) -> None:
     manager: ParameterManager[ComposerContext] = CompositionParameterManager(
-        resolvers=Resolvers(
-            {
-                Query: compose_query_param,
-                Header: compose_header,
-                Cookie: compose_cookie,
-                Path: compose_path_param,
-                Body: compose_body,
-                QueryParams: compose_query_params,
-                Headers: compose_headers,
-                Cookies: compose_cookies,
-                PathParams: compose_path_params,
-            }
-        ),
+        resolvers=resolvers,
         request=request,
-        infer=True,
     )
 
     # NOTE: `params` should complain if a param spec doesn't have a specified resolver.

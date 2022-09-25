@@ -17,7 +17,7 @@ import param.parameters
 import pydantic
 import httpx
 from httpx import Response
-from param import ParameterType
+from param import ParameterType, Resolvers
 from param.sentinels import Missing, MissingType
 
 from . import api, utils
@@ -55,23 +55,26 @@ class Resolver(Protocol):
         ...
 
 
+resolvers: Resolvers[Resolver] = Resolvers()
+
+
 def _get_alias(parameter: param.Parameter[Param], /) -> str:
-    if parameter.spec.alias is not None:
-        return parameter.spec.alias
+    if parameter.default.alias is not None:
+        return parameter.default.alias
     else:
-        return parameter.spec.generate_alias(parameter.name)
+        return parameter.default.generate_alias(parameter.name)
 
 
 def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
-    if type(obj) is annotation or annotation in (inspect._empty, Missing):
+    if type(obj) is annotation or annotation in (inspect.Parameter.empty, Missing):
         return obj
 
     return pydantic.parse_obj_as(annotation, obj)
 
 
 def _get_param(
-    source: Mapping[str, T], parameters: List[param.Parameter[Param]]
-) -> Dict[str, T]:
+    source: Mapping[str, str], parameters: List[param.Parameter[Param]]
+) -> Dict[str, str]:
     values: Dict[str, str] = {}
 
     parameter: param.Parameter[Query]
@@ -80,14 +83,15 @@ def _get_param(
 
         if value is not Missing:
             values[parameter.name] = value
-        elif parameter.spec.has_default():
-            values[parameter.name] = parameter.spec.get_default()
+        elif parameter.default.has_default():
+            values[parameter.name] = parameter.default.get_default()
         else:
             raise ResolutionError(f"Failed to resolve parameter: {parameter!r}")
 
     return values
 
 
+@resolvers(Query)
 def resolve_response_query_param(
     request: RequestOptions,
     response: Response,
@@ -98,6 +102,7 @@ def resolve_response_query_param(
     return _get_param(response.request.url.params, parameters)
 
 
+@resolvers(Header)
 def resolve_response_header(
     request: RequestOptions,
     response: Response,
@@ -108,6 +113,7 @@ def resolve_response_header(
     return _get_param(response.headers, parameters)
 
 
+@resolvers(Cookie)
 def resolve_response_cookie(
     request: RequestOptions,
     response: Response,
@@ -118,6 +124,7 @@ def resolve_response_cookie(
     return _get_param(response.cookies, parameters)
 
 
+@resolvers(Path)
 def resolve_response_path_param(
     request: RequestOptions,
     response: Response,
@@ -135,6 +142,7 @@ def resolve_response_path_param(
     return _get_param(path_params, parameters)
 
 
+@resolvers(Body)
 def resolve_response_body(
     request: RequestOptions,
     response: Response,
@@ -146,6 +154,7 @@ def resolve_response_body(
     return {parameter.name: response.json() for parameter in parameters}
 
 
+@resolvers(Promise)
 def resolve_response_promise(
     request: RequestOptions,
     response: Response,
@@ -168,9 +177,9 @@ def resolve_response_promise(
     for parameter in parameters:
         promised_type: type
 
-        if parameter.spec.promised_type is not None:
-            promised_type = parameter.spec.promised_type
-        elif parameter.annotation not in (inspect._empty, Missing):
+        if parameter.default.promised_type is not None:
+            promised_type = parameter.default.promised_type
+        elif parameter.annotation not in (inspect.Parameter.empty, Missing):
             promised_type = parameter.annotation
         else:
             raise ResolutionError(
@@ -191,6 +200,7 @@ def _get_params(source: M, parameters: List[param.Parameter[Params]]) -> Dict[st
     return {parameter.name: source for parameter in parameters}
 
 
+@resolvers(QueryParams)
 def resolve_response_query_params(
     request: RequestOptions,
     response: Response,
@@ -201,6 +211,7 @@ def resolve_response_query_params(
     return _get_params(response.request.url.params, parameters)
 
 
+@resolvers(Headers)
 def resolve_response_headers(
     request: RequestOptions,
     response: Response,
@@ -211,6 +222,7 @@ def resolve_response_headers(
     return _get_params(response.headers, parameters)
 
 
+@resolvers(Cookies)
 def resolve_response_cookies(
     request: RequestOptions,
     response: Response,
@@ -221,13 +233,14 @@ def resolve_response_cookies(
     return _get_params(response.cookies, parameters)
 
 
+@resolvers(PathParams)
 def resolve_response_path_params(
     request: RequestOptions,
     response: Response,
     parameters: List[param.Parameter[PathParams]],
     *,
     cached_dependencies: Dict[Callable[..., Any], Any],
-) -> Dict[str, httpx.Cookies]:
+) -> Dict[str, Dict[str, Any]]:
     path_params: Dict[str, Any] = utils.extract_path_params(
         urllib.parse.unquote(str(request.url.copy_with(params=None, fragment=None))),
         urllib.parse.unquote(
@@ -238,6 +251,7 @@ def resolve_response_path_params(
     return _get_params(path_params, parameters)
 
 
+@resolvers(Depends)
 def resolve_response_depends(
     request: RequestOptions,
     response: Response,
@@ -251,9 +265,9 @@ def resolve_response_depends(
     for parameter in parameters:
         parameter_dependency_callable: Callable
 
-        if parameter.spec.dependency is not None:
-            parameter_dependency_callable = parameter.spec.dependency
-        elif parameter.annotation not in (inspect._empty, Missing):
+        if parameter.default.dependency is not None:
+            parameter_dependency_callable = parameter.default.dependency
+        elif parameter.annotation not in (inspect.Parameter.empty, Missing):
             if not callable(parameter.annotation):
                 raise ResolutionError(
                     f"Failed to resolve parameter: {parameter!r}. Dependency has non-callable annotation"
@@ -267,10 +281,10 @@ def resolve_response_depends(
 
         if (
             cached_dependencies is not None
-            and parameter.spec.use_cache
-            and parameter.spec.dependency in cached_dependencies
+            and parameter.default.use_cache
+            and parameter.default.dependency in cached_dependencies
         ):
-            return cached_dependencies[parameter.spec.dependency]
+            return cached_dependencies[parameter.default.dependency]
 
         resolved: Any = resolve_func(
             request,
@@ -287,21 +301,6 @@ def resolve_response_depends(
     return resolved_values
 
 
-response_resolvers: Dict[type, Resolver] = {
-    Query: resolve_response_query_param,
-    Header: resolve_response_header,
-    Cookie: resolve_response_cookie,
-    Path: resolve_response_path_param,
-    Body: resolve_response_body,
-    QueryParams: resolve_response_query_params,
-    Headers: resolve_response_headers,
-    Cookies: resolve_response_cookies,
-    PathParams: resolve_response_path_params,
-    Depends: resolve_response_depends,
-    Promise: resolve_response_promise,
-}
-
-
 def resolve(
     request: RequestOptions,
     response: Response,
@@ -312,7 +311,7 @@ def resolve(
 ) -> Any:
     spec_type: type
     resolver: Resolver
-    for spec_type, resolver in response_resolvers.items():
+    for spec_type, resolver in resolvers.items():
         if issubclass(parameter_cls, spec_type):
             resolved_values: Dict[str, Any] = resolver(
                 request, response, parameters, cached_dependencies=cached_dependencies
@@ -337,7 +336,7 @@ def aggregate_parameters(
 
     parameter: param.Parameter
     for parameter in parameters.values():
-        aggregated_parameters.setdefault(type(parameter.spec), []).append(parameter)
+        aggregated_parameters.setdefault(type(parameter.default), []).append(parameter)
 
     return aggregated_parameters
 

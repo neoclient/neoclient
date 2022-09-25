@@ -41,19 +41,19 @@ def test_get_params_implicit():
             name="path",
             annotation=str,
             type=param.ParameterType.POSITIONAL_OR_KEYWORD,
-            spec=Path("path"),
+            default=Path("path"),
         ),
         "query": param.Parameter(
             name="query",
             annotation=str,
             type=param.ParameterType.POSITIONAL_OR_KEYWORD,
-            spec=Query("query"),
+            default=Query("query"),
         ),
         "body": param.Parameter(
             name="body",
             annotation=dict,
             type=param.ParameterType.POSITIONAL_OR_KEYWORD,
-            spec=Body("body"),
+            default=Body("body"),
         ),
     }
 
@@ -72,18 +72,18 @@ def test_get_params_explicit():
             name="path",
             annotation=str,
             type=param.ParameterType.POSITIONAL_OR_KEYWORD,
-            spec=Path("foo_path"),
+            default=Path("foo_path"),
         ),
         "query": param.Parameter(
             name="query",
             annotation=str,
             type=param.ParameterType.POSITIONAL_OR_KEYWORD,
-            spec=Query("foo_query"),
+            default=Query("foo_query"),
         ),
         "body": param.Parameter(
             name="body",
             annotation=dict,
             type=param.ParameterType.POSITIONAL_OR_KEYWORD,
-            spec=Body("foo_body"),
+            default=Body("foo_body"),
         ),
     }
