@@ -1,33 +1,33 @@
-from dataclasses import dataclass
 import inspect
 import urllib.parse
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, Mapping, Protocol, Set, Union
 
 import fastapi.encoders
 import param
-from param.errors import ResolutionError
-from param.parameters import ParameterSpecification
-from param.models import Arguments
-from param.manager import ParameterManager
-from param.resolvers import Resolvers
-from param.sentinels import Missing, MissingType
 import pydantic
+from param.errors import ResolutionError
+from param.manager import ParameterManager
+from param.models import Arguments
+from param.parameters import ParameterSpecification
+from param.resolvers import Resolvers, resolve_param
+from param.sentinels import Missing, MissingType
 
 from . import utils
 from .errors import IncompatiblePathParameters
 from .models import ComposerContext, RequestOptions
 from .parameters import (
     Body,
-    Param,
-    Params,
-    Header,
-    Headers,
-    Path,
-    QueryParams,
-    Query,
     Cookie,
     Cookies,
+    Header,
+    Headers,
+    Param,
+    Params,
+    Path,
     PathParams,
+    Query,
+    QueryParams,
 )
 
 
@@ -44,8 +44,8 @@ class Composer(Protocol):
 def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
     if type(obj) is annotation or annotation in (inspect.Parameter.empty, Missing):
         return obj
-
-    return pydantic.parse_obj_as(annotation, obj)
+    else:
+        return pydantic.parse_obj_as(annotation, obj)
 
 
 def _get_alias(parameter: param.Parameter[Param], /) -> str:
@@ -60,16 +60,7 @@ def _compose_param(
     value: Union[Any, MissingType],
     setter: Callable[[str, Any], Any],
 ) -> None:
-    true_value: Any
-
-    if value is not Missing:
-        true_value = value
-    elif parameter.default.has_default():
-        true_value = parameter.default.get_default()
-    else:
-        raise ResolutionError(
-            f"Failed to compose parameter: {parameter!r} - No default and no value provided"
-        )
+    true_value: Any = resolve_param(parameter, value)
 
     field_name: str = _get_alias(parameter)
 
@@ -82,6 +73,16 @@ def _compose_param(
 
     # Set the value
     setter(field_name, string_value)
+
+
+def _compose_params(
+    parameter: param.Parameter[Params],
+    value: Union[Any, MissingType],
+    setter: Callable[[Any], Any],
+) -> None:
+    true_value: Any = resolve_param(parameter, value)
+
+    setter(true_value)
 
 
 resolvers: Resolvers[Composer] = Resolvers()
@@ -172,25 +173,6 @@ def compose_body(
         context.request.json.update(json_value)
 
 
-def _compose_params(
-    parameter: param.Parameter[Params],
-    value: Union[Any, MissingType],
-    setter: Callable[[Any], Any],
-) -> None:
-    true_value: Any
-
-    if value is not Missing:
-        true_value = value
-    elif parameter.default.has_default():
-        true_value = parameter.default.get_default()
-    else:
-        raise ResolutionError(
-            f"Failed to compose parameter: {parameter!r} - No default and no value provided"
-        )
-
-    setter(true_value)
-
-
 @resolvers(QueryParams)
 def compose_query_params(
     parameter: param.Parameter[QueryParams],
@@ -253,48 +235,31 @@ class CompositionParameterManager(ParameterManager[Composer]):
             else Missing
         )
 
-    def _build_contexts(
-        self, parameters: Dict[str, param.Parameter], arguments: Dict[str, Any]
-    ) -> Dict[str, ComposerContext]:
-        return {
-            parameter: ComposerContext(request=self.request, parameters=parameters)
-            for parameter in parameters
+    def resolve_arguments(
+        self,
+        arguments: Dict[
+            param.Parameter[ParameterSpecification], Union[Any, MissingType]
+        ],
+        /,
+    ) -> Dict[str, Any]:
+        resolved_arguments: Dict[str, Any] = {}
+
+        parameters: Dict[str, param.Parameter[ParameterSpecification]] = {
+            parameter.name: parameter for parameter in arguments.keys()
         }
 
-    def resolve_parameters(
-        self, parameters: Dict[str, param.Parameter], arguments: Dict[str, Any], /
-    ) -> Dict[str, Any]:
-
-        # TODO: This method logic is largely copied from params.manager.ParameterManager.resolve_parameters.
-        # The `params` library should be re-coded to make overriding `resolve_parameters` easier.
-
-        contexts: Dict[str, ComposerContext] = self._build_contexts(
-            parameters, arguments
+        context: ComposerContext = ComposerContext(
+            request=self.request, parameters=parameters
         )
 
-        resolved_parameters: Dict[str, Any] = {}
+        parameter: param.Parameter[ParameterSpecification]
+        argument: Union[Any, MissingType]
+        for parameter, argument in arguments.items():
+            composer: Composer = self.get_resolver(type(parameter.default))
 
-        parameter: param.Parameter
-        context: ComposerContext
-        argument: Any
-        for parameter, context, argument in zip(
-            parameters.values(), contexts.values(), arguments.values()
-        ):
-            if (
-                isinstance(argument, ParameterSpecification)
-                and isinstance(parameter.default, ParameterSpecification)
-                and argument is parameter.default
-            ):
-                argument = Missing
+            resolved_arguments[parameter.name] = composer(parameter, context, argument)
 
-            if isinstance(parameter.default, ParameterSpecification):
-                resolved_parameters[parameter.name] = self.get_resolver(
-                    type(parameter.default)
-                )(parameter, context, argument)
-            else:
-                resolved_parameters[parameter.name] = argument
-
-        return resolved_parameters
+        return resolved_arguments
 
 
 def compose_func(

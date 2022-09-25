@@ -91,6 +91,10 @@ def _get_param(
     return values
 
 
+def _get_params(source: M, parameters: List[param.Parameter[Params]]) -> Dict[str, M]:
+    return {parameter.name: source for parameter in parameters}
+
+
 @resolvers(Query)
 def resolve_response_query_param(
     request: RequestOptions,
@@ -194,10 +198,6 @@ def resolve_response_promise(
             )
 
     return resolved_values
-
-
-def _get_params(source: M, parameters: List[param.Parameter[Params]]) -> Dict[str, M]:
-    return {parameter.name: source for parameter in parameters}
 
 
 @resolvers(QueryParams)
