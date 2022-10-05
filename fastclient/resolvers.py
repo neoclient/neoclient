@@ -6,7 +6,6 @@ from typing import (
     Dict,
     List,
     Mapping,
-    Type,
     TypeVar,
     Union,
     Protocol,
@@ -22,8 +21,8 @@ from httpx import Response
 from param import ParameterType, Resolvers
 from param.sentinels import Missing, MissingType
 
-from . import api, utils
-from .errors import InvalidParameterSpecification, ResolutionError
+from . import utils
+from .errors import ResolutionError
 from .parameters import (
     Depends,
     PathParams,
@@ -49,13 +48,8 @@ class Resolver(Protocol):
     def __call__(
         self,
         parameter: param.Parameter[ParameterSpecification],
-        request: RequestOptions,
-        response: Response,
-        # parameters: List[param.Parameter],
-        # context: ResolverContext,
-        *,
-        cached_dependencies: Dict[Callable[..., Any], Any],
-    ) -> Dict[str, Any]:
+        context: ResolverContext,
+    ) -> Any:
         ...
 
 
@@ -72,27 +66,8 @@ def _get_alias(parameter: param.Parameter[Param], /) -> str:
 def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
     if type(obj) is annotation or annotation in (inspect.Parameter.empty, Missing):
         return obj
-
-    return pydantic.parse_obj_as(annotation, obj)
-
-
-# def _get_param(
-#     source: Mapping[str, str], parameters: List[param.Parameter[Param]]
-# ) -> Dict[str, str]:
-#     values: Dict[str, str] = {}
-
-#     parameter: param.Parameter[Query]
-#     for parameter in parameters:
-#         value: Union[str, MissingType] = source.get(_get_alias(parameter), Missing)
-
-#         if value is not Missing:
-#             values[parameter.name] = value
-#         elif parameter.default.has_default():
-#             values[parameter.name] = parameter.default.get_default()
-#         else:
-#             raise ResolutionError(f"Failed to resolve parameter: {parameter!r}")
-
-#     return values
+    else:
+        return pydantic.parse_obj_as(annotation, obj)
 
 
 def _get_param(source: Mapping[str, str], parameter: param.Parameter[Param]) -> str:
@@ -106,64 +81,45 @@ def _get_param(source: Mapping[str, str], parameter: param.Parameter[Param]) -> 
         raise ResolutionError(f"Failed to resolve parameter: {parameter!r}")
 
 
-# def _get_params(source: M, parameters: List[param.Parameter[Params]]) -> Dict[str, M]:
-#     return {parameter.name: source for parameter in parameters}
-
-def _get_params(source: Mapping[str, Any], parameter: param.Parameter[Params]) -> Mapping[str, Any]:
-    # TODO: Improve this implementation?
+def _get_params(
+    source: Mapping[str, Any], parameter: param.Parameter[Params]
+) -> Mapping[str, Any]:
+    # TODO: Improve this implementation
     return source
 
 
 @resolvers(Query)
 def resolve_response_query_param(
-    parameter: param.Parameter[Query],
-    request: RequestOptions,
-    response: Response,
-    # parameters: List[param.Parameter[Query]],
-    *,
-    cached_dependencies: Dict[Callable[..., Any], Any],
+    parameter: param.Parameter[Query], context: ResolverContext
 ) -> str:
     # return _get_param(response.request.url.params, parameters)
-    return _get_param(response.request.url.params, parameter)
+    return _get_param(context.response.request.url.params, parameter)
 
 
 @resolvers(Header)
 def resolve_response_header(
-    parameter: param.Parameter[Header],
-    request: RequestOptions,
-    response: Response,
-    # parameters: List[param.Parameter[Header]],
-    *,
-    cached_dependencies: Dict[Callable[..., Any], Any],
+    parameter: param.Parameter[Header], context: ResolverContext
 ) -> str:
-    return _get_param(response.headers, parameter)
+    return _get_param(context.response.headers, parameter)
 
 
 @resolvers(Cookie)
 def resolve_response_cookie(
-    parameter: param.Parameter[Cookie],
-    request: RequestOptions,
-    response: Response,
-    # parameters: List[param.Parameter[Cookie]],
-    *,
-    cached_dependencies: Dict[Callable[..., Any], Any],
+    parameter: param.Parameter[Cookie], context: ResolverContext
 ) -> str:
-    return _get_param(response.cookies, parameter)
+    return _get_param(context.response.cookies, parameter)
 
 
 @resolvers(Path)
 def resolve_response_path_param(
-    parameter: param.Parameter[Path],
-    request: RequestOptions,
-    response: Response,
-    # parameters: List[param.Parameter[Path]],
-    *,
-    cached_dependencies: Dict[Callable[..., Any], Any],
+    parameter: param.Parameter[Path], context: ResolverContext
 ) -> str:
     path_params: Dict[str, str] = utils.extract_path_params(
-        urllib.parse.unquote(str(request.url.copy_with(params=None, fragment=None))),
         urllib.parse.unquote(
-            str(response.request.url.copy_with(params=None, fragment=None))
+            str(context.request.url.copy_with(params=None, fragment=None))
+        ),
+        urllib.parse.unquote(
+            str(context.response.request.url.copy_with(params=None, fragment=None))
         ),
     )
 
@@ -172,89 +128,60 @@ def resolve_response_path_param(
 
 @resolvers(QueryParams)
 def resolve_response_query_params(
-    parameter: param.Parameter[QueryParams],
-    request: RequestOptions,
-    response: Response,
-    # parameters: List[param.Parameter[QueryParams]],
-    *,
-    cached_dependencies: Dict[Callable[..., Any], Any],
+    parameter: param.Parameter[QueryParams], context: ResolverContext
 ) -> httpx.QueryParams:
-    return _get_params(response.request.url.params, parameter)
+    return _get_params(context.response.request.url.params, parameter)
 
 
 @resolvers(Headers)
 def resolve_response_headers(
-    parameter: param.Parameter[Headers],
-    request: RequestOptions,
-    response: Response,
-    # parameters: List[param.Parameter[Headers]],
-    *,
-    cached_dependencies: Dict[Callable[..., Any], Any],
+    parameter: param.Parameter[Headers], context: ResolverContext
 ) -> httpx.Headers:
-    return _get_params(response.headers, parameter)
+    return _get_params(context.response.headers, parameter)
 
 
 @resolvers(Cookies)
 def resolve_response_cookies(
-    parameter: param.Parameter[Cookies],
-    request: RequestOptions,
-    response: Response,
-    # parameters: List[param.Parameter[Cookies]],
-    *,
-    cached_dependencies: Dict[Callable[..., Any], Any],
+    parameter: param.Parameter[Cookies], context: ResolverContext
 ) -> httpx.Cookies:
-    return _get_params(response.cookies, parameter)
+    return _get_params(context.response.cookies, parameter)
 
 
 @resolvers(PathParams)
 def resolve_response_path_params(
-    parameter: param.Parameter[PathParams],
-    request: RequestOptions,
-    response: Response,
-    # parameters: List[param.Parameter[PathParams]],
-    *,
-    cached_dependencies: Dict[Callable[..., Any], Any],
+    parameter: param.Parameter[PathParams], context: ResolverContext
 ) -> Dict[str, str]:
     path_params: Dict[str, str] = utils.extract_path_params(
-        urllib.parse.unquote(str(request.url.copy_with(params=None, fragment=None))),
         urllib.parse.unquote(
-            str(response.request.url.copy_with(params=None, fragment=None))
+            str(context.request.url.copy_with(params=None, fragment=None))
+        ),
+        urllib.parse.unquote(
+            str(context.response.request.url.copy_with(params=None, fragment=None))
         ),
     )
 
     return _get_params(path_params, parameter)
 
+
 @resolvers(Body)
 def resolve_response_body(
-    parameter: param.Parameter[Body],
-    request: RequestOptions,
-    response: Response,
-    # parameters: List[param.Parameter[Body]],
-    *,
-    cached_dependencies: Dict[Callable[..., Any], Any],
+    parameter: param.Parameter[Body], context: ResolverContext
 ) -> Any:
     # TODO: Improve this implementation
-    return response.json()
-
-    # return {parameter.name: response.json() for parameter in parameters}
+    return context.response.json()
 
 
 @resolvers(Promise)
 def resolve_response_promise(
-    parameter: param.Parameter[Promise],
-    request: RequestOptions,
-    response: Response,
-    # parameters: List[param.Parameter[Promise]],
-    *,
-    cached_dependencies: Dict[Callable[..., Any], Any],
+    parameter: param.Parameter[Promise], context: ResolverContext
 ) -> Any:
     fullfillments: Dict[type, Any] = {
-        httpx.Response: response,
-        httpx.Request: response.request,
-        httpx.URL: response.url,
-        httpx.Headers: response.headers,
-        httpx.Cookies: response.cookies,
-        httpx.QueryParams: response.request.url.params,
+        httpx.Response: context.response,
+        httpx.Request: context.response.request,
+        httpx.URL: context.response.url,
+        httpx.Headers: context.response.headers,
+        httpx.Cookies: context.response.cookies,
+        httpx.QueryParams: context.response.request.url.params,
     }
 
     promised_type: type
@@ -275,19 +202,11 @@ def resolve_response_promise(
             f"Failed to resolve parameter: {parameter!r}. Unsupported promise type"
         )
 
+
 @resolvers(Depends)
 def resolve_response_depends(
-    parameter: param.Parameter[Depends],
-    request: RequestOptions,
-    response: Response,
-    # parameters: List[param.Parameter[Depends]],
-    *,
-    cached_dependencies: Dict[Callable[..., Any], Any],
+    parameter: param.Parameter[Depends], context: ResolverContext
 ) -> Any:
-    # resolved_values: Dict[str, Any] = {}
-
-    # parameter: param.Parameter
-    # for parameter in parameters:
     parameter_dependency_callable: Callable
 
     if parameter.default.dependency is not None:
@@ -305,25 +224,23 @@ def resolve_response_depends(
         )
 
     if (
-        cached_dependencies is not None
+        context.cached_dependencies is not None
         and parameter.default.use_cache
-        and parameter.default.dependency in cached_dependencies
+        and parameter.default.dependency in context.cached_dependencies
     ):
-        return cached_dependencies[parameter.default.dependency]
+        return context.cached_dependencies[parameter.default.dependency]
 
     resolved: Any = resolve_func(
-        request,
-        response,
+        context.request,
+        context.response,
         parameter_dependency_callable,
-        cached_dependencies=cached_dependencies,
+        cached_dependencies=context.cached_dependencies,
     )
 
     # Cache resolved dependency
-    cached_dependencies[parameter_dependency_callable] = resolved
+    context.cached_dependencies[parameter_dependency_callable] = resolved
 
     return resolved
-
-    # return resolved_values
 
 
 @dataclass
@@ -351,21 +268,17 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
     ) -> Dict[str, Any]:
         resolved_arguments: Dict[str, Any] = {}
 
-        # context: ResolverContext = ResolverContext(
-        #     request=self.request, response=self.response
-        # )
+        context: ResolverContext = ResolverContext(
+            request=self.request,
+            response=self.response,
+            cached_dependencies=self.cached_dependencies,
+        )
 
         parameter: param.Parameter[ParameterSpecification]
         for parameter in arguments:
             resolver: Resolver = self.get_resolver(type(parameter.default))
 
-            # resolved_arguments[parameter.name] = resolver(parameter, context)
-            resolved_arguments[parameter.name] = resolver(
-                parameter,
-                self.request,
-                self.response,
-                cached_dependencies=self.cached_dependencies,
-            )
+            resolved_arguments[parameter.name] = resolver(parameter, context)
 
         return resolved_arguments
 
