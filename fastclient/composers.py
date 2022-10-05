@@ -55,6 +55,18 @@ def _get_alias(parameter: param.Parameter[Param], /) -> str:
         return parameter.default.generate_alias(parameter.name)
 
 
+def _validate_request_options(request: RequestOptions, /) -> None:
+    missing_path_params: Set[str] = utils.get_path_params(
+        urllib.parse.unquote(str(request.url))
+    )
+
+    # Validate path params are correct
+    if missing_path_params:
+        raise IncompatiblePathParameters(
+            f"Incompatible path params. Missing: {missing_path_params}"
+        )
+
+
 def _compose_param(
     parameter: param.Parameter[Param],
     value: Union[Any, MissingType],
@@ -209,18 +221,6 @@ def compose_path_params(
     return _compose_params(parameter, value, context.request.add_path_params)
 
 
-def _validate_request_options(request: RequestOptions, /) -> None:
-    missing_path_params: Set[str] = utils.get_path_params(
-        urllib.parse.unquote(str(request.url))
-    )
-
-    # Validate path params are correct
-    if missing_path_params:
-        raise IncompatiblePathParameters(
-            f"Incompatible path params. Missing: {missing_path_params}"
-        )
-
-
 @dataclass
 class CompositionParameterManager(ParameterManager[Composer]):
     resolvers: Resolvers[Composer]
@@ -265,7 +265,7 @@ class CompositionParameterManager(ParameterManager[Composer]):
 def compose_func(
     request: RequestOptions, func: Callable, arguments: Mapping[str, Any]
 ) -> None:
-    manager: ParameterManager[ComposerContext] = CompositionParameterManager(
+    manager: ParameterManager[Composer] = CompositionParameterManager(
         resolvers=resolvers,
         request=request,
     )

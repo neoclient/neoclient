@@ -1,9 +1,9 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Mapping, Optional
 import urllib.parse
 
 import httpx
-from httpx import URL, Cookies, Headers, QueryParams, Timeout
+from httpx import URL, Cookies, Headers, QueryParams, Timeout, Response
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 from param.models import Parameter
 
@@ -248,3 +248,9 @@ class OperationSpecification:
 class ComposerContext:
     request: RequestOptions
     parameters: Dict[str, Parameter]
+
+@dataclass(frozen=True)
+class ResolverContext:
+    request: RequestOptions
+    response: Response
+    cached_dependencies: Dict[Callable[..., Any], Any] = field(default_factory=dict)
