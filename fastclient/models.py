@@ -249,6 +249,7 @@ class ComposerContext:
     request: RequestOptions
     parameters: Dict[str, Parameter]
 
+
 @dataclass(frozen=True)
 class ResolverContext:
     request: RequestOptions
