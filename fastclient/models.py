@@ -167,9 +167,11 @@ class RequestOptions:
                 data=self.data,
                 files=self.files,
                 json=self.json,
-                extensions=dict(timeout=self.timeout.as_dict())
-                if self.timeout is not None
-                else {},
+                extensions=(
+                    dict(timeout=self.timeout.as_dict())
+                    if self.timeout is not None
+                    else {}
+                ),
             )
         else:
             return client.build_request(
@@ -192,21 +194,27 @@ class RequestOptions:
             params=self.params.merge(request_options.params),
             headers=httpx.Headers({**self.headers, **request_options.headers}),
             cookies=httpx.Cookies({**self.cookies, **request_options.cookies}),
-            content=request_options.content
-            if request_options.content is not None
-            else self.content,
-            data=request_options.data
-            if request_options.data is not None
-            else self.data,
-            files=request_options.files
-            if request_options.files is not None
-            else self.files,
-            json=request_options.json
-            if request_options.json is not None
-            else self.json,
-            timeout=request_options.timeout
-            if request_options.timeout is not None
-            else self.timeout,
+            content=(
+                request_options.content
+                if request_options.content is not None
+                else self.content
+            ),
+            data=(
+                request_options.data if request_options.data is not None else self.data
+            ),
+            files=(
+                request_options.files
+                if request_options.files is not None
+                else self.files
+            ),
+            json=(
+                request_options.json if request_options.json is not None else self.json
+            ),
+            timeout=(
+                request_options.timeout
+                if request_options.timeout is not None
+                else self.timeout
+            ),
         )
 
     def add_query_param(self, key: str, value: Any) -> None:
@@ -253,5 +261,4 @@ class ComposerContext:
 @dataclass(frozen=True)
 class ResolverContext:
     request: RequestOptions
-    response: Response
     cached_dependencies: Dict[Callable[..., Any], Any] = field(default_factory=dict)

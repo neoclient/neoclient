@@ -6,6 +6,8 @@ from typing import (
     Dict,
     List,
     Mapping,
+    Set,
+    Tuple,
     TypeVar,
     Union,
     Protocol,
@@ -16,6 +18,7 @@ import param
 from param import ParameterManager, ParameterSpecification, BoundArguments, Arguments
 import param.parameters
 import pydantic
+from pydantic import BaseModel
 import httpx
 from httpx import Response
 from param import ParameterType, Resolvers
@@ -35,19 +38,19 @@ from .parameters import (
     QueryParams,
     Headers,
     Cookies,
-    Params,
     Path,
 )
 from .models import RequestOptions, ResolverContext
 
 T = TypeVar("T")
-M = TypeVar("M", bound=Mapping[str, str])
+M = TypeVar("M", bound=Mapping[str, Any])
 
 
 class Resolver(Protocol):
     def __call__(
         self,
         parameter: param.Parameter[ParameterSpecification],
+        response: Response,
         context: ResolverContext,
     ) -> Any:
         ...
@@ -70,8 +73,8 @@ def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
         return pydantic.parse_obj_as(annotation, obj)
 
 
-def _get_param(source: Mapping[str, str], parameter: param.Parameter[Param]) -> str:
-    value: Union[str, MissingType] = source.get(_get_alias(parameter), Missing)
+def _get_param(source: Mapping[str, T], parameter: param.Parameter[Param[T]]) -> T:
+    value: Union[T, MissingType] = source.get(_get_alias(parameter), Missing)
 
     if value is not Missing:
         return value
@@ -81,45 +84,37 @@ def _get_param(source: Mapping[str, str], parameter: param.Parameter[Param]) -> 
         raise ResolutionError(f"Failed to resolve parameter: {parameter!r}")
 
 
-def _get_params(
-    source: Mapping[str, Any], parameter: param.Parameter[Params]
-) -> Mapping[str, Any]:
-    # TODO: Improve this implementation
-    return source
-
-
 @resolvers(Query)
 def resolve_response_query_param(
-    parameter: param.Parameter[Query], context: ResolverContext
+    parameter: param.Parameter[Query], response: Response, context: ResolverContext
 ) -> str:
-    # return _get_param(response.request.url.params, parameters)
-    return _get_param(context.response.request.url.params, parameter)
+    return _get_param(response.request.url.params, parameter)
 
 
 @resolvers(Header)
 def resolve_response_header(
-    parameter: param.Parameter[Header], context: ResolverContext
+    parameter: param.Parameter[Header], response: Response, context: ResolverContext
 ) -> str:
-    return _get_param(context.response.headers, parameter)
+    return _get_param(response.headers, parameter)
 
 
 @resolvers(Cookie)
 def resolve_response_cookie(
-    parameter: param.Parameter[Cookie], context: ResolverContext
+    parameter: param.Parameter[Cookie], response: Response, context: ResolverContext
 ) -> str:
-    return _get_param(context.response.cookies, parameter)
+    return _get_param(response.cookies, parameter)
 
 
 @resolvers(Path)
 def resolve_response_path_param(
-    parameter: param.Parameter[Path], context: ResolverContext
+    parameter: param.Parameter[Path], response: Response, context: ResolverContext
 ) -> str:
     path_params: Dict[str, str] = utils.extract_path_params(
         urllib.parse.unquote(
             str(context.request.url.copy_with(params=None, fragment=None))
         ),
         urllib.parse.unquote(
-            str(context.response.request.url.copy_with(params=None, fragment=None))
+            str(response.request.url.copy_with(params=None, fragment=None))
         ),
     )
 
@@ -128,62 +123,63 @@ def resolve_response_path_param(
 
 @resolvers(QueryParams)
 def resolve_response_query_params(
-    parameter: param.Parameter[QueryParams], context: ResolverContext
+    parameter: param.Parameter[QueryParams], response: Response, context: ResolverContext
 ) -> httpx.QueryParams:
-    return _get_params(context.response.request.url.params, parameter)
+    return response.request.url.params
 
 
 @resolvers(Headers)
 def resolve_response_headers(
-    parameter: param.Parameter[Headers], context: ResolverContext
+    parameter: param.Parameter[Headers], response: Response, context: ResolverContext
 ) -> httpx.Headers:
-    return _get_params(context.response.headers, parameter)
+    return response.headers
 
 
 @resolvers(Cookies)
 def resolve_response_cookies(
-    parameter: param.Parameter[Cookies], context: ResolverContext
+    parameter: param.Parameter[Cookies], response: Response, context: ResolverContext
 ) -> httpx.Cookies:
-    return _get_params(context.response.cookies, parameter)
+    return response.cookies
 
 
 @resolvers(PathParams)
 def resolve_response_path_params(
-    parameter: param.Parameter[PathParams], context: ResolverContext
+    parameter: param.Parameter[PathParams], response: Response, context: ResolverContext
 ) -> Dict[str, str]:
     path_params: Dict[str, str] = utils.extract_path_params(
         urllib.parse.unquote(
             str(context.request.url.copy_with(params=None, fragment=None))
         ),
         urllib.parse.unquote(
-            str(context.response.request.url.copy_with(params=None, fragment=None))
+            str(response.request.url.copy_with(params=None, fragment=None))
         ),
     )
 
-    return _get_params(path_params, parameter)
+    return path_params
 
 
 @resolvers(Body)
 def resolve_response_body(
-    parameter: param.Parameter[Body], context: ResolverContext
+    parameter: param.Parameter[Body], response: Response, context: ResolverContext
 ) -> Any:
     # TODO: Improve this implementation
-    return context.response.json()
+    return response.json()
+
+
+fullfillments: Dict[type, Callable[[Response], Any]] = {
+    httpx.Response: lambda response: response,
+    httpx.Request: lambda response: response.request,
+    httpx.URL: lambda response: response.url,
+    httpx.Headers: lambda response: response.headers,
+    httpx.Cookies: lambda response: response.cookies,
+    httpx.QueryParams: lambda response: response.request.url.params,
+}
 
 
 @resolvers(Promise)
 def resolve_response_promise(
-    parameter: param.Parameter[Promise], context: ResolverContext
+    parameter: param.Parameter[Promise], response: Response, context: ResolverContext
 ) -> Any:
-    fullfillments: Dict[type, Any] = {
-        httpx.Response: context.response,
-        httpx.Request: context.response.request,
-        httpx.URL: context.response.url,
-        httpx.Headers: context.response.headers,
-        httpx.Cookies: context.response.cookies,
-        httpx.QueryParams: context.response.request.url.params,
-    }
-
     promised_type: type
 
     if parameter.default.promised_type is not None:
@@ -196,7 +192,7 @@ def resolve_response_promise(
         )
 
     if promised_type in fullfillments:
-        return fullfillments[promised_type]
+        return fullfillments[promised_type](response)
     else:
         raise ResolutionError(
             f"Failed to resolve parameter: {parameter!r}. Unsupported promise type"
@@ -205,7 +201,7 @@ def resolve_response_promise(
 
 @resolvers(Depends)
 def resolve_response_depends(
-    parameter: param.Parameter[Depends], context: ResolverContext
+    parameter: param.Parameter[Depends], response: Response, context: ResolverContext
 ) -> Any:
     parameter_dependency_callable: Callable
 
@@ -232,7 +228,7 @@ def resolve_response_depends(
 
     resolved: Any = resolve_func(
         context.request,
-        context.response,
+        response,
         parameter_dependency_callable,
         cached_dependencies=context.cached_dependencies,
     )
@@ -250,14 +246,80 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
     response: Response
     cached_dependencies: Dict[Callable[..., Any], Any] = field(default_factory=dict)
 
-    # NOTE: Resolution parameter inference should be much more advanced than this.
-    # `api.get_params` contains the current inference logic that should be used.
     def infer_spec(self, parameter: inspect.Parameter, /) -> ParameterSpecification:
-        return Query(
-            default=parameter.default
-            if parameter.default is not inspect.Parameter.empty
-            else Missing
+        path_params: Set[str] = (
+            utils.get_path_params(urllib.parse.unquote(str(self.request.url)))
+            if self.request is not None
+            else set()
         )
+
+        parameter_type: type = parameter.annotation
+
+        body_types: Tuple[type, ...] = (BaseModel, dict)
+        httpx_types: Tuple[type, ...] = (
+            httpx.Headers,
+            httpx.Cookies,
+            httpx.QueryParams,
+        )
+        promise_types: Tuple[type, ...] = (
+            httpx.Request,
+            httpx.Response,
+        )
+
+        # NOTE: Need to check later that there's no conflict with any explicityly provided parameters
+        # E.g. (path_param: str, same_path_param: str = Param(alias="path_param"))
+        if parameter.name in path_params:
+            return Path(
+                alias=Path.generate_alias(parameter.name),
+                default=(
+                    parameter.default
+                    if parameter.default is not parameter.empty
+                    else Missing
+                ),
+            )
+        elif (
+            parameter_type is not parameter.empty
+            and isinstance(parameter_type, type)
+            and any(issubclass(parameter_type, body_type) for body_type in body_types)
+        ):
+            return Body(
+                alias=Body.generate_alias(parameter.name),
+                default=(
+                    parameter.default
+                    if parameter.default is not parameter.empty
+                    else Missing
+                ),
+            )
+        elif (
+            parameter_type is not parameter.empty
+            and isinstance(parameter_type, type)
+            and any(
+                issubclass(parameter_type, promise_type) for promise_type in promise_types
+            )
+        ):
+            return Promise(parameter_type)
+        elif (
+            parameter_type is not parameter.empty
+            and isinstance(parameter_type, type)
+            and any(issubclass(parameter_type, httpx_type) for httpx_type in httpx_types)
+        ):
+            if parameter_type is httpx.Headers:
+                return Headers()
+            elif parameter_type is httpx.Cookies:
+                return Cookies()
+            elif parameter_type is httpx.QueryParams:
+                return QueryParams()
+            else:
+                raise Exception(f"Unknown httpx dependency type: {parameter.annotation!r}")
+        else:
+            return Query(
+                alias=Query.generate_alias(parameter.name),
+                default=(
+                    parameter.default
+                    if parameter.default is not parameter.empty
+                    else Missing
+                ),
+            )
 
     def resolve_arguments(
         self,
@@ -270,7 +332,6 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
 
         context: ResolverContext = ResolverContext(
             request=self.request,
-            response=self.response,
             cached_dependencies=self.cached_dependencies,
         )
 
@@ -278,7 +339,7 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
         for parameter in arguments:
             resolver: Resolver = self.get_resolver(type(parameter.default))
 
-            resolved_arguments[parameter.name] = resolver(parameter, context)
+            resolved_arguments[parameter.name] = resolver(parameter, self.response, context)
 
         return resolved_arguments
 

@@ -130,7 +130,8 @@ class FastClient:
 
         def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
             # Assert params are valid
-            api.get_params(func, request=specification.request)
+            # NOTE: Temporarily disabled whilst `api` being deprecated
+            # api.get_params(func, request=specification.request)
 
             operation: Operation[PS, RT] = Operation(func, specification, self.client)
 

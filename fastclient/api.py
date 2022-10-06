@@ -35,6 +35,7 @@ from .parameters import (
 from .parameter_functions import Headers, Cookies, QueryParams
 
 
+# TODO: Move this implementation to `param.models.Parameter.from(...)`
 def _build_parameter(
     parameter: inspect.Parameter, spec: param.ParameterSpecification
 ) -> param.Parameter:
@@ -62,74 +63,74 @@ def _extract_path_params(parameters: Iterable[param.Parameter]) -> Set[str]:
     }
 
 
-def _infer_parameter(parameter: inspect.Parameter, /, *, path_params: Set[str] = set()):
-    parameter_type: type = parameter.annotation
+# def _infer_parameter(parameter: inspect.Parameter, /, *, path_params: Set[str] = set()):
+#     parameter_type: type = parameter.annotation
 
-    body_types: Tuple[type, ...] = (BaseModel, dict)
-    httpx_types: Tuple[type, ...] = (
-        httpx.Headers,
-        httpx.Cookies,
-        httpx.QueryParams,
-    )
-    promise_types: Tuple[type, ...] = (
-        httpx.Request,
-        httpx.Response,
-    )
+#     body_types: Tuple[type, ...] = (BaseModel, dict)
+#     httpx_types: Tuple[type, ...] = (
+#         httpx.Headers,
+#         httpx.Cookies,
+#         httpx.QueryParams,
+#     )
+#     promise_types: Tuple[type, ...] = (
+#         httpx.Request,
+#         httpx.Response,
+#     )
 
-    # NOTE: Need to check later that there's no conflict with any explicityly provided parameters
-    # E.g. (path_param: str, same_path_param: str = Param(alias="path_param"))
-    if parameter.name in path_params:
-        return Path(
-            alias=parameter.name,
-            default=(
-                parameter.default
-                if parameter.default is not parameter.empty
-                else Missing
-            ),
-        )
-    elif (
-        parameter_type is not parameter.empty
-        and isinstance(parameter_type, type)
-        and any(issubclass(parameter_type, body_type) for body_type in body_types)
-    ):
-        return Body(
-            alias=parameter.name,
-            default=(
-                parameter.default
-                if parameter.default is not parameter.empty
-                else Missing
-            ),
-        )
-    elif (
-        parameter_type is not parameter.empty
-        and isinstance(parameter_type, type)
-        and any(
-            issubclass(parameter_type, promise_type) for promise_type in promise_types
-        )
-    ):
-        return Promise(parameter_type)
-    elif (
-        parameter_type is not parameter.empty
-        and isinstance(parameter_type, type)
-        and any(issubclass(parameter_type, httpx_type) for httpx_type in httpx_types)
-    ):
-        if parameter_type is httpx.Headers:
-            return Headers()
-        elif parameter_type is httpx.Cookies:
-            return Cookies()
-        elif parameter_type is httpx.QueryParams:
-            return QueryParams()
-        else:
-            raise Exception(f"Unknown httpx dependency type: {parameter.annotation!r}")
-    else:
-        return Query(
-            alias=parameter.name,
-            default=(
-                parameter.default
-                if parameter.default is not parameter.empty
-                else Missing
-            ),
-        )
+#     # NOTE: Need to check later that there's no conflict with any explicityly provided parameters
+#     # E.g. (path_param: str, same_path_param: str = Param(alias="path_param"))
+#     if parameter.name in path_params:
+#         return Path(
+#             alias=parameter.name,
+#             default=(
+#                 parameter.default
+#                 if parameter.default is not parameter.empty
+#                 else Missing
+#             ),
+#         )
+#     elif (
+#         parameter_type is not parameter.empty
+#         and isinstance(parameter_type, type)
+#         and any(issubclass(parameter_type, body_type) for body_type in body_types)
+#     ):
+#         return Body(
+#             alias=parameter.name,
+#             default=(
+#                 parameter.default
+#                 if parameter.default is not parameter.empty
+#                 else Missing
+#             ),
+#         )
+#     elif (
+#         parameter_type is not parameter.empty
+#         and isinstance(parameter_type, type)
+#         and any(
+#             issubclass(parameter_type, promise_type) for promise_type in promise_types
+#         )
+#     ):
+#         return Promise(parameter_type)
+#     elif (
+#         parameter_type is not parameter.empty
+#         and isinstance(parameter_type, type)
+#         and any(issubclass(parameter_type, httpx_type) for httpx_type in httpx_types)
+#     ):
+#         if parameter_type is httpx.Headers:
+#             return Headers()
+#         elif parameter_type is httpx.Cookies:
+#             return Cookies()
+#         elif parameter_type is httpx.QueryParams:
+#             return QueryParams()
+#         else:
+#             raise Exception(f"Unknown httpx dependency type: {parameter.annotation!r}")
+#     else:
+#         return Query(
+#             alias=parameter.name,
+#             default=(
+#                 parameter.default
+#                 if parameter.default is not parameter.empty
+#                 else Missing
+#             ),
+#         )
 
 
 def get_params(
