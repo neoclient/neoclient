@@ -92,16 +92,26 @@ class FastClient:
         for func in operations.values():
             attributes[func.__name__] = self.bind(func)
 
-        return type(protocol.__name__, (BaseService,), attributes)()
+        typ = type(protocol.__name__, (BaseService,), attributes)
+        obj = typ()
+
+        member: Any
+        for _, member in inspect.getmembers(obj):
+            if has_operation(member):
+                member.operation.func = member
+        
+        return obj
 
     def _wrap(self, operation: Operation[PS, RT], /) -> Callable[PS, RT]:
+        # NOTE: If the `operation.func` is a `staticmethod`, `self` will already have been swallowed.
         @functools.wraps(operation.func)
-        def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> RT:
+        def wrapper(self, *args: PS.args, **kwargs: PS.kwargs) -> RT:
             return operation(*args, **kwargs)
 
         set_operation(wrapper, operation)
 
-        return abc.abstractmethod(wrapper)
+        # return abc.abstractmethod(wrapper)
+        return wrapper
 
     def bind(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
         operation: Operation[PS, RT] = get_operation(func)

@@ -54,6 +54,7 @@ class Operation(Generic[PS, RT]):
     client: Optional[Client]
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
+        print("Operation.__call__:", self, args, kwargs)
         arguments: Dict[str, Any] = self._get_arguments(*args, **kwargs)
 
         request_options: RequestOptions = self.build_request_options(arguments)
@@ -114,8 +115,8 @@ class Operation(Generic[PS, RT]):
         arguments: Dict[str, Any] = utils.bind_arguments(self.func, args, kwargs)
 
         # TODO: Find a better fix for instance methods
-        if arguments and list(arguments)[0] == "self":
-            arguments.pop("self")
+        # if arguments and list(arguments)[0] == "self":
+        #     arguments.pop("self")
 
         argument_name: str
         argument: Any

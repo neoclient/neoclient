@@ -147,10 +147,10 @@ def get_params(
     )
 
     # TODO: Find a better fix for methods!
-    if _inspect_params and _inspect_params[0].name == "self":
-        raw_parameters = _inspect_params[1:]
-    else:
-        raw_parameters = _inspect_params
+    # if _inspect_params and _inspect_params[0].name == "self":
+    #     raw_parameters = _inspect_params[1:]
+    # else:
+    raw_parameters = _inspect_params
 
     parameters: Dict[str, param.Parameter] = {}
     parameters_to_infer: List[inspect.Parameter] = []
