@@ -1,7 +1,8 @@
-import abc
+from enum import Enum, auto
 import functools
 import inspect
 from dataclasses import dataclass
+from types import FunctionType, MethodType
 from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
 
 import httpx
@@ -24,10 +25,26 @@ from .types import (
     URLTypes,
 )
 
+class MethodKind(Enum):
+    METHOD = auto()
+    CLASS_METHOD = auto()
+    STATIC_METHOD = auto()
+
 T = TypeVar("T")
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
+
+def get_method_kind(method: Union[FunctionType, MethodType], /) -> MethodKind:
+    if isinstance(method, MethodType):
+        if isinstance(method.__self__, type):
+            return MethodKind.CLASS_METHOD
+        else:
+            return MethodKind.METHOD
+    elif isinstance(method, FunctionType):
+        return MethodKind.STATIC_METHOD
+    else:
+        raise ValueError("`method` is not a function or method, cannot determine its kind")
 
 
 class BaseService:
@@ -88,29 +105,60 @@ class FastClient:
 
         attributes: dict = {"__module__": protocol.__module__}
 
+
         func: Callable
         for func in operations.values():
-            attributes[func.__name__] = self.bind(func)
+            static_attr = inspect.getattr_static(protocol, func.__name__)
+
+            method_kind: MethodKind
+
+            if isinstance(static_attr, FunctionType):
+                method_kind = MethodKind.METHOD
+            elif isinstance(static_attr, staticmethod):
+                method_kind = MethodKind.STATIC_METHOD
+            elif isinstance(static_attr, classmethod):
+                method_kind = MethodKind.CLASS_METHOD
+            else:
+                raise Exception("Cannot determine method kind")
+
+            attributes[func.__name__] = static_attr
 
         typ = type(protocol.__name__, (BaseService,), attributes)
         obj = typ()
 
+        member_name: str
         member: Any
-        for _, member in inspect.getmembers(obj):
-            if has_operation(member):
-                member.operation.func = member
+        for member_name, member in inspect.getmembers(obj):
+            if not has_operation(member):
+                continue
+
+            bound_member = self.bind(member)
+
+            method_kind: MethodKind = get_method_kind(member)
+
+            if method_kind is MethodKind.METHOD:
+                bound_member = bound_member.__get__(obj)
+            elif method_kind is MethodKind.CLASS_METHOD:
+                bound_member = bound_member.__get__(typ)
+
+            bound_member.operation.func = bound_member
+
+            setattr(obj, member_name, bound_member)
         
         return obj
 
     def _wrap(self, operation: Operation[PS, RT], /) -> Callable[PS, RT]:
-        # NOTE: If the `operation.func` is a `staticmethod`, `self` will already have been swallowed.
         @functools.wraps(operation.func)
-        def wrapper(self, *args: PS.args, **kwargs: PS.kwargs) -> RT:
+        def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> RT:
+            if inspect.ismethod(operation.func):
+                _, *args = args
+
             return operation(*args, **kwargs)
+
+        operation.func = wrapper
 
         set_operation(wrapper, operation)
 
-        # return abc.abstractmethod(wrapper)
         return wrapper
 
     def bind(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
