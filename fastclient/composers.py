@@ -1,17 +1,18 @@
 import inspect
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Mapping, Protocol, Set, Union
+from typing import Any, Callable, Dict, Iterable, Protocol, Set, Union
 
 import fastapi.encoders
 import param
 import pydantic
+from pydantic import Required
+from pydantic.fields import Undefined, UndefinedType
+from param import Resolvable
 from param.errors import ResolutionError
 from param.manager import ParameterManager
 from param.models import Arguments
-from param.parameters import ParameterSpecification
 from param.resolvers import Resolvers, resolve_param
-from param.sentinels import Missing, MissingType
 
 from . import utils
 from .errors import IncompatiblePathParameters
@@ -34,21 +35,24 @@ from .parameters import (
 class Composer(Protocol):
     def __call__(
         self,
-        parameter: param.Parameter[ParameterSpecification],
-        value: Union[Any, MissingType],
+        parameter: param.Parameter,
+        value: Union[Any, UndefinedType],
         context: ComposerContext,
     ):
         ...
 
 
-def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
-    if type(obj) is annotation or annotation in (inspect.Parameter.empty, Missing):
+def _parse_obj(annotation: Union[UndefinedType, Any], obj: Any) -> Any:
+    if type(obj) is annotation or isinstance(annotation, UndefinedType):
         return obj
     else:
         return pydantic.parse_obj_as(annotation, obj)
 
 
-def _get_alias(parameter: param.Parameter[Param], /) -> str:
+def _get_alias(parameter: param.Parameter, /) -> str:
+    if not isinstance(parameter.default, Param):
+        raise Exception("Cannot get alias of non-param")
+
     if parameter.default.alias is not None:
         return parameter.default.alias
     else:
@@ -68,16 +72,23 @@ def _validate_request_options(request: RequestOptions, /) -> None:
 
 
 def _compose_param(
-    parameter: param.Parameter[Param],
-    value: Union[Any, MissingType],
+    parameter: param.Parameter,
+    value: Union[Any, UndefinedType],
     setter: Callable[[str, Any], Any],
 ) -> None:
-    true_value: Any = resolve_param(parameter, value)
+    if not isinstance(parameter.default, Param):
+        raise Exception("Cannot compose non-param")
+
+    true_value: Any = resolve_param(Resolvable(
+        parameter=parameter,
+        field=parameter.default,
+        argument=value,
+    ))
 
     field_name: str = _get_alias(parameter)
 
     # If the field is not required and has no value, it can be omitted
-    if true_value is None and not parameter.default.required:
+    if true_value is None and parameter.default is not Required:
         return
 
     # Convert the value to a string
@@ -88,10 +99,13 @@ def _compose_param(
 
 
 def _compose_params(
-    parameter: param.Parameter[Params],
-    value: Union[Any, MissingType],
+    parameter: param.Parameter,
+    value: Union[Any, UndefinedType],
     setter: Callable[[Any], Any],
 ) -> None:
+    if not isinstance(parameter.default, Params):
+        raise Exception("Cannot compose non-params")
+
     true_value: Any = resolve_param(parameter, value)
 
     setter(true_value)
@@ -102,8 +116,8 @@ resolvers: Resolvers[Composer] = Resolvers()
 
 @resolvers(Query)
 def compose_query_param(
-    parameter: param.Parameter[Query],
-    value: Union[Any, MissingType],
+    parameter: param.Parameter,
+    value: Union[Any, UndefinedType],
     context: ComposerContext,
 ) -> None:
     return _compose_param(parameter, value, context.request.add_query_param)
@@ -111,8 +125,8 @@ def compose_query_param(
 
 @resolvers(Header)
 def compose_header(
-    parameter: param.Parameter[Header],
-    value: Union[Any, MissingType],
+    parameter: param.Parameter,
+    value: Union[Any, UndefinedType],
     context: ComposerContext,
 ) -> None:
     return _compose_param(parameter, value, context.request.add_header)
@@ -120,8 +134,8 @@ def compose_header(
 
 @resolvers(Cookie)
 def compose_cookie(
-    parameter: param.Parameter[Cookie],
-    value: Union[Any, MissingType],
+    parameter: param.Parameter,
+    value: Union[Any, UndefinedType],
     context: ComposerContext,
 ) -> None:
     return _compose_param(parameter, value, context.request.add_cookie)
@@ -129,8 +143,8 @@ def compose_cookie(
 
 @resolvers(Path)
 def compose_path_param(
-    parameter: param.Parameter[Path],
-    value: Union[Any, MissingType],
+    parameter: param.Parameter,
+    value: Union[Any, UndefinedType],
     context: ComposerContext,
 ) -> None:
     return _compose_param(parameter, value, context.request.add_path_param)
@@ -138,13 +152,16 @@ def compose_path_param(
 
 @resolvers(Body)
 def compose_body(
-    parameter: param.Parameter[Body],
-    value: Union[Any, MissingType],
+    parameter: param.Parameter,
+    value: Union[Any, UndefinedType],
     context: ComposerContext,
 ) -> None:
+    if not isinstance(parameter.default, Body):
+        raise Exception("Cannot compose non-body")
+
     true_value: Any
 
-    if value is not Missing:
+    if value is not Undefined:
         true_value = value
     elif parameter.default.has_default():
         true_value = parameter.default.get_default()
@@ -156,7 +173,7 @@ def compose_body(
     field_name: str = _get_alias(parameter)
 
     # If the field is not required and has no value, it can be omitted
-    if true_value is None and not parameter.default.required:
+    if true_value is None and parameter.default is not Required:
         return
 
     json_value: Any = fastapi.encoders.jsonable_encoder(true_value)
@@ -187,8 +204,8 @@ def compose_body(
 
 @resolvers(QueryParams)
 def compose_query_params(
-    parameter: param.Parameter[QueryParams],
-    value: Union[Any, MissingType],
+    parameter: param.Parameter,
+    value: Union[Any, UndefinedType],
     context: ComposerContext,
 ) -> None:
     return _compose_params(parameter, value, context.request.add_query_params)
@@ -196,8 +213,8 @@ def compose_query_params(
 
 @resolvers(Headers)
 def compose_headers(
-    parameter: param.Parameter[Headers],
-    value: Union[Any, MissingType],
+    parameter: param.Parameter,
+    value: Union[Any, UndefinedType],
     context: ComposerContext,
 ) -> None:
     return _compose_params(parameter, value, context.request.add_headers)
@@ -205,8 +222,8 @@ def compose_headers(
 
 @resolvers(Cookies)
 def compose_cookies(
-    parameter: param.Parameter[Cookie],
-    value: Union[Any, MissingType],
+    parameter: param.Parameter,
+    value: Union[Any, UndefinedType],
     context: ComposerContext,
 ) -> None:
     return _compose_params(parameter, value, context.request.add_cookies)
@@ -214,8 +231,8 @@ def compose_cookies(
 
 @resolvers(PathParams)
 def compose_path_params(
-    parameter: param.Parameter[PathParams],
-    value: Union[Any, MissingType],
+    parameter: param.Parameter,
+    value: Union[Any, UndefinedType],
     context: ComposerContext,
 ) -> None:
     return _compose_params(parameter, value, context.request.add_path_params)
@@ -228,33 +245,36 @@ class CompositionParameterManager(ParameterManager[Composer]):
 
     # NOTE: Composition parameter inference should be much more advanced than this.
     # `api.get_params` contains the current inference logic that should be used.
-    def infer_spec(self, parameter: inspect.Parameter, /) -> ParameterSpecification:
+    def infer_spec(self, parameter: inspect.Parameter, /) -> Param:
         return Query(
             default=parameter.default
             if parameter.default is not inspect.Parameter.empty
-            else Missing
+            else Undefined
         )
 
-    def resolve_arguments(
+    def resolve_all(
         self,
-        arguments: Dict[
-            param.Parameter[ParameterSpecification], Union[Any, MissingType]
-        ],
+        resolvables: Iterable[Resolvable],
         /,
     ) -> Dict[str, Any]:
         resolved_arguments: Dict[str, Any] = {}
 
-        parameters: Dict[str, param.Parameter[ParameterSpecification]] = {
-            parameter.name: parameter for parameter in arguments.keys()
+        parameters: Dict[str, param.Parameter] = {
+            resolvable.parameter.name: resolvable.parameter for resolvable in resolvables
         }
 
         context: ComposerContext = ComposerContext(
             request=self.request, parameters=parameters
         )
 
-        parameter: param.Parameter[ParameterSpecification]
-        argument: Union[Any, MissingType]
-        for parameter, argument in arguments.items():
+        resolvable: Resolvable
+        for resolvable in resolvables:
+            parameter: param.Parameter = resolvable.parameter
+            argument: Union[Any, UndefinedType] = resolvable.argument
+
+            if not isinstance(parameter.default, Param):
+                raise Exception("Cannot compose non-param")
+
             composer: Composer = self.get_resolver(type(parameter.default))
 
             resolved_arguments[parameter.name] = composer(parameter, argument, context)
@@ -263,7 +283,7 @@ class CompositionParameterManager(ParameterManager[Composer]):
 
 
 def compose_func(
-    request: RequestOptions, func: Callable, arguments: Mapping[str, Any]
+    request: RequestOptions, func: Callable, arguments: Dict[str, Any]
 ) -> None:
     manager: ParameterManager[Composer] = CompositionParameterManager(
         resolvers=resolvers,

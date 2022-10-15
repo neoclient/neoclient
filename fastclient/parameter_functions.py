@@ -1,13 +1,10 @@
-from typing import Any, Callable, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Optional, Type, Union
 
 from httpx import Request, Response
 from param.typing import Supplier
 from pydantic.fields import UndefinedType, Undefined
 
 from . import parameters
-
-T = TypeVar("T")
-
 
 def Header(
     alias: Optional[str] = None,
@@ -85,8 +82,8 @@ def PathParams() -> parameters.PathParams:
 
 
 def Depends(
-    dependency: Optional[Callable[..., T]] = None, /, *, use_cache: bool = True
-) -> parameters.Depends[T]:
+    dependency: Optional[Callable] = None, /, *, use_cache: bool = True
+) -> parameters.Depends:
     return parameters.Depends(dependency, use_cache=use_cache)
 
 

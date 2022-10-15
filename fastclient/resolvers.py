@@ -4,6 +4,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Mapping,
     Set,
@@ -15,14 +16,15 @@ from typing import (
 import urllib.parse
 
 import param
-from param import ParameterManager, ParameterSpecification, BoundArguments, Arguments
+from param import ParameterManager, BoundArguments, Arguments
 import param.parameters
+from param import Resolvable
 import pydantic
 from pydantic import BaseModel
+from pydantic.fields import Undefined, UndefinedType
 import httpx
 from httpx import Response
 from param import ParameterType, Resolvers
-from param.sentinels import Missing, MissingType
 
 from . import utils
 from .errors import ResolutionError
@@ -49,7 +51,7 @@ M = TypeVar("M", bound=Mapping[str, Any])
 class Resolver(Protocol):
     def __call__(
         self,
-        parameter: param.Parameter[ParameterSpecification],
+        parameter: param.Parameter,
         response: Response,
         context: ResolverContext,
     ) -> Any:
@@ -59,24 +61,33 @@ class Resolver(Protocol):
 resolvers: Resolvers[Resolver] = Resolvers()
 
 
-def _get_alias(parameter: param.Parameter[Param], /) -> str:
+def _get_alias(parameter: param.Parameter, /) -> str:
+    if not isinstance(parameter.default, Param):
+        raise Exception("Cannot get alias of non-param")
+
     if parameter.default.alias is not None:
         return parameter.default.alias
     else:
         return parameter.default.generate_alias(parameter.name)
 
 
-def _parse_obj(annotation: Union[MissingType, Any], obj: Any) -> Any:
-    if type(obj) is annotation or annotation in (inspect.Parameter.empty, Missing):
+def _parse_obj(annotation: Union[UndefinedType, Any], obj: Any) -> Any:
+    if type(obj) is annotation or isinstance(annotation, UndefinedType):
         return obj
     else:
         return pydantic.parse_obj_as(annotation, obj)
 
 
-def _get_param(source: Mapping[str, T], parameter: param.Parameter[Param[T]]) -> T:
-    value: Union[T, MissingType] = source.get(_get_alias(parameter), Missing)
+def _get_param(source: Mapping[str, T], parameter: param.Parameter) -> T:
+    print("_get_param:", repr(source), repr(parameter))
+    if not isinstance(parameter.default, Param):
+        raise Exception("Cannot resolve non-param")
 
-    if value is not Missing:
+    value: Union[T, UndefinedType] = source.get(_get_alias(parameter), Undefined)
+
+    print("value:", repr(value))
+
+    if not isinstance(value, UndefinedType):
         return value
     elif parameter.default.has_default():
         return parameter.default.get_default()
@@ -86,28 +97,28 @@ def _get_param(source: Mapping[str, T], parameter: param.Parameter[Param[T]]) ->
 
 @resolvers(Query)
 def resolve_response_query_param(
-    parameter: param.Parameter[Query], response: Response, context: ResolverContext
+    parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> str:
     return _get_param(response.request.url.params, parameter)
 
 
 @resolvers(Header)
 def resolve_response_header(
-    parameter: param.Parameter[Header], response: Response, context: ResolverContext
+    parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> str:
     return _get_param(response.headers, parameter)
 
 
 @resolvers(Cookie)
 def resolve_response_cookie(
-    parameter: param.Parameter[Cookie], response: Response, context: ResolverContext
+    parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> str:
     return _get_param(response.cookies, parameter)
 
 
 @resolvers(Path)
 def resolve_response_path_param(
-    parameter: param.Parameter[Path], response: Response, context: ResolverContext
+    parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> str:
     path_params: Dict[str, str] = utils.extract_path_params(
         urllib.parse.unquote(
@@ -123,28 +134,28 @@ def resolve_response_path_param(
 
 @resolvers(QueryParams)
 def resolve_response_query_params(
-    parameter: param.Parameter[QueryParams], response: Response, context: ResolverContext
+    parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> httpx.QueryParams:
     return response.request.url.params
 
 
 @resolvers(Headers)
 def resolve_response_headers(
-    parameter: param.Parameter[Headers], response: Response, context: ResolverContext
+    parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> httpx.Headers:
     return response.headers
 
 
 @resolvers(Cookies)
 def resolve_response_cookies(
-    parameter: param.Parameter[Cookies], response: Response, context: ResolverContext
+    parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> httpx.Cookies:
     return response.cookies
 
 
 @resolvers(PathParams)
 def resolve_response_path_params(
-    parameter: param.Parameter[PathParams], response: Response, context: ResolverContext
+    parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> Dict[str, str]:
     path_params: Dict[str, str] = utils.extract_path_params(
         urllib.parse.unquote(
@@ -160,7 +171,7 @@ def resolve_response_path_params(
 
 @resolvers(Body)
 def resolve_response_body(
-    parameter: param.Parameter[Body], response: Response, context: ResolverContext
+    parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> Any:
     # TODO: Improve this implementation
     return response.json()
@@ -178,13 +189,16 @@ fullfillments: Dict[type, Callable[[Response], Any]] = {
 
 @resolvers(Promise)
 def resolve_response_promise(
-    parameter: param.Parameter[Promise], response: Response, context: ResolverContext
+    parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> Any:
+    if not isinstance(parameter.default, Promise):
+        raise Exception("Cannot resolve non-param")
+
     promised_type: type
 
     if parameter.default.promised_type is not None:
         promised_type = parameter.default.promised_type
-    elif parameter.annotation not in (inspect.Parameter.empty, Missing):
+    elif not isinstance(parameter.annotation, UndefinedType):
         promised_type = parameter.annotation
     else:
         raise ResolutionError(
@@ -201,13 +215,16 @@ def resolve_response_promise(
 
 @resolvers(Depends)
 def resolve_response_depends(
-    parameter: param.Parameter[Depends], response: Response, context: ResolverContext
+    parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> Any:
+    if not isinstance(parameter.default, Depends):
+        raise Exception("Cannot resolve non-dependency")
+
     parameter_dependency_callable: Callable
 
     if parameter.default.dependency is not None:
         parameter_dependency_callable = parameter.default.dependency
-    elif parameter.annotation not in (inspect.Parameter.empty, Missing):
+    elif parameter.annotation not in (inspect.Parameter.empty, Undefined):
         if not callable(parameter.annotation):
             raise ResolutionError(
                 f"Failed to resolve parameter: {parameter!r}. Dependency has non-callable annotation"
@@ -246,7 +263,7 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
     response: Response
     cached_dependencies: Dict[Callable[..., Any], Any] = field(default_factory=dict)
 
-    def infer_spec(self, parameter: inspect.Parameter, /) -> ParameterSpecification:
+    def infer_spec(self, parameter: inspect.Parameter, /) -> param.parameters.Param:
         path_params: Set[str] = (
             utils.get_path_params(urllib.parse.unquote(str(self.request.url)))
             if self.request is not None
@@ -274,7 +291,7 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
                 default=(
                     parameter.default
                     if parameter.default is not parameter.empty
-                    else Missing
+                    else Undefined
                 ),
             )
         elif (
@@ -287,7 +304,7 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
                 default=(
                     parameter.default
                     if parameter.default is not parameter.empty
-                    else Missing
+                    else Undefined
                 ),
             )
         elif (
@@ -317,15 +334,13 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
                 default=(
                     parameter.default
                     if parameter.default is not parameter.empty
-                    else Missing
+                    else Undefined
                 ),
             )
 
-    def resolve_arguments(
+    def resolve_all(
         self,
-        arguments: Dict[
-            param.Parameter[ParameterSpecification], Union[Any, MissingType]
-        ],
+        resolvables: Iterable[Resolvable],
         /,
     ) -> Dict[str, Any]:
         resolved_arguments: Dict[str, Any] = {}
@@ -335,8 +350,13 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
             cached_dependencies=self.cached_dependencies,
         )
 
-        parameter: param.Parameter[ParameterSpecification]
-        for parameter in arguments:
+        resolvable: Resolvable
+        for resolvable in resolvables:
+            parameter: param.Parameter = resolvable.parameter
+            
+            if not isinstance(parameter.default, param.parameters.Param):
+                raise Exception("Cannot resolve non-param")
+
             resolver: Resolver = self.get_resolver(type(parameter.default))
 
             resolved_arguments[parameter.name] = resolver(parameter, self.response, context)
@@ -360,20 +380,20 @@ def resolve_func(
 
     # NOTE: This was using `api.get_params` which respected the `RequestOptions` instance (for inferring path params)
     # `ResolutionParameterManager` needs to be refactored to re-support this functionality
-    parameters: Dict[str, param.Parameter] = manager.get_params(func)
+    parameters: Dict[str, param.Parameter] = manager.get_parameters(func)
 
-    args: List[MissingType] = []
-    kwargs: Dict[str, MissingType] = {}
+    args: List[UndefinedType] = []
+    kwargs: Dict[str, UndefinedType] = {}
 
     parameter: param.Parameter
     for parameter in parameters.values():
         if parameter.type is ParameterType.POSITIONAL_ONLY:
-            args.append(Missing)
+            args.append(Undefined)
         elif parameter.type in (
             ParameterType.POSITIONAL_OR_KEYWORD,
             ParameterType.KEYWORD_ONLY,
         ):
-            kwargs[parameter.name] = Missing
+            kwargs[parameter.name] = Undefined
         else:
             # TODO: Support variable parameters
             raise Exception(

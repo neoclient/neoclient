@@ -7,10 +7,8 @@ from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
 
 import httpx
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
-from param.sentinels import Missing, MissingType
 from typing_extensions import ParamSpec
 
-from . import api
 from .enums import HttpMethod
 from .models import ClientOptions, OperationSpecification, RequestOptions
 from .operations import Operation, get_operation, has_operation, set_operation
@@ -70,7 +68,6 @@ class FastClient:
         event_hooks: Optional[EventHooks] = None,
         trust_env: bool = True,
         default_encoding: DefaultEncodingTypes = "utf-8",
-        client: Union[None, httpx.Client, MissingType] = Missing,
     ) -> None:
         client_options: ClientOptions = ClientOptions(
             auth=auth,
@@ -86,15 +83,16 @@ class FastClient:
             default_encoding=default_encoding,
         )
 
-        if client is Missing:
-            self.client = client_options.build()
-        else:
-            if not client_options.is_default():
-                raise Exception(
-                    "Cannot specify both `client` and other config options."
-                )
+        self.client = client_options.build()
 
-            self.client = client
+    @classmethod
+    def from_client(cls, client: Optional[httpx.Client], /) -> "FastClient":
+        obj = cls()
+
+        obj.client = client
+
+        return obj
+
 
     def create(self, protocol: Type[T], /) -> T:
         operations: Dict[str, Callable] = {
@@ -110,16 +108,16 @@ class FastClient:
         for func in operations.values():
             static_attr = inspect.getattr_static(protocol, func.__name__)
 
-            method_kind: MethodKind
+            # method_kind: MethodKind
 
-            if isinstance(static_attr, FunctionType):
-                method_kind = MethodKind.METHOD
-            elif isinstance(static_attr, staticmethod):
-                method_kind = MethodKind.STATIC_METHOD
-            elif isinstance(static_attr, classmethod):
-                method_kind = MethodKind.CLASS_METHOD
-            else:
-                raise Exception("Cannot determine method kind")
+            # if isinstance(static_attr, FunctionType):
+            #     method_kind = MethodKind.METHOD
+            # elif isinstance(static_attr, staticmethod):
+            #     method_kind = MethodKind.STATIC_METHOD
+            # elif isinstance(static_attr, classmethod):
+            #     method_kind = MethodKind.CLASS_METHOD
+            # else:
+            #     raise Exception("Cannot determine method kind")
 
             attributes[func.__name__] = static_attr
 
@@ -141,7 +139,9 @@ class FastClient:
             elif method_kind is MethodKind.CLASS_METHOD:
                 bound_member = bound_member.__get__(typ)
 
-            bound_member.operation.func = bound_member
+            operation: Operation = get_operation(bound_member)
+
+            operation.func = bound_member
 
             setattr(obj, member_name, bound_member)
         
@@ -151,7 +151,8 @@ class FastClient:
         @functools.wraps(operation.func)
         def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> RT:
             if inspect.ismethod(operation.func):
-                _, *args = args
+                # Read off `self` or `cls`
+                _, *args = args  # type: ignore
 
             return operation(*args, **kwargs)
 

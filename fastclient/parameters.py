@@ -51,7 +51,7 @@ class Path(Param):
         return alias.lower().replace("_", "-")
 
 
-@dataclass(frozen=True, init=False)
+@dataclass(frozen=True)
 class Body(param.parameters.Param):
     embed: bool = False
 
@@ -91,21 +91,22 @@ class PathParams(Params):
 
 
 # NOTE: Don't use @dataclass, this way can make `use_cache` keyword-only? (FastAPI does it this way)
-@dataclass(frozen=True, init=False)
+# @dataclass(frozen=True, init=False)
+@dataclass(frozen=True)
 class Depends(param.parameters.Param):
     dependency: Optional[Callable] = None
     use_cache: bool = True
 
-    def __init__(
-        self,
-        dependency: Optional[Callable] = None,
-        *,
-        use_cache: bool = True,
-    ):
-        super().__init__()
+    # def __init__(
+    #     self,
+    #     dependency: Optional[Callable] = None,
+    #     *,
+    #     use_cache: bool = True,
+    # ):
+    #     super().__init__()
 
-        setattr(self, "dependency", dependency)
-        setattr(self, "use_cache", use_cache)
+    #     setattr(self, "dependency", dependency)
+    #     setattr(self, "use_cache", use_cache)
 
 @dataclass(frozen=True)
 class Promise(param.parameters.Param):
