@@ -17,7 +17,6 @@ import param
 from param import Parameter
 from param.utils import parse
 from pydantic import BaseModel
-from pydantic.fields import Undefined
 
 from . import utils
 from .errors import (

@@ -7,6 +7,7 @@ from typing import (
     Iterable,
     List,
     Mapping,
+    Optional,
     Set,
     Tuple,
     TypeVar,
@@ -263,14 +264,19 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
     response: Response
     cached_dependencies: Dict[Callable[..., Any], Any] = field(default_factory=dict)
 
-    def infer_spec(self, parameter: inspect.Parameter, /) -> param.parameters.Param:
+    def get_param(self, parameter: param.Parameter, /) -> param.parameters.Param:
+        param: Optional[param.parameters.Param] = super().get_param(parameter)
+
+        if param is not None:
+            return param
+            
         path_params: Set[str] = (
             utils.get_path_params(urllib.parse.unquote(str(self.request.url)))
             if self.request is not None
             else set()
         )
 
-        parameter_type: type = parameter.annotation
+        parameter_type: Union[Any, UndefinedType] = parameter.annotation
 
         body_types: Tuple[type, ...] = (BaseModel, dict)
         httpx_types: Tuple[type, ...] = (
@@ -288,27 +294,19 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
         if parameter.name in path_params:
             return Path(
                 alias=Path.generate_alias(parameter.name),
-                default=(
-                    parameter.default
-                    if parameter.default is not parameter.empty
-                    else Undefined
-                ),
+                default=parameter.default,
             )
         elif (
-            parameter_type is not parameter.empty
+            not isinstance(parameter_type, UndefinedType)
             and isinstance(parameter_type, type)
             and any(issubclass(parameter_type, body_type) for body_type in body_types)
         ):
             return Body(
                 alias=Body.generate_alias(parameter.name),
-                default=(
-                    parameter.default
-                    if parameter.default is not parameter.empty
-                    else Undefined
-                ),
+                default=parameter.default,
             )
         elif (
-            parameter_type is not parameter.empty
+            not isinstance(parameter_type, UndefinedType)
             and isinstance(parameter_type, type)
             and any(
                 issubclass(parameter_type, promise_type) for promise_type in promise_types
@@ -316,7 +314,7 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
         ):
             return Promise(parameter_type)
         elif (
-            parameter_type is not parameter.empty
+            not isinstance(parameter_type, UndefinedType)
             and isinstance(parameter_type, type)
             and any(issubclass(parameter_type, httpx_type) for httpx_type in httpx_types)
         ):
@@ -331,11 +329,7 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
         else:
             return Query(
                 alias=Query.generate_alias(parameter.name),
-                default=(
-                    parameter.default
-                    if parameter.default is not parameter.empty
-                    else Undefined
-                ),
+                default=parameter.default,
             )
 
     def resolve_all(
