@@ -12,6 +12,9 @@ from httpx._types import (
     SyncByteStream,
     TimeoutTypes,
     URLTypes,
+    VerifyTypes,
+    CertTypes,
+    ProxiesTypes,
 )
 from typing_extensions import TypeAlias
 
@@ -20,3 +23,4 @@ JsonTypes: TypeAlias = Any
 StreamTypes: TypeAlias = Union[SyncByteStream, AsyncByteStream]
 EventHooks: TypeAlias = Mapping[str, List[Callable]]
 DefaultEncodingTypes: TypeAlias = Union[str, Callable[[bytes], str]]
+EventHook: TypeAlias = Callable[..., Any]

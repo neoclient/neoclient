@@ -12,7 +12,7 @@ RT = TypeVar("RT")
 def request(
     method: str, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
 ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return FastClient.from_client(None).request(method, endpoint, response=response)
+    return FastClient().request(method, endpoint, response=response)
 
 
 def put(

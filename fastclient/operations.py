@@ -54,7 +54,6 @@ class Operation(Generic[PS, RT]):
     client: Optional[Client]
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
-        print("Operation.__call__:", self, args, kwargs)
         arguments: Dict[str, Any] = self._get_arguments(*args, **kwargs)
 
         request_options: RequestOptions = self.build_request_options(arguments)

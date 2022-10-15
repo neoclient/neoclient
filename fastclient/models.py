@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Mapping, Optional
+from typing import Any, Callable, Dict, List, Mapping, Optional
 import urllib.parse
 
 import httpx
-from httpx import URL, Cookies, Headers, QueryParams, Timeout, Response
+from httpx import URL, Cookies, Headers, QueryParams, Timeout
+from httpx._auth import Auth
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 from param.models import Parameter
 
@@ -23,6 +24,20 @@ from .types import (
     TimeoutTypes,
     URLTypes,
 )
+
+# NOTE: This does not belong here
+@dataclass(init=False)
+class Client(httpx.Client):
+    auth: Optional[Auth]
+    params: QueryParams
+    headers: Headers
+    cookies: Cookies
+    timeout: Timeout
+    follow_redirects: bool
+    max_redirects: int
+    event_hooks: Dict[str, List[Callable]]
+    base_url: URL
+    trust_env: bool
 
 
 @dataclass(init=False)
@@ -68,7 +83,7 @@ class ClientOptions:
         self.default_encoding = default_encoding
 
     def build(self) -> httpx.Client:
-        return httpx.Client(
+        return Client(
             auth=self.auth,
             params=self.params,
             headers=self.headers,

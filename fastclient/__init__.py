@@ -19,6 +19,7 @@ from .methods import (
     put,
     request,
 )
+from .models import Client
 from .parameter_functions import (
     Body,
     Cookie,
