@@ -270,7 +270,7 @@ class OperationSpecification:
 @dataclass(frozen=True)
 class ComposerContext:
     request: RequestOptions
-    parameters: Dict[str, Parameter]
+    parameters: Dict[str, Parameter] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
