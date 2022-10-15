@@ -31,11 +31,11 @@ tests_no_zope = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>
 
 [[package]]
 name = "black"
-version = "22.8.0"
+version = "22.10.0"
 description = "The uncompromising code formatter."
 category = "dev"
 optional = false
-python-versions = ">=3.6.2"
+python-versions = ">=3.7"
 
 [package.dependencies]
 click = ">=8.0.0"
@@ -336,13 +336,14 @@ full = ["itsdangerous", "jinja2", "python-multipart", "pyyaml", "requests"]
 
 [[package]]
 name = "tombulled-param"
-version = "0.1.6"
+version = "0.1.9"
 description = "Enhanced function parameters"
 category = "main"
 optional = false
 python-versions = ">=3.8,<4.0"
 
 [package.dependencies]
+pydantic = ">=1.10.2,<2.0.0"
 roster = ">=0.1.8,<0.2.0"
 
 [[package]]
@@ -355,7 +356,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "typing-extensions"
-version = "4.3.0"
+version = "4.4.0"
 description = "Backported and Experimental Type Hints for Python 3.7+"
 category = "main"
 optional = false
@@ -364,7 +365,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "4690277d1583ff46490c2a6a3dc20803e4d64c3c4ba14e324c86013f53bd2ff4"
+content-hash = "0a4163489bd7fc3f4c71541a3bc51dfac6fe2c7b8e686327906e052d268acb58"
 
 [metadata.files]
 anyio = [

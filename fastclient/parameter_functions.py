@@ -1,7 +1,8 @@
-from typing import Callable, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Optional, Type, TypeVar, Union
 
 from httpx import Request, Response
-from param.sentinels import Missing, MissingType
+from param.typing import Supplier
+from pydantic.fields import UndefinedType, Undefined
 
 from . import parameters
 
@@ -11,64 +12,58 @@ T = TypeVar("T")
 def Header(
     alias: Optional[str] = None,
     *,
-    default: Union[T, MissingType] = Missing,
-    default_factory: Union[Callable[[], T], MissingType] = Missing,
-    required: bool = False,
-) -> parameters.Header[T]:
+    default: Union[Any, UndefinedType] = Undefined,
+    default_factory: Optional[Supplier[Any]] = None,
+) -> parameters.Header:
     return parameters.Header(
-        alias=alias, default=default, default_factory=default_factory, required=required
+        alias=alias, default=default, default_factory=default_factory
     )
 
 
 def Query(
     alias: Optional[str] = None,
     *,
-    default: Union[T, MissingType] = Missing,
-    default_factory: Union[Callable[[], T], MissingType] = Missing,
-    required: bool = False,
-) -> parameters.Query[T]:
+    default: Union[Any, UndefinedType] = Undefined,
+    default_factory: Optional[Supplier[Any]] = None,
+) -> parameters.Query:
     return parameters.Query(
-        alias=alias, default=default, default_factory=default_factory, required=required
+        alias=alias, default=default, default_factory=default_factory
     )
 
 
 def Path(
     alias: Optional[str] = None,
     *,
-    default: Union[T, MissingType] = Missing,
-    default_factory: Union[Callable[[], T], MissingType] = Missing,
-    required: bool = False,
-) -> parameters.Path[T]:
+    default: Union[Any, UndefinedType] = Undefined,
+    default_factory: Optional[Supplier[Any]] = None,
+) -> parameters.Path:
     return parameters.Path(
-        alias=alias, default=default, default_factory=default_factory, required=required
+        alias=alias, default=default, default_factory=default_factory
     )
 
 
 def Cookie(
     alias: Optional[str] = None,
     *,
-    default: Union[T, MissingType] = Missing,
-    default_factory: Union[Callable[[], T], MissingType] = Missing,
-    required: bool = False,
-) -> parameters.Cookie[T]:
+    default: Union[Any, UndefinedType] = Undefined,
+    default_factory: Optional[Supplier[Any]] = None,
+) -> parameters.Cookie:
     return parameters.Cookie(
-        alias=alias, default=default, default_factory=default_factory, required=required
+        alias=alias, default=default, default_factory=default_factory
     )
 
 
 def Body(
     alias: Optional[str] = None,
     *,
-    default: Union[T, MissingType] = Missing,
-    default_factory: Union[Callable[[], T], MissingType] = Missing,
-    required: bool = False,
+    default: Union[Any, UndefinedType] = Undefined,
+    default_factory: Optional[Supplier[Any]] = None,
     embed: bool = False,
-) -> parameters.Body[T]:
+) -> parameters.Body:
     return parameters.Body(
         alias=alias,
         default=default,
         default_factory=default_factory,
-        required=required,
         embed=embed,
     )
 

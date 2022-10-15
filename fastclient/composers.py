@@ -35,8 +35,8 @@ class Composer(Protocol):
     def __call__(
         self,
         parameter: param.Parameter[ParameterSpecification],
-        context: ComposerContext,
         value: Union[Any, MissingType],
+        context: ComposerContext,
     ):
         ...
 
@@ -103,8 +103,8 @@ resolvers: Resolvers[Composer] = Resolvers()
 @resolvers(Query)
 def compose_query_param(
     parameter: param.Parameter[Query],
-    context: ComposerContext,
     value: Union[Any, MissingType],
+    context: ComposerContext,
 ) -> None:
     return _compose_param(parameter, value, context.request.add_query_param)
 
@@ -112,8 +112,8 @@ def compose_query_param(
 @resolvers(Header)
 def compose_header(
     parameter: param.Parameter[Header],
-    context: ComposerContext,
     value: Union[Any, MissingType],
+    context: ComposerContext,
 ) -> None:
     return _compose_param(parameter, value, context.request.add_header)
 
@@ -121,8 +121,8 @@ def compose_header(
 @resolvers(Cookie)
 def compose_cookie(
     parameter: param.Parameter[Cookie],
-    context: ComposerContext,
     value: Union[Any, MissingType],
+    context: ComposerContext,
 ) -> None:
     return _compose_param(parameter, value, context.request.add_cookie)
 
@@ -130,8 +130,8 @@ def compose_cookie(
 @resolvers(Path)
 def compose_path_param(
     parameter: param.Parameter[Path],
-    context: ComposerContext,
     value: Union[Any, MissingType],
+    context: ComposerContext,
 ) -> None:
     return _compose_param(parameter, value, context.request.add_path_param)
 
@@ -139,8 +139,8 @@ def compose_path_param(
 @resolvers(Body)
 def compose_body(
     parameter: param.Parameter[Body],
-    context: ComposerContext,
     value: Union[Any, MissingType],
+    context: ComposerContext,
 ) -> None:
     true_value: Any
 
@@ -188,8 +188,8 @@ def compose_body(
 @resolvers(QueryParams)
 def compose_query_params(
     parameter: param.Parameter[QueryParams],
-    context: ComposerContext,
     value: Union[Any, MissingType],
+    context: ComposerContext,
 ) -> None:
     return _compose_params(parameter, value, context.request.add_query_params)
 
@@ -197,8 +197,8 @@ def compose_query_params(
 @resolvers(Headers)
 def compose_headers(
     parameter: param.Parameter[Headers],
-    context: ComposerContext,
     value: Union[Any, MissingType],
+    context: ComposerContext,
 ) -> None:
     return _compose_params(parameter, value, context.request.add_headers)
 
@@ -206,8 +206,8 @@ def compose_headers(
 @resolvers(Cookies)
 def compose_cookies(
     parameter: param.Parameter[Cookie],
-    context: ComposerContext,
     value: Union[Any, MissingType],
+    context: ComposerContext,
 ) -> None:
     return _compose_params(parameter, value, context.request.add_cookies)
 
@@ -215,8 +215,8 @@ def compose_cookies(
 @resolvers(PathParams)
 def compose_path_params(
     parameter: param.Parameter[PathParams],
-    context: ComposerContext,
     value: Union[Any, MissingType],
+    context: ComposerContext,
 ) -> None:
     return _compose_params(parameter, value, context.request.add_path_params)
 
@@ -257,7 +257,7 @@ class CompositionParameterManager(ParameterManager[Composer]):
         for parameter, argument in arguments.items():
             composer: Composer = self.get_resolver(type(parameter.default))
 
-            resolved_arguments[parameter.name] = composer(parameter, context, argument)
+            resolved_arguments[parameter.name] = composer(parameter, argument, context)
 
         return resolved_arguments
 

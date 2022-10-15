@@ -1,3 +1,4 @@
+import dataclasses
 import inspect
 import urllib.parse
 from typing import (
@@ -13,8 +14,10 @@ from typing import (
 
 import httpx
 import param
-from param.sentinels import Missing
+from param import Parameter
+from param.utils import parse
 from pydantic import BaseModel
+from pydantic.fields import Undefined
 
 from . import utils
 from .errors import (
@@ -35,22 +38,6 @@ from .parameters import (
 from .parameter_functions import Headers, Cookies, QueryParams
 
 
-# TODO: Move this implementation to `param.models.Parameter.from(...)`
-def _build_parameter(
-    parameter: inspect.Parameter, spec: param.ParameterSpecification
-) -> param.Parameter:
-    return param.Parameter(
-        name=parameter.name,
-        default=spec,
-        annotation=(
-            parameter.annotation
-            if parameter.annotation is not inspect.Parameter.empty
-            else Missing
-        ),
-        type=param.ParameterType.from_kind(parameter.kind),
-    )
-
-
 def _extract_path_params(parameters: Iterable[param.Parameter]) -> Set[str]:
     return {
         (
@@ -63,74 +50,63 @@ def _extract_path_params(parameters: Iterable[param.Parameter]) -> Set[str]:
     }
 
 
-# def _infer_parameter(parameter: inspect.Parameter, /, *, path_params: Set[str] = set()):
-#     parameter_type: type = parameter.annotation
+# DEPRECATED: DO NOT USE
+def _infer_parameter(parameter: inspect.Parameter, /, *, path_params: Set[str] = set()):
+    parameter_type: type = parameter.annotation
 
-#     body_types: Tuple[type, ...] = (BaseModel, dict)
-#     httpx_types: Tuple[type, ...] = (
-#         httpx.Headers,
-#         httpx.Cookies,
-#         httpx.QueryParams,
-#     )
-#     promise_types: Tuple[type, ...] = (
-#         httpx.Request,
-#         httpx.Response,
-#     )
+    body_types: Tuple[type, ...] = (BaseModel, dict)
+    httpx_types: Tuple[type, ...] = (
+        httpx.Headers,
+        httpx.Cookies,
+        httpx.QueryParams,
+    )
+    promise_types: Tuple[type, ...] = (
+        httpx.Request,
+        httpx.Response,
+    )
 
-#     # NOTE: Need to check later that there's no conflict with any explicityly provided parameters
-#     # E.g. (path_param: str, same_path_param: str = Param(alias="path_param"))
-#     if parameter.name in path_params:
-#         return Path(
-#             alias=parameter.name,
-#             default=(
-#                 parameter.default
-#                 if parameter.default is not parameter.empty
-#                 else Missing
-#             ),
-#         )
-#     elif (
-#         parameter_type is not parameter.empty
-#         and isinstance(parameter_type, type)
-#         and any(issubclass(parameter_type, body_type) for body_type in body_types)
-#     ):
-#         return Body(
-#             alias=parameter.name,
-#             default=(
-#                 parameter.default
-#                 if parameter.default is not parameter.empty
-#                 else Missing
-#             ),
-#         )
-#     elif (
-#         parameter_type is not parameter.empty
-#         and isinstance(parameter_type, type)
-#         and any(
-#             issubclass(parameter_type, promise_type) for promise_type in promise_types
-#         )
-#     ):
-#         return Promise(parameter_type)
-#     elif (
-#         parameter_type is not parameter.empty
-#         and isinstance(parameter_type, type)
-#         and any(issubclass(parameter_type, httpx_type) for httpx_type in httpx_types)
-#     ):
-#         if parameter_type is httpx.Headers:
-#             return Headers()
-#         elif parameter_type is httpx.Cookies:
-#             return Cookies()
-#         elif parameter_type is httpx.QueryParams:
-#             return QueryParams()
-#         else:
-#             raise Exception(f"Unknown httpx dependency type: {parameter.annotation!r}")
-#     else:
-#         return Query(
-#             alias=parameter.name,
-#             default=(
-#                 parameter.default
-#                 if parameter.default is not parameter.empty
-#                 else Missing
-#             ),
-#         )
+    # NOTE: Need to check later that there's no conflict with any explicityly provided parameters
+    # E.g. (path_param: str, same_path_param: str = Param(alias="path_param"))
+    if parameter.name in path_params:
+        return Path(
+            alias=parameter.name,
+            default=parse(parameter.default),
+        )
+    elif (
+        parameter_type is not parameter.empty
+        and isinstance(parameter_type, type)
+        and any(issubclass(parameter_type, body_type) for body_type in body_types)
+    ):
+        return Body(
+            alias=parameter.name,
+            default=parse(parameter.default),
+        )
+    elif (
+        parameter_type is not parameter.empty
+        and isinstance(parameter_type, type)
+        and any(
+            issubclass(parameter_type, promise_type) for promise_type in promise_types
+        )
+    ):
+        return Promise(parameter_type)
+    elif (
+        parameter_type is not parameter.empty
+        and isinstance(parameter_type, type)
+        and any(issubclass(parameter_type, httpx_type) for httpx_type in httpx_types)
+    ):
+        if parameter_type is httpx.Headers:
+            return Headers()
+        elif parameter_type is httpx.Cookies:
+            return Cookies()
+        elif parameter_type is httpx.QueryParams:
+            return QueryParams()
+        else:
+            raise Exception(f"Unknown httpx dependency type: {parameter.annotation!r}")
+    else:
+        return Query(
+            alias=parameter.name,
+            default=parse(parameter.default),
+        )
 
 
 def get_params(
@@ -161,14 +137,16 @@ def get_params(
         # NOTE: `Depends` doesn't subclass `Param`. This needs to be fixed.
         # "responses" (e.g. `responses.status_code`) also don't subclass `Param`...
         if isinstance(parameter.default, (Param, Body, Params, Depends, Promise)):
-            parameters[parameter.name] = _build_parameter(parameter, parameter.default)
+            # parameters[parameter.name] = _build_parameter(parameter, parameter.default)
+            parameters[parameter.name] = Parameter.from_parameter(parameter)
         else:
             parameters_to_infer.append(parameter)
 
     for parameter in parameters_to_infer:
         param_spec: Any = _infer_parameter(parameter, path_params=path_params)
 
-        parameters[parameter.name] = _build_parameter(parameter, param_spec)
+        # parameters[parameter.name] = _build_parameter(parameter, param_spec)
+        parameters[parameter.name] = dataclasses.replace(Parameter.from_parameter(parameter), default=param_spec)
 
     # NOTE: Validation currently disabled as the checks should differ depending on whether it's checking
     # an operation or a dependency
@@ -208,7 +186,7 @@ def validate_params(
 
         parameter_inner: param.Parameter
         for parameter_inner in params.values():
-            if parameter_outer is parameter_inner:
+            if parameter_inner is parameter_outer or not isinstance(parameter_inner.default, Param):
                 continue
 
             if (
