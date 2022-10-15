@@ -25,7 +25,7 @@ def extract_path_params(url_format: str, url: str, /) -> Dict[str, Any]:
     parse_result: Optional[parse.Result] = parse.parse(url_format, url)
 
     if parse_result is None:
-        raise Exception(
+        raise ValueError(
             f"Failed to parse url {url!r} against format spec {url_format!r}"
         )
 
