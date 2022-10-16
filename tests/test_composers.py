@@ -11,6 +11,7 @@ from fastclient import (
 )
 from fastclient import composers
 from param.errors import ResolutionError
+from param.typing import Consumer
 from pydantic.fields import Undefined
 import httpx
 
@@ -20,11 +21,11 @@ from fastclient.models import RequestOptions
 def test_compose_query_param_default_no_arg() -> None:
     request: RequestOptions = RequestOptions("GET", "/")
 
-    composers.compose_query_param(
-        request=request,
-        param=Query(alias="foo", default="bar"),
-        value=Undefined,
+    consumer: Consumer[RequestOptions] = composers.compose_query_param(
+        Query(alias="foo", default="bar"), Undefined
     )
+
+    consumer(request)
 
     assert request == RequestOptions(
         "GET", "/", params=httpx.QueryParams({"foo": "bar"})
@@ -34,11 +35,11 @@ def test_compose_query_param_default_no_arg() -> None:
 def test_compose_query_param_default_factory_no_arg() -> None:
     request: RequestOptions = RequestOptions("GET", "/")
 
-    composers.compose_query_param(
-        request=request,
-        param=Query(alias="foo", default_factory=lambda: "bar"),
-        value=Undefined,
+    consumer: Consumer[RequestOptions] = composers.compose_query_param(
+        Query(alias="foo", default_factory=lambda: "bar"), Undefined
     )
+
+    consumer(request)
 
     assert request == RequestOptions(
         "GET", "/", params=httpx.QueryParams({"foo": "bar"})
@@ -48,11 +49,11 @@ def test_compose_query_param_default_factory_no_arg() -> None:
 def test_compose_query_param_default_has_arg() -> None:
     request: RequestOptions = RequestOptions("GET", "/")
 
-    composers.compose_query_param(
-        request=request,
-        param=Query(alias="foo", default="bar"),
-        value="baz",
+    consumer: Consumer[RequestOptions] = composers.compose_query_param(
+        Query(alias="foo", default="bar"), "baz"
     )
+
+    consumer(request)
 
     assert request == RequestOptions(
         "GET", "/", params=httpx.QueryParams({"foo": "baz"})
@@ -62,11 +63,11 @@ def test_compose_query_param_default_has_arg() -> None:
 def test_compose_query_param_default_factory_has_arg() -> None:
     request: RequestOptions = RequestOptions("GET", "/")
 
-    composers.compose_query_param(
-        request=request,
-        param=Query(alias="foo", default_factory=lambda: "bar"),
-        value="baz",
+    consumer: Consumer[RequestOptions] = composers.compose_query_param(
+        Query(alias="foo", default_factory=lambda: "bar"), "baz"
     )
+
+    consumer(request)
 
     assert request == RequestOptions(
         "GET", "/", params=httpx.QueryParams({"foo": "baz"})
@@ -75,30 +76,25 @@ def test_compose_query_param_default_factory_has_arg() -> None:
 
 def test_compose_query_param_no_default_no_arg() -> None:
     with pytest.raises(ResolutionError):
-        composers.compose_query_param(
-            request=RequestOptions("GET", "/"),
-            param=Query(alias="foo"),
-            value=Undefined,
-        )
+        composers.compose_query_param(Query(alias="foo"), Undefined)
 
 
 def test_compose_query_param_no_alias() -> None:
     with pytest.raises(ResolutionError):
         composers.compose_query_param(
-            request=RequestOptions("GET", "/"),
-            param=Query(default="bar"),
-            value="baz",
+            Query(default="bar"),
+            "baz",
         )
 
 
 def test_compose_header_default_no_arg() -> None:
     request: RequestOptions = RequestOptions("GET", "/")
 
-    composers.compose_header(
-        request=request,
-        param=Header(alias="foo", default="bar"),
-        value=Undefined,
+    consumer: Consumer[RequestOptions] = composers.compose_header(
+        Header(alias="foo", default="bar"), Undefined
     )
+
+    consumer(request)
 
     assert request == RequestOptions("GET", "/", headers=httpx.Headers({"foo": "bar"}))
 
@@ -106,11 +102,11 @@ def test_compose_header_default_no_arg() -> None:
 def test_compose_header_default_factory_no_arg() -> None:
     request: RequestOptions = RequestOptions("GET", "/")
 
-    composers.compose_header(
-        request=request,
-        param=Header(alias="foo", default_factory=lambda: "bar"),
-        value=Undefined,
+    consumer: Consumer[RequestOptions] = composers.compose_header(
+        Header(alias="foo", default_factory=lambda: "bar"), Undefined
     )
+
+    consumer(request)
 
     assert request == RequestOptions("GET", "/", headers=httpx.Headers({"foo": "bar"}))
 
@@ -118,11 +114,11 @@ def test_compose_header_default_factory_no_arg() -> None:
 def test_compose_header_default_has_arg() -> None:
     request: RequestOptions = RequestOptions("GET", "/")
 
-    composers.compose_header(
-        request=request,
-        param=Header(alias="foo", default="bar"),
-        value="baz",
+    consumer: Consumer[RequestOptions] = composers.compose_header(
+        Header(alias="foo", default="bar"), "baz"
     )
+
+    consumer(request)
 
     assert request == RequestOptions("GET", "/", headers=httpx.Headers({"foo": "baz"}))
 
@@ -130,31 +126,23 @@ def test_compose_header_default_has_arg() -> None:
 def test_compose_header_default_factory_has_arg() -> None:
     request: RequestOptions = RequestOptions("GET", "/")
 
-    composers.compose_header(
-        request=request,
-        param=Header(alias="foo", default_factory=lambda: "bar"),
-        value="baz",
+    consumer: Consumer[RequestOptions] = composers.compose_header(
+        Header(alias="foo", default_factory=lambda: "bar"), "baz"
     )
+
+    consumer(request)
 
     assert request == RequestOptions("GET", "/", headers=httpx.Headers({"foo": "baz"}))
 
 
 def test_compose_header_no_default_no_arg() -> None:
     with pytest.raises(ResolutionError):
-        composers.compose_header(
-            request=RequestOptions("GET", "/"),
-            param=Header(alias="foo"),
-            value=Undefined,
-        )
+        composers.compose_header(Header(alias="foo"), Undefined)
 
 
 def test_compose_header_no_alias() -> None:
     with pytest.raises(ResolutionError):
-        composers.compose_header(
-            request=RequestOptions("GET", "/"),
-            param=Header(default="bar"),
-            value="baz",
-        )
+        composers.compose_header(Header(), "foo")
 
 
 def test_compose_cookie_default_no_arg() -> None:

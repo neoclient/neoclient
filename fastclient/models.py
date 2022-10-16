@@ -144,6 +144,7 @@ class RequestOptions:
     files: Optional[RequestFiles]
     json: Optional[JsonTypes]
     timeout: Optional[Timeout]
+    path_params: Dict[str, Any]
 
     def __init__(
         self,
@@ -158,6 +159,7 @@ class RequestOptions:
         files: Optional[RequestFiles] = None,
         json: Optional[JsonTypes] = None,
         timeout: Optional[TimeoutTypes] = None,
+        path_params: Optional[Dict[str, Any]] = None,
     ) -> None:
         ...
         self.method = method if isinstance(method, str) else method.decode()
@@ -170,12 +172,15 @@ class RequestOptions:
         self.files = files
         self.json = json
         self.timeout = Timeout(timeout) if timeout is not None else None
+        self.path_params = path_params if path_params is not None else {}
 
     def build_request(self, client: Optional[httpx.Client]) -> httpx.Request:
+        url: str = str(self.url).format(**self.path_params)
+
         if client is None:
             return httpx.Request(
                 self.method,
-                self.url,
+                url,
                 params=self.params,
                 headers=self.headers,
                 cookies=self.cookies,
@@ -192,7 +197,7 @@ class RequestOptions:
         else:
             return client.build_request(
                 self.method,
-                self.url,
+                url,
                 params=self.params,
                 headers=self.headers,
                 cookies=self.cookies,
@@ -231,6 +236,7 @@ class RequestOptions:
                 if request_options.timeout is not None
                 else self.timeout
             ),
+            path_params={**self.path_params, **request_options.path_params},
         )
 
     def add_query_param(self, key: str, value: Any) -> None:
@@ -243,9 +249,10 @@ class RequestOptions:
         self.cookies[key] = value
 
     def add_path_param(self, key: str, value: Any) -> None:
-        self.url = httpx.URL(
-            utils.partially_format(urllib.parse.unquote(str(self.url)), **{key: value})
-        )
+        # self.url = httpx.URL(
+        #     utils.partially_format(urllib.parse.unquote(str(self.url)), **{key: value})
+        # )
+        self.path_params[key] = value
 
     def add_query_params(self, query_params: QueryParamTypes) -> None:
         self.params = self.params.merge(httpx.QueryParams(query_params))
@@ -257,9 +264,10 @@ class RequestOptions:
         self.cookies.update(httpx.Cookies(cookies))
 
     def add_path_params(self, path_params: Mapping[str, Any]) -> None:
-        self.url = httpx.URL(
-            utils.partially_format(urllib.parse.unquote(str(self.url)), **path_params)
-        )
+        # self.url = httpx.URL(
+        #     utils.partially_format(urllib.parse.unquote(str(self.url)), **path_params)
+        # )
+        self.path_params.update(path_params)
 
     def validate(self):
         missing_path_params: Set[str] = utils.get_path_params(
