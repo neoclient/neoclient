@@ -7,6 +7,7 @@ from typing import (
     Protocol,
     Tuple,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -16,7 +17,7 @@ from pydantic import Required, BaseModel
 from pydantic.fields import UndefinedType, FieldInfo, ModelField
 import param.parameters
 from param.errors import ResolutionError
-from param.resolvers import Resolvers, resolve_param
+from param.resolvers import Resolvers
 from param.typing import Consumer
 from param.validation import ValidatedFunction
 
@@ -36,20 +37,14 @@ from .parameters import (
 )
 
 
-class Resolver(Protocol):
-    def __call__(
-        self,
-        param: param.parameters.Param,
-        argument: Union[Any, UndefinedType],
-    ) -> Any:
-        ...
+P = TypeVar("P", contravariant=True, bound=param.parameters.Param)
 
 
-class Composer(Protocol):
+class Composer(Protocol[P]):
     def __call__(
         self,
-        param: param.parameters.Param,
-        argument: Union[Any, UndefinedType],
+        param: P,
+        argument: Any,
     ) -> Consumer[RequestOptions]:
         ...
 
@@ -64,152 +59,59 @@ class ParamsSetter(Protocol):
         ...
 
 
-@dataclass(init=False)
-class ParamsComposer(Consumer[RequestOptions]):
-    value: Any
+@dataclass
+class ParamsComposer(Composer[Params]):
     setter: ParamsSetter
 
-    def __init__(
+    def __call__(
         self,
-        param: Params,
-        argument: Union[Any, UndefinedType],
-        setter: ParamsSetter,
-    ) -> None:
-        self.value = resolve_param(param, argument)
-        self.setter = setter
+        _: Params,
+        argument: Any,
+    ) -> Consumer[RequestOptions]:
+        def consume(request: RequestOptions, /) -> None:
+            self.setter(request, argument)
 
-    def __call__(self, request: RequestOptions, /) -> None:
-        self.setter(request, self.value)
+        return consume
 
 
-@dataclass(init=False)
-class ParamComposer(Consumer[RequestOptions]):
-    key: str
-    value: Any
-    required: bool
+@dataclass
+class ParamComposer(Composer[Param]):
     setter: ParamSetter
 
-    def __init__(
+    def __call__(
         self,
         param: Param,
-        argument: Union[Any, UndefinedType],
-        setter: ParamSetter,
-    ) -> None:
+        argument: Any,
+    ) -> Consumer[RequestOptions]:
         if param.alias is None:
             raise ResolutionError("Cannot compose `Param` with no alias")
 
-        self.key: str = param.alias
-        self.value: Any = resolve_param(param, argument)
-        self.required = param.default is Required
-        self.setter = setter
+        if argument is None and param.default is not Required:
+            return empty_consumer
 
-    def __call__(self, request: RequestOptions, /) -> None:
-        if self.value is None and not self.required:
-            return
+        key: str = param.alias
+        value: Any = argument
 
-        self.setter(request, self.key, self.value)
+        def consume(request: RequestOptions, /) -> None:
+            self.setter(request, key, value)
 
-
-resolvers: Resolvers[Composer] = Resolvers()
+        return consume
 
 
-@resolvers(Query)
-def compose_query_param(
-    param: Query,
-    argument: Union[Any, UndefinedType],
-) -> Consumer[RequestOptions]:
-    # def setter(request: RequestOptions, key: str, value: Any) -> None:
-    #     request.params = request.params.set(key, value)
-
-    return ParamComposer(
-        param=param,
-        argument=argument,
-        setter=RequestOptions.add_query_param,
-    )
+def empty_consumer(_: RequestOptions, /) -> None:
+    pass
 
 
-@resolvers(Header)
-def compose_header(
-    param: Header,
-    argument: Union[Any, UndefinedType],
-) -> Consumer[RequestOptions]:
-    return ParamComposer(
-        param=param,
-        argument=argument,
-        setter=RequestOptions.add_header,
-    )
-
-
-@resolvers(Cookie)
-def compose_cookie(
-    param: Cookie,
-    argument: Union[Any, UndefinedType],
-) -> Consumer[RequestOptions]:
-    return ParamComposer(
-        param=param,
-        argument=argument,
-        setter=RequestOptions.add_cookie,
-    )
-
-
-@resolvers(Path)
-def compose_path_param(
-    param: Path,
-    argument: Union[Any, UndefinedType],
-) -> Consumer[RequestOptions]:
-    return ParamComposer(
-        param=param,
-        argument=argument,
-        setter=RequestOptions.add_path_param,
-    )
-
-
-@resolvers(QueryParams)
-def compose_query_params(
-    param: QueryParams,
-    argument: Union[Any, UndefinedType],
-) -> Consumer[RequestOptions]:
-    return ParamsComposer(
-        param=param,
-        argument=argument,
-        setter=RequestOptions.add_query_params,
-    )
-
-
-@resolvers(Headers)
-def compose_headers(
-    param: Headers,
-    argument: Union[Any, UndefinedType],
-) -> Consumer[RequestOptions]:
-    return ParamsComposer(
-        param=param,
-        argument=argument,
-        setter=RequestOptions.add_headers,
-    )
-
-
-@resolvers(Cookies)
-def compose_cookies(
-    param: Cookies,
-    argument: Union[Any, UndefinedType],
-) -> Consumer[RequestOptions]:
-    return ParamsComposer(
-        param=param,
-        argument=argument,
-        setter=RequestOptions.add_cookies,
-    )
-
-
-@resolvers(PathParams)
-def compose_path_params(
-    param: PathParams,
-    argument: Union[Any, UndefinedType],
-) -> Consumer[RequestOptions]:
-    return ParamsComposer(
-        param=param,
-        argument=argument,
-        setter=RequestOptions.add_path_params,
-    )
+resolvers: Resolvers[Composer] = Resolvers({
+    Query: ParamComposer(RequestOptions.add_query_param),
+    Header: ParamComposer(RequestOptions.add_header),
+    Cookie: ParamComposer(RequestOptions.add_cookie),
+    Path: ParamComposer(RequestOptions.add_path_param),
+    QueryParams: ParamsComposer(RequestOptions.add_query_params),
+    Headers: ParamsComposer(RequestOptions.add_query_params),
+    Cookies: ParamsComposer(RequestOptions.add_query_params),
+    PathParams: ParamsComposer(RequestOptions.add_query_params),
+})
 
 
 # NOTE: This resolver is currently untested
@@ -256,8 +158,8 @@ def compose_body(
         context.request.json.update(json_value)
 
 
-def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, Any]]:
-    fields: Dict[str, Tuple[Any, Any]] = {}
+def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, param.parameters.Param]]:
+    fields: Dict[str, Tuple[Any, param.parameters.Param]] = {}
 
     field_name: str
     model_field: ModelField
@@ -269,7 +171,7 @@ def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, Any]]:
                 default=param.parameters.Param.get_default(field_info),
             )
 
-        if field_info.alias is None:
+        if isinstance(field_info, Param) and field_info.alias is None:
             field_info = dataclasses.replace(
                 field_info, alias=field_info.generate_alias(model_field.name)
             )
@@ -279,24 +181,31 @@ def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, Any]]:
     return fields
 
 
-def compose_func(
-    request: RequestOptions, func: Callable, arguments: Dict[str, Any]
-) -> None:
-    fields: Dict[str, Tuple[Any, Any]] = get_fields(func)
+def create_model(func: Callable, arguments: Dict[str, Any]) -> BaseModel:
+    fields: Dict[str, Tuple[Any, param.parameters.Param]] = get_fields(func)
 
     class Config:
         allow_population_by_field_name = True
 
-    model_cls: Type[BaseModel] = ValidatedFunction(func)._create_model(fields, config=Config)
+    model_cls: Type[BaseModel] = ValidatedFunction(func)._create_model(
+        fields, config=Config
+    )
 
-    model: BaseModel = model_cls(**arguments)
+    return model_cls(**arguments)
 
+
+def compose_func(
+    request: RequestOptions, func: Callable, arguments: Dict[str, Any]
+) -> None:
+    model: BaseModel = create_model(func, arguments)
+
+    # By this stage the arguments have been validated (coerced, defaults used, exception thrown if missing)
     validated_arguments: Dict[str, Any] = model.dict()
 
     # TODO: Resolve here...
     field_name: str
     model_field: ModelField
-    for field_name, model_field in model_cls.__fields__.items():
+    for field_name, model_field in model.__fields__.items():
         field_info: param.parameters.Param = model_field.field_info
         argument: Any = validated_arguments[field_name]
 

@@ -1,6 +1,5 @@
 import pytest
 from fastclient import (
-    Query,
     Header,
     Cookie,
     Path,
@@ -9,7 +8,8 @@ from fastclient import (
     Cookies,
     PathParams,
 )
-from fastclient import composers
+from fastclient.parameters import Query
+from fastclient.composers import resolvers, Composer
 from param.errors import ResolutionError
 from param.typing import Consumer
 from pydantic.fields import Undefined
@@ -18,11 +18,13 @@ import httpx
 from fastclient.models import RequestOptions
 
 
-def test_compose_query_param_default_no_arg() -> None:
+def test_compose_query_param() -> None:
+    composer: Composer[Query] = resolvers[Query]
+
     request: RequestOptions = RequestOptions("GET", "/")
 
-    consumer: Consumer[RequestOptions] = composers.compose_query_param(
-        Query(alias="foo", default="bar"), Undefined
+    consumer: Consumer[RequestOptions] = composer(
+        Query(alias="foo"), "bar"
     )
 
     consumer(request)
@@ -30,60 +32,15 @@ def test_compose_query_param_default_no_arg() -> None:
     assert request == RequestOptions(
         "GET", "/", params=httpx.QueryParams({"foo": "bar"})
     )
-
-
-def test_compose_query_param_default_factory_no_arg() -> None:
-    request: RequestOptions = RequestOptions("GET", "/")
-
-    consumer: Consumer[RequestOptions] = composers.compose_query_param(
-        Query(alias="foo", default_factory=lambda: "bar"), Undefined
-    )
-
-    consumer(request)
-
-    assert request == RequestOptions(
-        "GET", "/", params=httpx.QueryParams({"foo": "bar"})
-    )
-
-
-def test_compose_query_param_default_has_arg() -> None:
-    request: RequestOptions = RequestOptions("GET", "/")
-
-    consumer: Consumer[RequestOptions] = composers.compose_query_param(
-        Query(alias="foo", default="bar"), "baz"
-    )
-
-    consumer(request)
-
-    assert request == RequestOptions(
-        "GET", "/", params=httpx.QueryParams({"foo": "baz"})
-    )
-
-
-def test_compose_query_param_default_factory_has_arg() -> None:
-    request: RequestOptions = RequestOptions("GET", "/")
-
-    consumer: Consumer[RequestOptions] = composers.compose_query_param(
-        Query(alias="foo", default_factory=lambda: "bar"), "baz"
-    )
-
-    consumer(request)
-
-    assert request == RequestOptions(
-        "GET", "/", params=httpx.QueryParams({"foo": "baz"})
-    )
-
-
-def test_compose_query_param_no_default_no_arg() -> None:
-    with pytest.raises(ResolutionError):
-        composers.compose_query_param(Query(alias="foo"), Undefined)
 
 
 def test_compose_query_param_no_alias() -> None:
+    composer: Composer[Query] = resolvers[Query]
+
     with pytest.raises(ResolutionError):
-        composers.compose_query_param(
-            Query(default="bar"),
-            "baz",
+        composer(
+            Query(),
+            "bar",
         )
 
 
