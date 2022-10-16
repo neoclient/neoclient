@@ -4,8 +4,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
-    Optional,
     Protocol,
     Tuple,
     Type,
@@ -16,11 +14,8 @@ import fastapi.encoders
 import param
 from pydantic import Required, BaseModel
 from pydantic.fields import UndefinedType, FieldInfo, ModelField
-from param import Resolvable
 import param.parameters
 from param.errors import ResolutionError
-from param.manager import ParameterManager
-from param.models import Arguments
 from param.resolvers import Resolvers, resolve_param
 from param.typing import Consumer
 from param.validation import ValidatedFunction
@@ -258,69 +253,6 @@ def compose_body(
         context.request.json.update(json_value)
 
 
-# TODO: Wean off this
-@dataclass
-class CompositionParameterManager(ParameterManager[Composer]):
-    resolvers: Resolvers[Composer]
-    request: RequestOptions
-
-    # NOTE: Composition parameter inference should be much more advanced than this.
-    # `api.get_params` contains the current inference logic that should be used.
-    def get_param(self, parameter: param.Parameter, /) -> param.parameters.Param:
-        param: Optional[param.parameters.Param] = super().get_param(parameter)
-
-        if param is not None:
-            return param
-        else:
-            return Query(
-                default=parameter.default,
-            )
-
-    def resolve_all(
-        self,
-        resolvables: Iterable[Resolvable],
-        /,
-    ) -> Dict[str, Any]:
-        resolved_arguments: Dict[str, Any] = {}
-
-        # parameters: Dict[str, param.Parameter] = {
-        #     resolvable.parameter.name: resolvable.parameter
-        #     for resolvable in resolvables
-        # }
-
-        resolvable: Resolvable
-        for resolvable in resolvables:
-            parameter: param.Parameter = resolvable.parameter
-            field: param.parameters.Param = resolvable.field
-            value: Union[Any, UndefinedType] = resolvable.argument
-
-            composer: Composer = self.get_resolver(type(field))
-
-            consumer: Consumer[RequestOptions] = composer(field, value)
-
-            consumer(self.request)
-
-            resolved_arguments[parameter.name] = None
-
-        return resolved_arguments
-
-
-# NOTE: DEPRECATED
-def compose_func_old(
-    request: RequestOptions, func: Callable, arguments: Dict[str, Any]
-) -> None:
-    manager: ParameterManager[Composer] = CompositionParameterManager(
-        resolvers=resolvers,
-        request=request,
-    )
-
-    # NOTE: `param` should complain if a param spec doesn't have a specified resolver.
-    # It does not currently do this.
-    manager.get_arguments(func, Arguments(kwargs=arguments))
-
-    # Validate the request (e.g. to ensure no path params have been missed)
-    request.validate()
-
 def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, Any]]:
     fields: Dict[str, Tuple[Any, Any]] = {}
 
@@ -343,15 +275,16 @@ def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, Any]]:
 
     return fields
 
+
 def compose_func(
     request: RequestOptions, func: Callable, arguments: Dict[str, Any]
 ) -> None:
     fields: Dict[str, Tuple[Any, Any]] = get_fields(func)
 
-    validated_function: ValidatedFunction = ValidatedFunction(func)
+    class Config:
+        allow_population_by_field_name = True
 
-    # We don't want the one built for us as we need to perform param inference
-    model_cls: Type[BaseModel] = validated_function._create_model(fields)
+    model_cls: Type[BaseModel] = ValidatedFunction(func)._create_model(fields, config=Config)
 
     model: BaseModel = model_cls(**arguments)
 
@@ -370,4 +303,5 @@ def compose_func(
 
         consumer(request)
 
-    return validated_function.prepare_arguments(validated_arguments)
+    # Validate the request (e.g. to ensure no path params have been missed)
+    request.validate()

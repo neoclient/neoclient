@@ -175,7 +175,7 @@ class RequestOptions:
         self.path_params = path_params if path_params is not None else {}
 
     def build_request(self, client: Optional[httpx.Client]) -> httpx.Request:
-        url: str = str(self.url).format(**self.path_params)
+        url: str = self._get_formatted_url()
 
         if client is None:
             return httpx.Request(
@@ -249,9 +249,6 @@ class RequestOptions:
         self.cookies[key] = value
 
     def add_path_param(self, key: str, value: Any) -> None:
-        # self.url = httpx.URL(
-        #     utils.partially_format(urllib.parse.unquote(str(self.url)), **{key: value})
-        # )
         self.path_params[key] = value
 
     def add_query_params(self, query_params: QueryParamTypes) -> None:
@@ -264,15 +261,15 @@ class RequestOptions:
         self.cookies.update(httpx.Cookies(cookies))
 
     def add_path_params(self, path_params: Mapping[str, Any]) -> None:
-        # self.url = httpx.URL(
-        #     utils.partially_format(urllib.parse.unquote(str(self.url)), **path_params)
-        # )
         self.path_params.update(path_params)
 
+    def _get_formatted_url(self) -> str:
+        return utils.partially_format(urllib.parse.unquote(str(self.url)), **self.path_params)
+
     def validate(self):
-        missing_path_params: Set[str] = utils.get_path_params(
-            urllib.parse.unquote(str(self.url))
-        )
+        formatted_url: str = self._get_formatted_url()
+        
+        missing_path_params: Set[str] = utils.get_path_params(formatted_url)
 
         # Validate path params are correct
         if missing_path_params:
