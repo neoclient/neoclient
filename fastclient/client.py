@@ -8,7 +8,12 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Type, TypeVar, 
 import httpx
 from httpx import QueryParams, Headers, Cookies, Timeout, URL
 from httpx._auth import Auth
-from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG, DEFAULT_LIMITS, Limits
+from httpx._config import (
+    DEFAULT_MAX_REDIRECTS,
+    DEFAULT_TIMEOUT_CONFIG,
+    DEFAULT_LIMITS,
+    Limits,
+)
 from httpx._transports.base import BaseTransport
 from typing_extensions import ParamSpec
 
@@ -30,15 +35,18 @@ from .types import (
     EventHook,
 )
 
+
 class MethodKind(Enum):
     METHOD = auto()
     CLASS_METHOD = auto()
     STATIC_METHOD = auto()
 
+
 T = TypeVar("T")
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
+
 
 def get_method_kind(method: Union[FunctionType, MethodType], /) -> MethodKind:
     if isinstance(method, MethodType):
@@ -49,12 +57,15 @@ def get_method_kind(method: Union[FunctionType, MethodType], /) -> MethodKind:
     elif isinstance(method, FunctionType):
         return MethodKind.STATIC_METHOD
     else:
-        raise ValueError("`method` is not a function or method, cannot determine its kind")
+        raise ValueError(
+            "`method` is not a function or method, cannot determine its kind"
+        )
 
 
 class BaseService:
     def __repr__(self) -> str:
         return f"<{type(self).__name__}()>"
+
 
 # @dataclass(init=False)
 # class Client(httpx.Client):
@@ -69,43 +80,44 @@ class BaseService:
 #     base_url: URL
 #     trust_env: bool
 
-    # auth: Optional[Auth] = None
-    # params: QueryParams = field(default_factory=QueryParams)
-    # headers: Headers = field(default_factory=lambda: Headers({'accept': '*/*', 'accept-encoding': 'gzip, deflate, br', 'connection': 'keep-alive', 'user-agent': 'python-httpx/0.23.0'}))
-    # cookies: Cookies = field(default_factory=Cookies)
-    # timeout: Timeout = DEFAULT_TIMEOUT_CONFIG
-    # follow_redirects: bool = False
-    # max_redirects: int = DEFAULT_MAX_REDIRECTS
-    # event_hooks: Dict[str, List[Callable]] = field(default_factory=lambda: {'request': [], 'response': []})
-    # base_url: URL = field(default_factory=URL)
-    # trust_env: bool = True
+# auth: Optional[Auth] = None
+# params: QueryParams = field(default_factory=QueryParams)
+# headers: Headers = field(default_factory=lambda: Headers({'accept': '*/*', 'accept-encoding': 'gzip, deflate, br', 'connection': 'keep-alive', 'user-agent': 'python-httpx/0.23.0'}))
+# cookies: Cookies = field(default_factory=Cookies)
+# timeout: Timeout = DEFAULT_TIMEOUT_CONFIG
+# follow_redirects: bool = False
+# max_redirects: int = DEFAULT_MAX_REDIRECTS
+# event_hooks: Dict[str, List[Callable]] = field(default_factory=lambda: {'request': [], 'response': []})
+# base_url: URL = field(default_factory=URL)
+# trust_env: bool = True
 
-    # def __init__(
-    #     self,
-    #     *,
-    #     auth: Optional[AuthTypes] = None,
-    #     params: Optional[QueryParamTypes] = None,
-    #     headers: Optional[HeaderTypes] = None,
-    #     cookies: Optional[CookieTypes] = None,
-    #     verify: VerifyTypes = True,
-    #     cert: Optional[CertTypes] = None,
-    #     http1: bool = True,
-    #     http2: bool = False,
-    #     proxies: Optional[ProxiesTypes] = None,
-    #     mounts: Optional[Mapping[str, BaseTransport]] = None,
-    #     timeout: TimeoutTypes = DEFAULT_TIMEOUT_CONFIG,
-    #     follow_redirects: bool = False,
-    #     limits: Limits = DEFAULT_LIMITS,
-    #     max_redirects: int = DEFAULT_MAX_REDIRECTS,
-    #     event_hooks: Optional[
-    #         Mapping[str, List[EventHook]]
-    #     ] = None,
-    #     base_url: URLTypes = "",
-    #     transport: Optional[BaseTransport] = None,
-    #     app: Optional[Callable[..., Any]] = None,
-    #     trust_env: bool = True,
-    #     default_encoding: Union[str, Callable[[bytes], str]] = "utf-8",
-    # ):
+# def __init__(
+#     self,
+#     *,
+#     auth: Optional[AuthTypes] = None,
+#     params: Optional[QueryParamTypes] = None,
+#     headers: Optional[HeaderTypes] = None,
+#     cookies: Optional[CookieTypes] = None,
+#     verify: VerifyTypes = True,
+#     cert: Optional[CertTypes] = None,
+#     http1: bool = True,
+#     http2: bool = False,
+#     proxies: Optional[ProxiesTypes] = None,
+#     mounts: Optional[Mapping[str, BaseTransport]] = None,
+#     timeout: TimeoutTypes = DEFAULT_TIMEOUT_CONFIG,
+#     follow_redirects: bool = False,
+#     limits: Limits = DEFAULT_LIMITS,
+#     max_redirects: int = DEFAULT_MAX_REDIRECTS,
+#     event_hooks: Optional[
+#         Mapping[str, List[EventHook]]
+#     ] = None,
+#     base_url: URLTypes = "",
+#     transport: Optional[BaseTransport] = None,
+#     app: Optional[Callable[..., Any]] = None,
+#     trust_env: bool = True,
+#     default_encoding: Union[str, Callable[[bytes], str]] = "utf-8",
+# ):
+
 
 @dataclass(init=False)
 class FastClient:
@@ -150,7 +162,6 @@ class FastClient:
 
         return obj
 
-
     def create(self, protocol: Type[T], /) -> T:
         operations: Dict[str, Callable] = {
             member_name: member
@@ -159,7 +170,6 @@ class FastClient:
         }
 
         attributes: dict = {"__module__": protocol.__module__}
-
 
         func: Callable
         for func in operations.values():
@@ -201,7 +211,7 @@ class FastClient:
             operation.func = bound_member
 
             setattr(obj, member_name, bound_member)
-        
+
         return obj
 
     def _wrap(self, operation: Operation[PS, RT], /) -> Callable[PS, RT]:

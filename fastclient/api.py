@@ -145,7 +145,9 @@ def get_params(
         param_spec: Any = _infer_parameter(parameter, path_params=path_params)
 
         # parameters[parameter.name] = _build_parameter(parameter, param_spec)
-        parameters[parameter.name] = dataclasses.replace(Parameter.from_parameter(parameter), default=param_spec)
+        parameters[parameter.name] = dataclasses.replace(
+            Parameter.from_parameter(parameter), default=param_spec
+        )
 
     # NOTE: Validation currently disabled as the checks should differ depending on whether it's checking
     # an operation or a dependency
@@ -185,7 +187,9 @@ def validate_params(
 
         parameter_inner: param.Parameter
         for parameter_inner in params.values():
-            if parameter_inner is parameter_outer or not isinstance(parameter_inner.default, Param):
+            if parameter_inner is parameter_outer or not isinstance(
+                parameter_inner.default, Param
+            ):
                 continue
 
             if (

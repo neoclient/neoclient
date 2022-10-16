@@ -12,7 +12,3 @@ class IncompatiblePathParameters(Exception):
 
 class InvalidParameterSpecification(Exception):
     pass
-
-
-class ResolutionError(Exception):
-    pass

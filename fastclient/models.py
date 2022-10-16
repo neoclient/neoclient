@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Mapping, Optional, Set
 import urllib.parse
 
 import httpx
@@ -9,6 +9,7 @@ from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 from param.models import Parameter
 
 from . import utils
+from .errors import IncompatiblePathParameters
 from .types import (
     AuthTypes,
     CookieTypes,
@@ -259,6 +260,17 @@ class RequestOptions:
         self.url = httpx.URL(
             utils.partially_format(urllib.parse.unquote(str(self.url)), **path_params)
         )
+
+    def validate(self):
+        missing_path_params: Set[str] = utils.get_path_params(
+            urllib.parse.unquote(str(self.url))
+        )
+
+        # Validate path params are correct
+        if missing_path_params:
+            raise IncompatiblePathParameters(
+                f"Incompatible path params. Missing: {missing_path_params}"
+            )
 
 
 @dataclass

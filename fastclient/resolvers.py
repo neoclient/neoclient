@@ -20,6 +20,7 @@ import param
 from param import ParameterManager, BoundArguments, Arguments
 import param.parameters
 from param import Resolvable
+from param.errors import ResolutionError
 import pydantic
 from pydantic import BaseModel
 from pydantic.fields import Undefined, UndefinedType
@@ -28,7 +29,6 @@ from httpx import Response
 from param import ParameterType, Resolvers
 
 from . import utils
-from .errors import ResolutionError
 from .parameters import (
     Depends,
     PathParams,
@@ -269,7 +269,7 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
 
         if param is not None:
             return param
-            
+
         path_params: Set[str] = (
             utils.get_path_params(urllib.parse.unquote(str(self.request.url)))
             if self.request is not None
@@ -309,14 +309,17 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
             not isinstance(parameter_type, UndefinedType)
             and isinstance(parameter_type, type)
             and any(
-                issubclass(parameter_type, promise_type) for promise_type in promise_types
+                issubclass(parameter_type, promise_type)
+                for promise_type in promise_types
             )
         ):
             return Promise(parameter_type)
         elif (
             not isinstance(parameter_type, UndefinedType)
             and isinstance(parameter_type, type)
-            and any(issubclass(parameter_type, httpx_type) for httpx_type in httpx_types)
+            and any(
+                issubclass(parameter_type, httpx_type) for httpx_type in httpx_types
+            )
         ):
             if parameter_type is httpx.Headers:
                 return Headers()
@@ -325,7 +328,9 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
             elif parameter_type is httpx.QueryParams:
                 return QueryParams()
             else:
-                raise Exception(f"Unknown httpx dependency type: {parameter.annotation!r}")
+                raise Exception(
+                    f"Unknown httpx dependency type: {parameter.annotation!r}"
+                )
         else:
             return Query(
                 alias=Query.generate_alias(parameter.name),
@@ -347,13 +352,15 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
         resolvable: Resolvable
         for resolvable in resolvables:
             parameter: param.Parameter = resolvable.parameter
-            
+
             if not isinstance(parameter.default, param.parameters.Param):
                 raise Exception("Cannot resolve non-param")
 
             resolver: Resolver = self.get_resolver(type(parameter.default))
 
-            resolved_arguments[parameter.name] = resolver(parameter, self.response, context)
+            resolved_arguments[parameter.name] = resolver(
+                parameter, self.response, context
+            )
 
         return resolved_arguments
 

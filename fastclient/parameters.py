@@ -11,6 +11,7 @@ from typing import (
 from httpx import Request, Response
 import param.parameters
 from param.typing import Supplier
+from pydantic.fields import Undefined, UndefinedType
 
 from .enums import ParamType
 
@@ -67,10 +68,12 @@ class Params(param.parameters.Param):
     def __init__(
         self,
         *,
+        default: Union[Any, UndefinedType] = Undefined,
         default_factory: Optional[Supplier[Any]] = None,
     ):
         super().__init__(
-            default_factory=default_factory if default_factory is not None else dict
+            default=default,
+            default_factory=default_factory,
         )
 
 
@@ -107,6 +110,7 @@ class Depends(param.parameters.Param):
 
     #     setattr(self, "dependency", dependency)
     #     setattr(self, "use_cache", use_cache)
+
 
 @dataclass(frozen=True)
 class Promise(param.parameters.Param):

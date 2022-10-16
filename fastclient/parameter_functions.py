@@ -6,6 +6,7 @@ from pydantic.fields import UndefinedType, Undefined
 
 from . import parameters
 
+
 def Header(
     alias: Optional[str] = None,
     *,
@@ -65,20 +66,48 @@ def Body(
     )
 
 
-def Headers() -> parameters.Headers:
-    return parameters.Headers()
+def Headers(
+    *,
+    default: Union[Any, UndefinedType] = Undefined,
+    default_factory: Optional[Supplier[Any]] = None,
+) -> parameters.Headers:
+    return parameters.Headers(
+        default=default,
+        default_factory=default_factory,
+    )
 
 
-def QueryParams() -> parameters.QueryParams:
-    return parameters.QueryParams()
+def QueryParams(
+    *,
+    default: Union[Any, UndefinedType] = Undefined,
+    default_factory: Optional[Supplier[Any]] = None,
+) -> parameters.QueryParams:
+    return parameters.QueryParams(
+        default=default,
+        default_factory=default_factory,
+    )
 
 
-def Cookies() -> parameters.Cookies:
-    return parameters.Cookies()
+def Cookies(
+    *,
+    default: Union[Any, UndefinedType] = Undefined,
+    default_factory: Optional[Supplier[Any]] = None,
+) -> parameters.Cookies:
+    return parameters.Cookies(
+        default=default,
+        default_factory=default_factory,
+    )
 
 
-def PathParams() -> parameters.PathParams:
-    return parameters.PathParams()
+def PathParams(
+    *,
+    default: Union[Any, UndefinedType] = Undefined,
+    default_factory: Optional[Supplier[Any]] = None,
+) -> parameters.PathParams:
+    return parameters.PathParams(
+        default=default,
+        default_factory=default_factory,
+    )
 
 
 def Depends(

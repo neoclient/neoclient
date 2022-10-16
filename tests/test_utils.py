@@ -46,8 +46,28 @@ def test_bind_arguments() -> None:
     def foo(x: str, /, y: str = "def_y", *, z: str = "def_z"):
         ...
 
-    assert utils.bind_arguments(foo, ("x",), {}) == {"x": "x", "y": "def_y", "z": "def_z"}
-    assert utils.bind_arguments(foo, ("x", "y"), {}) == {"x": "x", "y": "y", "z": "def_z"}
-    assert utils.bind_arguments(foo, ("x",), {"y": "y"}) == {"x": "x", "y": "y", "z": "def_z"}
-    assert utils.bind_arguments(foo, ("x", "y"), {"z": "z"}) == {"x": "x", "y": "y", "z": "z"}
-    assert utils.bind_arguments(foo, ("x",), {"y": "y", "z": "z"}) == {"x": "x", "y": "y", "z": "z"}
+    assert utils.bind_arguments(foo, ("x",), {}) == {
+        "x": "x",
+        "y": "def_y",
+        "z": "def_z",
+    }
+    assert utils.bind_arguments(foo, ("x", "y"), {}) == {
+        "x": "x",
+        "y": "y",
+        "z": "def_z",
+    }
+    assert utils.bind_arguments(foo, ("x",), {"y": "y"}) == {
+        "x": "x",
+        "y": "y",
+        "z": "def_z",
+    }
+    assert utils.bind_arguments(foo, ("x", "y"), {"z": "z"}) == {
+        "x": "x",
+        "y": "y",
+        "z": "z",
+    }
+    assert utils.bind_arguments(foo, ("x",), {"y": "y", "z": "z"}) == {
+        "x": "x",
+        "y": "y",
+        "z": "z",
+    }
