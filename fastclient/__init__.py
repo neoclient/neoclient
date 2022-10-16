@@ -1,6 +1,7 @@
 from .client import FastClient
 from .decorators import (
     params,
+    header,
     headers,
     cookies,
     content,

@@ -1,10 +1,16 @@
-from typing import Callable, TypeVar
+from dataclasses import dataclass
+from typing import Any, Callable, TypeVar
 
+import param.parameters
+from param.typing import Consumer
 from httpx import Timeout
 from typing_extensions import ParamSpec
 
+from . import composers
+from .composers import Composer
 from .models import RequestOptions
 from .operations import Operation, get_operation
+from .parameters import Cookies, Headers, QueryParams, Header
 from .types import (
     CookieTypes,
     HeaderTypes,
@@ -33,25 +39,36 @@ def _composer(
     return decorator
 
 
-def params(value: QueryParamTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    def composer(request: RequestOptions, /) -> None:
-        request.add_query_params(value)
+@dataclass
+class Decorator:
+    value: Any
+    param: param.parameters.Param
+    composer: Composer
 
-    return _composer(composer)
+    def __call__(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
+        operation: Operation = get_operation(func)
+
+        consumer: Consumer[RequestOptions] = self.composer(self.param, self.value)
+
+        consumer(operation.specification.request)
+
+        return func
+
+# TODO: Also implement @param, @cookie, ....
+def header(key: str, value: Any, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return Decorator(value, Header(alias=key), composers.compose_header)
+
+
+def params(value: QueryParamTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+    return Decorator(value, QueryParams(), composers.compose_query_params)
 
 
 def headers(value: HeaderTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    def composer(request: RequestOptions, /) -> None:
-        request.add_headers(value)
-
-    return _composer(composer)
+    return Decorator(value, Headers(), composers.compose_headers)
 
 
 def cookies(value: CookieTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    def composer(request: RequestOptions, /) -> None:
-        request.add_cookies(value)
-
-    return _composer(composer)
+    return Decorator(value, Cookies(), composers.compose_cookies)
 
 
 def content(value: RequestContent, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:

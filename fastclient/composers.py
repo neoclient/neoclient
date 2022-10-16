@@ -118,6 +118,9 @@ def compose_query_param(
     param: Query,
     argument: Union[Any, UndefinedType],
 ) -> Consumer[RequestOptions]:
+    # def setter(request: RequestOptions, key: str, value: Any) -> None:
+    #     request.params = request.params.set(key, value)
+
     return ParamComposer(
         param=param,
         argument=argument,
