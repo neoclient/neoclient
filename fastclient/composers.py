@@ -19,8 +19,6 @@ from .parameters import (
     Cookies,
     Header,
     Headers,
-    Param,
-    Params,
     Path,
     PathParams,
     Query,
@@ -34,47 +32,49 @@ class Composer(Protocol):
         request: RequestOptions,
         param: param.parameters.Param,
         value: Union[Any, UndefinedType],
-    ):
+    ) -> Any:
         ...
 
 
-# TODO: Implement me...
+@dataclass
 class ParamComposer(Composer):
+    setter: Callable[[str, Any], Any]
+
     def __call__(
         self,
         request: RequestOptions,
         param: param.parameters.Param,
         value: Union[Any, UndefinedType],
-    ):
-        ...
+    ) -> Any:
+        true_value: Any = resolve_param(param, value)
 
+        if param.alias is None:
+            raise ResolutionError("Cannot compose `Param` with no alias")
 
-def _compose_param(
-    param: Param,
-    value: Union[Any, UndefinedType],
-    setter: Callable[[str, Any], Any],
-) -> None:
-    true_value: Any = resolve_param(param, value)
+        # If the param is not required and has no value, it can be omitted
+        if true_value is None and param.default is not Required:
+            return
 
-    if param.alias is None:
-        raise ResolutionError("Cannot compose `Param` with no alias")
+        # Set the value
+        self.setter(param.alias, true_value)
 
-    # If the param is not required and has no value, it can be omitted
-    if true_value is None and param.default is not Required:
-        return
+        return true_value
 
-    # Set the value
-    setter(param.alias, true_value)
+@dataclass
+class ParamsComposer(Composer):
+    setter: Callable[[Any], Any]
 
+    def __call__(
+        self,
+        request: RequestOptions,
+        param: param.parameters.Param,
+        value: Union[Any, UndefinedType],
+    ) -> Any:
+        true_value: Any = resolve_param(param, value)
 
-def _compose_params(
-    param: Params,
-    value: Union[Any, UndefinedType],
-    setter: Callable[[Any], Any],
-) -> None:
-    true_value: Any = resolve_param(param, value)
+        self.setter(true_value)
 
-    setter(true_value)
+        return true_value
 
 
 resolvers: Resolvers[Composer] = Resolvers()
@@ -86,7 +86,7 @@ def compose_query_param(
     param: Query,
     value: Union[Any, UndefinedType],
 ) -> None:
-    return _compose_param(param, value, request.add_query_param)
+    return ParamComposer(request.add_query_param)(request, param, value)
 
 
 @resolvers(Header)
@@ -95,7 +95,7 @@ def compose_header(
     param: Header,
     value: Union[Any, UndefinedType],
 ) -> None:
-    return _compose_param(param, value, request.add_header)
+    return ParamComposer(request.add_header)(request, param, value)
 
 
 @resolvers(Cookie)
@@ -104,7 +104,7 @@ def compose_cookie(
     param: Cookie,
     value: Union[Any, UndefinedType],
 ) -> None:
-    return _compose_param(param, value, request.add_cookie)
+    return ParamComposer(request.add_cookie)(request, param, value)
 
 
 @resolvers(Path)
@@ -113,7 +113,7 @@ def compose_path_param(
     param: Path,
     value: Union[Any, UndefinedType],
 ) -> None:
-    return _compose_param(param, value, request.add_path_param)
+    return ParamComposer(request.add_path_param)(request, param, value)
 
 
 @resolvers(QueryParams)
@@ -122,7 +122,7 @@ def compose_query_params(
     param: QueryParams,
     value: Union[Any, UndefinedType],
 ) -> None:
-    return _compose_params(param, value, request.add_query_params)
+    return ParamsComposer(request.add_query_params)(request, param, value)
 
 
 @resolvers(Headers)
@@ -131,7 +131,7 @@ def compose_headers(
     param: Headers,
     value: Union[Any, UndefinedType],
 ) -> None:
-    return _compose_params(param, value, request.add_headers)
+    return ParamsComposer(request.add_headers)(request, param, value)
 
 
 @resolvers(Cookies)
@@ -140,7 +140,7 @@ def compose_cookies(
     param: Cookies,
     value: Union[Any, UndefinedType],
 ) -> None:
-    return _compose_params(param, value, request.add_cookies)
+    return ParamsComposer(request.add_cookies)(request, param, value)
 
 
 @resolvers(PathParams)
@@ -149,7 +149,7 @@ def compose_path_params(
     param: PathParams,
     value: Union[Any, UndefinedType],
 ) -> None:
-    return _compose_params(param, value, request.add_path_params)
+    return ParamsComposer(request.add_path_params)(request, param, value)
 
 
 # NOTE: This resolver is currently untested
@@ -246,8 +246,9 @@ def compose_func(
         request=request,
     )
 
-    # NOTE: `params` should complain if a param spec doesn't have a specified resolver.
+    # NOTE: `param` should complain if a param spec doesn't have a specified resolver.
     # It does not currently do this.
     manager.get_arguments(func, Arguments(kwargs=arguments))
 
+    # Validate the request (e.g. to ensure no path params have been missed)
     request.validate()
