@@ -1,11 +1,11 @@
-from typing import Any, Callable, List, Mapping, Union
+from typing import Any, Callable, List, Mapping, Sequence, Tuple, Union
 
 from httpx._types import (
     AsyncByteStream,
     AuthTypes,
     CookieTypes,
     HeaderTypes,
-    QueryParamTypes,
+    # QueryParamTypes,
     RequestContent,
     RequestData,
     RequestFiles,
@@ -15,8 +15,19 @@ from httpx._types import (
     VerifyTypes,
     CertTypes,
     ProxiesTypes,
+    PrimitiveData,
 )
+from httpx import QueryParams
 from typing_extensions import TypeAlias
+
+QueryParamTypes: TypeAlias = Union[
+    QueryParams,
+    Mapping[str, Union[PrimitiveData, Sequence[PrimitiveData]]],
+    List[Tuple[str, PrimitiveData]],
+    Tuple[Tuple[str, PrimitiveData], ...],
+    str,
+    bytes,
+]
 
 MethodTypes: TypeAlias = Union[str, bytes]
 JsonTypes: TypeAlias = Any

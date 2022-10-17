@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from types import FunctionType, MethodType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Type, TypeVar, Union
 
+from loguru import logger
 import httpx
 from httpx import QueryParams, Headers, Cookies, Timeout, URL
 from httpx._auth import Auth
@@ -175,17 +176,6 @@ class FastClient:
         for func in operations.values():
             static_attr = inspect.getattr_static(protocol, func.__name__)
 
-            # method_kind: MethodKind
-
-            # if isinstance(static_attr, FunctionType):
-            #     method_kind = MethodKind.METHOD
-            # elif isinstance(static_attr, staticmethod):
-            #     method_kind = MethodKind.STATIC_METHOD
-            # elif isinstance(static_attr, classmethod):
-            #     method_kind = MethodKind.CLASS_METHOD
-            # else:
-            #     raise Exception("Cannot determine method kind")
-
             attributes[func.__name__] = static_attr
 
         typ = type(protocol.__name__, (BaseService,), attributes)
@@ -255,11 +245,15 @@ class FastClient:
         )
 
         def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
+            logger.info(f"Creating operation: {method=} {endpoint=} {func=}")
+
             # Assert params are valid
             # NOTE: Temporarily disabled whilst `api` being deprecated
             # api.get_params(func, request=specification.request)
 
             operation: Operation[PS, RT] = Operation(func, specification, self.client)
+
+            logger.info(f"Created operation: {operation!r}")
 
             return self._wrap(operation)
 
