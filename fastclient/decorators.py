@@ -1,16 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Mapping, Protocol, TypeVar
 
-import param.parameters
-from param.typing import Consumer
 from httpx import Timeout
-from typing_extensions import ParamSpec
+from loguru import logger
 
-from . import composers
-from .composers import Composer
 from .models import RequestOptions
 from .operations import Operation, get_operation
-from .parameters import Cookies, Headers, QueryParams, Header
 from .types import (
     CookieTypes,
     HeaderTypes,
@@ -22,85 +17,188 @@ from .types import (
     TimeoutTypes,
 )
 
-PS = ParamSpec("PS")
-RT = TypeVar("RT")
+C = TypeVar("C", bound=Callable)
 
 
-def _composer(
-    composer: Callable[[RequestOptions], None], /
-) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
-        operation: Operation = get_operation(func)
+class Decorator(Protocol):
+    def __call__(self, func: C, /) -> C:
+        ...
 
-        composer(operation.specification.request)
 
-        return func
-
-    return decorator
+class Composer(Protocol):
+    def __call__(self, request: RequestOptions, /) -> None:
+        ...
 
 
 @dataclass
-class Decorator:
+class QueryParamComposer(Composer):
+    key: str
     value: Any
-    param: param.parameters.Param
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.params = request.params.set(self.key, self.value)
+
+
+@dataclass
+class HeaderComposer(Composer):
+    key: str
+    value: str
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.headers[self.key] = self.value
+
+
+@dataclass
+class CookieComposer(Composer):
+    key: str
+    value: str
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.cookies[self.key] = self.value
+
+
+@dataclass
+class PathParamComposer(Composer):
+    key: str
+    value: str
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.path_params[self.key] = self.value
+
+
+@dataclass
+class QueryParamsComposer(Composer):
+    params: QueryParamTypes
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.params = request.params.merge(self.params)
+
+
+@dataclass
+class HeadersComposer(Composer):
+    headers: HeaderTypes
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.headers.update(self.headers)
+
+
+@dataclass
+class CookiesComposer(Composer):
+    cookies: CookieTypes
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.cookies.update(self.cookies)
+
+
+@dataclass
+class PathParamsComposer(Composer):
+    path_params: Mapping[str, Any]
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.path_params.update(self.path_params)
+
+
+@dataclass
+class ContentComposer(Composer):
+    content: RequestContent
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.content = self.content
+
+
+@dataclass
+class DataComposer(Composer):
+    data: RequestData
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.data = self.data
+
+
+@dataclass
+class FilesComposer(Composer):
+    files: RequestFiles
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.files = self.files
+
+
+@dataclass
+class JsonComposer(Composer):
+    json: JsonTypes
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.json = self.json
+
+
+@dataclass
+class TimeoutComposer(Composer):
+    timeout: TimeoutTypes
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.timeout = Timeout(self.timeout)
+
+
+@dataclass
+class CompositionFacilitator(Decorator):
     composer: Composer
 
-    def __call__(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
+    def __call__(self, func: C, /) -> C:
+        logger.info(f"Composing {func!r} using {self.composer!r}")
+
         operation: Operation = get_operation(func)
 
-        consumer: Consumer[RequestOptions] = self.composer(self.param, self.value)
-
-        consumer(operation.specification.request)
+        self.composer(operation.specification.request)
 
         return func
 
-# TODO: Also implement @param, @cookie, ....
-def header(key: str, value: Any, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return Decorator(value, Header(alias=key), composers.compose_header)
+
+def query(key: str, value: Any) -> Decorator:
+    return CompositionFacilitator(QueryParamComposer(key, value))
 
 
-def params(value: QueryParamTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return Decorator(value, QueryParams(), composers.compose_query_params)
+def header(key: str, value: Any) -> Decorator:
+    return CompositionFacilitator(HeaderComposer(key, str(value)))
 
 
-def headers(value: HeaderTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return Decorator(value, Headers(), composers.compose_headers)
+def cookie(key: str, value: Any) -> Decorator:
+    return CompositionFacilitator(CookieComposer(key, str(value)))
 
 
-def cookies(value: CookieTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    return Decorator(value, Cookies(), composers.compose_cookies)
+def path(key: str, value: Any) -> Decorator:
+    return CompositionFacilitator(PathParamComposer(key, str(value)))
 
 
-def content(value: RequestContent, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    def composer(request: RequestOptions, /) -> None:
-        request.content = value
-
-    return _composer(composer)
+def query_params(params: QueryParamTypes, /) -> Decorator:
+    return CompositionFacilitator(QueryParamsComposer(params))
 
 
-def data(value: RequestData, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    def composer(request: RequestOptions, /) -> None:
-        request.data = value
-
-    return _composer(composer)
+def headers(headers: HeaderTypes, /) -> Decorator:
+    return CompositionFacilitator(HeadersComposer(headers))
 
 
-def files(value: RequestFiles, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    def composer(request: RequestOptions, /) -> None:
-        request.files = value
-
-    return _composer(composer)
+def cookies(cookies: CookieTypes, /) -> Decorator:
+    return CompositionFacilitator(CookiesComposer(cookies))
 
 
-def json(value: JsonTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    def composer(request: RequestOptions, /) -> None:
-        request.json = value
-
-    return _composer(composer)
+def path_params(path_params: Mapping[str, Any], /) -> Decorator:
+    return CompositionFacilitator(PathParamsComposer(path_params))
 
 
-def timeout(value: TimeoutTypes, /) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    def composer(request: RequestOptions, /) -> None:
-        request.timeout = Timeout(value)
+def content(content: RequestContent, /) -> Decorator:
+    return CompositionFacilitator(ContentComposer(content))
 
-    return _composer(composer)
+
+def data(data: RequestData, /) -> Decorator:
+    return CompositionFacilitator(DataComposer(data))
+
+
+def files(files: RequestFiles, /) -> Decorator:
+    return CompositionFacilitator(FilesComposer(files))
+
+
+def json(json: JsonTypes, /) -> Decorator:
+    return CompositionFacilitator(JsonComposer(json))
+
+
+def timeout(timeout: TimeoutTypes, /) -> Decorator:
+    return CompositionFacilitator(TimeoutComposer(timeout))

@@ -251,16 +251,16 @@ class RequestOptions:
     def add_path_param(self, key: str, value: Any) -> None:
         self.path_params[key] = value
 
-    def add_query_params(self, query_params: QueryParamTypes) -> None:
+    def add_query_params(self, query_params: QueryParamTypes, /) -> None:
         self.params = self.params.merge(httpx.QueryParams(query_params))
 
-    def add_headers(self, headers: HeaderTypes) -> None:
+    def add_headers(self, headers: HeaderTypes, /) -> None:
         self.headers.update(httpx.Headers(headers))
 
-    def add_cookies(self, cookies: CookieTypes) -> None:
+    def add_cookies(self, cookies: CookieTypes, /) -> None:
         self.cookies.update(httpx.Cookies(cookies))
 
-    def add_path_params(self, path_params: Mapping[str, Any]) -> None:
+    def add_path_params(self, path_params: Mapping[str, Any], /) -> None:
         self.path_params.update(path_params)
 
     def _get_formatted_url(self) -> str:

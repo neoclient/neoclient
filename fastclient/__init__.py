@@ -1,9 +1,13 @@
 from .client import FastClient
 from .decorators import (
-    params,
+    query,
     header,
+    cookie,
+    path,
+    query_params,
     headers,
     cookies,
+    path_params,
     content,
     data,
     files,
