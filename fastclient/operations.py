@@ -11,14 +11,14 @@ from typing import (
 )
 
 import httpx
-import param
-import param.parameters
+# import param
+# import param.parameters
 import pydantic
 from httpx import Client, Response
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from . import utils
+# from . import utils
 from .errors import NotAnOperation
 from .models import OperationSpecification, RequestOptions
 from .composers import compose_func
@@ -54,9 +54,18 @@ class Operation(Generic[PS, RT]):
     client: Optional[Client]
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
-        arguments: Dict[str, Any] = self._get_arguments(*args, **kwargs)
+        # arguments: Dict[str, Any] = self._get_arguments(*args, **kwargs)
 
-        request_options: RequestOptions = self.build_request_options(arguments)
+        # request_options: RequestOptions = self.build_request_options(arguments)
+
+        request_options: RequestOptions = self.specification.request.merge(
+            RequestOptions(
+                method=self.specification.request.method,
+                url=self.specification.request.url,
+            )
+        )
+
+        compose_func(request_options, self.func, args, kwargs)
 
         request: httpx.Request = request_options.build_request(self.client)
 
@@ -98,34 +107,34 @@ class Operation(Generic[PS, RT]):
 
         return pydantic.parse_raw_as(return_annotation, response.text)
 
-    def build_request_options(self, arguments: Dict[str, Any], /) -> RequestOptions:
-        request: RequestOptions = self.specification.request.merge(
-            RequestOptions(
-                method=self.specification.request.method,
-                url=self.specification.request.url,
-            )
-        )
+    # def build_request_options(self, arguments: Dict[str, Any], /) -> RequestOptions:
+    #     request: RequestOptions = self.specification.request.merge(
+    #         RequestOptions(
+    #             method=self.specification.request.method,
+    #             url=self.specification.request.url,
+    #         )
+    #     )
 
-        compose_func(request, self.func, arguments)
+    #     compose_func(request, self.func, arguments)
 
-        return request
+    #     return request
 
-    def _get_arguments(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
-        arguments: Dict[str, Any] = utils.bind_arguments(self.func, args, kwargs)
+    # def _get_arguments(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+    #     arguments: Dict[str, Any] = utils.bind_arguments(self.func, args, kwargs)
 
-        # TODO: Find a better fix for instance methods
-        # if arguments and list(arguments)[0] == "self":
-        #     arguments.pop("self")
+    #     # TODO: Find a better fix for instance methods
+    #     # if arguments and list(arguments)[0] == "self":
+    #     #     arguments.pop("self")
 
-        argument_name: str
-        argument: Any
-        for argument_name, argument in arguments.items():
-            if isinstance(argument, param.parameters.Param):
-                if not argument.has_default():
-                    raise ValueError(
-                        f"{self.func.__name__}() missing argument: {argument_name!r}"
-                    )
+    #     argument_name: str
+    #     argument: Any
+    #     for argument_name, argument in arguments.items():
+    #         if isinstance(argument, param.parameters.Param):
+    #             if not argument.has_default():
+    #                 raise ValueError(
+    #                     f"{self.func.__name__}() missing argument: {argument_name!r}"
+    #                 )
 
-                arguments[argument_name] = argument.get_default()
+    #             arguments[argument_name] = argument.get_default()
 
-        return arguments
+    #     return arguments

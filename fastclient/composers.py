@@ -21,6 +21,7 @@ from param.resolvers import Resolvers
 from param.typing import Consumer
 from param.validation import ValidatedFunction
 
+from . import utils
 from .models import ComposerContext, RequestOptions
 from .parameters import (
     Body,
@@ -102,21 +103,8 @@ def empty_consumer(_: RequestOptions, /) -> None:
     pass
 
 
-resolvers: Resolvers[Composer] = Resolvers({
-    Query: ParamComposer(RequestOptions.add_query_param),
-    Header: ParamComposer(RequestOptions.add_header),
-    Cookie: ParamComposer(RequestOptions.add_cookie),
-    Path: ParamComposer(RequestOptions.add_path_param),
-    QueryParams: ParamsComposer(RequestOptions.add_query_params),
-    Headers: ParamsComposer(RequestOptions.add_query_params),
-    Cookies: ParamsComposer(RequestOptions.add_query_params),
-    PathParams: ParamsComposer(RequestOptions.add_query_params),
-})
-
-
 # NOTE: This resolver is currently untested
 # TODO: Add some middleware that sets/unsets `embed` as appropriate
-@resolvers(Body)
 def compose_body(
     parameter: param.Parameter,
     param: Body,
@@ -194,9 +182,37 @@ def create_model(func: Callable, arguments: Dict[str, Any]) -> BaseModel:
     return model_cls(**arguments)
 
 
+resolvers: Resolvers[Composer] = Resolvers(
+    {
+        Query: ParamComposer(RequestOptions.add_query_param),
+        Header: ParamComposer(RequestOptions.add_header),
+        Cookie: ParamComposer(RequestOptions.add_cookie),
+        Path: ParamComposer(RequestOptions.add_path_param),
+        QueryParams: ParamsComposer(RequestOptions.add_query_params),
+        Headers: ParamsComposer(RequestOptions.add_query_params),
+        Cookies: ParamsComposer(RequestOptions.add_query_params),
+        PathParams: ParamsComposer(RequestOptions.add_query_params),
+
+        # NOTE: Currently disabled as broken
+        # Body: compose_body,
+    }
+)
+
+def bind_arguments(func: Callable, args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    arguments: Dict[str, Any] = utils.bind_arguments(func, args, kwargs)
+
+    return {
+        key: value
+        for key, value in arguments.items()
+        if not isinstance(value, param.parameters.Param)
+    }
+
+
 def compose_func(
-    request: RequestOptions, func: Callable, arguments: Dict[str, Any]
+    request: RequestOptions, func: Callable, args: Tuple[Any, ...], kwargs: Dict[str, Any]
 ) -> None:
+    arguments: Dict[str, Any] = bind_arguments(func, args, kwargs)
+
     model: BaseModel = create_model(func, arguments)
 
     # By this stage the arguments have been validated (coerced, defaults used, exception thrown if missing)
