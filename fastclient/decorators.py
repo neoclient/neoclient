@@ -1,8 +1,10 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Callable, Mapping, Protocol, TypeVar
 
 from httpx import Timeout
 from loguru import logger
+from pydantic import BaseModel
 
 from .models import RequestOptions
 from .operations import Operation, get_operation
@@ -30,8 +32,16 @@ class Composer(Protocol):
         ...
 
 
-@dataclass
-class QueryParamComposer(Composer):
+class BaseComposer(BaseModel, ABC):
+    class Config:
+        arbitrary_types_allowed: bool = True
+
+    @abstractmethod
+    def __call__(self, request: RequestOptions, /) -> None:
+        ...
+
+
+class QueryParamComposer(BaseComposer):
     key: str
     value: Any
 
@@ -39,8 +49,7 @@ class QueryParamComposer(Composer):
         request.params = request.params.set(self.key, self.value)
 
 
-@dataclass
-class HeaderComposer(Composer):
+class HeaderComposer(BaseComposer):
     key: str
     value: str
 
@@ -48,8 +57,7 @@ class HeaderComposer(Composer):
         request.headers[self.key] = self.value
 
 
-@dataclass
-class CookieComposer(Composer):
+class CookieComposer(BaseComposer):
     key: str
     value: str
 
@@ -57,8 +65,7 @@ class CookieComposer(Composer):
         request.cookies[self.key] = self.value
 
 
-@dataclass
-class PathParamComposer(Composer):
+class PathParamComposer(BaseComposer):
     key: str
     value: str
 
@@ -66,72 +73,63 @@ class PathParamComposer(Composer):
         request.path_params[self.key] = self.value
 
 
-@dataclass
-class QueryParamsComposer(Composer):
+class QueryParamsComposer(BaseComposer):
     params: QueryParamTypes
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.params = request.params.merge(self.params)
 
 
-@dataclass
-class HeadersComposer(Composer):
+class HeadersComposer(BaseComposer):
     headers: HeaderTypes
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.headers.update(self.headers)
 
 
-@dataclass
-class CookiesComposer(Composer):
+class CookiesComposer(BaseComposer):
     cookies: CookieTypes
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.cookies.update(self.cookies)
 
 
-@dataclass
-class PathParamsComposer(Composer):
+class PathParamsComposer(BaseComposer):
     path_params: Mapping[str, Any]
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.path_params.update(self.path_params)
 
 
-@dataclass
-class ContentComposer(Composer):
+class ContentComposer(BaseComposer):
     content: RequestContent
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.content = self.content
 
 
-@dataclass
-class DataComposer(Composer):
+class DataComposer(BaseComposer):
     data: RequestData
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.data = self.data
 
 
-@dataclass
-class FilesComposer(Composer):
+class FilesComposer(BaseComposer):
     files: RequestFiles
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.files = self.files
 
 
-@dataclass
-class JsonComposer(Composer):
+class JsonComposer(BaseComposer):
     json: JsonTypes
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.json = self.json
 
 
-@dataclass
-class TimeoutComposer(Composer):
+class TimeoutComposer(BaseComposer):
     timeout: TimeoutTypes
 
     def __call__(self, request: RequestOptions, /) -> None:
@@ -153,52 +151,52 @@ class CompositionFacilitator(Decorator):
 
 
 def query(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(QueryParamComposer(key, value))
+    return CompositionFacilitator(QueryParamComposer(key=key, value=value))
 
 
 def header(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(HeaderComposer(key, str(value)))
+    return CompositionFacilitator(HeaderComposer(key=key, value=value))
 
 
 def cookie(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(CookieComposer(key, str(value)))
+    return CompositionFacilitator(CookieComposer(key=key, value=value))
 
 
 def path(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(PathParamComposer(key, str(value)))
+    return CompositionFacilitator(PathParamComposer(key=key, value=value))
 
 
 def query_params(params: QueryParamTypes, /) -> Decorator:
-    return CompositionFacilitator(QueryParamsComposer(params))
+    return CompositionFacilitator(QueryParamsComposer(params=params))
 
 
 def headers(headers: HeaderTypes, /) -> Decorator:
-    return CompositionFacilitator(HeadersComposer(headers))
+    return CompositionFacilitator(HeadersComposer(headers=headers))
 
 
 def cookies(cookies: CookieTypes, /) -> Decorator:
-    return CompositionFacilitator(CookiesComposer(cookies))
+    return CompositionFacilitator(CookiesComposer(cookies=cookies))
 
 
 def path_params(path_params: Mapping[str, Any], /) -> Decorator:
-    return CompositionFacilitator(PathParamsComposer(path_params))
+    return CompositionFacilitator(PathParamsComposer(path_params=path_params))
 
 
 def content(content: RequestContent, /) -> Decorator:
-    return CompositionFacilitator(ContentComposer(content))
+    return CompositionFacilitator(ContentComposer(content=content))
 
 
 def data(data: RequestData, /) -> Decorator:
-    return CompositionFacilitator(DataComposer(data))
+    return CompositionFacilitator(DataComposer(data=data))
 
 
 def files(files: RequestFiles, /) -> Decorator:
-    return CompositionFacilitator(FilesComposer(files))
+    return CompositionFacilitator(FilesComposer(files=files))
 
 
 def json(json: JsonTypes, /) -> Decorator:
-    return CompositionFacilitator(JsonComposer(json))
+    return CompositionFacilitator(JsonComposer(json=json))
 
 
 def timeout(timeout: TimeoutTypes, /) -> Decorator:
-    return CompositionFacilitator(TimeoutComposer(timeout))
+    return CompositionFacilitator(TimeoutComposer(timeout=timeout))
