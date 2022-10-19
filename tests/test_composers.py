@@ -9,7 +9,7 @@ from fastclient import (
     PathParams,
 )
 from fastclient.parameters import Query
-from fastclient.composers import resolvers, Composer
+from fastclient.composers import resolvers, Resolver
 from param.errors import ResolutionError
 from param.typing import Consumer
 from pydantic.fields import Undefined
@@ -19,7 +19,7 @@ from fastclient.models import RequestOptions
 
 
 def test_compose_query_param() -> None:
-    composer: Composer[Query] = resolvers[Query]
+    composer: Resolver[Query] = resolvers[Query]
 
     request: RequestOptions = RequestOptions("GET", "/")
 
@@ -35,7 +35,7 @@ def test_compose_query_param() -> None:
 
 
 def test_compose_query_param_no_alias() -> None:
-    composer: Composer[Query] = resolvers[Query]
+    composer: Resolver[Query] = resolvers[Query]
 
     with pytest.raises(ResolutionError):
         composer(
