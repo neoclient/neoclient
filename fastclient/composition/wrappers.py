@@ -3,7 +3,7 @@ from typing import Any, Mapping
 
 from loguru import logger
 
-from .factories import (
+from .composers import (
     QueryParamComposer,
     HeaderComposer,
     CookieComposer,

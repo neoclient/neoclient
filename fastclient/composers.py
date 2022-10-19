@@ -16,7 +16,9 @@ from param.errors import ResolutionError
 from param.resolvers import Resolvers
 from param.typing import Consumer
 
-from .composition import factories
+from . import converters
+from .converters import Converter
+from .composition import composers
 from .composition.typing import Composer
 from .models import ComposerContext, RequestOptions
 from .parameters import (
@@ -65,18 +67,20 @@ class ParamsSetter(Protocol):
 @dataclass
 class ParamsComposer(Resolver[Params], Generic[T]):
     composer_factory: ComposerFactory[T]
+    converter: Converter[T]
 
     def __call__(
         self,
         _: Params,
         argument: Any,
     ) -> Consumer:
-        return self.composer_factory(argument)
+        return self.composer_factory(self.converter(argument))
 
 
 @dataclass
 class ParamComposer(Resolver[Param]):
     composer_factory: ParamComposerFactory
+    converter: Converter[str]
 
     def __call__(
         self,
@@ -89,7 +93,7 @@ class ParamComposer(Resolver[Param]):
         if argument is None and param.default is not Required:
             return empty_consumer
 
-        return self.composer_factory(param.alias, argument)
+        return self.composer_factory(param.alias, self.converter(argument))
 
 
 def empty_consumer(_: RequestOptions, /) -> None:
@@ -141,14 +145,14 @@ def compose_body(
 
 resolvers: Resolvers[Resolver] = Resolvers(
     {
-        Query: ParamComposer(factories.QueryParamComposer),
-        Header: ParamComposer(factories.HeaderComposer),
-        Cookie: ParamComposer(factories.CookieComposer),
-        Path: ParamComposer(factories.PathParamComposer),
-        QueryParams: ParamsComposer(factories.QueryParamsComposer),
-        Headers: ParamsComposer(factories.HeadersComposer),
-        Cookies: ParamsComposer(factories.CookiesComposer),
-        PathParams: ParamsComposer(factories.PathParamsComposer),
+        Query: ParamComposer(composers.QueryParamComposer, converters.convert_query_param),
+        Header: ParamComposer(composers.HeaderComposer, converters.convert_header),
+        Cookie: ParamComposer(composers.CookieComposer, converters.convert_cookie),
+        Path: ParamComposer(composers.PathParamComposer, converters.convert_path_param),
+        QueryParams: ParamsComposer(composers.QueryParamsComposer, converters.convert_query_params),
+        Headers: ParamsComposer(composers.HeadersComposer, converters.convert_headers),
+        Cookies: ParamsComposer(composers.CookiesComposer, converters.convert_cookies),
+        PathParams: ParamsComposer(composers.PathParamsComposer, converters.convert_path_params),
         # NOTE: Currently disabled as broken
         # Body: compose_body,
     }
