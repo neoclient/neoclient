@@ -16,7 +16,7 @@ from param.errors import ResolutionError
 from param.resolvers import Resolvers
 from param.typing import Consumer
 
-from . import converters
+from . import converters, utils
 from .converters import Converter
 from .composition import composers
 from .composition.typing import Composer
@@ -34,6 +34,7 @@ from .parameters import (
     Query,
     QueryParams,
 )
+from .types import QueryParamTypes
 
 
 P = TypeVar("P", contravariant=True, bound=param.parameters.Param)
@@ -100,6 +101,18 @@ def empty_consumer(_: RequestOptions, /) -> None:
     pass
 
 
+class QueryParamsComposer(Resolver[QueryParams]):
+    def __call__(
+        self,
+        _: Params,
+        argument: Any,
+    ) -> Consumer:
+        coerced_argument: QueryParamTypes = utils.parse_obj_as(
+            QueryParamTypes, argument
+        )
+        return composers.QueryParamsComposer(coerced_argument)
+
+
 # NOTE: This resolver is currently untested
 # TODO: Add some middleware that sets/unsets `embed` as appropriate
 def compose_body(
@@ -145,14 +158,19 @@ def compose_body(
 
 resolvers: Resolvers[Resolver] = Resolvers(
     {
-        Query: ParamComposer(composers.QueryParamComposer, converters.convert_query_param),
+        Query: ParamComposer(
+            composers.QueryParamComposer, converters.convert_query_param
+        ),
         Header: ParamComposer(composers.HeaderComposer, converters.convert_header),
         Cookie: ParamComposer(composers.CookieComposer, converters.convert_cookie),
         Path: ParamComposer(composers.PathParamComposer, converters.convert_path_param),
-        QueryParams: ParamsComposer(composers.QueryParamsComposer, converters.convert_query_params),
+        QueryParams: QueryParamsComposer,
+        # QueryParams: ParamsComposer(composers.QueryParamsComposer, converters.convert_query_params),
         Headers: ParamsComposer(composers.HeadersComposer, converters.convert_headers),
         Cookies: ParamsComposer(composers.CookiesComposer, converters.convert_cookies),
-        PathParams: ParamsComposer(composers.PathParamsComposer, converters.convert_path_params),
+        PathParams: ParamsComposer(
+            composers.PathParamsComposer, converters.convert_path_params
+        ),
         # NOTE: Currently disabled as broken
         # Body: compose_body,
     }
