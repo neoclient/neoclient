@@ -1,25 +1,6 @@
-from dataclasses import dataclass
 from typing import Any, Mapping
 
-from loguru import logger
-
-from .composers import (
-    QueryParamComposer,
-    HeaderComposer,
-    CookieComposer,
-    PathParamComposer,
-    QueryParamsComposer,
-    HeadersComposer,
-    CookiesComposer,
-    PathParamsComposer,
-    ContentComposer,
-    DataComposer,
-    FilesComposer,
-    JsonComposer,
-    TimeoutComposer,
-)
-from .typing import Decorator, Composer, C
-
+from .. import converters
 from ..types import (
     CookieTypes,
     HeaderTypes,
@@ -30,67 +11,71 @@ from ..types import (
     RequestFiles,
     TimeoutTypes,
 )
+from .composers import (
+    ContentComposer,
+    CookieComposer,
+    CookiesComposer,
+    DataComposer,
+    FilesComposer,
+    HeaderComposer,
+    HeadersComposer,
+    JsonComposer,
+    PathParamComposer,
+    PathParamsComposer,
+    QueryParamComposer,
+    QueryParamsComposer,
+    TimeoutComposer,
+)
+from .typing import Composer
 
 
-@dataclass
-class CompositionFacilitator(Decorator):
-    composer: Composer
-
-    def __call__(self, func: C, /) -> C:
-        logger.info(f"Composing {func!r} using {self.composer!r}")
-
-        # TODO: Use get_operation(...)
-        self.composer(func.operation.specification.request)
-
-        return func
-
-def query(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(QueryParamComposer(key, value))
+def query(key: str, value: Any) -> Composer:
+    return QueryParamComposer(key, converters.convert_query_param(value))
 
 
-def header(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(HeaderComposer(key, value))
+def header(key: str, value: Any) -> Composer:
+    return HeaderComposer(key, converters.convert_header(value))
 
 
-def cookie(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(CookieComposer(key, value))
+def cookie(key: str, value: Any) -> Composer:
+    return CookieComposer(key, converters.convert_cookie(value))
 
 
-def path(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(PathParamComposer(key, value))
+def path(key: str, value: Any) -> Composer:
+    return PathParamComposer(key, converters.convert_path_param(value))
 
 
-def query_params(params: QueryParamTypes, /) -> Decorator:
-    return CompositionFacilitator(QueryParamsComposer(params))
+def query_params(params: QueryParamTypes, /) -> Composer:
+    return QueryParamsComposer(converters.convert_query_params(params))
 
 
-def headers(headers: HeaderTypes, /) -> Decorator:
-    return CompositionFacilitator(HeadersComposer(headers))
+def headers(headers: HeaderTypes, /) -> Composer:
+    return HeadersComposer(converters.convert_headers(headers))
 
 
-def cookies(cookies: CookieTypes, /) -> Decorator:
-    return CompositionFacilitator(CookiesComposer(cookies))
+def cookies(cookies: CookieTypes, /) -> Composer:
+    return CookiesComposer(converters.convert_cookies(cookies))
 
 
-def path_params(path_params: Mapping[str, Any], /) -> Decorator:
-    return CompositionFacilitator(PathParamsComposer(path_params))
+def path_params(path_params: Mapping[str, Any], /) -> Composer:
+    return PathParamsComposer(converters.convert_path_params(path_params))
 
 
-def content(content: RequestContent, /) -> Decorator:
-    return CompositionFacilitator(ContentComposer(content))
+def content(content: RequestContent, /) -> Composer:
+    return ContentComposer(content)
 
 
-def data(data: RequestData, /) -> Decorator:
-    return CompositionFacilitator(DataComposer(data))
+def data(data: RequestData, /) -> Composer:
+    return DataComposer(data)
 
 
-def files(files: RequestFiles, /) -> Decorator:
-    return CompositionFacilitator(FilesComposer(files))
+def files(files: RequestFiles, /) -> Composer:
+    return FilesComposer(files)
 
 
-def json(json: JsonTypes, /) -> Decorator:
-    return CompositionFacilitator(JsonComposer(json))
+def json(json: JsonTypes, /) -> Composer:
+    return JsonComposer(json)
 
 
-def timeout(timeout: TimeoutTypes, /) -> Decorator:
-    return CompositionFacilitator(TimeoutComposer(timeout))
+def timeout(timeout: TimeoutTypes, /) -> Composer:
+    return TimeoutComposer(converters.convert_timeout(timeout))

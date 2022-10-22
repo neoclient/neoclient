@@ -73,7 +73,7 @@ def _get_alias(parameter: param.Parameter, /) -> str:
 
 
 def _parse_obj(annotation: Union[UndefinedType, Any], obj: Any) -> Any:
-    if type(obj) is annotation or isinstance(annotation, UndefinedType):
+    if type(obj) is annotation or isinstance(annotation, UndefinedType) or annotation is inspect.Parameter.empty:
         return obj
     else:
         return pydantic.parse_obj_as(annotation, obj)

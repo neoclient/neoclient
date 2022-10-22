@@ -5,58 +5,56 @@ from httpx import (
     QueryParams,
     Headers,
     Cookies,
+    Timeout,
 )
 
-T = TypeVar("T", covariant=True)
+from .types import (
+    QueryParamTypes,
+    HeaderTypes,
+    CookieTypes,
+    TimeoutTypes,
+)
+
+V = TypeVar("V", contravariant=True)
+R = TypeVar("R", covariant=True)
 
 
-class Converter(Protocol[T]):
-    def __call__(self, value: Any, /) -> T:
+class Converter(Protocol[V, R]):
+    def __call__(self, value: V, /) -> R:
         ...
 
 
-C = TypeVar("C", bound=Converter)
-
-
-def converter(func: C, /) -> C:
-    return func
-
-
-@converter
 def convert_query_param(value: Any, /) -> str:
     return primitive_value_to_str(value)
 
 
-@converter
 def convert_header(value: Any, /) -> str:
     return primitive_value_to_str(value)
 
 
-@converter
 def convert_cookie(value: Any, /) -> str:
     return primitive_value_to_str(value)
 
 
-@converter
 def convert_path_param(value: Any, /) -> str:
     return primitive_value_to_str(value)
 
 
-@converter
-def convert_query_params(value: Any, /) -> QueryParams:
+def convert_query_params(value: QueryParamTypes, /) -> QueryParams:
     return QueryParams(value)
 
 
-@converter
-def convert_headers(value: Any, /) -> Headers:
+def convert_headers(value: HeaderTypes, /) -> Headers:
     return Headers(value)
 
 
-@converter
-def convert_cookies(value: Any, /) -> Cookies:
+def convert_cookies(value: CookieTypes, /) -> Cookies:
     return Cookies(value)
 
 
-@converter
-def convert_path_params(value: Any, /) -> Mapping[str, str]:
-    return {key: str(value) for key, value in dict(value)}
+def convert_path_params(value: Mapping[str, Any], /) -> Mapping[str, str]:
+    return {key: primitive_value_to_str(value) for key, value in value.items()}
+
+
+def convert_timeout(value: TimeoutTypes, /) -> Timeout:
+    return Timeout(value)

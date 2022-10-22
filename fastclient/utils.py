@@ -1,11 +1,8 @@
 import inspect
 import string
-from typing import Any, Callable, Dict, Optional, Set, Tuple, Type, TypeVar
+from typing import Any, Callable, Dict, Optional, Set, Tuple
 
-from pydantic import BaseModel, Field, Required, create_model
 import parse
-
-T = TypeVar("T")
 
 
 def get_path_params(url: str, /) -> Set[str]:
@@ -53,16 +50,3 @@ def bind_arguments(
     bound_arguments.apply_defaults()
 
     return bound_arguments.arguments
-
-def parse_obj_as(type_: Type[T], obj: Any, /) -> T:
-    class BM(BaseModel):
-        class Config:
-            arbitrary_types_allowed: bool = True
-
-    model_cls: Type[BaseModel] = create_model(
-        "TempModel", __base__=BM, v=(type_, Field(Required))
-    )
-
-    model: BaseModel = model_cls(v=obj)
-
-    return model.v

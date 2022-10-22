@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, Optional, Set
+from typing import Any, Callable, Dict, List, Mapping, MutableMapping, Optional, Set
 import urllib.parse
 
 import httpx
@@ -144,7 +144,7 @@ class RequestOptions:
     files: Optional[RequestFiles]
     json: Optional[JsonTypes]
     timeout: Optional[Timeout]
-    path_params: Dict[str, Any]
+    path_params: MutableMapping[str, str]
 
     def __init__(
         self,
@@ -159,7 +159,7 @@ class RequestOptions:
         files: Optional[RequestFiles] = None,
         json: Optional[JsonTypes] = None,
         timeout: Optional[TimeoutTypes] = None,
-        path_params: Optional[Dict[str, Any]] = None,
+        path_params: Optional[MutableMapping[str, str]] = None,
     ) -> None:
         ...
         self.method = method if isinstance(method, str) else method.decode()

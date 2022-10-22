@@ -1,5 +1,5 @@
 from .client import FastClient
-from .composition.wrappers import (
+from .composition.decorators import (
     query,
     header,
     cookie,

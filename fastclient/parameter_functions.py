@@ -113,10 +113,10 @@ def PathParams(
 def Depends(
     dependency: Optional[Callable] = None, /, *, use_cache: bool = True
 ) -> parameters.Depends:
-    return parameters.Depends(dependency, use_cache=use_cache)
+    return parameters.Depends(dependency=dependency, use_cache=use_cache)
 
 
 def Promise(
     promised_type: Union[None, Type[Request], Type[Response]] = None, /
 ) -> parameters.Promise:
-    return parameters.Promise(promised_type)
+    return parameters.Promise(promised_type=promised_type)

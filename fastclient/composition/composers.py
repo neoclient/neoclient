@@ -1,27 +1,28 @@
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Mapping
 
-from httpx import Timeout
+from httpx import (
+    QueryParams,
+    Headers,
+    Cookies,
+    Timeout
+)
 
 from .typing import Composer
 
 from ..models import RequestOptions
 from ..types import (
-    CookieTypes,
-    HeaderTypes,
     JsonTypes,
-    QueryParamTypes,
     RequestContent,
     RequestData,
     RequestFiles,
-    TimeoutTypes,
 )
 
 
 @dataclass
 class QueryParamComposer(Composer):
     key: str
-    value: Any
+    value: str
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.params = request.params.set(self.key, self.value)
@@ -30,33 +31,33 @@ class QueryParamComposer(Composer):
 @dataclass
 class HeaderComposer(Composer):
     key: str
-    value: Any
+    value: str
 
     def __call__(self, request: RequestOptions, /) -> None:
-        request.headers[self.key] = str(self.value)
+        request.headers[self.key] = self.value
 
 
 @dataclass
 class CookieComposer(Composer):
     key: str
-    value: Any
+    value: str
 
     def __call__(self, request: RequestOptions, /) -> None:
-        request.cookies[self.key] = str(self.value)
+        request.cookies[self.key] = self.value
 
 
 @dataclass
 class PathParamComposer(Composer):
     key: str
-    value: Any
+    value: str
 
     def __call__(self, request: RequestOptions, /) -> None:
-        request.path_params[self.key] = str(self.value)
+        request.path_params[self.key] = self.value
 
 
 @dataclass
 class QueryParamsComposer(Composer):
-    params: QueryParamTypes
+    params: QueryParams
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.params = request.params.merge(self.params)
@@ -64,7 +65,7 @@ class QueryParamsComposer(Composer):
 
 @dataclass
 class HeadersComposer(Composer):
-    headers: HeaderTypes
+    headers: Headers
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.headers.update(self.headers)
@@ -72,7 +73,7 @@ class HeadersComposer(Composer):
 
 @dataclass
 class CookiesComposer(Composer):
-    cookies: CookieTypes
+    cookies: Cookies
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.cookies.update(self.cookies)
@@ -80,7 +81,7 @@ class CookiesComposer(Composer):
 
 @dataclass
 class PathParamsComposer(Composer):
-    path_params: Mapping[str, Any]
+    path_params: Mapping[str, str]
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.path_params.update(self.path_params)
@@ -120,7 +121,7 @@ class JsonComposer(Composer):
 
 @dataclass
 class TimeoutComposer(Composer):
-    timeout: TimeoutTypes
+    timeout: Timeout
 
     def __call__(self, request: RequestOptions, /) -> None:
-        request.timeout = Timeout(self.timeout)
+        request.timeout = self.timeout

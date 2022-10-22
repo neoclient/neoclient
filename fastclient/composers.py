@@ -2,21 +2,22 @@ from dataclasses import dataclass
 from typing import (
     Any,
     Generic,
+    Mapping,
     Protocol,
     TypeVar,
     Union,
 )
 
 import fastapi.encoders
+import httpx
 import param
 from pydantic import Required
 from pydantic.fields import UndefinedType
 import param.parameters
 from param.errors import ResolutionError
 from param.resolvers import Resolvers
-from param.typing import Consumer
 
-from . import converters, utils
+from . import converters
 from .converters import Converter
 from .composition import composers
 from .composition.typing import Composer
@@ -34,15 +35,23 @@ from .parameters import (
     Query,
     QueryParams,
 )
-from .types import QueryParamTypes
+from .parsing import Parser
+from .types import (
+    QueryParamTypes,
+    HeaderTypes,
+    CookieTypes,
+)
 
 
 P = TypeVar("P", contravariant=True, bound=param.parameters.Param)
+PA = TypeVar("PA", contravariant=True, bound=Param)
+PS = TypeVar("PS", contravariant=True, bound=Params)
 T = TypeVar("T", contravariant=True)
+I = TypeVar("I")
 
 
 class ParamComposerFactory(Protocol):
-    def __call__(self, key: str, value: Any) -> Composer:
+    def __call__(self, key: str, value: str) -> Composer:
         ...
 
 
@@ -66,28 +75,32 @@ class ParamsSetter(Protocol):
 
 
 @dataclass
-class ParamsComposer(Resolver[Params], Generic[T]):
+class ParamsComposer(Resolver[PS], Generic[PS, I, T]):
+    parser: Parser[I]
+    converter: Converter[I, T]
     composer_factory: ComposerFactory[T]
-    converter: Converter[T]
 
     def __call__(
         self,
-        _: Params,
+        _: PS,
         argument: Any,
-    ) -> Consumer:
-        return self.composer_factory(self.converter(argument))
+    ) -> Composer:
+        argument_parsed: I = self.parser(argument)
+        argument_converted: T = self.converter(argument_parsed)
+
+        return self.composer_factory(argument_converted)
 
 
 @dataclass
-class ParamComposer(Resolver[Param]):
+class ParamComposer(Resolver[PA]):
     composer_factory: ParamComposerFactory
-    converter: Converter[str]
+    converter: Converter[Any, str]
 
     def __call__(
         self,
-        param: Param,
+        param: PA,
         argument: Any,
-    ) -> Consumer:
+    ) -> Composer:
         if param.alias is None:
             raise ResolutionError("Cannot compose `Param` with no alias")
 
@@ -99,18 +112,6 @@ class ParamComposer(Resolver[Param]):
 
 def empty_consumer(_: RequestOptions, /) -> None:
     pass
-
-
-class QueryParamsComposer(Resolver[QueryParams]):
-    def __call__(
-        self,
-        _: Params,
-        argument: Any,
-    ) -> Consumer:
-        coerced_argument: QueryParamTypes = utils.parse_obj_as(
-            QueryParamTypes, argument
-        )
-        return composers.QueryParamsComposer(coerced_argument)
 
 
 # NOTE: This resolver is currently untested
@@ -164,12 +165,25 @@ resolvers: Resolvers[Resolver] = Resolvers(
         Header: ParamComposer(composers.HeaderComposer, converters.convert_header),
         Cookie: ParamComposer(composers.CookieComposer, converters.convert_cookie),
         Path: ParamComposer(composers.PathParamComposer, converters.convert_path_param),
-        QueryParams: QueryParamsComposer,
-        # QueryParams: ParamsComposer(composers.QueryParamsComposer, converters.convert_query_params),
-        Headers: ParamsComposer(composers.HeadersComposer, converters.convert_headers),
-        Cookies: ParamsComposer(composers.CookiesComposer, converters.convert_cookies),
-        PathParams: ParamsComposer(
-            composers.PathParamsComposer, converters.convert_path_params
+        QueryParams: ParamsComposer[QueryParams, QueryParamTypes, httpx.QueryParams](
+            parser=Parser(QueryParamTypes),
+            composer_factory=composers.QueryParamsComposer,
+            converter=converters.convert_query_params,
+        ),
+        Headers: ParamsComposer[Headers, HeaderTypes, httpx.Headers](
+            parser=Parser(HeaderTypes),
+            composer_factory=composers.HeadersComposer,
+            converter=converters.convert_headers,
+        ),
+        Cookies: ParamsComposer[Cookies, CookieTypes, httpx.Cookies](
+            parser=Parser(CookieTypes),
+            composer_factory=composers.CookiesComposer,
+            converter=converters.convert_cookies,
+        ),
+        PathParams: ParamsComposer[PathParams, Mapping[str, Any], Mapping[str, str]](
+            parser=Parser(Mapping[str, Any]),
+            composer_factory=composers.PathParamsComposer,
+            converter=converters.convert_path_params,
         ),
         # NOTE: Currently disabled as broken
         # Body: compose_body,
