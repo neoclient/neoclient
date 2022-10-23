@@ -11,7 +11,7 @@ from ..types import (
     RequestFiles,
     TimeoutTypes,
 )
-from .composers import (
+from .factories import (
     ContentComposer,
     CookieComposer,
     CookiesComposer,
@@ -26,23 +26,24 @@ from .composers import (
     QueryParamsComposer,
     TimeoutComposer,
 )
+from .models import Entry
 from .typing import Composer
 
 
 def query(key: str, value: Any) -> Composer:
-    return QueryParamComposer(key, converters.convert_query_param(value))
+    return QueryParamComposer(Entry(key, converters.convert_query_param(value)))
 
 
 def header(key: str, value: Any) -> Composer:
-    return HeaderComposer(key, converters.convert_header(value))
+    return HeaderComposer(Entry(key, converters.convert_header(value)))
 
 
 def cookie(key: str, value: Any) -> Composer:
-    return CookieComposer(key, converters.convert_cookie(value))
+    return CookieComposer(Entry(key, converters.convert_cookie(value)))
 
 
 def path(key: str, value: Any) -> Composer:
-    return PathParamComposer(key, converters.convert_path_param(value))
+    return PathParamComposer(Entry(key, converters.convert_path_param(value)))
 
 
 def query_params(params: QueryParamTypes, /) -> Composer:

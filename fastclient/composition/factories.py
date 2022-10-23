@@ -8,6 +8,7 @@ from httpx import (
     Timeout
 )
 
+from .models import Entry
 from .typing import Composer
 
 from ..models import RequestOptions
@@ -21,38 +22,34 @@ from ..types import (
 
 @dataclass
 class QueryParamComposer(Composer):
-    key: str
-    value: str
+    entry: Entry[str, str]
 
     def __call__(self, request: RequestOptions, /) -> None:
-        request.params = request.params.set(self.key, self.value)
+        request.params = request.params.set(self.entry.key, self.entry.value)
 
 
 @dataclass
 class HeaderComposer(Composer):
-    key: str
-    value: str
+    entry: Entry[str, str]
 
     def __call__(self, request: RequestOptions, /) -> None:
-        request.headers[self.key] = self.value
+        request.headers[self.entry.key] = self.entry.value
 
 
 @dataclass
 class CookieComposer(Composer):
-    key: str
-    value: str
+    entry: Entry[str, str]
 
     def __call__(self, request: RequestOptions, /) -> None:
-        request.cookies[self.key] = self.value
+        request.cookies[self.entry.key] = self.entry.value
 
 
 @dataclass
 class PathParamComposer(Composer):
-    key: str
-    value: str
+    entry: Entry[str, str]
 
     def __call__(self, request: RequestOptions, /) -> None:
-        request.path_params[self.key] = self.value
+        request.path_params[self.entry.key] = self.entry.value
 
 
 @dataclass

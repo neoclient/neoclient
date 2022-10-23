@@ -14,7 +14,7 @@ from ..types import (
     TimeoutTypes,
 )
 from . import wrappers
-from .composers import ContentComposer, DataComposer, FilesComposer, JsonComposer
+from .factories import ContentComposer, DataComposer, FilesComposer, JsonComposer
 from .typing import C, Composer, Decorator
 
 

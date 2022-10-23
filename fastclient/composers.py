@@ -3,6 +3,7 @@ from typing import (
     Any,
     Generic,
     Mapping,
+    Optional,
     Protocol,
     TypeVar,
     Union,
@@ -10,6 +11,7 @@ from typing import (
 
 import fastapi.encoders
 import httpx
+from loguru import logger
 import param
 from pydantic import Required
 from pydantic.fields import UndefinedType
@@ -19,8 +21,9 @@ from param.resolvers import Resolvers
 
 from . import converters
 from .converters import Converter
-from .composition import composers
-from .composition.typing import Composer
+from .composition import factories
+from .composition.models import Entry
+from .composition.typing import Composer, ComposerFactory
 from .models import ComposerContext, RequestOptions
 from .parameters import (
     Body,
@@ -44,20 +47,16 @@ from .types import (
 
 
 P = TypeVar("P", contravariant=True, bound=param.parameters.Param)
+
 PA = TypeVar("PA", contravariant=True, bound=Param)
 PS = TypeVar("PS", contravariant=True, bound=Params)
+
 T = TypeVar("T", contravariant=True)
 I = TypeVar("I")
 
 
-class ParamComposerFactory(Protocol):
-    def __call__(self, key: str, value: str) -> Composer:
-        ...
-
-
-class ComposerFactory(Protocol[T]):
-    def __call__(self, t: T, /) -> Composer:
-        ...
+def empty_consumer(_: RequestOptions, /) -> None:
+    pass
 
 
 class Resolver(Protocol[P]):
@@ -69,31 +68,9 @@ class Resolver(Protocol[P]):
         ...
 
 
-class ParamsSetter(Protocol):
-    def __call__(self, request: RequestOptions, value: Any, /) -> None:
-        ...
-
-
 @dataclass
-class ParamsComposer(Resolver[PS], Generic[PS, I, T]):
-    parser: Parser[I]
-    converter: Converter[I, T]
-    composer_factory: ComposerFactory[T]
-
-    def __call__(
-        self,
-        _: PS,
-        argument: Any,
-    ) -> Composer:
-        argument_parsed: I = self.parser(argument)
-        argument_converted: T = self.converter(argument_parsed)
-
-        return self.composer_factory(argument_converted)
-
-
-@dataclass
-class ParamComposer(Resolver[PA]):
-    composer_factory: ParamComposerFactory
+class ParamResolver(Resolver[PA]):
+    composer_factory: ComposerFactory[Entry[str, str]]
     converter: Converter[Any, str]
 
     def __call__(
@@ -107,11 +84,27 @@ class ParamComposer(Resolver[PA]):
         if argument is None and param.default is not Required:
             return empty_consumer
 
-        return self.composer_factory(param.alias, self.converter(argument))
+        key: str = param.alias
+        value: str = self.converter(argument)
+
+        return self.composer_factory(Entry(key, value))
 
 
-def empty_consumer(_: RequestOptions, /) -> None:
-    pass
+@dataclass
+class ParamsResolver(Resolver[PS], Generic[PS, I, T]):
+    parser: Parser[I]
+    converter: Converter[I, T]
+    composer_factory: ComposerFactory[T]
+
+    def __call__(
+        self,
+        _: PS,
+        argument: Any,
+    ) -> Composer:
+        argument_parsed: I = self.parser(argument)
+        argument_converted: T = self.converter(argument_parsed)
+
+        return self.composer_factory(argument_converted)
 
 
 # NOTE: This resolver is currently untested
@@ -159,33 +152,53 @@ def compose_body(
 
 resolvers: Resolvers[Resolver] = Resolvers(
     {
-        Query: ParamComposer(
-            composers.QueryParamComposer, converters.convert_query_param
+        Query: ParamResolver(
+            factories.QueryParamComposer, converters.convert_query_param
         ),
-        Header: ParamComposer(composers.HeaderComposer, converters.convert_header),
-        Cookie: ParamComposer(composers.CookieComposer, converters.convert_cookie),
-        Path: ParamComposer(composers.PathParamComposer, converters.convert_path_param),
-        QueryParams: ParamsComposer[QueryParams, QueryParamTypes, httpx.QueryParams](
+        Header: ParamResolver(factories.HeaderComposer, converters.convert_header),
+        Cookie: ParamResolver(factories.CookieComposer, converters.convert_cookie),
+        Path: ParamResolver(factories.PathParamComposer, converters.convert_path_param),
+        QueryParams: ParamsResolver[QueryParams, QueryParamTypes, httpx.QueryParams](
             parser=Parser(QueryParamTypes),
-            composer_factory=composers.QueryParamsComposer,
+            composer_factory=factories.QueryParamsComposer,
             converter=converters.convert_query_params,
         ),
-        Headers: ParamsComposer[Headers, HeaderTypes, httpx.Headers](
+        Headers: ParamsResolver[Headers, HeaderTypes, httpx.Headers](
             parser=Parser(HeaderTypes),
-            composer_factory=composers.HeadersComposer,
+            composer_factory=factories.HeadersComposer,
             converter=converters.convert_headers,
         ),
-        Cookies: ParamsComposer[Cookies, CookieTypes, httpx.Cookies](
+        Cookies: ParamsResolver[Cookies, CookieTypes, httpx.Cookies](
             parser=Parser(CookieTypes),
-            composer_factory=composers.CookiesComposer,
+            composer_factory=factories.CookiesComposer,
             converter=converters.convert_cookies,
         ),
-        PathParams: ParamsComposer[PathParams, Mapping[str, Any], Mapping[str, str]](
+        PathParams: ParamsResolver[PathParams, Mapping[str, Any], Mapping[str, str]](
             parser=Parser(Mapping[str, Any]),
-            composer_factory=composers.PathParamsComposer,
+            composer_factory=factories.PathParamsComposer,
             converter=converters.convert_path_params,
         ),
         # NOTE: Currently disabled as broken
         # Body: compose_body,
     }
 )
+
+def compose(request: RequestOptions, param: param.parameters.Param, argument: Any) -> None:
+    logger.info(
+        "Composing param {param!r} with argument {argument!r}",
+        param=param,
+        argument=argument,
+    )
+
+    resolver: Optional[Resolver] = resolvers.get(type(param))
+
+    if resolver is None:
+        raise ResolutionError(f"Failed to find composition resolver for param {param!r}")
+
+    logger.info(f"Found composition resolver: {resolver!r}")
+
+    composer: Composer = resolver(param, argument)
+
+    logger.info(f"Applying composer: {composer!r}")
+
+    composer(request)

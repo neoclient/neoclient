@@ -24,7 +24,7 @@ from typing_extensions import ParamSpec
 
 from . import utils
 from .composition.typing import Composer
-from .composers import resolvers, Resolver
+from .composers import resolvers, Resolver, compose
 from .errors import NotAnOperation
 from .models import OperationSpecification, RequestOptions
 from .resolvers import resolve_func
@@ -130,20 +130,7 @@ def compose_func(
         field_info: param.parameters.Param = model_field.field_info
         argument: Any = validated_arguments[field_name]
 
-        logger.info(
-            "Composing param {name!r} of type {type!r} with argument {argument!r}",
-            name=field_name,
-            type=type(field_info),
-            argument=argument,
-        )
-
-        composer: Resolver = resolvers[type(field_info)]
-
-        logger.info(f"Found composer: {composer!r}")
-
-        consumer: Composer = composer(field_info, argument)
-
-        consumer(request)
+        compose(request, field_info, argument)
 
     # Validate the request (e.g. to ensure no path params have been missed)
     request.validate()
