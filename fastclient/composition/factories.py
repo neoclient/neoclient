@@ -9,7 +9,7 @@ from httpx import (
 )
 
 from .models import Entry
-from .typing import Composer
+from .typing import RequestConsumer
 
 from ..models import RequestOptions
 from ..types import (
@@ -21,7 +21,7 @@ from ..types import (
 
 
 @dataclass
-class QueryParamComposer(Composer):
+class QueryParamComposer(RequestConsumer):
     entry: Entry[str, str]
 
     def __call__(self, request: RequestOptions, /) -> None:
@@ -29,7 +29,7 @@ class QueryParamComposer(Composer):
 
 
 @dataclass
-class HeaderComposer(Composer):
+class HeaderComposer(RequestConsumer):
     entry: Entry[str, str]
 
     def __call__(self, request: RequestOptions, /) -> None:
@@ -37,7 +37,7 @@ class HeaderComposer(Composer):
 
 
 @dataclass
-class CookieComposer(Composer):
+class CookieComposer(RequestConsumer):
     entry: Entry[str, str]
 
     def __call__(self, request: RequestOptions, /) -> None:
@@ -45,7 +45,7 @@ class CookieComposer(Composer):
 
 
 @dataclass
-class PathParamComposer(Composer):
+class PathParamComposer(RequestConsumer):
     entry: Entry[str, str]
 
     def __call__(self, request: RequestOptions, /) -> None:
@@ -53,7 +53,7 @@ class PathParamComposer(Composer):
 
 
 @dataclass
-class QueryParamsComposer(Composer):
+class QueryParamsComposer(RequestConsumer):
     params: QueryParams
 
     def __call__(self, request: RequestOptions, /) -> None:
@@ -61,7 +61,7 @@ class QueryParamsComposer(Composer):
 
 
 @dataclass
-class HeadersComposer(Composer):
+class HeadersComposer(RequestConsumer):
     headers: Headers
 
     def __call__(self, request: RequestOptions, /) -> None:
@@ -69,7 +69,7 @@ class HeadersComposer(Composer):
 
 
 @dataclass
-class CookiesComposer(Composer):
+class CookiesComposer(RequestConsumer):
     cookies: Cookies
 
     def __call__(self, request: RequestOptions, /) -> None:
@@ -77,7 +77,7 @@ class CookiesComposer(Composer):
 
 
 @dataclass
-class PathParamsComposer(Composer):
+class PathParamsComposer(RequestConsumer):
     path_params: Mapping[str, str]
 
     def __call__(self, request: RequestOptions, /) -> None:
@@ -85,7 +85,7 @@ class PathParamsComposer(Composer):
 
 
 @dataclass
-class ContentComposer(Composer):
+class ContentComposer(RequestConsumer):
     content: RequestContent
 
     def __call__(self, request: RequestOptions, /) -> None:
@@ -93,7 +93,7 @@ class ContentComposer(Composer):
 
 
 @dataclass
-class DataComposer(Composer):
+class DataComposer(RequestConsumer):
     data: RequestData
 
     def __call__(self, request: RequestOptions, /) -> None:
@@ -101,7 +101,7 @@ class DataComposer(Composer):
 
 
 @dataclass
-class FilesComposer(Composer):
+class FilesComposer(RequestConsumer):
     files: RequestFiles
 
     def __call__(self, request: RequestOptions, /) -> None:
@@ -109,7 +109,7 @@ class FilesComposer(Composer):
 
 
 @dataclass
-class JsonComposer(Composer):
+class JsonComposer(RequestConsumer):
     json: JsonTypes
 
     def __call__(self, request: RequestOptions, /) -> None:
@@ -117,7 +117,7 @@ class JsonComposer(Composer):
 
 
 @dataclass
-class TimeoutComposer(Composer):
+class TimeoutComposer(RequestConsumer):
     timeout: Timeout
 
     def __call__(self, request: RequestOptions, /) -> None:

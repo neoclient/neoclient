@@ -1,4 +1,4 @@
-from typing import Any, Mapping, Protocol, TypeVar
+from typing import Any, Mapping
 
 from httpx._utils import primitive_value_to_str
 from httpx import (
@@ -14,14 +14,6 @@ from .types import (
     CookieTypes,
     TimeoutTypes,
 )
-
-V = TypeVar("V", contravariant=True)
-R = TypeVar("R", covariant=True)
-
-
-class Converter(Protocol[V, R]):
-    def __call__(self, value: V, /) -> R:
-        ...
 
 
 def convert_query_param(value: Any, /) -> str:

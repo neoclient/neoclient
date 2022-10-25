@@ -35,3 +35,5 @@ StreamTypes: TypeAlias = Union[SyncByteStream, AsyncByteStream]
 EventHooks: TypeAlias = Mapping[str, List[Callable]]
 DefaultEncodingTypes: TypeAlias = Union[str, Callable[[bytes], str]]
 EventHook: TypeAlias = Callable[..., Any]
+
+PathParamTypes: TypeAlias = Mapping[str, Any]

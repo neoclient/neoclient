@@ -11,11 +11,11 @@ class Decorator(Protocol):
         ...
 
 
-class Composer(Protocol):
+class RequestConsumer(Protocol):
     def __call__(self, request: RequestOptions, /) -> None:
         ...
 
 
-class ComposerFactory(Protocol[T]):
-    def __call__(self, t: T, /) -> Composer:
+class RequestConsumerFactory(Protocol[T]):
+    def __call__(self, t: T, /) -> RequestConsumer:
         ...
