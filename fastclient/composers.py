@@ -1,43 +1,28 @@
-from dataclasses import dataclass
-from typing import (
-    Any,
-    Optional,
-    Protocol,
-    TypeVar,
-)
+from typing import Any, Optional, Protocol, TypeVar
 
-from loguru import logger
 import param
-from pydantic import Required
 import param.parameters
+from loguru import logger
 from param.errors import ResolutionError
 from param.resolvers import Resolvers
-from param.typing import Function
+from pydantic import Required
 
-from . import converters
-from .composition import factories, wrappers
-from .composition.models import Entry
-from .composition.typing import RequestConsumer, RequestConsumerFactory
+from .composition import wrappers
+from .composition.typing import RequestConsumer
 from .models import RequestOptions
 from .parameters import (
     Cookie,
     Cookies,
     Header,
     Headers,
-    Path,
     Param,
+    Path,
     PathParams,
     Query,
     QueryParams,
 )
 from .parsing import parse_obj_as
-from .types import (
-    QueryParamTypes,
-    HeaderTypes,
-    CookieTypes,
-    PathParamTypes,
-)
-
+from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
 
 P = TypeVar("P", contravariant=True, bound=param.parameters.Param)
 PA = TypeVar("PA", contravariant=True, bound=Param)
@@ -55,17 +40,13 @@ class Composer(Protocol[P]):
     ) -> RequestConsumer:
         ...
 
+
 composers: Resolvers[Composer] = Resolvers()
 
 
-@dataclass
-class ParamComposer(Composer[PA]):
-    composer_factory: RequestConsumerFactory[Entry[str, str]]
-    converter: Function[Any, str]
-
-    def __call__(
-        self,
-        param: PA,
+def param_composer(composer: Composer[P], /) -> Composer[P]:
+    def wrapper(
+        param: P,
         argument: Any,
     ) -> RequestConsumer:
         if param.alias is None:
@@ -74,14 +55,50 @@ class ParamComposer(Composer[PA]):
         if argument is None and param.default is not Required:
             return noop_consumer
 
-        key: str = param.alias
-        value: str = self.converter(argument)
+        return composer(param, argument)
 
-        return self.composer_factory(Entry(key, value))
+    return wrapper
+
+
+@composers(Query)
+@param_composer
+def compose_query_param(
+    param: Query,
+    argument: Any,
+) -> RequestConsumer:
+    return wrappers.query(param.alias, argument)
+
+
+@composers(Header)
+@param_composer
+def compose_header(
+    param: Header,
+    argument: Any,
+) -> RequestConsumer:
+    return wrappers.header(param.alias, argument)
+
+
+@composers(Cookie)
+@param_composer
+def compose_cookie(
+    param: Cookie,
+    argument: Any,
+) -> RequestConsumer:
+    return wrappers.cookie(param.alias, argument)
+
+
+@composers(Path)
+@param_composer
+def compose_path_param(
+    param: Path,
+    argument: Any,
+) -> RequestConsumer:
+    return wrappers.path(param.alias, argument)
+
 
 @composers(QueryParams)
 def compose_query_params(
-    param: QueryParams,
+    _: QueryParams,
     argument: Any,
 ) -> RequestConsumer:
     query_params: QueryParamTypes = parse_obj_as(QueryParamTypes, argument)
@@ -91,7 +108,7 @@ def compose_query_params(
 
 @composers(Headers)
 def compose_headers(
-    param: Headers,
+    _: Headers,
     argument: Any,
 ) -> RequestConsumer:
     headers: HeaderTypes = parse_obj_as(HeaderTypes, argument)
@@ -101,7 +118,7 @@ def compose_headers(
 
 @composers(Cookies)
 def compose_cookies(
-    param: Cookies,
+    _: Cookies,
     argument: Any,
 ) -> RequestConsumer:
     cookies: CookieTypes = parse_obj_as(CookieTypes, argument)
@@ -111,7 +128,7 @@ def compose_cookies(
 
 @composers(PathParams)
 def compose_path_params(
-    param: PathParams,
+    _: PathParams,
     argument: Any,
 ) -> RequestConsumer:
     path_params: PathParamTypes = parse_obj_as(PathParamTypes, argument)
@@ -162,44 +179,6 @@ def compose_body(
 """
 
 
-composers.update(
-    {
-        Query: ParamComposer(
-            factories.QueryParamComposer, converters.convert_query_param
-        ),
-        Header: ParamComposer(factories.HeaderComposer, converters.convert_header),
-        Cookie: ParamComposer(factories.CookieComposer, converters.convert_cookie),
-        Path: ParamComposer(factories.PathParamComposer, converters.convert_path_param),
-        # QueryParams: compose_query_params,
-        # Headers: compose_headers,
-        # Cookies: compose_cookies,
-        # PathParams: compose_path_params,
-        # QueryParams: ParamsComposer[QueryParams, QueryParamTypes, httpx.QueryParams](
-        #     parser=Parser(QueryParamTypes),
-        #     composer_factory=factories.QueryParamsComposer,
-        #     converter=converters.convert_query_params,
-        # ),
-        # Headers: ParamsComposer[Headers, HeaderTypes, httpx.Headers](
-        #     parser=Parser(HeaderTypes),
-        #     composer_factory=factories.HeadersComposer,
-        #     converter=converters.convert_headers,
-        # ),
-        # Cookies: ParamsComposer[Cookies, CookieTypes, httpx.Cookies](
-        #     parser=Parser(CookieTypes),
-        #     composer_factory=factories.CookiesComposer,
-        #     converter=converters.convert_cookies,
-        # ),
-        # PathParams: ParamsComposer[PathParams, Mapping[str, Any], Mapping[str, str]](
-        #     parser=Parser(Mapping[str, Any]),
-        #     composer_factory=factories.PathParamsComposer,
-        #     converter=converters.convert_path_params,
-        # ),
-        # NOTE: Currently disabled as broken
-        # Body: compose_body,
-    }
-)
-
-
 def compose(
     request: RequestOptions, param: param.parameters.Param, argument: Any
 ) -> None:
@@ -213,13 +192,13 @@ def compose(
 
     if composer is None:
         raise ResolutionError(
-            f"Failed to find composition resolver for param {param!r}"
+            f"Failed to find composer for param {param!r}"
         )
 
-    logger.info(f"Found composition resolver: {composer!r}")
+    logger.info(f"Found composer: {composer!r}")
 
-    composer: RequestConsumer = composer(param, argument)
+    consumer: RequestConsumer = composer(param, argument)
 
-    logger.info(f"Applying composer: {composer!r}")
+    logger.info(f"Applying request consumer: {consumer!r}")
 
-    composer(request)
+    consumer(request)

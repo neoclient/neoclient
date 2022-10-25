@@ -27,7 +27,7 @@ from .composition.typing import RequestConsumer
 from .composers import composers, Composer, compose
 from .errors import NotAnOperation
 from .models import OperationSpecification, RequestOptions
-from .composers import resolve_func
+from .resolvers import resolve_func
 from .parameters import Query, Param
 
 PS = ParamSpec("PS")
