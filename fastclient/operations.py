@@ -24,10 +24,10 @@ from typing_extensions import ParamSpec
 
 from . import utils
 from .composition.typing import RequestConsumer
-from .composers import resolvers, Composer, compose
+from .composers import composers, Composer, compose
 from .errors import NotAnOperation
 from .models import OperationSpecification, RequestOptions
-from .resolvers import resolve_func
+from .composers import resolve_func
 from .parameters import Query, Param
 
 PS = ParamSpec("PS")

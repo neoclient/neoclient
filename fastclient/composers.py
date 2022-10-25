@@ -1,14 +1,11 @@
 from dataclasses import dataclass
 from typing import (
     Any,
-    Generic,
-    Mapping,
     Optional,
     Protocol,
     TypeVar,
 )
 
-import httpx
 from loguru import logger
 import param
 from pydantic import Required
@@ -23,19 +20,17 @@ from .composition.models import Entry
 from .composition.typing import RequestConsumer, RequestConsumerFactory
 from .models import RequestOptions
 from .parameters import (
-    Body,
     Cookie,
     Cookies,
     Header,
     Headers,
     Path,
     Param,
-    Params,
     PathParams,
     Query,
     QueryParams,
 )
-from .parsing import Parser, parse_obj_as
+from .parsing import parse_obj_as
 from .types import (
     QueryParamTypes,
     HeaderTypes,
@@ -45,12 +40,7 @@ from .types import (
 
 
 P = TypeVar("P", contravariant=True, bound=param.parameters.Param)
-
 PA = TypeVar("PA", contravariant=True, bound=Param)
-PS = TypeVar("PS", contravariant=True, bound=Params)
-
-T = TypeVar("T", contravariant=True)
-I = TypeVar("I")
 
 
 def noop_consumer(_: RequestOptions, /) -> None:
@@ -64,6 +54,8 @@ class Composer(Protocol[P]):
         argument: Any,
     ) -> RequestConsumer:
         ...
+
+composers: Resolvers[Composer] = Resolvers()
 
 
 @dataclass
@@ -87,7 +79,7 @@ class ParamComposer(Composer[PA]):
 
         return self.composer_factory(Entry(key, value))
 
-
+@composers(QueryParams)
 def compose_query_params(
     param: QueryParams,
     argument: Any,
@@ -97,6 +89,7 @@ def compose_query_params(
     return wrappers.query_params(query_params)
 
 
+@composers(Headers)
 def compose_headers(
     param: Headers,
     argument: Any,
@@ -106,6 +99,7 @@ def compose_headers(
     return wrappers.headers(headers)
 
 
+@composers(Cookies)
 def compose_cookies(
     param: Cookies,
     argument: Any,
@@ -115,6 +109,7 @@ def compose_cookies(
     return wrappers.cookies(cookies)
 
 
+@composers(PathParams)
 def compose_path_params(
     param: PathParams,
     argument: Any,
@@ -167,7 +162,7 @@ def compose_body(
 """
 
 
-resolvers: Resolvers[Composer] = Resolvers(
+composers.update(
     {
         Query: ParamComposer(
             factories.QueryParamComposer, converters.convert_query_param
@@ -175,10 +170,10 @@ resolvers: Resolvers[Composer] = Resolvers(
         Header: ParamComposer(factories.HeaderComposer, converters.convert_header),
         Cookie: ParamComposer(factories.CookieComposer, converters.convert_cookie),
         Path: ParamComposer(factories.PathParamComposer, converters.convert_path_param),
-        QueryParams: compose_query_params,
-        Headers: compose_headers,
-        Cookies: compose_cookies,
-        PathParams: compose_path_params,
+        # QueryParams: compose_query_params,
+        # Headers: compose_headers,
+        # Cookies: compose_cookies,
+        # PathParams: compose_path_params,
         # QueryParams: ParamsComposer[QueryParams, QueryParamTypes, httpx.QueryParams](
         #     parser=Parser(QueryParamTypes),
         #     composer_factory=factories.QueryParamsComposer,
@@ -214,16 +209,16 @@ def compose(
         argument=argument,
     )
 
-    resolver: Optional[Composer] = resolvers.get(type(param))
+    composer: Optional[Composer] = composers.get(type(param))
 
-    if resolver is None:
+    if composer is None:
         raise ResolutionError(
             f"Failed to find composition resolver for param {param!r}"
         )
 
-    logger.info(f"Found composition resolver: {resolver!r}")
+    logger.info(f"Found composition resolver: {composer!r}")
 
-    composer: RequestConsumer = resolver(param, argument)
+    composer: RequestConsumer = composer(param, argument)
 
     logger.info(f"Applying composer: {composer!r}")
 
