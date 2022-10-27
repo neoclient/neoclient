@@ -6,6 +6,7 @@ from loguru import logger
 from param.errors import ResolutionError
 from param.resolvers import Resolvers
 from pydantic import Required
+from mediate import Middleware
 
 from .composition import wrappers
 from .composition.typing import RequestConsumer
@@ -43,21 +44,45 @@ class Composer(Protocol[P]):
 
 composers: Resolvers[Composer] = Resolvers()
 
+# NOTE: HERE LAST - START IMPLEMENTING MIDDLEWARE
+middleware: Middleware = Middleware()
+
 
 def param_composer(composer: Composer[P], /) -> Composer[P]:
     def wrapper(
         param: P,
         argument: Any,
     ) -> RequestConsumer:
+        # NOTE: Maybe make this its own decorator: @aliased
         if param.alias is None:
             raise ResolutionError("Cannot compose `Param` with no alias")
 
+        # NOTE: Maybe make this its own decorator: @skippable
         if argument is None and param.default is not Required:
             return noop_consumer
 
         return composer(param, argument)
 
     return wrapper
+
+
+# @middleware
+def requires_alias(
+    call_next: Composer[Param], param: Param, argument: Any
+) -> RequestConsumer:
+    if param.alias is None:
+        raise ResolutionError("Cannot compose `Param` with no alias")
+
+    return call_next(param, argument)
+
+
+def ignorable(
+    call_next: Composer[Param], param: Param, argument: Any
+) -> RequestConsumer:
+    if argument is None and param.default is not Required:
+        return noop_consumer
+
+    return call_next(param, argument)
 
 
 @composers(Query)
@@ -191,9 +216,7 @@ def compose(
     composer: Optional[Composer] = composers.get(type(param))
 
     if composer is None:
-        raise ResolutionError(
-            f"Failed to find composer for param {param!r}"
-        )
+        raise ResolutionError(f"Failed to find composer for param {param!r}")
 
     logger.info(f"Found composer: {composer!r}")
 
