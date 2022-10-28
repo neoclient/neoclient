@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping, TypeVar
+from typing_extensions import ParamSpec
 
 from loguru import logger
 
@@ -14,8 +15,16 @@ from ..types import (
     TimeoutTypes,
 )
 from . import wrappers
-from .factories import ContentComposer, DataComposer, FilesComposer, JsonComposer
-from .typing import C, RequestConsumer, Decorator
+from .factories import (
+    ContentComposer,
+    DataComposer,
+    FilesComposer,
+    JsonComposer,
+)
+from .typing import C, Decorator, RequestConsumer, RequestConsumerFactory
+
+PS = ParamSpec("PS")
+RT = TypeVar("RT")
 
 
 @dataclass
@@ -30,6 +39,27 @@ class CompositionFacilitator(Decorator):
 
         return func
 
+# DEPRECATED?
+def _deprecated_composition_facilitator(
+    request_consumer_factory: RequestConsumerFactory[RT],
+    bundler: Callable[PS, RT],
+):
+    def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> Callable[[C], C]:
+        bundled: RT = bundler(*args, **kwargs)
+
+        composer: RequestConsumer = request_consumer_factory(bundled)
+
+        def decorate(func: C, /) -> C:
+            logger.info(f"Composing {func!r} using {composer!r}")
+
+            # TODO: Use get_operation(...)
+            composer(func.operation.specification.request)
+
+            return func
+
+        return decorate
+
+    return wrapper
 
 def query(key: str, value: Any) -> Decorator:
     consumer: RequestConsumer = wrappers.query(key, value)

@@ -1,6 +1,5 @@
 from typing import Any, Mapping
 
-from .. import converters
 from ..types import (
     CookieTypes,
     HeaderTypes,
@@ -11,6 +10,7 @@ from ..types import (
     RequestFiles,
     TimeoutTypes,
 )
+from . import bundlers
 from .factories import (
     ContentComposer,
     CookieComposer,
@@ -26,57 +26,56 @@ from .factories import (
     QueryParamsComposer,
     TimeoutComposer,
 )
-from .models import Entry
 from .typing import RequestConsumer
 
 
 def query(key: str, value: Any) -> RequestConsumer:
-    return QueryParamComposer(Entry(key, converters.convert_query_param(value)))
+    return QueryParamComposer(bundlers.query(key, value))
 
 
 def header(key: str, value: Any) -> RequestConsumer:
-    return HeaderComposer(Entry(key, converters.convert_header(value)))
+    return HeaderComposer(bundlers.header(key, value))
 
 
 def cookie(key: str, value: Any) -> RequestConsumer:
-    return CookieComposer(Entry(key, converters.convert_cookie(value)))
+    return CookieComposer(bundlers.cookie(key, value))
 
 
 def path(key: str, value: Any) -> RequestConsumer:
-    return PathParamComposer(Entry(key, converters.convert_path_param(value)))
+    return PathParamComposer(bundlers.path(key, value))
 
 
 def query_params(params: QueryParamTypes, /) -> RequestConsumer:
-    return QueryParamsComposer(converters.convert_query_params(params))
+    return QueryParamsComposer(bundlers.query_params(params))
 
 
 def headers(headers: HeaderTypes, /) -> RequestConsumer:
-    return HeadersComposer(converters.convert_headers(headers))
+    return HeadersComposer(bundlers.headers(headers))
 
 
 def cookies(cookies: CookieTypes, /) -> RequestConsumer:
-    return CookiesComposer(converters.convert_cookies(cookies))
+    return CookiesComposer(bundlers.cookies(cookies))
 
 
 def path_params(path_params: Mapping[str, Any], /) -> RequestConsumer:
-    return PathParamsComposer(converters.convert_path_params(path_params))
+    return PathParamsComposer(bundlers.path_params(path_params))
 
 
 def content(content: RequestContent, /) -> RequestConsumer:
-    return ContentComposer(content)
+    return ContentComposer(bundlers.content(content))
 
 
 def data(data: RequestData, /) -> RequestConsumer:
-    return DataComposer(data)
+    return DataComposer(bundlers.data(data))
 
 
 def files(files: RequestFiles, /) -> RequestConsumer:
-    return FilesComposer(files)
+    return FilesComposer(bundlers.files(files))
 
 
 def json(json: JsonTypes, /) -> RequestConsumer:
-    return JsonComposer(json)
+    return JsonComposer(bundlers.json(json))
 
 
 def timeout(timeout: TimeoutTypes, /) -> RequestConsumer:
-    return TimeoutComposer(converters.convert_timeout(timeout))
+    return TimeoutComposer(bundlers.timeout(timeout))
