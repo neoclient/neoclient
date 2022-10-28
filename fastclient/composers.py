@@ -1,15 +1,23 @@
-from typing import Any, Optional, Protocol, Type, TypeVar
+from dataclasses import dataclass
+from typing import Any, Callable, Optional, Protocol, Type, TypeVar
+from typing_extensions import ParamSpec
 
 import param
 import param.parameters
 from loguru import logger
 from param.errors import ResolutionError
 from pydantic import Required
-from mediate import middleware
 from roster import Register
 
-from .composition import wrappers
-from .composition.typing import RequestConsumer
+from .composition import wrappers, bundlers
+from .composition.factories import (
+    QueryParamConsumerFactory,
+    HeaderConsumerFactory,
+    CookieConsumerFactory,
+    PathParamConsumerFactory,
+)
+from .composition.typing import RequestConsumer, RequestConsumerFactory
+from .composition.models import Entry
 from .models import RequestOptions
 from .parameters import (
     Cookie,
@@ -28,6 +36,10 @@ from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
 P = TypeVar("P", contravariant=True, bound=param.parameters.Param)
 PA = TypeVar("PA", contravariant=True, bound=Param)
 
+BT = TypeVar("BT")
+
+PS = ParamSpec("PS")
+
 
 def noop_consumer(_: RequestOptions, /) -> None:
     pass
@@ -43,6 +55,28 @@ class Composer(Protocol[P]):
         ...
 
 
+@dataclass
+class ParamComposer(Composer):
+    request_consumer_factory: RequestConsumerFactory[Entry[str, str]]
+    bundler: Callable[[str, Any], Entry[str, str]]
+
+    def __call__(
+        self,
+        param: P,
+        argument: Any,
+        /,
+    ) -> RequestConsumer:
+        if param.alias is None:
+            raise ResolutionError("Cannot compose `Param` with no alias")
+
+        if argument is None and param.default is not Required:
+            return noop_consumer
+
+        bundled: Entry[str, str] = self.bundler(param.alias, argument)
+
+        return self.request_consumer_factory(bundled)
+
+
 C = TypeVar("C", bound=Composer)
 
 
@@ -52,59 +86,27 @@ class Composers(Register[Type[param.parameters.Param], C]):
 
 composers: Composers[Composer] = Composers()
 
+compose_query_param: Composer = ParamComposer(
+    request_consumer_factory=QueryParamConsumerFactory,
+    bundler=bundlers.query,
+)
+compose_header: Composer = ParamComposer(
+    request_consumer_factory=HeaderConsumerFactory,
+    bundler=bundlers.header,
+)
+compose_cookie: Composer = ParamComposer(
+    request_consumer_factory=CookieConsumerFactory,
+    bundler=bundlers.cookie,
+)
+compose_path_param: Composer = ParamComposer(
+    request_consumer_factory=PathParamConsumerFactory,
+    bundler=bundlers.path,
+)
 
-def requires_alias(
-    call_next: Composer[Param], param: Param, argument: Any
-) -> RequestConsumer:
-    if param.alias is None:
-        raise ResolutionError("Cannot compose `Param` with no alias")
-
-    return call_next(param, argument)
-
-
-def ignorable(
-    call_next: Composer[Param], param: Param, argument: Any
-) -> RequestConsumer:
-    if argument is None and param.default is not Required:
-        return noop_consumer
-
-    return call_next(param, argument)
-
-
-@composers(Query)
-@middleware(requires_alias, ignorable)
-def compose_query_param(
-    param: Param,
-    argument: Any,
-) -> RequestConsumer:
-    return wrappers.query(param.alias, argument)
-
-
-@composers(Header)
-@middleware(requires_alias, ignorable)
-def compose_header(
-    param: Param,
-    argument: Any,
-) -> RequestConsumer:
-    return wrappers.header(param.alias, argument)
-
-
-@composers(Cookie)
-@middleware(requires_alias, ignorable)
-def compose_cookie(
-    param: Param,
-    argument: Any,
-) -> RequestConsumer:
-    return wrappers.cookie(param.alias, argument)
-
-
-@composers(Path)
-@middleware(requires_alias, ignorable)
-def compose_path_param(
-    param: Param,
-    argument: Any,
-) -> RequestConsumer:
-    return wrappers.path(param.alias, argument)
+composers(Query)(compose_query_param)
+composers(Header)(compose_header)
+composers(Cookie)(compose_cookie)
+composers(Path)(compose_path_param)
 
 
 @composers(QueryParams)

@@ -12,70 +12,70 @@ from ..types import (
 )
 from . import bundlers
 from .factories import (
-    ContentComposer,
-    CookieComposer,
-    CookiesComposer,
-    DataComposer,
-    FilesComposer,
-    HeaderComposer,
-    HeadersComposer,
-    JsonComposer,
-    PathParamComposer,
-    PathParamsComposer,
-    QueryParamComposer,
-    QueryParamsComposer,
-    TimeoutComposer,
+    ContentConsumerFactory,
+    CookieConsumerFactory,
+    CookiesConsumerFactory,
+    DataConsumerFactory,
+    FilesConsumerFactory,
+    HeaderConsumerFactory,
+    HeadersConsumerFactory,
+    JsonConsumerFactory,
+    PathParamConsumerFactory,
+    PathParamsConsumerFactory,
+    QueryParamConsumerFactory,
+    QueryParamsConsumerFactory,
+    TimeoutConsumerFactory,
 )
 from .typing import RequestConsumer
 
 
 def query(key: str, value: Any) -> RequestConsumer:
-    return QueryParamComposer(bundlers.query(key, value))
+    return QueryParamConsumerFactory(bundlers.query(key, value))
 
 
 def header(key: str, value: Any) -> RequestConsumer:
-    return HeaderComposer(bundlers.header(key, value))
+    return HeaderConsumerFactory(bundlers.header(key, value))
 
 
 def cookie(key: str, value: Any) -> RequestConsumer:
-    return CookieComposer(bundlers.cookie(key, value))
+    return CookieConsumerFactory(bundlers.cookie(key, value))
 
 
 def path(key: str, value: Any) -> RequestConsumer:
-    return PathParamComposer(bundlers.path(key, value))
+    return PathParamConsumerFactory(bundlers.path(key, value))
 
 
 def query_params(params: QueryParamTypes, /) -> RequestConsumer:
-    return QueryParamsComposer(bundlers.query_params(params))
+    return QueryParamsConsumerFactory(bundlers.query_params(params))
 
 
 def headers(headers: HeaderTypes, /) -> RequestConsumer:
-    return HeadersComposer(bundlers.headers(headers))
+    return HeadersConsumerFactory(bundlers.headers(headers))
 
 
 def cookies(cookies: CookieTypes, /) -> RequestConsumer:
-    return CookiesComposer(bundlers.cookies(cookies))
+    return CookiesConsumerFactory(bundlers.cookies(cookies))
 
 
 def path_params(path_params: Mapping[str, Any], /) -> RequestConsumer:
-    return PathParamsComposer(bundlers.path_params(path_params))
+    return PathParamsConsumerFactory(bundlers.path_params(path_params))
 
 
 def content(content: RequestContent, /) -> RequestConsumer:
-    return ContentComposer(bundlers.content(content))
+    return ContentConsumerFactory(bundlers.content(content))
 
 
 def data(data: RequestData, /) -> RequestConsumer:
-    return DataComposer(bundlers.data(data))
+    return DataConsumerFactory(bundlers.data(data))
 
 
 def files(files: RequestFiles, /) -> RequestConsumer:
-    return FilesComposer(bundlers.files(files))
+    return FilesConsumerFactory(bundlers.files(files))
 
 
 def json(json: JsonTypes, /) -> RequestConsumer:
-    return JsonComposer(bundlers.json(json))
+    return JsonConsumerFactory(bundlers.json(json))
 
 
 def timeout(timeout: TimeoutTypes, /) -> RequestConsumer:
-    return TimeoutComposer(bundlers.timeout(timeout))
+    return TimeoutConsumerFactory(bundlers.timeout(timeout))

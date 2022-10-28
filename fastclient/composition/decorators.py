@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, TypeVar
-from typing_extensions import ParamSpec
+from typing import Any, Mapping
 
 from loguru import logger
 
@@ -16,15 +15,12 @@ from ..types import (
 )
 from . import wrappers
 from .factories import (
-    ContentComposer,
-    DataComposer,
-    FilesComposer,
-    JsonComposer,
+    ContentConsumerFactory,
+    DataConsumerFactory,
+    FilesConsumerFactory,
+    JsonConsumerFactory,
 )
-from .typing import C, Decorator, RequestConsumer, RequestConsumerFactory
-
-PS = ParamSpec("PS")
-RT = TypeVar("RT")
+from .typing import C, Decorator, RequestConsumer
 
 
 @dataclass
@@ -39,27 +35,6 @@ class CompositionFacilitator(Decorator):
 
         return func
 
-# DEPRECATED?
-def _deprecated_composition_facilitator(
-    request_consumer_factory: RequestConsumerFactory[RT],
-    bundler: Callable[PS, RT],
-):
-    def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> Callable[[C], C]:
-        bundled: RT = bundler(*args, **kwargs)
-
-        composer: RequestConsumer = request_consumer_factory(bundled)
-
-        def decorate(func: C, /) -> C:
-            logger.info(f"Composing {func!r} using {composer!r}")
-
-            # TODO: Use get_operation(...)
-            composer(func.operation.specification.request)
-
-            return func
-
-        return decorate
-
-    return wrapper
 
 def query(key: str, value: Any) -> Decorator:
     consumer: RequestConsumer = wrappers.query(key, value)
@@ -110,25 +85,25 @@ def path_params(path_params: Mapping[str, Any], /) -> Decorator:
 
 
 def content(content: RequestContent, /) -> Decorator:
-    consumer: RequestConsumer = ContentComposer(content)
+    consumer: RequestConsumer = ContentConsumerFactory(content)
 
     return CompositionFacilitator(consumer)
 
 
 def data(data: RequestData, /) -> Decorator:
-    consumer: RequestConsumer = DataComposer(data)
+    consumer: RequestConsumer = DataConsumerFactory(data)
 
     return CompositionFacilitator(consumer)
 
 
 def files(files: RequestFiles, /) -> Decorator:
-    consumer: RequestConsumer = FilesComposer(files)
+    consumer: RequestConsumer = FilesConsumerFactory(files)
 
     return CompositionFacilitator(consumer)
 
 
 def json(json: JsonTypes, /) -> Decorator:
-    consumer: RequestConsumer = JsonComposer(json)
+    consumer: RequestConsumer = JsonConsumerFactory(json)
 
     return CompositionFacilitator(consumer)
 
