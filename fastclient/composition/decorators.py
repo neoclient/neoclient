@@ -13,12 +13,20 @@ from ..types import (
     RequestFiles,
     TimeoutTypes,
 )
-from . import wrappers
-from .factories import (
-    ContentConsumerFactory,
-    DataConsumerFactory,
-    FilesConsumerFactory,
-    JsonConsumerFactory,
+from .consumers import (
+    QueryParamConsumer,
+    HeaderConsumer,
+    CookieConsumer,
+    PathParamConsumer,
+    QueryParamsConsumer,
+    HeadersConsumer,
+    CookiesConsumer,
+    PathParamsConsumer,
+    ContentConsumer,
+    DataConsumer,
+    FilesConsumer,
+    JsonConsumer,
+    TimeoutConsumer,
 )
 from .typing import C, Decorator, RequestConsumer
 
@@ -37,78 +45,52 @@ class CompositionFacilitator(Decorator):
 
 
 def query(key: str, value: Any) -> Decorator:
-    consumer: RequestConsumer = wrappers.query(key, value)
-
-    return CompositionFacilitator(consumer)
+    return CompositionFacilitator(QueryParamConsumer.parse(key, value))
 
 
 def header(key: str, value: Any) -> Decorator:
-    consumer: RequestConsumer = wrappers.header(key, value)
-
-    return CompositionFacilitator(consumer)
+    return CompositionFacilitator(HeaderConsumer.parse(key, value))
 
 
 def cookie(key: str, value: Any) -> Decorator:
-    consumer: RequestConsumer = wrappers.cookie(key, value)
-
-    return CompositionFacilitator(consumer)
+    return CompositionFacilitator(CookieConsumer.parse(key, value))
 
 
 def path(key: str, value: Any) -> Decorator:
-    consumer: RequestConsumer = wrappers.path(key, value)
-
-    return CompositionFacilitator(consumer)
+    return CompositionFacilitator(PathParamConsumer.parse(key, value))
 
 
 def query_params(params: QueryParamTypes, /) -> Decorator:
-    consumer: RequestConsumer = wrappers.query_params(params)
-
-    return CompositionFacilitator(consumer)
+    return CompositionFacilitator(QueryParamsConsumer.parse(params))
 
 
 def headers(headers: HeaderTypes, /) -> Decorator:
-    consumer: RequestConsumer = wrappers.headers(headers)
-
-    return CompositionFacilitator(consumer)
+    return CompositionFacilitator(HeadersConsumer.parse(headers))
 
 
 def cookies(cookies: CookieTypes, /) -> Decorator:
-    consumer: RequestConsumer = wrappers.cookies(cookies)
-
-    return CompositionFacilitator(consumer)
+    return CompositionFacilitator(CookiesConsumer.parse(cookies))
 
 
 def path_params(path_params: Mapping[str, Any], /) -> Decorator:
-    consumer: RequestConsumer = wrappers.path_params(path_params)
-
-    return CompositionFacilitator(consumer)
+    return CompositionFacilitator(PathParamsConsumer.parse(path_params))
 
 
 def content(content: RequestContent, /) -> Decorator:
-    consumer: RequestConsumer = ContentConsumerFactory(content)
-
-    return CompositionFacilitator(consumer)
+    return CompositionFacilitator(ContentConsumer(content))
 
 
 def data(data: RequestData, /) -> Decorator:
-    consumer: RequestConsumer = DataConsumerFactory(data)
-
-    return CompositionFacilitator(consumer)
+    return CompositionFacilitator(DataConsumer(data))
 
 
 def files(files: RequestFiles, /) -> Decorator:
-    consumer: RequestConsumer = FilesConsumerFactory(files)
-
-    return CompositionFacilitator(consumer)
+    return CompositionFacilitator(FilesConsumer(files))
 
 
 def json(json: JsonTypes, /) -> Decorator:
-    consumer: RequestConsumer = JsonConsumerFactory(json)
-
-    return CompositionFacilitator(consumer)
+    return CompositionFacilitator(JsonConsumer(json))
 
 
 def timeout(timeout: TimeoutTypes, /) -> Decorator:
-    consumer: RequestConsumer = wrappers.timeout(timeout)
-
-    return CompositionFacilitator(consumer)
+    return CompositionFacilitator(TimeoutConsumer.parse(timeout))

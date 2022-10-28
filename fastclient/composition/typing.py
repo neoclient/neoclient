@@ -1,9 +1,12 @@
 from typing import Callable, Protocol, TypeVar
+from typing_extensions import ParamSpec
 
 from ..models import RequestOptions
 
 C = TypeVar("C", bound=Callable)
 T = TypeVar("T", contravariant=True)
+
+PS = ParamSpec("PS")
 
 
 class Decorator(Protocol):
@@ -16,6 +19,6 @@ class RequestConsumer(Protocol):
         ...
 
 
-class RequestConsumerFactory(Protocol[T]):
-    def __call__(self, t: T, /) -> RequestConsumer:
+class RequestConsumerFactory(Protocol[PS]):
+    def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> RequestConsumer:
         ...

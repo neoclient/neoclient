@@ -1,5 +1,6 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Protocol, Type, TypeVar
+from typing import Any, Callable, Generic, Optional, Protocol, Type, TypeVar
 from typing_extensions import ParamSpec
 
 import param
@@ -9,15 +10,19 @@ from param.errors import ResolutionError
 from pydantic import Required
 from roster import Register
 
-from .composition import wrappers, bundlers
-from .composition.factories import (
-    QueryParamConsumerFactory,
-    HeaderConsumerFactory,
-    CookieConsumerFactory,
-    PathParamConsumerFactory,
+from . import converters
+from .composition.consumers import (
+    QueryParamConsumer,
+    HeaderConsumer,
+    CookieConsumer,
+    PathParamConsumer,
+    QueryParamsConsumer,
+    HeadersConsumer,
+    CookiesConsumer,
+    PathParamsConsumer,
 )
 from .composition.typing import RequestConsumer, RequestConsumerFactory
-from .composition.models import Entry
+# from .composition.models import Entry
 from .models import RequestOptions
 from .parameters import (
     Cookie,
@@ -25,6 +30,7 @@ from .parameters import (
     Header,
     Headers,
     Param,
+    Params,
     Path,
     PathParams,
     Query,
@@ -35,10 +41,12 @@ from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
 
 P = TypeVar("P", contravariant=True, bound=param.parameters.Param)
 PA = TypeVar("PA", contravariant=True, bound=Param)
+PS = TypeVar("PS", contravariant=True, bound=Params)
 
 BT = TypeVar("BT")
+IT = TypeVar("IT")
 
-PS = ParamSpec("PS")
+# PS = ParamSpec("PS")
 
 
 def noop_consumer(_: RequestOptions, /) -> None:
@@ -56,13 +64,12 @@ class Composer(Protocol[P]):
 
 
 @dataclass
-class ParamComposer(Composer):
-    request_consumer_factory: RequestConsumerFactory[Entry[str, str]]
-    bundler: Callable[[str, Any], Entry[str, str]]
+class ParamComposer(Composer[PA]):
+    consumer_factory: "RequestConsumerFactory[str, Any]"
 
     def __call__(
         self,
-        param: P,
+        param: PA,
         argument: Any,
         /,
     ) -> RequestConsumer:
@@ -72,9 +79,68 @@ class ParamComposer(Composer):
         if argument is None and param.default is not Required:
             return noop_consumer
 
-        bundled: Entry[str, str] = self.bundler(param.alias, argument)
+        return self.consumer_factory(param.alias, argument)
 
-        return self.request_consumer_factory(bundled)
+    # @staticmethod
+    # @abstractmethod
+    # def convert_value(value: Any, /) -> str:
+    #     ...
+
+    # @classmethod
+    # @abstractmethod
+    # def build_consumer(cls, key: str, value: Any) -> RequestConsumer:
+    #     ...
+
+# class ParamsComposer(Composer[PS], Generic[PS, IT]):
+#     consumer_factory: "RequestConsumerFactory[IT]"
+
+#     def __call__(
+#         self,
+#         param: PS,
+#         argument: Any,
+#         /,
+#     ) -> RequestConsumer:
+        
+
+# @dataclass
+# class QueryParamComposer(ParamComposer[Query]):
+#     @staticmethod
+#     def convert_value(value: Any, /) -> str:
+#         return converters.convert_query_param(value)
+
+#     @classmethod
+#     def build_consumer(cls, key: str, value: Any) -> RequestConsumer:
+#         return QueryParamConsumerFactory(Entry(key, cls.convert_value(value)))
+
+
+# class HeaderComposer(ParamComposer[Header]):
+#     @staticmethod
+#     def convert_value(value: Any, /) -> str:
+#         return converters.convert_header(value)
+
+#     @classmethod
+#     def build_consumer(cls, key: str, value: Any) -> RequestConsumer:
+#         return HeaderConsumerFactory(Entry(key, cls.convert_value(value)))
+
+
+# class CookieComposer(ParamComposer[Cookie]):
+#     @staticmethod
+#     def convert_value(value: Any, /) -> str:
+#         return converters.convert_cookie(value)
+
+#     @classmethod
+#     def build_consumer(cls, key: str, value: Any) -> RequestConsumer:
+#         return CookieConsumerFactory(Entry(key, cls.convert_value(value)))
+
+
+# class PathParamComposer(ParamComposer[Path]):
+#     @staticmethod
+#     def convert_value(value: Any, /) -> str:
+#         return converters.convert_path_param(value)
+
+#     @classmethod
+#     def build_consumer(cls, key: str, value: Any) -> RequestConsumer:
+#         return PathParamConsumerFactory(cls.bundle(key, value))
 
 
 C = TypeVar("C", bound=Composer)
@@ -84,29 +150,24 @@ class Composers(Register[Type[param.parameters.Param], C]):
     pass
 
 
-composers: Composers[Composer] = Composers()
+compose_query_param: Composer = ParamComposer(QueryParamConsumer.parse)
+compose_header: Composer = ParamComposer(HeaderConsumer.parse)
+compose_cookie: Composer = ParamComposer(CookieConsumer.parse)
+compose_path_param: Composer = ParamComposer(PathParamConsumer.parse)
 
-compose_query_param: Composer = ParamComposer(
-    request_consumer_factory=QueryParamConsumerFactory,
-    bundler=bundlers.query,
-)
-compose_header: Composer = ParamComposer(
-    request_consumer_factory=HeaderConsumerFactory,
-    bundler=bundlers.header,
-)
-compose_cookie: Composer = ParamComposer(
-    request_consumer_factory=CookieConsumerFactory,
-    bundler=bundlers.cookie,
-)
-compose_path_param: Composer = ParamComposer(
-    request_consumer_factory=PathParamConsumerFactory,
-    bundler=bundlers.path,
-)
+# compose_query_param: Composer = QueryParamComposer()
+# compose_header: Composer = HeaderComposer()
+# compose_cookie: Composer = CookieComposer()
+# compose_path_param: Composer = PathParamComposer()
 
-composers(Query)(compose_query_param)
-composers(Header)(compose_header)
-composers(Cookie)(compose_cookie)
-composers(Path)(compose_path_param)
+composers: Composers[Composer] = Composers(
+    {
+        Query: compose_query_param,
+        Header: compose_header,
+        Cookie: compose_cookie,
+        Path: compose_path_param,
+    }
+)
 
 
 @composers(QueryParams)
@@ -116,7 +177,7 @@ def compose_query_params(
 ) -> RequestConsumer:
     query_params: QueryParamTypes = parse_obj_as(QueryParamTypes, argument)
 
-    return wrappers.query_params(query_params)
+    return QueryParamsConsumer.parse(query_params)
 
 
 @composers(Headers)
@@ -126,7 +187,7 @@ def compose_headers(
 ) -> RequestConsumer:
     headers: HeaderTypes = parse_obj_as(HeaderTypes, argument)
 
-    return wrappers.headers(headers)
+    return HeadersConsumer.parse(headers)
 
 
 @composers(Cookies)
@@ -136,7 +197,7 @@ def compose_cookies(
 ) -> RequestConsumer:
     cookies: CookieTypes = parse_obj_as(CookieTypes, argument)
 
-    return wrappers.cookies(cookies)
+    return CookiesConsumer.parse(cookies)
 
 
 @composers(PathParams)
@@ -146,7 +207,7 @@ def compose_path_params(
 ) -> RequestConsumer:
     path_params: PathParamTypes = parse_obj_as(PathParamTypes, argument)
 
-    return wrappers.path_params(path_params)
+    return PathParamsConsumer.parse(path_params)
 
 
 # NOTE: This resolver is currently untested
