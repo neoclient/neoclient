@@ -1,7 +1,7 @@
 from typing import Callable, Protocol, TypeVar
 from typing_extensions import ParamSpec
 
-from ..models import RequestOptions
+from .models import RequestOptions
 
 C = TypeVar("C", bound=Callable)
 T = TypeVar("T", contravariant=True)

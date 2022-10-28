@@ -23,7 +23,7 @@ from pydantic.fields import ModelField, FieldInfo
 from typing_extensions import ParamSpec
 
 from . import utils
-from .composition.typing import RequestConsumer
+from .typing import RequestConsumer
 from .composers import composers, Composer, compose
 from .errors import NotAnOperation
 from .models import OperationSpecification, RequestOptions

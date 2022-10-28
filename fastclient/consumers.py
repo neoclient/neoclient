@@ -10,9 +10,9 @@ from httpx import (
 
 from .typing import RequestConsumer
 
-from .. import converters
-from ..models import RequestOptions
-from ..types import (
+from . import converters
+from .models import RequestOptions
+from .types import (
     JsonTypes,
     RequestContent,
     RequestData,

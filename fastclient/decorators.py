@@ -3,7 +3,7 @@ from typing import Any, Mapping
 
 from loguru import logger
 
-from ..types import (
+from .types import (
     CookieTypes,
     HeaderTypes,
     JsonTypes,
