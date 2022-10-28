@@ -18,6 +18,7 @@ pydantic = "^1.9.2"
 fastapi = "^0.79.1"
 parse = "^1.19.0"
 loguru = "^0.6.0"
+mediate = "^0.1.6"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"

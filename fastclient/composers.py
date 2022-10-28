@@ -1,12 +1,12 @@
-from typing import Any, Optional, Protocol, TypeVar
+from typing import Any, Optional, Protocol, Type, TypeVar
 
 import param
 import param.parameters
 from loguru import logger
 from param.errors import ResolutionError
-from param.resolvers import Resolvers
 from pydantic import Required
-from mediate import Middleware
+from mediate import middleware
+from roster import Register
 
 from .composition import wrappers
 from .composition.typing import RequestConsumer
@@ -38,35 +38,21 @@ class Composer(Protocol[P]):
         self,
         param: P,
         argument: Any,
+        /,
     ) -> RequestConsumer:
         ...
 
 
-composers: Resolvers[Composer] = Resolvers()
-
-# NOTE: HERE LAST - START IMPLEMENTING MIDDLEWARE
-middleware: Middleware = Middleware()
+C = TypeVar("C", bound=Composer)
 
 
-def param_composer(composer: Composer[P], /) -> Composer[P]:
-    def wrapper(
-        param: P,
-        argument: Any,
-    ) -> RequestConsumer:
-        # NOTE: Maybe make this its own decorator: @aliased
-        if param.alias is None:
-            raise ResolutionError("Cannot compose `Param` with no alias")
-
-        # NOTE: Maybe make this its own decorator: @skippable
-        if argument is None and param.default is not Required:
-            return noop_consumer
-
-        return composer(param, argument)
-
-    return wrapper
+class Composers(Register[Type[param.parameters.Param], C]):
+    pass
 
 
-# @middleware
+composers: Composers[Composer] = Composers()
+
+
 def requires_alias(
     call_next: Composer[Param], param: Param, argument: Any
 ) -> RequestConsumer:
@@ -86,36 +72,36 @@ def ignorable(
 
 
 @composers(Query)
-@param_composer
+@middleware(requires_alias, ignorable)
 def compose_query_param(
-    param: Query,
+    param: Param,
     argument: Any,
 ) -> RequestConsumer:
     return wrappers.query(param.alias, argument)
 
 
 @composers(Header)
-@param_composer
+@middleware(requires_alias, ignorable)
 def compose_header(
-    param: Header,
+    param: Param,
     argument: Any,
 ) -> RequestConsumer:
     return wrappers.header(param.alias, argument)
 
 
 @composers(Cookie)
-@param_composer
+@middleware(requires_alias, ignorable)
 def compose_cookie(
-    param: Cookie,
+    param: Param,
     argument: Any,
 ) -> RequestConsumer:
     return wrappers.cookie(param.alias, argument)
 
 
 @composers(Path)
-@param_composer
+@middleware(requires_alias, ignorable)
 def compose_path_param(
-    param: Path,
+    param: Param,
     argument: Any,
 ) -> RequestConsumer:
     return wrappers.path(param.alias, argument)
