@@ -1,6 +1,6 @@
+import urllib.parse
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Mapping, MutableMapping, Optional, Set
-import urllib.parse
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
@@ -25,6 +25,7 @@ from .types import (
     TimeoutTypes,
     URLTypes,
 )
+
 
 # NOTE: This does not belong here
 @dataclass(init=False)
@@ -264,11 +265,13 @@ class RequestOptions:
         self.path_params.update(path_params)
 
     def _get_formatted_url(self) -> str:
-        return utils.partially_format(urllib.parse.unquote(str(self.url)), **self.path_params)
+        return utils.partially_format(
+            urllib.parse.unquote(str(self.url)), **self.path_params
+        )
 
     def validate(self):
         formatted_url: str = self._get_formatted_url()
-        
+
         missing_path_params: Set[str] = utils.get_path_params(formatted_url)
 
         # Validate path params are correct

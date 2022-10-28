@@ -1,28 +1,22 @@
 from dataclasses import dataclass
 from typing import Any, Mapping
 
-from httpx import (
-    QueryParams,
-    Headers,
-    Cookies,
-    Timeout
-)
-
-from .typing import RequestConsumer
+from httpx import Cookies, Headers, QueryParams, Timeout
 
 from . import converters
 from .models import RequestOptions
 from .types import (
+    CookieTypes,
+    HeaderTypes,
     JsonTypes,
+    PathParamTypes,
+    QueryParamTypes,
     RequestContent,
     RequestData,
     RequestFiles,
-    QueryParamTypes,
-    HeaderTypes,
-    CookieTypes,
-    PathParamTypes,
     TimeoutTypes,
 )
+from .typing import RequestConsumer
 
 
 @dataclass

@@ -1,21 +1,13 @@
+import httpx
 import pytest
-from fastclient import (
-    Header,
-    Cookie,
-    Path,
-    QueryParams,
-    Headers,
-    Cookies,
-    PathParams,
-)
-from fastclient.parameters import Query
-from fastclient.composers import composers, Composer
 from param.errors import ResolutionError
 from param.typing import Consumer
 from pydantic.fields import Undefined
-import httpx
 
+from fastclient import Cookie, Cookies, Header, Headers, Path, PathParams, QueryParams
+from fastclient.composers import Composer, composers
 from fastclient.models import RequestOptions
+from fastclient.parameters import Query
 
 
 def test_compose_query_param() -> None:
@@ -23,9 +15,7 @@ def test_compose_query_param() -> None:
 
     request: RequestOptions = RequestOptions("GET", "/")
 
-    consumer: Consumer[RequestOptions] = composer(
-        Query(alias="foo"), "bar"
-    )
+    consumer: Consumer[RequestOptions] = composer(Query(alias="foo"), "bar")
 
     consumer(request)
 

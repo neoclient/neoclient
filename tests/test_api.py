@@ -1,10 +1,11 @@
-import pytest
 import param
+import pytest
+
 from fastclient import api
+from fastclient.errors import DuplicateParameter, IncompatiblePathParameters
 from fastclient.methods import get
 from fastclient.operations import get_operation
-from fastclient.parameter_functions import Query, Body, Path
-from fastclient.errors import DuplicateParameter, IncompatiblePathParameters
+from fastclient.parameter_functions import Body, Path, Query
 
 
 def test_get_params_duplicate_explicit():

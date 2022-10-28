@@ -1,34 +1,25 @@
 import dataclasses
 import inspect
 from dataclasses import dataclass
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Generic,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-)
+from typing import Any, Callable, Dict, Generic, Optional, Tuple, Type, TypeVar
 
 import httpx
+import param.parameters
 import pydantic
 from httpx import Client, Response
 from loguru import logger
-import param.parameters
 from param.validation import ValidatedFunction
 from pydantic import BaseModel
-from pydantic.fields import ModelField, FieldInfo
+from pydantic.fields import FieldInfo, ModelField
 from typing_extensions import ParamSpec
 
 from . import utils
-from .typing import RequestConsumer
-from .composers import composers, Composer, compose
+from .composers import Composer, compose, composers
 from .errors import NotAnOperation
 from .models import OperationSpecification, RequestOptions
+from .parameters import Param, Query
 from .resolvers import resolve_func
-from .parameters import Query, Param
+from .typing import RequestConsumer
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")

@@ -1,5 +1,6 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional, Protocol, Type, TypeVar, Generic
+from typing import Any, Generic, Optional, Protocol, Type, TypeVar
 
 import param
 import param.parameters
@@ -9,16 +10,15 @@ from pydantic import Required
 from roster import Register
 
 from .consumers import (
-    QueryParamConsumer,
-    HeaderConsumer,
     CookieConsumer,
-    PathParamConsumer,
-    QueryParamsConsumer,
-    HeadersConsumer,
     CookiesConsumer,
+    HeaderConsumer,
+    HeadersConsumer,
+    PathParamConsumer,
     PathParamsConsumer,
+    QueryParamConsumer,
+    QueryParamsConsumer,
 )
-from .typing import RequestConsumer, RequestConsumerFactory
 from .models import RequestOptions
 from .parameters import (
     Cookie,
@@ -32,17 +32,15 @@ from .parameters import (
     Query,
     QueryParams,
 )
-from .parsing import parse_obj_as, Parser
+from .parsing import Parser
 from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
+from .typing import RequestConsumer
+from .utils import noop_consumer
 
 P = TypeVar("P", contravariant=True, bound=param.parameters.Param)
 PA = TypeVar("PA", contravariant=True, bound=Param)
 PS = TypeVar("PS", contravariant=True, bound=Params)
 T = TypeVar("T")
-
-
-def noop_consumer(_: RequestOptions, /) -> None:
-    pass
 
 
 class Composer(Protocol[P]):
@@ -54,13 +52,11 @@ class Composer(Protocol[P]):
     ) -> RequestConsumer:
         ...
 
+
 C = TypeVar("C", bound=Composer)
 
 
-@dataclass
-class ParamComposer(Composer[PA]):
-    consumer_factory: "RequestConsumerFactory[str, Any]"
-
+class ParamComposer(ABC, Composer[PA]):
     def __call__(
         self,
         param: PA,
@@ -73,111 +69,124 @@ class ParamComposer(Composer[PA]):
         if argument is None and param.default is not Required:
             return noop_consumer
 
-        return self.consumer_factory(param.alias, argument)
+        return self.build_consumer(param.alias, argument)
+
+    @staticmethod
+    @abstractmethod
+    def build_consumer(key: str, value: Any) -> RequestConsumer:
+        ...
+
 
 @dataclass
-class ParamsComposer(Composer[PS], Generic[PS, T]):
-    parser: Parser[T]
-    consumer_factory: "RequestConsumerFactory[T]"
+class QueryParamComposer(ParamComposer[Query]):
+    @staticmethod
+    def build_consumer(key: str, value: Any) -> RequestConsumer:
+        return QueryParamConsumer.parse(key, value)
 
+
+@dataclass
+class HeaderComposer(ParamComposer[Query]):
+    @staticmethod
+    def build_consumer(key: str, value: Any) -> RequestConsumer:
+        return HeaderConsumer.parse(key, value)
+
+
+@dataclass
+class CookieComposer(ParamComposer[Query]):
+    @staticmethod
+    def build_consumer(key: str, value: Any) -> RequestConsumer:
+        return CookieConsumer.parse(key, value)
+
+
+@dataclass
+class PathParamComposer(ParamComposer[Query]):
+    @staticmethod
+    def build_consumer(key: str, value: Any) -> RequestConsumer:
+        return PathParamConsumer.parse(key, value)
+
+
+class ParamsComposer(Composer[PS], Generic[PS, T]):
     def __call__(
         self,
         _: PS,
         argument: Any,
         /,
     ) -> RequestConsumer:
-        parsed: T = self.parser(argument)
+        parsed: T = self.parse(argument)
 
-        return self.consumer_factory(parsed)
+        return self.build_consumer(parsed)
+
+    @staticmethod
+    @abstractmethod
+    def build_consumer(value: T, /) -> RequestConsumer:
+        ...
+
+    @staticmethod
+    @abstractmethod
+    def parse(value: Any, /) -> T:
+        ...
+
+
+@dataclass
+class QueryParamsComposer(ParamsComposer[QueryParams, QueryParamTypes]):
+    @staticmethod
+    def build_consumer(params: QueryParamTypes, /) -> RequestConsumer:
+        return QueryParamsConsumer.parse(params)
+
+    @staticmethod
+    def parse(value: Any, /) -> QueryParamTypes:
+        return Parser(QueryParamTypes)(value)
+
+
+@dataclass
+class HeadersComposer(ParamsComposer[Headers, HeaderTypes]):
+    @staticmethod
+    def build_consumer(headers: HeaderTypes, /) -> RequestConsumer:
+        return HeadersConsumer.parse(headers)
+
+    @staticmethod
+    def parse(value: Any, /) -> HeaderTypes:
+        return Parser(HeaderTypes)(value)
+
+
+@dataclass
+class CookiesComposer(ParamsComposer[Cookies, CookieTypes]):
+    @staticmethod
+    def build_consumer(cookies: CookieTypes, /) -> RequestConsumer:
+        return CookiesConsumer.parse(cookies)
+
+    @staticmethod
+    def parse(value: Any, /) -> CookieTypes:
+        return Parser(CookieTypes)(value)
+
+
+@dataclass
+class PathParamsComposer(ParamsComposer[PathParams, PathParamTypes]):
+    @staticmethod
+    def build_consumer(path_params: PathParamTypes, /) -> RequestConsumer:
+        return PathParamsConsumer.parse(path_params)
+
+    @staticmethod
+    def parse(value: Any, /) -> PathParamTypes:
+        return Parser(PathParamTypes)(value)
 
 
 class Composers(Register[Type[param.parameters.Param], C]):
     pass
 
 
-compose_query_param: Composer = ParamComposer(QueryParamConsumer.parse)
-compose_header: Composer = ParamComposer(HeaderConsumer.parse)
-compose_cookie: Composer = ParamComposer(CookieConsumer.parse)
-compose_path_param: Composer = ParamComposer(PathParamConsumer.parse)
-
-compose_query_params: Composer = ParamsComposer(
-    parser=Parser(QueryParamTypes),
-    consumer_factory=QueryParamsConsumer.parse,
-)
-compose_headers: Composer = ParamsComposer(
-    parser=Parser(HeaderTypes),
-    consumer_factory=HeadersConsumer.parse,
-)
-compose_cookies: Composer = ParamsComposer(
-    parser=Parser(CookieTypes),
-    consumer_factory=CookiesConsumer.parse,
-)
-compose_path_params: Composer = ParamsComposer(
-    parser=Parser(PathParamTypes),
-    consumer_factory=PathParamsConsumer.parse,
-)
-
 composers: Composers[Composer] = Composers(
     {
-        Query: compose_query_param,
-        Header: compose_header,
-        Cookie: compose_cookie,
-        Path: compose_path_param,
-
-        QueryParams: compose_query_params,
-        Headers: compose_headers,
-        Cookies: compose_cookies,
-        PathParams: compose_path_params,
+        Query: QueryParamComposer(),
+        Header: HeaderComposer(),
+        Cookie: CookieComposer(),
+        Path: PathParamComposer(),
+        QueryParams: QueryParamsComposer(),
+        Headers: HeadersComposer(),
+        Cookies: CookiesComposer(),
+        PathParams: PathParamsComposer(),
     }
 )
-
-
-# @composers(QueryParams)
-# def compose_query_params(
-#     _: QueryParams,
-#     argument: Any,
-# ) -> RequestConsumer:
-#     parser: Parser[QueryParamTypes] = Parser(QueryParamTypes)
-
-#     query_params: QueryParamTypes = parser(argument)
-
-#     return QueryParamsConsumer.parse(query_params)
-
-
-# @composers(Headers)
-# def compose_headers(
-#     _: Headers,
-#     argument: Any,
-# ) -> RequestConsumer:
-#     parser: Parser[HeaderTypes] = Parser(HeaderTypes)
-    
-#     headers: HeaderTypes = parser(argument)
-
-#     return HeadersConsumer.parse(headers)
-
-
-# @composers(Cookies)
-# def compose_cookies(
-#     _: Cookies,
-#     argument: Any,
-# ) -> RequestConsumer:
-#     parser: Parser[CookieTypes] = Parser(CookieTypes)
-    
-#     cookies: CookieTypes = parser(argument)
-
-#     return CookiesConsumer.parse(cookies)
-
-
-# @composers(PathParams)
-# def compose_path_params(
-#     _: PathParams,
-#     argument: Any,
-# ) -> RequestConsumer:
-#     parser: Parser[PathParamTypes] = Parser(PathParamTypes)
-    
-#     path_params: PathParamTypes = parser(argument)
-
-#     return PathParamsConsumer.parse(path_params)
 
 
 # NOTE: This resolver is currently untested

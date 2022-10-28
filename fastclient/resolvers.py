@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
 import inspect
+import urllib.parse
+from dataclasses import dataclass, field
 from typing import (
     Any,
     Callable,
@@ -8,42 +9,46 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Protocol,
     Set,
     Tuple,
     TypeVar,
     Union,
-    Protocol,
 )
-import urllib.parse
 
+import httpx
 import param
-from param import ParameterManager, BoundArguments, Arguments
 import param.parameters
-from param import Resolvable
-from param.errors import ResolutionError
 import pydantic
+from httpx import Response
+from param import (
+    Arguments,
+    BoundArguments,
+    ParameterManager,
+    ParameterType,
+    Resolvable,
+    Resolvers,
+)
+from param.errors import ResolutionError
 from pydantic import BaseModel
 from pydantic.fields import Undefined, UndefinedType
-import httpx
-from httpx import Response
-from param import ParameterType, Resolvers
 
 from . import utils
+from .models import RequestOptions, ResolverContext
 from .parameters import (
+    Body,
+    Cookie,
+    Cookies,
     Depends,
+    Header,
+    Headers,
+    Param,
+    Path,
     PathParams,
     Promise,
     Query,
-    Header,
-    Cookie,
-    Body,
-    Param,
     QueryParams,
-    Headers,
-    Cookies,
-    Path,
 )
-from .models import RequestOptions, ResolverContext
 
 T = TypeVar("T")
 M = TypeVar("M", bound=Mapping[str, Any])
@@ -73,7 +78,11 @@ def _get_alias(parameter: param.Parameter, /) -> str:
 
 
 def _parse_obj(annotation: Union[UndefinedType, Any], obj: Any) -> Any:
-    if type(obj) is annotation or isinstance(annotation, UndefinedType) or annotation is inspect.Parameter.empty:
+    if (
+        type(obj) is annotation
+        or isinstance(annotation, UndefinedType)
+        or annotation is inspect.Parameter.empty
+    ):
         return obj
     else:
         return pydantic.parse_obj_as(annotation, obj)

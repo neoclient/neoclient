@@ -1,16 +1,7 @@
 import dataclasses
 import inspect
 import urllib.parse
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Set,
-    Tuple,
-)
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 import httpx
 import param
@@ -19,22 +10,10 @@ from param.utils import parse
 from pydantic import BaseModel
 
 from . import utils
-from .errors import (
-    DuplicateParameter,
-    IncompatiblePathParameters,
-)
+from .errors import DuplicateParameter, IncompatiblePathParameters
 from .models import RequestOptions
-from .parameters import (
-    Body,
-    Depends,
-    Param,
-    Path,
-    Promise,
-    Query,
-    Params,
-    PathParams,
-)
-from .parameter_functions import Headers, Cookies, QueryParams
+from .parameter_functions import Cookies, Headers, QueryParams
+from .parameters import Body, Depends, Param, Params, Path, PathParams, Promise, Query
 
 
 def _extract_path_params(parameters: Iterable[param.Parameter]) -> Set[str]:

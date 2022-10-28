@@ -5,6 +5,21 @@ from loguru import logger
 
 from fastclient.models import RequestOptions
 
+from .consumers import (
+    ContentConsumer,
+    CookieConsumer,
+    CookiesConsumer,
+    DataConsumer,
+    FilesConsumer,
+    HeaderConsumer,
+    HeadersConsumer,
+    JsonConsumer,
+    PathParamConsumer,
+    PathParamsConsumer,
+    QueryParamConsumer,
+    QueryParamsConsumer,
+    TimeoutConsumer,
+)
 from .types import (
     CookieTypes,
     HeaderTypes,
@@ -14,21 +29,6 @@ from .types import (
     RequestData,
     RequestFiles,
     TimeoutTypes,
-)
-from .consumers import (
-    QueryParamConsumer,
-    HeaderConsumer,
-    CookieConsumer,
-    PathParamConsumer,
-    QueryParamsConsumer,
-    HeadersConsumer,
-    CookiesConsumer,
-    PathParamsConsumer,
-    ContentConsumer,
-    DataConsumer,
-    FilesConsumer,
-    JsonConsumer,
-    TimeoutConsumer,
 )
 from .typing import C, Decorator, RequestConsumer
 
@@ -41,7 +41,9 @@ class CompositionFacilitator(Decorator):
         # TODO: Use get_operation(...) (but avoid cyclic dependency!)
         request: RequestOptions = func.operation.specification.request
 
-        logger.info(f"Composing {func!r} with request {request!r} using {self.composer!r}")
+        logger.info(
+            f"Composing {func!r} with request {request!r} using {self.composer!r}"
+        )
 
         self.composer(request)
 

@@ -1,4 +1,5 @@
 from typing import Callable, Protocol, TypeVar
+
 from typing_extensions import ParamSpec
 
 from .models import RequestOptions

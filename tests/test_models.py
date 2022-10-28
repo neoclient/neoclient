@@ -1,6 +1,7 @@
-from fastclient.parameters import Query
-from fastclient.enums import ParamType
 from pydantic.fields import Undefined
+
+from fastclient.enums import ParamType
+from fastclient.parameters import Query
 
 
 def test_field_no_default() -> None:

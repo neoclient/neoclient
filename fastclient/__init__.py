@@ -1,29 +1,22 @@
+from httpx import Request, Response
+
 from .client import FastClient
 from .decorators import (
-    query,
-    header,
-    cookie,
-    path,
-    query_params,
-    headers,
-    cookies,
-    path_params,
     content,
+    cookie,
+    cookies,
     data,
     files,
+    header,
+    headers,
     json,
+    path,
+    path_params,
+    query,
+    query_params,
     timeout,
 )
-from .methods import (
-    delete,
-    get,
-    head,
-    options,
-    patch,
-    post,
-    put,
-    request,
-)
+from .methods import delete, get, head, options, patch, post, put, request
 from .models import Client
 from .parameter_functions import (
     Body,
@@ -33,9 +26,8 @@ from .parameter_functions import (
     Header,
     Headers,
     Path,
-    Promise,
-    QueryParams,
-    Query,
     PathParams,
+    Promise,
+    Query,
+    QueryParams,
 )
-from httpx import Request, Response

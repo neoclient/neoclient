@@ -50,3 +50,7 @@ def bind_arguments(
     bound_arguments.apply_defaults()
 
     return bound_arguments.arguments
+
+
+def noop_consumer(_: Any, /) -> None:
+    pass

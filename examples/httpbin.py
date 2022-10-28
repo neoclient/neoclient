@@ -1,6 +1,8 @@
-from fastclient import FastClient, get
 from typing import Protocol
+
 from pydantic import BaseModel
+
+from fastclient import FastClient, get
 
 
 class Response(BaseModel):

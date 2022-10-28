@@ -1,5 +1,6 @@
-from fastclient import utils
 import pytest
+
+from fastclient import utils
 
 
 def test_get_path_params() -> None:

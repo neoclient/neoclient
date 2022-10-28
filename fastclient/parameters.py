@@ -1,15 +1,8 @@
 from dataclasses import dataclass
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Optional,
-    Type,
-    Union,
-)
+from typing import Any, Callable, ClassVar, Optional, Type, Union
 
-from httpx import Request, Response
 import param.parameters
+from httpx import Request, Response
 from param.typing import Supplier
 from pydantic.fields import Undefined, UndefinedType
 

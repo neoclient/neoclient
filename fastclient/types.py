@@ -1,11 +1,14 @@
 from typing import Any, Callable, List, Mapping, Sequence, Tuple, Union
 
+from httpx import QueryParams
 from httpx._types import (
     AsyncByteStream,
-    AuthTypes,
+    AuthTypes,  # QueryParamTypes,
+    CertTypes,
     CookieTypes,
     HeaderTypes,
-    # QueryParamTypes,
+    PrimitiveData,
+    ProxiesTypes,
     RequestContent,
     RequestData,
     RequestFiles,
@@ -13,11 +16,7 @@ from httpx._types import (
     TimeoutTypes,
     URLTypes,
     VerifyTypes,
-    CertTypes,
-    ProxiesTypes,
-    PrimitiveData,
 )
-from httpx import QueryParams
 from typing_extensions import TypeAlias
 
 QueryParamTypes: TypeAlias = Union[

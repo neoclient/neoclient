@@ -2,7 +2,7 @@ from typing import Any, Callable, Optional, Type, Union
 
 from httpx import Request, Response
 from param.typing import Supplier
-from pydantic.fields import UndefinedType, Undefined
+from pydantic.fields import Undefined, UndefinedType
 
 from . import parameters
 

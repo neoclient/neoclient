@@ -1,19 +1,9 @@
 from typing import Any, Mapping
 
+from httpx import Cookies, Headers, QueryParams, Timeout
 from httpx._utils import primitive_value_to_str
-from httpx import (
-    QueryParams,
-    Headers,
-    Cookies,
-    Timeout,
-)
 
-from .types import (
-    QueryParamTypes,
-    HeaderTypes,
-    CookieTypes,
-    TimeoutTypes,
-)
+from .types import CookieTypes, HeaderTypes, QueryParamTypes, TimeoutTypes
 
 
 def convert_query_param(value: Any, /) -> str:

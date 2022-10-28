@@ -2,8 +2,8 @@ from typing import Any, Callable, Optional, TypeVar
 
 from typing_extensions import ParamSpec
 
-from .enums import HttpMethod
 from .client import FastClient
+from .enums import HttpMethod
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")

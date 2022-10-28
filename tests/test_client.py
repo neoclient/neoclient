@@ -1,11 +1,11 @@
 from typing import Optional, Protocol
 
 import pytest
-from fastclient import Path, Query, Body, FastClient, get, post
-from fastclient.models import RequestOptions
-from fastclient.errors import IncompatiblePathParameters
 from pydantic import BaseModel
 
+from fastclient import Body, FastClient, Path, Query, get, post
+from fastclient.errors import IncompatiblePathParameters
+from fastclient.models import RequestOptions
 from fastclient.parameter_functions import QueryParams
 
 

@@ -1,21 +1,21 @@
-from enum import Enum, auto
 import functools
 import inspect
 from dataclasses import dataclass, field
+from enum import Enum, auto
 from types import FunctionType, MethodType
 from typing import Any, Callable, Dict, List, Mapping, Optional, Type, TypeVar, Union
 
-from loguru import logger
 import httpx
-from httpx import QueryParams, Headers, Cookies, Timeout, URL
+from httpx import URL, Cookies, Headers, QueryParams, Timeout
 from httpx._auth import Auth
 from httpx._config import (
+    DEFAULT_LIMITS,
     DEFAULT_MAX_REDIRECTS,
     DEFAULT_TIMEOUT_CONFIG,
-    DEFAULT_LIMITS,
     Limits,
 )
 from httpx._transports.base import BaseTransport
+from loguru import logger
 from typing_extensions import ParamSpec
 
 from .enums import HttpMethod
@@ -23,17 +23,17 @@ from .models import ClientOptions, OperationSpecification, RequestOptions
 from .operations import Operation, get_operation, has_operation, set_operation
 from .types import (
     AuthTypes,
+    CertTypes,
     CookieTypes,
     DefaultEncodingTypes,
+    EventHook,
     EventHooks,
     HeaderTypes,
+    ProxiesTypes,
     QueryParamTypes,
     TimeoutTypes,
     URLTypes,
     VerifyTypes,
-    CertTypes,
-    ProxiesTypes,
-    EventHook,
 )
 
 
