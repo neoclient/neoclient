@@ -21,7 +21,7 @@ def parse_obj_as(type_: Type[T], obj: Any, /) -> T:
 
 @dataclass
 class Parser(Generic[T]):
-    type_: Type[T]
+    annotation: Any
 
     def __call__(self, obj: Any, /) -> T:
-        return parse_obj_as(self.type_, obj)
+        return parse_obj_as(self.annotation, obj)

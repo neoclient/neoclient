@@ -3,6 +3,8 @@ from typing import Any, Mapping
 
 from loguru import logger
 
+from fastclient.models import RequestOptions
+
 from .types import (
     CookieTypes,
     HeaderTypes,
@@ -36,10 +38,12 @@ class CompositionFacilitator(Decorator):
     composer: RequestConsumer
 
     def __call__(self, func: C, /) -> C:
-        logger.info(f"Composing {func!r} using {self.composer!r}")
+        # TODO: Use get_operation(...) (but avoid cyclic dependency!)
+        request: RequestOptions = func.operation.specification.request
 
-        # TODO: Use get_operation(...)
-        self.composer(func.operation.specification.request)
+        logger.info(f"Composing {func!r} with request {request!r} using {self.composer!r}")
+
+        self.composer(request)
 
         return func
 
