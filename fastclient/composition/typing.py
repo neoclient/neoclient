@@ -1,8 +1,8 @@
-from typing import Callable, Protocol, TypeVar
+from typing import Callable, Protocol, TypeVar, runtime_checkable
 
 from typing_extensions import ParamSpec
 
-from .models import RequestOptions
+from ..models import RequestOptions
 
 C = TypeVar("C", bound=Callable)
 T = TypeVar("T", contravariant=True)
@@ -15,6 +15,7 @@ class Decorator(Protocol):
         ...
 
 
+@runtime_checkable
 class RequestConsumer(Protocol):
     def __call__(self, request: RequestOptions, /) -> None:
         ...

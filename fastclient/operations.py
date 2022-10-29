@@ -14,12 +14,11 @@ from pydantic.fields import FieldInfo, ModelField
 from typing_extensions import ParamSpec
 
 from . import utils
-from .composers import Composer, compose, composers
+from .composition import compose
 from .errors import NotAnOperation
 from .models import OperationSpecification, RequestOptions
 from .parameters import Param, Query
 from .resolvers import resolve_func
-from .typing import RequestConsumer
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")

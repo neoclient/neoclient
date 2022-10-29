@@ -1,7 +1,7 @@
 from httpx import Request, Response
 
 from .client import FastClient
-from .decorators import (
+from .composition.decorators import (
     content,
     cookie,
     cookies,

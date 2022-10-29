@@ -20,7 +20,7 @@ from .consumers import (
     QueryParamsConsumer,
     TimeoutConsumer,
 )
-from .types import (
+from ..types import (
     CookieTypes,
     HeaderTypes,
     JsonTypes,

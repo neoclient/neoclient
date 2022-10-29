@@ -4,7 +4,6 @@ from typing import Any, Generic, Optional, Protocol, Type, TypeVar
 
 import param
 import param.parameters
-from loguru import logger
 from param.errors import ResolutionError
 from pydantic import Required
 from roster import Register
@@ -19,8 +18,7 @@ from .consumers import (
     QueryParamConsumer,
     QueryParamsConsumer,
 )
-from .models import RequestOptions
-from .parameters import (
+from ..parameters import (
     Cookie,
     Cookies,
     Header,
@@ -32,10 +30,10 @@ from .parameters import (
     Query,
     QueryParams,
 )
-from .parsing import Parser
-from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
+from ..parsing import Parser
+from ..types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
 from .typing import RequestConsumer
-from .utils import noop_consumer
+from ..utils import noop_consumer
 
 P = TypeVar("P", contravariant=True, bound=param.parameters.Param)
 PA = TypeVar("PA", contravariant=True, bound=Param)
@@ -230,26 +228,3 @@ def compose_body(
     else:
         context.request.json.update(json_value)
 """
-
-
-def compose(
-    request: RequestOptions, param: param.parameters.Param, argument: Any
-) -> None:
-    logger.info(
-        "Composing param {param!r} with argument {argument!r}",
-        param=param,
-        argument=argument,
-    )
-
-    composer: Optional[Composer] = composers.get(type(param))
-
-    if composer is None:
-        raise ResolutionError(f"Failed to find composer for param {param!r}")
-
-    logger.info(f"Found composer: {composer!r}")
-
-    consumer: RequestConsumer = composer(param, argument)
-
-    logger.info(f"Applying request consumer: {consumer!r}")
-
-    consumer(request)

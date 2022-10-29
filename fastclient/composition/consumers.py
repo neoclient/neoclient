@@ -3,9 +3,9 @@ from typing import Any, Mapping
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 
-from . import converters
-from .models import RequestOptions
-from .types import (
+from .. import converters
+from ..models import RequestOptions
+from ..types import (
     CookieTypes,
     HeaderTypes,
     JsonTypes,

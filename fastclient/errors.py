@@ -12,3 +12,7 @@ class IncompatiblePathParameters(Exception):
 
 class InvalidParameterSpecification(Exception):
     pass
+
+
+class CompositionError(Exception):
+    pass
