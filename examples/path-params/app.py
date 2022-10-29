@@ -1,3 +1,3 @@
-from client import echo
+from client import perform
 
-print(echo(("i", "like", "fish", "and", "chips")))
+print(perform({"action": "destroy", "item": "castle", "time": "now"}))

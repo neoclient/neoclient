@@ -1,10 +1,13 @@
-from typing import Sequence
-from pathlib import Path
+from typing import Mapping
 from fastapi import FastAPI
 
 app: FastAPI = FastAPI()
 
 
-@app.get("/{path_params:path}")
-def echo(path_params: Path) -> Sequence[str]:
-    return path_params.parts
+@app.get("/{action}/{item}/{time}")
+def perform(action: str, item: str, time: str) -> Mapping[str, str]:
+    return {
+        "action": action,
+        "item": item,
+        "time": time,
+    }
