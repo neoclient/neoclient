@@ -54,3 +54,7 @@ def bind_arguments(
 
 def noop_consumer(_: Any, /) -> None:
     pass
+
+
+def is_primitive(obj: Any, /) -> bool:
+    return isinstance(obj, (str, int, float, bool, type(None)))

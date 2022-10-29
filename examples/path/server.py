@@ -1,8 +1,8 @@
-from fastapi import FastAPI, Path
+from fastapi import FastAPI
 
 app: FastAPI = FastAPI()
 
 
 @app.get("/greet/{name}")
-def greet(name: str = Path()) -> str:
+def greet(name: str) -> str:
     return f"Hello, {name}"

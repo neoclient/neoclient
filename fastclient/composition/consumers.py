@@ -4,7 +4,7 @@ from typing import Any, Mapping
 from httpx import Cookies, Headers, QueryParams, Timeout
 
 from .. import converters
-from ..models import RequestOptions, PathParams
+from ..models import RequestOptions
 from ..types import (
     CookieTypes,
     HeaderTypes,
@@ -121,13 +121,14 @@ class CookiesConsumer(RequestConsumer):
 
 @dataclass
 class PathParamsConsumer(RequestConsumer):
-    path_params: PathParams
+    # path_params: PathParams
+    path_params: Mapping[str, str]
 
     def __call__(self, request: RequestOptions, /) -> None:
-        request.path_params.args.extend(self.path_params.args)
-        request.path_params.kwargs.update(self.path_params.kwargs)
+        # request.path_params.args.extend(self.path_params.args)
+        # request.path_params.kwargs.update(self.path_params.kwargs)
         
-        # request.path_params.update(self.path_params)
+        request.path_params.update(self.path_params)
 
     @classmethod
     def parse(cls, path_params: PathParamTypes) -> "PathParamsConsumer":

@@ -1,7 +1,7 @@
 from typing import (
     Any,
     Callable,
-    Collection,
+    # Collection,
     Dict,
     List,
     Mapping,
@@ -20,7 +20,6 @@ from httpx._types import (
     AsyncByteStream,
     AuthTypes,
     CertTypes,
-    PrimitiveData,
     ProxiesTypes,
     RequestContent,
     RequestData,
@@ -31,13 +30,21 @@ from httpx._types import (
     VerifyTypes,
 )
 from typing_extensions import TypeAlias
-from .typs import PathParams
+# from .typs import PathParams
+
+Primitive: TypeAlias = Union[
+    str,
+    int,
+    float,
+    bool,
+    None,
+]
 
 QueryParamTypes: TypeAlias = Union[
     QueryParams,
-    Mapping[str, Union[PrimitiveData, Sequence[PrimitiveData]]],
-    List[Tuple[str, PrimitiveData]],
-    Tuple[Tuple[str, PrimitiveData], ...],
+    Mapping[str, Union[Primitive, Sequence[Primitive]]],
+    List[Tuple[str, Primitive]],
+    Tuple[Tuple[str, Primitive], ...],
     str,
     bytes,
 ]
@@ -64,8 +71,11 @@ EventHooks: TypeAlias = Mapping[str, List[Callable]]
 DefaultEncodingTypes: TypeAlias = Union[str, Callable[[bytes], str]]
 EventHook: TypeAlias = Callable[..., Any]
 
-PathParamTypes: TypeAlias = Union[
-    PathParams,
-    Mapping[str, Any],
-    Collection[Any],
-]
+PathParamValueTypes: TypeAlias = Union[Primitive, Sequence[Primitive]]
+PathParamTypes: TypeAlias = Mapping[str, PathParamValueTypes]
+
+# PathParamTypes: TypeAlias = Union[
+#     PathParams,
+#     Mapping[str, Any],
+#     Collection[Any],
+# ]
