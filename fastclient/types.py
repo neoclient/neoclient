@@ -1,12 +1,25 @@
-from typing import Any, Callable, List, Mapping, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Collection,
+    Dict,
+    List,
+    Mapping,
+    Sequence,
+    Tuple,
+    Union,
+)
+from http.cookiejar import CookieJar
 
-from httpx import QueryParams
+from httpx import (
+    QueryParams,
+    Headers,
+    Cookies,
+)
 from httpx._types import (
     AsyncByteStream,
-    AuthTypes,  # QueryParamTypes,
+    AuthTypes,
     CertTypes,
-    CookieTypes,
-    HeaderTypes,
     PrimitiveData,
     ProxiesTypes,
     RequestContent,
@@ -18,6 +31,7 @@ from httpx._types import (
     VerifyTypes,
 )
 from typing_extensions import TypeAlias
+from .typs import PathParams
 
 QueryParamTypes: TypeAlias = Union[
     QueryParams,
@@ -28,6 +42,21 @@ QueryParamTypes: TypeAlias = Union[
     bytes,
 ]
 
+HeaderTypes: TypeAlias = Union[
+    Headers,
+    Mapping[str, str],
+    Mapping[bytes, bytes],
+    Sequence[Tuple[str, str]],
+    Sequence[Tuple[bytes, bytes]],
+]
+
+CookieTypes: TypeAlias = Union[
+    Cookies,
+    CookieJar,
+    Dict[str, str],
+    List[Tuple[str, str]],
+]
+
 MethodTypes: TypeAlias = Union[str, bytes]
 JsonTypes: TypeAlias = Any
 StreamTypes: TypeAlias = Union[SyncByteStream, AsyncByteStream]
@@ -35,4 +64,8 @@ EventHooks: TypeAlias = Mapping[str, List[Callable]]
 DefaultEncodingTypes: TypeAlias = Union[str, Callable[[bytes], str]]
 EventHook: TypeAlias = Callable[..., Any]
 
-PathParamTypes: TypeAlias = Mapping[str, Any]
+PathParamTypes: TypeAlias = Union[
+    PathParams,
+    Mapping[str, Any],
+    Collection[Any],
+]

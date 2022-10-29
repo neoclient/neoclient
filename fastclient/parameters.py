@@ -40,10 +40,6 @@ class Cookie(Param):
 class Path(Param):
     type: ClassVar[ParamType] = ParamType.PATH
 
-    @staticmethod
-    def generate_alias(alias: str):
-        return alias.lower().replace("_", "-")
-
 
 @dataclass(frozen=True)
 class Body(param.parameters.Param):

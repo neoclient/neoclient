@@ -51,6 +51,7 @@ def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, param.parameters.Param
     for field_name, model_field in ValidatedFunction(func).model.__fields__.items():
         field_info: FieldInfo = model_field.field_info
 
+        # WARNING: The current inference logic is severely lacking!
         if not isinstance(field_info, param.parameters.Param):
             field_info = Query(
                 default=param.parameters.Param.get_default(field_info),
@@ -100,6 +101,7 @@ def compose_func(
     kwargs: Dict[str, Any],
 ) -> None:
     logger.info(f"Composing function: {func!r}")
+    logger.info(f"Initial request before composition: {request!r}")
 
     arguments: Dict[str, Any] = bind_arguments(func, args, kwargs)
 
@@ -122,8 +124,11 @@ def compose_func(
 
         compose(request, field_info, argument)
 
+    logger.info(f"Request after composition: {request!r}")
+
     # Validate the request (e.g. to ensure no path params have been missed)
-    request.validate()
+    # NOTE: Temporarily disabled as `RequestOptions.path_params` now used over formatting the URL.
+    # request.validate()
 
 
 @dataclass

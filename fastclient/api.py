@@ -87,6 +87,7 @@ def _infer_parameter(parameter: inspect.Parameter, /, *, path_params: Set[str] =
         )
 
 
+# NOT USED
 def get_params(
     func: Callable, /, *, request: Optional[RequestOptions] = None
 ) -> Dict[str, param.Parameter]:
@@ -135,6 +136,7 @@ def get_params(
     return parameters
 
 
+# NOT USED
 def validate_params(
     params: Dict[str, param.Parameter], *, request: Optional[RequestOptions] = None
 ) -> None:

@@ -12,7 +12,7 @@ from ..models import RequestOptions
 def compose(
     request: RequestOptions, param: param.parameters.Param, argument: Any
 ) -> None:
-    logger.info(
+    logger.debug(
         "Composing param {param!r} with argument {argument!r}",
         param=param,
         argument=argument,
@@ -23,10 +23,10 @@ def compose(
     if composer is None:
         raise CompositionError(f"Failed to find composer for param {param!r}")
 
-    logger.info(f"Found composer: {composer!r}")
+    logger.debug(f"Found composer: {composer!r}")
 
     consumer: RequestConsumer = composer(param, argument)
 
-    logger.info(f"Applying request consumer: {consumer!r}")
+    logger.debug(f"Applying request consumer: {consumer!r}")
 
     consumer(request)

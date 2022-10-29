@@ -107,7 +107,7 @@ def test_QueryParamsConsumer(request_options: RequestOptions) -> None:
 
 def test_HeadersConsumer(request_options: RequestOptions) -> None:
     ref_request_options: RequestOptions = replace(request_options)
-    
+
     headers: Headers = Headers({"name": "sam"})
 
     HeadersConsumer(headers)(request_options)

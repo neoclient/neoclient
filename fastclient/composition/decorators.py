@@ -25,6 +25,7 @@ from ..types import (
     HeaderTypes,
     JsonTypes,
     QueryParamTypes,
+    PathParamTypes,
     RequestContent,
     RequestData,
     RequestFiles,
@@ -78,7 +79,7 @@ def cookies(cookies: CookieTypes, /) -> Decorator:
     return CompositionFacilitator(CookiesConsumer.parse(cookies))
 
 
-def path_params(path_params: Mapping[str, Any], /) -> Decorator:
+def path_params(path_params: PathParamTypes, /) -> Decorator:
     return CompositionFacilitator(PathParamsConsumer.parse(path_params))
 
 

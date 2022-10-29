@@ -22,6 +22,7 @@ from fastclient.types import (
     RequestData,
     RequestFiles,
     TimeoutTypes,
+    PathParamTypes,
 )
 
 
@@ -125,7 +126,7 @@ def test_cookies(func: Callable) -> None:
 def test_path_params(func: Callable) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
-    path_params: Mapping[str, str] = {"name": "sam"}
+    path_params: PathParamTypes = {"name": "sam"}
 
     decorators.path_params(path_params)(func)
 

@@ -18,6 +18,7 @@ from httpx._transports.base import BaseTransport
 from loguru import logger
 from typing_extensions import ParamSpec
 
+from . import __version__
 from .enums import HttpMethod
 from .models import ClientOptions, OperationSpecification, RequestOptions
 from .operations import Operation, get_operation, has_operation, set_operation
@@ -152,6 +153,9 @@ class FastClient:
             trust_env=trust_env,
             default_encoding=default_encoding,
         )
+
+        # Default the user agent!
+        client_options.headers.setdefault("user-agent", f"fastclient/{__version__}")
 
         self.client = client_options.build()
 

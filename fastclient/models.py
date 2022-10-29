@@ -1,6 +1,16 @@
 import urllib.parse
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, MutableMapping, Optional, Set
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Optional,
+    Set,
+)
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
@@ -8,7 +18,8 @@ from httpx._auth import Auth
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 from param.models import Parameter
 
-from . import utils
+from . import utils, converters
+from .typs import PathParams
 from .errors import IncompatiblePathParameters
 from .types import (
     AuthTypes,
@@ -18,6 +29,7 @@ from .types import (
     HeaderTypes,
     JsonTypes,
     MethodTypes,
+    PathParamTypes,
     QueryParamTypes,
     RequestContent,
     RequestData,
@@ -145,7 +157,7 @@ class RequestOptions:
     files: Optional[RequestFiles]
     json: Optional[JsonTypes]
     timeout: Optional[Timeout]
-    path_params: MutableMapping[str, str]
+    path_params: PathParams
 
     def __init__(
         self,
@@ -160,7 +172,7 @@ class RequestOptions:
         files: Optional[RequestFiles] = None,
         json: Optional[JsonTypes] = None,
         timeout: Optional[TimeoutTypes] = None,
-        path_params: Optional[MutableMapping[str, str]] = None,
+        path_params: Optional[PathParamTypes] = None,
     ) -> None:
         ...
         self.method = method if isinstance(method, str) else method.decode()
@@ -173,7 +185,11 @@ class RequestOptions:
         self.files = files
         self.json = json
         self.timeout = Timeout(timeout) if timeout is not None else None
-        self.path_params = path_params if path_params is not None else {}
+        self.path_params = (
+            converters.convert_path_params(path_params)
+            if path_params is not None
+            else PathParams()
+        )
 
     def build_request(self, client: Optional[httpx.Client]) -> httpx.Request:
         url: str = self._get_formatted_url()
@@ -237,36 +253,49 @@ class RequestOptions:
                 if request_options.timeout is not None
                 else self.timeout
             ),
-            path_params={**self.path_params, **request_options.path_params},
+            path_params=PathParams(
+                args=[*self.path_params.args, *request_options.path_params.args],
+                kwargs={
+                    **self.path_params.kwargs,
+                    **request_options.path_params.kwargs,
+                },
+            ),
         )
 
-    def add_query_param(self, key: str, value: Any) -> None:
-        self.params = self.params.set(key, value)
+    # def add_query_param(self, key: str, value: Any) -> None:
+    #     self.params = self.params.set(key, value)
 
-    def add_header(self, key: str, value: str) -> None:
-        self.headers[key] = value
+    # def add_header(self, key: str, value: str) -> None:
+    #     self.headers[key] = value
 
-    def add_cookie(self, key: str, value: str) -> None:
-        self.cookies[key] = value
+    # def add_cookie(self, key: str, value: str) -> None:
+    #     self.cookies[key] = value
 
-    def add_path_param(self, key: str, value: Any) -> None:
-        self.path_params[key] = value
+    # def add_path_param(self, key: str, value: Any) -> None:
+    #     self.path_params[key] = value
 
-    def add_query_params(self, query_params: QueryParamTypes, /) -> None:
-        self.params = self.params.merge(httpx.QueryParams(query_params))
+    # def add_query_params(self, query_params: QueryParamTypes, /) -> None:
+    #     self.params = self.params.merge(httpx.QueryParams(query_params))
 
-    def add_headers(self, headers: HeaderTypes, /) -> None:
-        self.headers.update(httpx.Headers(headers))
+    # def add_headers(self, headers: HeaderTypes, /) -> None:
+    #     self.headers.update(httpx.Headers(headers))
 
-    def add_cookies(self, cookies: CookieTypes, /) -> None:
-        self.cookies.update(httpx.Cookies(cookies))
+    # def add_cookies(self, cookies: CookieTypes, /) -> None:
+    #     self.cookies.update(httpx.Cookies(cookies))
 
-    def add_path_params(self, path_params: Mapping[str, Any], /) -> None:
-        self.path_params.update(path_params)
+    # def add_path_params(self, path_params: Mapping[str, Any], /) -> None:
+    #     self.path_params.update(path_params)
 
     def _get_formatted_url(self) -> str:
+        raw_url: str = urllib.parse.unquote(str(self.url))
+
         return utils.partially_format(
-            urllib.parse.unquote(str(self.url)), **self.path_params
+            raw_url,
+            **self.path_params.kwargs,
+            # NOTE: As a *temporary* solution, positional path parameters are
+            # currently inserted into the key `pp`... this is obviously not the correct
+            # way to do this going forward.
+            pp="/".join(self.path_params.args),
         )
 
     def validate(self):
