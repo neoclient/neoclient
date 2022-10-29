@@ -1,12 +1,15 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Generic, Optional, Protocol, Type, TypeVar
+from typing import Any, Generic, Protocol, Type, TypeVar
 
+import fastapi.encoders
 import param
 import param.parameters
 from param.errors import ResolutionError
 from pydantic import Required
 from roster import Register
+
+from fastclient.models import RequestOptions
 
 from .consumers import (
     CookieConsumer,
@@ -19,6 +22,7 @@ from .consumers import (
     QueryParamsConsumer,
 )
 from ..parameters import (
+    Body,
     Cookie,
     Cookies,
     Header,
@@ -169,6 +173,43 @@ class PathParamsComposer(ParamsComposer[PathParams, PathParamTypes]):
         return Parser(PathParamTypes)(value)
 
 
+# NOTE: This resolver is currently untested
+# TODO: Add some middleware that sets/unsets `embed` as appropriate
+def compose_body(
+    param: Body,
+    argument: Any,
+) -> RequestConsumer:
+    # If the param is not required and has no value, it can be omitted
+    if argument is None and param.default is not Required:
+        return noop_consumer
+
+    json_value: Any = fastapi.encoders.jsonable_encoder(argument)
+
+    if param.embed:
+        if param.alias is None:
+            raise ResolutionError("Cannot embed `Body` with no alias")
+
+        json_value = {param.alias: json_value}
+
+    # If this param shouln't be embedded in any pre-existing json,
+    # make it the entire JSON request body
+    if not param.embed:
+
+        def consume(request: RequestOptions, /) -> None:
+            request.json = json_value
+
+        return consume
+    else:
+
+        def consume(request: RequestOptions, /) -> None:
+            if request.json is None:
+                request.json = json_value
+            else:
+                request.json.update(json_value)
+
+        return consume
+
+
 class Composers(Register[Type[param.parameters.Param], C]):
     pass
 
@@ -183,48 +224,6 @@ composers: Composers[Composer] = Composers(
         Headers: HeadersComposer(),
         Cookies: CookiesComposer(),
         PathParams: PathParamsComposer(),
+        Body: compose_body,
     }
 )
-
-
-# NOTE: This resolver is currently untested
-# TODO: Add some middleware that sets/unsets `embed` as appropriate
-"""
-def compose_body(
-    param: P,
-    argument: Any,
-) -> RequestConsumer:
-    true_value: Any = resolve_param(parameter, value)
-
-    # If the param is not required and has no value, it can be omitted
-    if true_value is None and param.default is not Required:
-        return
-
-    json_value: Any = fastapi.encoders.jsonable_encoder(true_value)
-
-    total_body_params: int = len(
-        [
-            parameter
-            for parameter in context.parameters.values()
-            if type(parameter.default) is Body
-        ]
-    )
-
-    embed: bool = param.embed
-
-    if total_body_params > 1:
-        embed = True
-
-    if embed:
-        if param.alias is None:
-            raise ResolutionError("Cannot embed `Body` with no alias")
-
-        json_value = {param.alias: json_value}
-
-    # If there's only one body param, or this param shouln't be embedded in any pre-existing json,
-    # make it the entire JSON request body
-    if context.request.json is None or not embed:
-        context.request.json = json_value
-    else:
-        context.request.json.update(json_value)
-"""

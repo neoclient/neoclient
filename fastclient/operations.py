@@ -1,7 +1,8 @@
 import dataclasses
 import inspect
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Generic, Optional, Tuple, Type, TypeVar
+from typing import Any, Callable, Dict, Generic, Optional, Set, Tuple, Type, TypeVar
+import urllib.parse
 
 import httpx
 import param.parameters
@@ -17,7 +18,7 @@ from . import utils
 from .composition import compose
 from .errors import NotAnOperation
 from .models import OperationSpecification, RequestOptions
-from .parameters import Param, Query
+from .parameters import Param, Query, Path, Body, QueryParams
 from .resolvers import resolve_func
 
 PS = ParamSpec("PS")
@@ -43,19 +44,50 @@ def del_operation(obj: Any, /) -> None:
     delattr(obj, "operation")
 
 
-def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, param.parameters.Param]]:
+def get_fields(func: Callable, /, *, config: type) -> Dict[str, Tuple[Any, param.parameters.Param]]:
+    request: RequestOptions = get_operation(func).specification.request
+
+    path_params: Set[str] = (
+        utils.get_path_params(urllib.parse.unquote(str(request.url)))
+        if request is not None
+        else set()
+    )
+
     fields: Dict[str, Tuple[Any, param.parameters.Param]] = {}
 
     field_name: str
     model_field: ModelField
-    for field_name, model_field in ValidatedFunction(func).model.__fields__.items():
+    for field_name, model_field in ValidatedFunction(func, config=config).model.__fields__.items():
         field_info: FieldInfo = model_field.field_info
 
-        # WARNING: The current inference logic is severely lacking!
+        # Parameter Inference
         if not isinstance(field_info, param.parameters.Param):
-            field_info = Query(
-                default=param.parameters.Param.get_default(field_info),
-            )
+            logger.info(f"Inferring parameter for field: {model_field!r}")
+
+            # NOTE: Need to check later that there's no conflict with any explicityly provided parameters
+            # E.g. (path_param: str, same_path_param: str = Param(alias="path_param"))
+            if field_name in path_params:
+                field_info = Path(
+                    alias=field_name,
+                    default=param.parameters.Param.get_default(field_info),
+                )
+            elif (
+                isinstance(model_field.annotation, type)
+                and (
+                    issubclass(model_field.annotation, (BaseModel, dict))
+                    or dataclasses.is_dataclass(model_field.annotation)
+                )
+            ):
+                field_info = Body(
+                    alias=field_name,
+                    default=param.parameters.Param.get_default(field_info),
+                )
+            else:
+                field_info = Query(
+                    default=param.parameters.Param.get_default(field_info),
+                )
+
+            logger.info(f"Inferred field {model_field!r} as parameter {field_info!r}")
 
         if isinstance(field_info, Param) and field_info.alias is None:
             field_info = dataclasses.replace(
@@ -64,14 +96,28 @@ def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, param.parameters.Param
 
         fields[field_name] = (model_field.annotation, field_info)
 
+    total_body_fields: int = sum(isinstance(field_info, Body) for _, field_info in fields.values())
+
+    if total_body_fields > 1:
+        field: str
+        annotation: Any
+        parameter: FieldInfo
+        for field, (annotation, parameter) in fields.items():
+            if not isinstance(parameter, Body): continue
+
+            parameter = dataclasses.replace(parameter, embed=True)
+
+            fields[field] = (annotation, parameter)
+
     return fields
 
 
 def create_model_cls(func: Callable, /) -> Type[BaseModel]:
-    fields: Dict[str, Tuple[Any, param.parameters.Param]] = get_fields(func)
-
     class Config:
-        allow_population_by_field_name = True
+        allow_population_by_field_name: bool = True
+        arbitrary_types_allowed: bool = True
+
+    fields: Dict[str, Tuple[Any, param.parameters.Param]] = get_fields(func, config=Config)
 
     return ValidatedFunction(func)._create_model(fields, config=Config)
 

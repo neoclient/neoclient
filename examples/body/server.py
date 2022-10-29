@@ -5,6 +5,6 @@ from models import Person
 app: FastAPI = FastAPI()
 
 
-@app.get("/greet")
+@app.post("/greet")
 def greet(person: Person) -> str:
     return f"Hello, {person.name}"

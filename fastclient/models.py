@@ -5,9 +5,7 @@ from typing import (
     Callable,
     Dict,
     List,
-    Mapping,
     MutableMapping,
-    MutableSequence,
     Optional,
     Set,
 )
@@ -19,7 +17,6 @@ from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 from param.models import Parameter
 
 from . import utils, converters
-# from .typs import PathParams
 from .errors import IncompatiblePathParameters
 from .types import (
     AuthTypes,
@@ -189,7 +186,6 @@ class RequestOptions:
             converters.convert_path_params(path_params)
             if path_params is not None
             else {}
-            # else PathParams()
         )
 
     def build_request(self, client: Optional[httpx.Client]) -> httpx.Request:
@@ -258,13 +254,6 @@ class RequestOptions:
                 **self.path_params,
                 **request_options.path_params,
             },
-            # path_params=PathParams(
-            #     args=[*self.path_params.args, *request_options.path_params.args],
-            #     kwargs={
-            #         **self.path_params.kwargs,
-            #         **request_options.path_params.kwargs,
-            #     },
-            # ),
         )
 
     # def add_query_param(self, key: str, value: Any) -> None:
@@ -295,15 +284,6 @@ class RequestOptions:
         raw_url: str = urllib.parse.unquote(str(self.url))
 
         return utils.partially_format(raw_url, **self.path_params)
-
-        # return utils.partially_format(
-        #     raw_url,
-        #     **self.path_params.kwargs,
-        #     # NOTE: As a *temporary* solution, positional path parameters are
-        #     # currently inserted into the key `pp`... this is obviously not the correct
-        #     # way to do this going forward.
-        #     pp="/".join(self.path_params.args),
-        # )
 
     def validate(self):
         formatted_url: str = self._get_formatted_url()

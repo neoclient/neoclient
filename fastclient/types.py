@@ -1,7 +1,6 @@
 from typing import (
     Any,
     Callable,
-    # Collection,
     Dict,
     List,
     Mapping,
@@ -30,7 +29,6 @@ from httpx._types import (
     VerifyTypes,
 )
 from typing_extensions import TypeAlias
-# from .typs import PathParams
 
 Primitive: TypeAlias = Union[
     str,
@@ -73,9 +71,3 @@ EventHook: TypeAlias = Callable[..., Any]
 
 PathParamValueTypes: TypeAlias = Union[Primitive, Sequence[Primitive]]
 PathParamTypes: TypeAlias = Mapping[str, PathParamValueTypes]
-
-# PathParamTypes: TypeAlias = Union[
-#     PathParams,
-#     Mapping[str, Any],
-#     Collection[Any],
-# ]

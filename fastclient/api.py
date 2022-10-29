@@ -101,10 +101,6 @@ def get_params(
         inspect.signature(func).parameters.values()
     )
 
-    # TODO: Find a better fix for methods!
-    # if _inspect_params and _inspect_params[0].name == "self":
-    #     raw_parameters = _inspect_params[1:]
-    # else:
     raw_parameters = _inspect_params
 
     parameters: Dict[str, param.Parameter] = {}
@@ -116,7 +112,6 @@ def get_params(
         # NOTE: `Depends` doesn't subclass `Param`. This needs to be fixed.
         # "responses" (e.g. `responses.status_code`) also don't subclass `Param`...
         if isinstance(parameter.default, (Param, Body, Params, Depends, Promise)):
-            # parameters[parameter.name] = _build_parameter(parameter, parameter.default)
             parameters[parameter.name] = Parameter.from_parameter(parameter)
         else:
             parameters_to_infer.append(parameter)
@@ -124,7 +119,6 @@ def get_params(
     for parameter in parameters_to_infer:
         param_spec: Any = _infer_parameter(parameter, path_params=path_params)
 
-        # parameters[parameter.name] = _build_parameter(parameter, param_spec)
         parameters[parameter.name] = dataclasses.replace(
             Parameter.from_parameter(parameter), default=param_spec
         )
