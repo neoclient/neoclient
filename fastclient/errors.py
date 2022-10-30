@@ -2,7 +2,7 @@ class NotAnOperation(Exception):
     pass
 
 
-class DuplicateParameter(Exception):
+class DuplicateParameters(Exception):
     pass
 
 
@@ -14,5 +14,5 @@ class InvalidParameterSpecification(Exception):
     pass
 
 
-class ResolutionError(Exception):
+class CompositionError(Exception):
     pass

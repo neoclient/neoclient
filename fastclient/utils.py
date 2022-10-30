@@ -25,7 +25,7 @@ def extract_path_params(url_format: str, url: str, /) -> Dict[str, Any]:
     parse_result: Optional[parse.Result] = parse.parse(url_format, url)
 
     if parse_result is None:
-        raise Exception(
+        raise ValueError(
             f"Failed to parse url {url!r} against format spec {url_format!r}"
         )
 
@@ -50,3 +50,11 @@ def bind_arguments(
     bound_arguments.apply_defaults()
 
     return bound_arguments.arguments
+
+
+def noop_consumer(_: Any, /) -> None:
+    return None
+
+
+def is_primitive(obj: Any, /) -> bool:
+    return isinstance(obj, (str, int, float, bool, type(None)))

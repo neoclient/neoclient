@@ -1,5 +1,5 @@
 # fastclient
-:rocket: Fast API clients for Python inspired by [FastAPI](https://github.com/tiangolo/fastapi) and [Retrofit](https://square.github.io/retrofit/)
+:rocket: Fast API Clients for Python
 
 ## Installation
 ```console
@@ -22,7 +22,7 @@ def ip():
 
 ## User Guide
 ### Path Parameters
-You can declare path "parameters" or "variables" with the same syntax used by Python format strings:
+You can declare path "parameters" with the same syntax used by Python format strings:
 ```python
 from fastclient import FastClient
 
@@ -53,7 +53,7 @@ app = FastClient("https://jsonplaceholder.typicode.com/")
 def get_post(post_id: int):
     ...
 ```
-In this case, `item_id` is declared to be an `int`.
+In this case, `post_id` is declared to be an `int`.
 
 ### Query Parameters
 When you declare other function parameters that are not part of the path parameters, they are automatically interpreted as "query" parameters.

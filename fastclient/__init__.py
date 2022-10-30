@@ -1,24 +1,25 @@
+__version__: str = "0.1.0"
+
+from httpx import Request, Response
+
 from .client import FastClient
-from .decorators import (
-    params,
-    headers,
-    cookies,
+from .composition.decorators import (
     content,
+    cookie,
+    cookies,
     data,
     files,
+    header,
+    headers,
     json,
+    path,
+    path_params,
+    query,
+    query_params,
     timeout,
 )
-from .methods import (
-    delete,
-    get,
-    head,
-    options,
-    patch,
-    post,
-    put,
-    request,
-)
+from .methods import delete, get, head, options, patch, post, put, request
+from .models import Client
 from .parameter_functions import (
     Body,
     Cookie,
@@ -27,9 +28,8 @@ from .parameter_functions import (
     Header,
     Headers,
     Path,
+    Paths,
     Promise,
-    QueryParams,
+    Queries,
     Query,
-    PathParams,
 )
-from httpx import Request, Response

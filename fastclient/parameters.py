@@ -1,38 +1,26 @@
 from dataclasses import dataclass
-from typing import (
-    Any,
-    Callable,
-    ClassVar,
-    Dict,
-    Generic,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Callable, ClassVar, Generic, Optional, Type, TypeVar, Union
 
-from httpx import Request, Response
 import param.parameters
-from param.sentinels import Missing, MissingType
+from httpx import Request, Response
+from param.typing import Supplier
+from pydantic.fields import Undefined, UndefinedType
 
 from .enums import ParamType
+from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
 
 T = TypeVar("T")
 
 
-@dataclass(frozen=True)
-class Param(param.parameters.Param[T]):
+class _BaseSingleParameter(param.parameters.Param):
     type: ClassVar[ParamType]
-
-    alias: Optional[str] = None
-    required: bool = False
 
     @staticmethod
     def generate_alias(alias: str):
         return alias
 
 
-class Query(Param[T]):
+class QueryParameter(_BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.QUERY
 
     @staticmethod
@@ -40,7 +28,7 @@ class Query(Param[T]):
         return alias.lower().replace("_", "-")
 
 
-class Header(Param[T]):
+class HeaderParameter(_BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.HEADER
 
     @staticmethod
@@ -48,23 +36,16 @@ class Header(Param[T]):
         return alias.title().replace("_", "-")
 
 
-class Cookie(Param[T]):
+class CookieParameter(_BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.COOKIE
 
 
-class Path(Param[T]):
+class PathParameter(_BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.PATH
-
-    @staticmethod
-    def generate_alias(alias: str):
-        return alias.lower().replace("_", "-")
 
 
 @dataclass(frozen=True)
-class Body(param.parameters.Param[T]):
-    alias: Optional[str] = None
-    required: bool = False
-
+class BodyParameter(param.parameters.Param):
     embed: bool = False
 
     @staticmethod
@@ -72,43 +53,43 @@ class Body(param.parameters.Param[T]):
         return alias
 
 
-# NOTE: Should use custom generic types for each subclass. E.g. `Headers` should have a `T` bound to `HeaderTypes`
-class Params(param.parameters.Param[Dict[str, Any]]):
+class _BaseMultiParameter(param.parameters.Param, Generic[T]):
     type: ClassVar[ParamType]
 
     def __init__(
         self,
         *,
-        default_factory: Union[Callable[[], Dict[str, Any]], MissingType] = Missing,
+        default: Union[T, UndefinedType] = Undefined,
+        default_factory: Optional[Supplier[T]] = None,
     ):
         super().__init__(
-            default_factory=default_factory if default_factory is not Missing else dict
+            default=default,
+            default_factory=default_factory,
         )
 
 
-class QueryParams(Params):
+class QueriesParameter(_BaseMultiParameter[QueryParamTypes]):
     type: ClassVar[ParamType] = ParamType.QUERY
 
 
-class Headers(Params):
+class HeadersParameter(_BaseMultiParameter[HeaderTypes]):
     type: ClassVar[ParamType] = ParamType.HEADER
 
 
-class Cookies(Params):
+class CookiesParameter(_BaseMultiParameter[CookieTypes]):
     type: ClassVar[ParamType] = ParamType.COOKIE
 
 
-class PathParams(Params):
+class PathsParameter(_BaseMultiParameter[PathParamTypes]):
     type: ClassVar[ParamType] = ParamType.PATH
 
 
-# NOTE: Don't use @dataclass, this way can make `use_cache` keyword-only? (FastAPI does it this way)
 @dataclass(frozen=True)
-class Depends(param.parameters.ParameterSpecification, Generic[T]):
-    dependency: Optional[Callable[..., T]] = None
+class DependencyParameter(param.parameters.Param):
+    dependency: Optional[Callable] = None
     use_cache: bool = True
 
 
 @dataclass(frozen=True)
-class Promise(param.parameters.ParameterSpecification):
+class PromiseParameter(param.parameters.Param):
     promised_type: Union[None, Type[Request], Type[Response]] = None
