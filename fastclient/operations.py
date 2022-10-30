@@ -1,8 +1,9 @@
 import dataclasses
 import inspect
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Generic, Optional, Set, Tuple, Type, TypeVar
+from typing import Any, Callable, Dict, Generic, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar
 import urllib.parse
+from collections import Counter
 
 import httpx
 import param.parameters
@@ -16,9 +17,9 @@ from typing_extensions import ParamSpec
 
 from . import utils
 from .composition import compose
-from .errors import NotAnOperation
+from .errors import NotAnOperation, IncompatiblePathParameters, DuplicateParameters
 from .models import OperationSpecification, RequestOptions
-from .parameters import Param, Query, Path, Body, QueryParams
+from .parameters import Param, Query, Path, Body, PathParams
 from .resolvers import resolve_func
 
 PS = ParamSpec("PS")
@@ -109,6 +110,38 @@ def get_fields(func: Callable, /, *, config: type) -> Dict[str, Tuple[Any, param
 
             fields[field] = (annotation, parameter)
 
+    # 1. Validate that only declared path params provided
+    #   In the event a `PathParams` parameter is being used, will have to defer this check for invokation.
+    #   For example, if the operation has route "/", but a Path(alias="foo") parameter is declared, this
+    #   should fail validation.
+    expected_path_params: Set[str] = (
+        utils.get_path_params(urllib.parse.unquote(str(request.url)))
+        if request is not None
+        else set()
+    )
+    actual_path_params: Set[str] = {
+        parameter.alias
+        for _, parameter in fields.values()
+        if isinstance(parameter, Path)
+    }
+    has_multi_path_parameter: bool = any(isinstance(parameter, PathParams) for _, parameter in fields.values())
+    if expected_path_params != actual_path_params and not has_multi_path_parameter:
+        raise IncompatiblePathParameters(
+            f"Incompatible path params. Got: {actual_path_params!r}, expected: {expected_path_params!r}"
+        )
+
+    # 2. Validate there are no parameters using the same alias
+    #   For example, the following function should fail validation:
+    #       @get("/")
+    #       def foo(a: str = Query(alias="name"), b: str = Query(alias="name")): ...
+    aliases: Sequence[str] = [parameter.alias for _, parameter in fields.values()]
+    alias_counts: Mapping[str, int] = Counter(aliases)
+    duplicate_aliases: Set[str] = {alias for alias, count in alias_counts.items() if count > 1}
+    if duplicate_aliases:
+        raise DuplicateParameters(
+            f"Duplicate parameters: {duplicate_aliases!r}"
+        )
+
     return fields
 
 
@@ -194,6 +227,8 @@ class Operation(Generic[PS, RT]):
         compose_func(request_options, self.func, args, kwargs)
 
         request: httpx.Request = request_options.build_request(self.client)
+
+        logger.info(f"Built httpx request: {request!r}")
 
         return_annotation: Any = inspect.signature(self.func).return_annotation
 

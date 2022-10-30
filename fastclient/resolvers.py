@@ -89,13 +89,10 @@ def _parse_obj(annotation: Union[UndefinedType, Any], obj: Any) -> Any:
 
 
 def _get_param(source: Mapping[str, T], parameter: param.Parameter) -> T:
-    print("_get_param:", repr(source), repr(parameter))
     if not isinstance(parameter.default, Param):
         raise Exception("Cannot resolve non-param")
 
     value: Union[T, UndefinedType] = source.get(_get_alias(parameter), Undefined)
-
-    print("value:", repr(value))
 
     if not isinstance(value, UndefinedType):
         return value

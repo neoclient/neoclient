@@ -2,7 +2,7 @@ class NotAnOperation(Exception):
     pass
 
 
-class DuplicateParameter(Exception):
+class DuplicateParameters(Exception):
     pass
 
 
