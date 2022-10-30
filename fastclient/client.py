@@ -1,40 +1,32 @@
 import functools
 import inspect
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, auto
 from types import FunctionType, MethodType
-from typing import Any, Callable, Dict, List, Mapping, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
 
 import httpx
-from httpx import URL, Cookies, Headers, QueryParams, Timeout
 from httpx._auth import Auth
 from httpx._config import (
-    DEFAULT_LIMITS,
     DEFAULT_MAX_REDIRECTS,
     DEFAULT_TIMEOUT_CONFIG,
-    Limits,
 )
-from httpx._transports.base import BaseTransport
 from loguru import logger
 from typing_extensions import ParamSpec
 
 from . import __version__
 from .enums import HttpMethod
 from .models import ClientOptions, OperationSpecification, RequestOptions
-from .operations import Operation, get_operation, has_operation, set_operation
+from .operations import Operation, get_operation, has_operation, set_operation, get_fields
 from .types import (
     AuthTypes,
-    CertTypes,
     CookieTypes,
     DefaultEncodingTypes,
-    EventHook,
     EventHooks,
     HeaderTypes,
-    ProxiesTypes,
     QueryParamTypes,
     TimeoutTypes,
     URLTypes,
-    VerifyTypes,
 )
 
 
@@ -67,58 +59,6 @@ def get_method_kind(method: Union[FunctionType, MethodType], /) -> MethodKind:
 class BaseService:
     def __repr__(self) -> str:
         return f"<{type(self).__name__}()>"
-
-
-# @dataclass(init=False)
-# class Client(httpx.Client):
-#     auth: Optional[Auth]
-#     params: QueryParams
-#     headers: Headers
-#     cookies: Cookies
-#     timeout: Timeout
-#     follow_redirects: bool
-#     max_redirects: int
-#     event_hooks: Dict[str, List[Callable]]
-#     base_url: URL
-#     trust_env: bool
-
-# auth: Optional[Auth] = None
-# params: QueryParams = field(default_factory=QueryParams)
-# headers: Headers = field(default_factory=lambda: Headers({'accept': '*/*', 'accept-encoding': 'gzip, deflate, br', 'connection': 'keep-alive', 'user-agent': 'python-httpx/0.23.0'}))
-# cookies: Cookies = field(default_factory=Cookies)
-# timeout: Timeout = DEFAULT_TIMEOUT_CONFIG
-# follow_redirects: bool = False
-# max_redirects: int = DEFAULT_MAX_REDIRECTS
-# event_hooks: Dict[str, List[Callable]] = field(default_factory=lambda: {'request': [], 'response': []})
-# base_url: URL = field(default_factory=URL)
-# trust_env: bool = True
-
-# def __init__(
-#     self,
-#     *,
-#     auth: Optional[AuthTypes] = None,
-#     params: Optional[QueryParamTypes] = None,
-#     headers: Optional[HeaderTypes] = None,
-#     cookies: Optional[CookieTypes] = None,
-#     verify: VerifyTypes = True,
-#     cert: Optional[CertTypes] = None,
-#     http1: bool = True,
-#     http2: bool = False,
-#     proxies: Optional[ProxiesTypes] = None,
-#     mounts: Optional[Mapping[str, BaseTransport]] = None,
-#     timeout: TimeoutTypes = DEFAULT_TIMEOUT_CONFIG,
-#     follow_redirects: bool = False,
-#     limits: Limits = DEFAULT_LIMITS,
-#     max_redirects: int = DEFAULT_MAX_REDIRECTS,
-#     event_hooks: Optional[
-#         Mapping[str, List[EventHook]]
-#     ] = None,
-#     base_url: URLTypes = "",
-#     transport: Optional[BaseTransport] = None,
-#     app: Optional[Callable[..., Any]] = None,
-#     trust_env: bool = True,
-#     default_encoding: Union[str, Callable[[bytes], str]] = "utf-8",
-# ):
 
 
 @dataclass(init=False)
@@ -154,7 +94,6 @@ class FastClient:
             default_encoding=default_encoding,
         )
 
-        # Default the user agent!
         client_options.headers.setdefault("user-agent", f"fastclient/{__version__}")
 
         self.client = client_options.build()
@@ -251,15 +190,16 @@ class FastClient:
         def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
             logger.info(f"Creating operation: {method=} {endpoint=} {func=}")
 
-            # Assert params are valid
-            # NOTE: Temporarily disabled whilst `api` being deprecated
-            # api.get_params(func, request=specification.request)
-
             operation: Operation[PS, RT] = Operation(func, specification, self.client)
 
             logger.info(f"Created operation: {operation!r}")
 
-            return self._wrap(operation)
+            wrapped_func: Callable[PS, RT] = self._wrap(operation)
+
+            # Assert params are valid
+            get_fields(wrapped_func)
+
+            return wrapped_func
 
         return decorator
 

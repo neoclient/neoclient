@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, ClassVar, Optional, Type, Union
+from typing import Callable, ClassVar, Generic, Optional, Type, Union, TypeVar
 
 import param.parameters
 from httpx import Request, Response
@@ -7,6 +7,14 @@ from param.typing import Supplier
 from pydantic.fields import Undefined, UndefinedType
 
 from .enums import ParamType
+from .types import (
+    QueryParamTypes,
+    HeaderTypes,
+    CookieTypes,
+    PathParamTypes,
+)
+
+T = TypeVar("T")
 
 
 class _BaseSingleParameter(param.parameters.Param):
@@ -50,15 +58,14 @@ class BodyParameter(param.parameters.Param):
         return alias
 
 
-# NOTE: Should use custom generic types for each subclass. E.g. `Headers` should have a `T` bound to `HeaderTypes`
-class _BaseMultiParameter(param.parameters.Param):
+class _BaseMultiParameter(param.parameters.Param, Generic[T]):
     type: ClassVar[ParamType]
 
     def __init__(
         self,
         *,
-        default: Union[Any, UndefinedType] = Undefined,
-        default_factory: Optional[Supplier[Any]] = None,
+        default: Union[T, UndefinedType] = Undefined,
+        default_factory: Optional[Supplier[T]] = None,
     ):
         super().__init__(
             default=default,
@@ -66,39 +73,26 @@ class _BaseMultiParameter(param.parameters.Param):
         )
 
 
-class QueriesParameter(_BaseMultiParameter):
+class QueriesParameter(_BaseMultiParameter[QueryParamTypes]):
     type: ClassVar[ParamType] = ParamType.QUERY
 
 
-class HeadersParameter(_BaseMultiParameter):
+class HeadersParameter(_BaseMultiParameter[HeaderTypes]):
     type: ClassVar[ParamType] = ParamType.HEADER
 
 
-class CookiesParameter(_BaseMultiParameter):
+class CookiesParameter(_BaseMultiParameter[CookieTypes]):
     type: ClassVar[ParamType] = ParamType.COOKIE
 
 
-class PathsParameter(_BaseMultiParameter):
+class PathsParameter(_BaseMultiParameter[PathParamTypes]):
     type: ClassVar[ParamType] = ParamType.PATH
 
 
-# NOTE: Don't use @dataclass, this way can make `use_cache` keyword-only? (FastAPI does it this way)
-# @dataclass(frozen=True, init=False)
 @dataclass(frozen=True)
 class DependencyParameter(param.parameters.Param):
     dependency: Optional[Callable] = None
     use_cache: bool = True
-
-    # def __init__(
-    #     self,
-    #     dependency: Optional[Callable] = None,
-    #     *,
-    #     use_cache: bool = True,
-    # ):
-    #     super().__init__()
-
-    #     setattr(self, "dependency", dependency)
-    #     setattr(self, "use_cache", use_cache)
 
 
 @dataclass(frozen=True)

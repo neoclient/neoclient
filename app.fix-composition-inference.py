@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from fastclient import FastClient, Path
+from fastclient import FastClient, Path, path
 
 
 @dataclass
@@ -10,9 +10,11 @@ class Person:
 client: FastClient = FastClient(base_url="http://127.0.0.1:8000/")
 
 
+# @path("name", "sam")
 @client.get("/greet/{name}")
-def greet(a: str = Path(alias="name"), b: str = Path(alias="name")) -> str:
+def greet() -> str:
     ...
 
 
-print(greet("sam", "bob"))
+# print(greet("sam", "bob"))
+print(greet())

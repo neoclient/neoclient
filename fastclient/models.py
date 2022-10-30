@@ -35,8 +35,6 @@ from .types import (
     URLTypes,
 )
 
-
-# NOTE: This does not belong here
 @dataclass(init=False)
 class Client(httpx.Client):
     auth: Optional[Auth]
@@ -49,6 +47,13 @@ class Client(httpx.Client):
     event_hooks: Dict[str, List[Callable]]
     base_url: URL
     trust_env: bool
+
+
+DEFAULT_TRUST_ENV: bool = True
+DEFAULT_ENCODING: str = "utf-8"
+DEFAULT_FOLLOW_REDIRECTS: bool = False
+DEFAULT_BASE_URL: URLTypes = ""
+DEFAULT_EVENT_HOOKS: EventHooks = {"request": [], "response": []}
 
 
 @dataclass(init=False)
@@ -72,22 +77,32 @@ class ClientOptions:
         headers: Optional[HeaderTypes] = None,
         cookies: Optional[CookieTypes] = None,
         timeout: TimeoutTypes = DEFAULT_TIMEOUT_CONFIG,
-        follow_redirects: bool = False,
+        follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
         max_redirects: int = DEFAULT_MAX_REDIRECTS,
         event_hooks: Optional[EventHooks] = None,
-        base_url: URLTypes = "",
-        trust_env: bool = True,
-        default_encoding: DefaultEncodingTypes = "utf-8",
+        base_url: URLTypes = DEFAULT_BASE_URL,
+        trust_env: bool = DEFAULT_TRUST_ENV,
+        default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
     ) -> None:
         self.auth = auth
-        self.params = QueryParams(params)
-        self.headers = Headers(headers)
-        self.cookies = Cookies(cookies)
-        self.timeout = Timeout(timeout)
+        self.params = (
+            converters.convert_query_params(params)
+            if params is not None
+            else QueryParams()
+        )
+        self.headers = (
+            converters.convert_headers(headers) if headers is not None else Headers()
+        )
+        self.cookies = (
+            converters.convert_cookies(cookies) if cookies is not None else Cookies()
+        )
+        self.timeout = (
+            converters.convert_timeout(timeout) if timeout is not None else Timeout()
+        )
         self.follow_redirects = follow_redirects
         self.max_redirects = max_redirects
         self.event_hooks = (
-            event_hooks if event_hooks is not None else {"request": [], "response": []}
+            event_hooks if event_hooks is not None else DEFAULT_EVENT_HOOKS
         )
         self.base_url = URL(base_url)
         self.trust_env = trust_env
@@ -116,12 +131,12 @@ class ClientOptions:
                 self.headers == Headers(),
                 self.cookies == Cookies(),
                 self.timeout == DEFAULT_TIMEOUT_CONFIG,
-                self.follow_redirects == False,
+                self.follow_redirects == DEFAULT_FOLLOW_REDIRECTS,
                 self.max_redirects == DEFAULT_MAX_REDIRECTS,
-                self.event_hooks == {"request": [], "response": []},
-                self.base_url == "",
-                self.trust_env == True,
-                self.default_encoding == "utf-8",
+                self.event_hooks == DEFAULT_EVENT_HOOKS,
+                self.base_url == DEFAULT_BASE_URL,
+                self.trust_env == DEFAULT_TRUST_ENV,
+                self.default_encoding == DEFAULT_ENCODING,
             )
         )
 
@@ -174,14 +189,24 @@ class RequestOptions:
         ...
         self.method = method if isinstance(method, str) else method.decode()
         self.url = URL(url)
-        self.params = QueryParams(params)
-        self.headers = Headers(headers)
-        self.cookies = Cookies(cookies)
+        self.params = (
+            converters.convert_query_params(params)
+            if params is not None
+            else QueryParams()
+        )
+        self.headers = (
+            converters.convert_headers(headers) if headers is not None else Headers()
+        )
+        self.cookies = (
+            converters.convert_cookies(cookies) if cookies is not None else Cookies()
+        )
         self.content = content
         self.data = data
         self.files = files
         self.json = json
-        self.timeout = Timeout(timeout) if timeout is not None else None
+        self.timeout = (
+            converters.convert_timeout(timeout) if timeout is not None else None
+        )
         self.path_params = (
             converters.convert_path_params(path_params)
             if path_params is not None
@@ -250,35 +275,11 @@ class RequestOptions:
                 if request_options.timeout is not None
                 else self.timeout
             ),
-            path_params = {
+            path_params={
                 **self.path_params,
                 **request_options.path_params,
             },
         )
-
-    # def add_query_param(self, key: str, value: Any) -> None:
-    #     self.params = self.params.set(key, value)
-
-    # def add_header(self, key: str, value: str) -> None:
-    #     self.headers[key] = value
-
-    # def add_cookie(self, key: str, value: str) -> None:
-    #     self.cookies[key] = value
-
-    # def add_path_param(self, key: str, value: Any) -> None:
-    #     self.path_params[key] = value
-
-    # def add_query_params(self, query_params: QueryParamTypes, /) -> None:
-    #     self.params = self.params.merge(httpx.QueryParams(query_params))
-
-    # def add_headers(self, headers: HeaderTypes, /) -> None:
-    #     self.headers.update(httpx.Headers(headers))
-
-    # def add_cookies(self, cookies: CookieTypes, /) -> None:
-    #     self.cookies.update(httpx.Cookies(cookies))
-
-    # def add_path_params(self, path_params: Mapping[str, Any], /) -> None:
-    #     self.path_params.update(path_params)
 
     def _get_formatted_url(self) -> str:
         raw_url: str = urllib.parse.unquote(str(self.url))

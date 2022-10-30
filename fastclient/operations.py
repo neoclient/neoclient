@@ -45,7 +45,7 @@ def del_operation(obj: Any, /) -> None:
     delattr(obj, "operation")
 
 
-def get_fields(func: Callable, /, *, config: type) -> Dict[str, Tuple[Any, param.parameters.Param]]:
+def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, param.parameters.Param]]:
     request: RequestOptions = get_operation(func).specification.request
 
     path_params: Set[str] = (
@@ -58,7 +58,7 @@ def get_fields(func: Callable, /, *, config: type) -> Dict[str, Tuple[Any, param
 
     field_name: str
     model_field: ModelField
-    for field_name, model_field in ValidatedFunction(func, config=config).model.__fields__.items():
+    for field_name, model_field in ValidatedFunction(func).model.__fields__.items():
         field_info: FieldInfo = model_field.field_info
 
         # Parameter Inference
@@ -110,27 +110,7 @@ def get_fields(func: Callable, /, *, config: type) -> Dict[str, Tuple[Any, param
 
             fields[field] = (annotation, parameter)
 
-    # 1. Validate that only declared path params provided
-    #   In the event a `PathParams` parameter is being used, will have to defer this check for invokation.
-    #   For example, if the operation has route "/", but a Path(alias="foo") parameter is declared, this
-    #   should fail validation.
-    expected_path_params: Set[str] = (
-        utils.get_path_params(urllib.parse.unquote(str(request.url)))
-        if request is not None
-        else set()
-    )
-    actual_path_params: Set[str] = {
-        parameter.alias
-        for _, parameter in fields.values()
-        if isinstance(parameter, PathParameter)
-    }
-    has_multi_path_parameter: bool = any(isinstance(parameter, PathsParameter) for _, parameter in fields.values())
-    if expected_path_params != actual_path_params and not has_multi_path_parameter:
-        raise IncompatiblePathParameters(
-            f"Incompatible path params. Got: {actual_path_params!r}, expected: {expected_path_params!r}"
-        )
-
-    # 2. Validate there are no parameters using the same alias
+    # Validate that there are no parameters using the same alias
     #   For example, the following function should fail validation:
     #       @get("/")
     #       def foo(a: str = Query(alias="name"), b: str = Query(alias="name")): ...
@@ -150,7 +130,7 @@ def create_model_cls(func: Callable, /) -> Type[BaseModel]:
         allow_population_by_field_name: bool = True
         arbitrary_types_allowed: bool = True
 
-    fields: Dict[str, Tuple[Any, param.parameters.Param]] = get_fields(func, config=Config)
+    fields: Dict[str, Tuple[Any, param.parameters.Param]] = get_fields(func)
 
     return ValidatedFunction(func)._create_model(fields, config=Config)
 
@@ -225,6 +205,9 @@ class Operation(Generic[PS, RT]):
         )
 
         compose_func(request_options, self.func, args, kwargs)
+
+        # Validate the request options (e.g. no missing path parameters)
+        request_options.validate()
 
         request: httpx.Request = request_options.build_request(self.client)
 
