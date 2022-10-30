@@ -72,3 +72,17 @@ def test_bind_arguments() -> None:
         "y": "y",
         "z": "z",
     }
+
+
+def test_is_primitive() -> None:
+    class Foo:
+        pass
+
+    assert utils.is_primitive("abc")
+    assert utils.is_primitive(123)
+    assert utils.is_primitive(123.456)
+    assert utils.is_primitive(True)
+    assert utils.is_primitive(False)
+    assert utils.is_primitive(None)
+    assert not utils.is_primitive(Foo)
+    assert not utils.is_primitive(Foo())

@@ -22,17 +22,17 @@ from .consumers import (
     QueryParamsConsumer,
 )
 from ..parameters import (
-    Body,
-    Cookie,
-    Cookies,
-    Header,
-    Headers,
-    Param,
-    Params,
-    Path,
-    PathParams,
-    Query,
-    QueryParams,
+    BodyParameter,
+    CookieParameter,
+    CookiesParameter,
+    HeaderParameter,
+    HeadersParameter,
+    _BaseSingleParameter,
+    _BaseMultiParameter,
+    PathParameter,
+    PathsParameter,
+    QueryParameter,
+    QueriesParameter,
 )
 from ..parsing import Parser
 from ..types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
@@ -40,8 +40,8 @@ from .typing import RequestConsumer
 from ..utils import noop_consumer
 
 P = TypeVar("P", contravariant=True, bound=param.parameters.Param)
-PA = TypeVar("PA", contravariant=True, bound=Param)
-PS = TypeVar("PS", contravariant=True, bound=Params)
+PA = TypeVar("PA", contravariant=True, bound=_BaseSingleParameter)
+PS = TypeVar("PS", contravariant=True, bound=_BaseMultiParameter)
 T = TypeVar("T")
 
 
@@ -80,28 +80,28 @@ class ParamComposer(ABC, Composer[PA]):
 
 
 @dataclass
-class QueryParamComposer(ParamComposer[Query]):
+class QueryParamComposer(ParamComposer[QueryParameter]):
     @staticmethod
     def build_consumer(key: str, value: Any) -> RequestConsumer:
         return QueryParamConsumer.parse(key, value)
 
 
 @dataclass
-class HeaderComposer(ParamComposer[Query]):
+class HeaderComposer(ParamComposer[QueryParameter]):
     @staticmethod
     def build_consumer(key: str, value: Any) -> RequestConsumer:
         return HeaderConsumer.parse(key, value)
 
 
 @dataclass
-class CookieComposer(ParamComposer[Query]):
+class CookieComposer(ParamComposer[QueryParameter]):
     @staticmethod
     def build_consumer(key: str, value: Any) -> RequestConsumer:
         return CookieConsumer.parse(key, value)
 
 
 @dataclass
-class PathParamComposer(ParamComposer[Query]):
+class PathParamComposer(ParamComposer[QueryParameter]):
     @staticmethod
     def build_consumer(key: str, value: Any) -> RequestConsumer:
         return PathParamConsumer.parse(key, value)
@@ -130,7 +130,7 @@ class ParamsComposer(Composer[PS], Generic[PS, T]):
 
 
 @dataclass
-class QueryParamsComposer(ParamsComposer[QueryParams, QueryParamTypes]):
+class QueryParamsComposer(ParamsComposer[QueriesParameter, QueryParamTypes]):
     @staticmethod
     def build_consumer(params: QueryParamTypes, /) -> RequestConsumer:
         return QueryParamsConsumer.parse(params)
@@ -141,7 +141,7 @@ class QueryParamsComposer(ParamsComposer[QueryParams, QueryParamTypes]):
 
 
 @dataclass
-class HeadersComposer(ParamsComposer[Headers, HeaderTypes]):
+class HeadersComposer(ParamsComposer[HeadersParameter, HeaderTypes]):
     @staticmethod
     def build_consumer(headers: HeaderTypes, /) -> RequestConsumer:
         return HeadersConsumer.parse(headers)
@@ -152,7 +152,7 @@ class HeadersComposer(ParamsComposer[Headers, HeaderTypes]):
 
 
 @dataclass
-class CookiesComposer(ParamsComposer[Cookies, CookieTypes]):
+class CookiesComposer(ParamsComposer[CookiesParameter, CookieTypes]):
     @staticmethod
     def build_consumer(cookies: CookieTypes, /) -> RequestConsumer:
         return CookiesConsumer.parse(cookies)
@@ -163,7 +163,7 @@ class CookiesComposer(ParamsComposer[Cookies, CookieTypes]):
 
 
 @dataclass
-class PathParamsComposer(ParamsComposer[PathParams, PathParamTypes]):
+class PathParamsComposer(ParamsComposer[PathsParameter, PathParamTypes]):
     @staticmethod
     def build_consumer(path_params: PathParamTypes, /) -> RequestConsumer:
         return PathParamsConsumer.parse(path_params)
@@ -176,7 +176,7 @@ class PathParamsComposer(ParamsComposer[PathParams, PathParamTypes]):
 # NOTE: This resolver is currently untested
 # TODO: Add some middleware that sets/unsets `embed` as appropriate
 def compose_body(
-    param: Body,
+    param: BodyParameter,
     argument: Any,
 ) -> RequestConsumer:
     # If the param is not required and has no value, it can be omitted
@@ -216,14 +216,14 @@ class Composers(Register[Type[param.parameters.Param], C]):
 
 composers: Composers[Composer] = Composers(
     {
-        Query: QueryParamComposer(),
-        Header: HeaderComposer(),
-        Cookie: CookieComposer(),
-        Path: PathParamComposer(),
-        QueryParams: QueryParamsComposer(),
-        Headers: HeadersComposer(),
-        Cookies: CookiesComposer(),
-        PathParams: PathParamsComposer(),
-        Body: compose_body,
+        QueryParameter: QueryParamComposer(),
+        HeaderParameter: HeaderComposer(),
+        CookieParameter: CookieComposer(),
+        PathParameter: PathParamComposer(),
+        QueriesParameter: QueryParamsComposer(),
+        HeadersParameter: HeadersComposer(),
+        CookiesParameter: CookiesComposer(),
+        PathsParameter: PathParamsComposer(),
+        BodyParameter: compose_body,
     }
 )

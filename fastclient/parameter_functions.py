@@ -4,18 +4,19 @@ from httpx import Request, Response
 from param.typing import Supplier
 from pydantic.fields import Undefined, UndefinedType
 
-from . import parameters
-
-
-def Header(
-    alias: Optional[str] = None,
-    *,
-    default: Union[Any, UndefinedType] = Undefined,
-    default_factory: Optional[Supplier[Any]] = None,
-) -> parameters.Header:
-    return parameters.Header(
-        alias=alias, default=default, default_factory=default_factory
-    )
+from .parameters import (
+    QueryParameter,
+    HeaderParameter,
+    CookieParameter,
+    PathParameter,
+    QueriesParameter,
+    HeadersParameter,
+    CookiesParameter,
+    PathsParameter,
+    BodyParameter,
+    DependencyParameter,
+    PromiseParameter,
+)
 
 
 def Query(
@@ -23,19 +24,17 @@ def Query(
     *,
     default: Union[Any, UndefinedType] = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
-) -> parameters.Query:
-    return parameters.Query(
-        alias=alias, default=default, default_factory=default_factory
-    )
+) -> QueryParameter:
+    return QueryParameter(alias=alias, default=default, default_factory=default_factory)
 
 
-def Path(
+def Header(
     alias: Optional[str] = None,
     *,
     default: Union[Any, UndefinedType] = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
-) -> parameters.Path:
-    return parameters.Path(
+) -> HeaderParameter:
+    return HeaderParameter(
         alias=alias, default=default, default_factory=default_factory
     )
 
@@ -45,24 +44,29 @@ def Cookie(
     *,
     default: Union[Any, UndefinedType] = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
-) -> parameters.Cookie:
-    return parameters.Cookie(
+) -> CookieParameter:
+    return CookieParameter(
         alias=alias, default=default, default_factory=default_factory
     )
 
 
-def Body(
+def Path(
     alias: Optional[str] = None,
     *,
     default: Union[Any, UndefinedType] = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
-    embed: bool = False,
-) -> parameters.Body:
-    return parameters.Body(
-        alias=alias,
+) -> PathParameter:
+    return PathParameter(alias=alias, default=default, default_factory=default_factory)
+
+
+def Queries(
+    *,
+    default: Union[Any, UndefinedType] = Undefined,
+    default_factory: Optional[Supplier[Any]] = None,
+) -> QueriesParameter:
+    return QueriesParameter(
         default=default,
         default_factory=default_factory,
-        embed=embed,
     )
 
 
@@ -70,19 +74,8 @@ def Headers(
     *,
     default: Union[Any, UndefinedType] = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
-) -> parameters.Headers:
-    return parameters.Headers(
-        default=default,
-        default_factory=default_factory,
-    )
-
-
-def QueryParams(
-    *,
-    default: Union[Any, UndefinedType] = Undefined,
-    default_factory: Optional[Supplier[Any]] = None,
-) -> parameters.QueryParams:
-    return parameters.QueryParams(
+) -> HeadersParameter:
+    return HeadersParameter(
         default=default,
         default_factory=default_factory,
     )
@@ -92,31 +85,46 @@ def Cookies(
     *,
     default: Union[Any, UndefinedType] = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
-) -> parameters.Cookies:
-    return parameters.Cookies(
+) -> CookiesParameter:
+    return CookiesParameter(
         default=default,
         default_factory=default_factory,
     )
 
 
-def PathParams(
+def Paths(
     *,
     default: Union[Any, UndefinedType] = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
-) -> parameters.PathParams:
-    return parameters.PathParams(
+) -> PathsParameter:
+    return PathsParameter(
         default=default,
         default_factory=default_factory,
+    )
+
+
+def Body(
+    alias: Optional[str] = None,
+    *,
+    default: Union[Any, UndefinedType] = Undefined,
+    default_factory: Optional[Supplier[Any]] = None,
+    embed: bool = False,
+) -> BodyParameter:
+    return BodyParameter(
+        alias=alias,
+        default=default,
+        default_factory=default_factory,
+        embed=embed,
     )
 
 
 def Depends(
     dependency: Optional[Callable] = None, /, *, use_cache: bool = True
-) -> parameters.Depends:
-    return parameters.Depends(dependency=dependency, use_cache=use_cache)
+) -> DependencyParameter:
+    return DependencyParameter(dependency=dependency, use_cache=use_cache)
 
 
 def Promise(
     promised_type: Union[None, Type[Request], Type[Response]] = None, /
-) -> parameters.Promise:
-    return parameters.Promise(promised_type=promised_type)
+) -> PromiseParameter:
+    return PromiseParameter(promised_type=promised_type)

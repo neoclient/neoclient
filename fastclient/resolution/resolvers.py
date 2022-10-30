@@ -33,21 +33,21 @@ from param.errors import ResolutionError
 from pydantic import BaseModel
 from pydantic.fields import Undefined, UndefinedType
 
-from . import utils
-from .models import RequestOptions, ResolverContext
-from .parameters import (
-    Body,
-    Cookie,
-    Cookies,
-    Depends,
-    Header,
-    Headers,
-    Param,
-    Path,
-    PathParams,
-    Promise,
-    Query,
-    QueryParams,
+from .. import utils
+from ..models import RequestOptions, ResolverContext
+from ..parameters import (
+    BodyParameter,
+    CookieParameter,
+    CookiesParameter,
+    DependencyParameter,
+    HeaderParameter,
+    HeadersParameter,
+    _BaseSingleParameter,
+    PathParameter,
+    PathsParameter,
+    PromiseParameter,
+    QueryParameter,
+    QueriesParameter,
 )
 
 T = TypeVar("T")
@@ -68,7 +68,7 @@ resolvers: Resolvers[Resolver] = Resolvers()
 
 
 def _get_alias(parameter: param.Parameter, /) -> str:
-    if not isinstance(parameter.default, Param):
+    if not isinstance(parameter.default, _BaseSingleParameter):
         raise Exception("Cannot get alias of non-param")
 
     if parameter.default.alias is not None:
@@ -89,7 +89,7 @@ def _parse_obj(annotation: Union[UndefinedType, Any], obj: Any) -> Any:
 
 
 def _get_param(source: Mapping[str, T], parameter: param.Parameter) -> T:
-    if not isinstance(parameter.default, Param):
+    if not isinstance(parameter.default, _BaseSingleParameter):
         raise Exception("Cannot resolve non-param")
 
     value: Union[T, UndefinedType] = source.get(_get_alias(parameter), Undefined)
@@ -102,28 +102,28 @@ def _get_param(source: Mapping[str, T], parameter: param.Parameter) -> T:
         raise ResolutionError(f"Failed to resolve parameter: {parameter!r}")
 
 
-@resolvers(Query)
+@resolvers(QueryParameter)
 def resolve_response_query_param(
     parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> str:
     return _get_param(response.request.url.params, parameter)
 
 
-@resolvers(Header)
+@resolvers(HeaderParameter)
 def resolve_response_header(
     parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> str:
     return _get_param(response.headers, parameter)
 
 
-@resolvers(Cookie)
+@resolvers(CookieParameter)
 def resolve_response_cookie(
     parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> str:
     return _get_param(response.cookies, parameter)
 
 
-@resolvers(Path)
+@resolvers(PathParameter)
 def resolve_response_path_param(
     parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> str:
@@ -139,28 +139,28 @@ def resolve_response_path_param(
     return _get_param(path_params, parameter)
 
 
-@resolvers(QueryParams)
+@resolvers(QueriesParameter)
 def resolve_response_query_params(
     parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> httpx.QueryParams:
     return response.request.url.params
 
 
-@resolvers(Headers)
+@resolvers(HeadersParameter)
 def resolve_response_headers(
     parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> httpx.Headers:
     return response.headers
 
 
-@resolvers(Cookies)
+@resolvers(CookiesParameter)
 def resolve_response_cookies(
     parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> httpx.Cookies:
     return response.cookies
 
 
-@resolvers(PathParams)
+@resolvers(PathsParameter)
 def resolve_response_path_params(
     parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> Dict[str, str]:
@@ -176,7 +176,7 @@ def resolve_response_path_params(
     return path_params
 
 
-@resolvers(Body)
+@resolvers(BodyParameter)
 def resolve_response_body(
     parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> Any:
@@ -194,11 +194,11 @@ fullfillments: Dict[type, Callable[[Response], Any]] = {
 }
 
 
-@resolvers(Promise)
+@resolvers(PromiseParameter)
 def resolve_response_promise(
     parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> Any:
-    if not isinstance(parameter.default, Promise):
+    if not isinstance(parameter.default, PromiseParameter):
         raise Exception("Cannot resolve non-param")
 
     promised_type: type
@@ -220,11 +220,11 @@ def resolve_response_promise(
         )
 
 
-@resolvers(Depends)
+@resolvers(DependencyParameter)
 def resolve_response_depends(
     parameter: param.Parameter, response: Response, context: ResolverContext
 ) -> Any:
-    if not isinstance(parameter.default, Depends):
+    if not isinstance(parameter.default, DependencyParameter):
         raise Exception("Cannot resolve non-dependency")
 
     parameter_dependency_callable: Callable
@@ -298,8 +298,8 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
         # NOTE: Need to check later that there's no conflict with any explicityly provided parameters
         # E.g. (path_param: str, same_path_param: str = Param(alias="path_param"))
         if parameter.name in path_params:
-            return Path(
-                alias=Path.generate_alias(parameter.name),
+            return PathParameter(
+                alias=PathParameter.generate_alias(parameter.name),
                 default=parameter.default,
             )
         elif (
@@ -307,8 +307,8 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
             and isinstance(parameter_type, type)
             and any(issubclass(parameter_type, body_type) for body_type in body_types)
         ):
-            return Body(
-                alias=Body.generate_alias(parameter.name),
+            return BodyParameter(
+                alias=BodyParameter.generate_alias(parameter.name),
                 default=parameter.default,
             )
         elif (
@@ -319,7 +319,7 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
                 for promise_type in promise_types
             )
         ):
-            return Promise(parameter_type)
+            return PromiseParameter(parameter_type)
         elif (
             not isinstance(parameter_type, UndefinedType)
             and isinstance(parameter_type, type)
@@ -328,18 +328,18 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
             )
         ):
             if parameter_type is httpx.Headers:
-                return Headers()
+                return HeadersParameter()
             elif parameter_type is httpx.Cookies:
-                return Cookies()
+                return CookiesParameter()
             elif parameter_type is httpx.QueryParams:
-                return QueryParams()
+                return QueriesParameter()
             else:
                 raise Exception(
                     f"Unknown httpx dependency type: {parameter.annotation!r}"
                 )
         else:
-            return Query(
-                alias=Query.generate_alias(parameter.name),
+            return QueryParameter(
+                alias=QueryParameter.generate_alias(parameter.name),
                 default=parameter.default,
             )
 

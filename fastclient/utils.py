@@ -53,7 +53,7 @@ def bind_arguments(
 
 
 def noop_consumer(_: Any, /) -> None:
-    pass
+    return None
 
 
 def is_primitive(obj: Any, /) -> bool:

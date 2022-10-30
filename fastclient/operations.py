@@ -19,8 +19,8 @@ from . import utils
 from .composition import compose
 from .errors import NotAnOperation, IncompatiblePathParameters, DuplicateParameters
 from .models import OperationSpecification, RequestOptions
-from .parameters import Param, Query, Path, Body, PathParams
-from .resolvers import resolve_func
+from .parameters import _BaseSingleParameter, QueryParameter, PathParameter, BodyParameter, PathsParameter
+from .resolution.resolvers import resolve_func
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
@@ -68,7 +68,7 @@ def get_fields(func: Callable, /, *, config: type) -> Dict[str, Tuple[Any, param
             # NOTE: Need to check later that there's no conflict with any explicityly provided parameters
             # E.g. (path_param: str, same_path_param: str = Param(alias="path_param"))
             if field_name in path_params:
-                field_info = Path(
+                field_info = PathParameter(
                     alias=field_name,
                     default=param.parameters.Param.get_default(field_info),
                 )
@@ -79,32 +79,32 @@ def get_fields(func: Callable, /, *, config: type) -> Dict[str, Tuple[Any, param
                     or dataclasses.is_dataclass(model_field.annotation)
                 )
             ):
-                field_info = Body(
+                field_info = BodyParameter(
                     alias=field_name,
                     default=param.parameters.Param.get_default(field_info),
                 )
             else:
-                field_info = Query(
+                field_info = QueryParameter(
                     default=param.parameters.Param.get_default(field_info),
                 )
 
             logger.info(f"Inferred field {model_field!r} as parameter {field_info!r}")
 
-        if isinstance(field_info, Param) and field_info.alias is None:
+        if isinstance(field_info, _BaseSingleParameter) and field_info.alias is None:
             field_info = dataclasses.replace(
                 field_info, alias=field_info.generate_alias(model_field.name)
             )
 
         fields[field_name] = (model_field.annotation, field_info)
 
-    total_body_fields: int = sum(isinstance(field_info, Body) for _, field_info in fields.values())
+    total_body_fields: int = sum(isinstance(field_info, BodyParameter) for _, field_info in fields.values())
 
     if total_body_fields > 1:
         field: str
         annotation: Any
         parameter: FieldInfo
         for field, (annotation, parameter) in fields.items():
-            if not isinstance(parameter, Body): continue
+            if not isinstance(parameter, BodyParameter): continue
 
             parameter = dataclasses.replace(parameter, embed=True)
 
@@ -122,9 +122,9 @@ def get_fields(func: Callable, /, *, config: type) -> Dict[str, Tuple[Any, param
     actual_path_params: Set[str] = {
         parameter.alias
         for _, parameter in fields.values()
-        if isinstance(parameter, Path)
+        if isinstance(parameter, PathParameter)
     }
-    has_multi_path_parameter: bool = any(isinstance(parameter, PathParams) for _, parameter in fields.values())
+    has_multi_path_parameter: bool = any(isinstance(parameter, PathsParameter) for _, parameter in fields.values())
     if expected_path_params != actual_path_params and not has_multi_path_parameter:
         raise IncompatiblePathParameters(
             f"Incompatible path params. Got: {actual_path_params!r}, expected: {expected_path_params!r}"

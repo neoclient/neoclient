@@ -9,7 +9,7 @@ from pydantic.fields import Undefined, UndefinedType
 from .enums import ParamType
 
 
-class Param(param.parameters.Param):
+class _BaseSingleParameter(param.parameters.Param):
     type: ClassVar[ParamType]
 
     @staticmethod
@@ -17,7 +17,7 @@ class Param(param.parameters.Param):
         return alias
 
 
-class Query(Param):
+class QueryParameter(_BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.QUERY
 
     @staticmethod
@@ -25,7 +25,7 @@ class Query(Param):
         return alias.lower().replace("_", "-")
 
 
-class Header(Param):
+class HeaderParameter(_BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.HEADER
 
     @staticmethod
@@ -33,16 +33,16 @@ class Header(Param):
         return alias.title().replace("_", "-")
 
 
-class Cookie(Param):
+class CookieParameter(_BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.COOKIE
 
 
-class Path(Param):
+class PathParameter(_BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.PATH
 
 
 @dataclass(frozen=True)
-class Body(param.parameters.Param):
+class BodyParameter(param.parameters.Param):
     embed: bool = False
 
     @staticmethod
@@ -51,7 +51,7 @@ class Body(param.parameters.Param):
 
 
 # NOTE: Should use custom generic types for each subclass. E.g. `Headers` should have a `T` bound to `HeaderTypes`
-class Params(param.parameters.Param):
+class _BaseMultiParameter(param.parameters.Param):
     type: ClassVar[ParamType]
 
     def __init__(
@@ -66,26 +66,26 @@ class Params(param.parameters.Param):
         )
 
 
-class QueryParams(Params):
+class QueriesParameter(_BaseMultiParameter):
     type: ClassVar[ParamType] = ParamType.QUERY
 
 
-class Headers(Params):
+class HeadersParameter(_BaseMultiParameter):
     type: ClassVar[ParamType] = ParamType.HEADER
 
 
-class Cookies(Params):
+class CookiesParameter(_BaseMultiParameter):
     type: ClassVar[ParamType] = ParamType.COOKIE
 
 
-class PathParams(Params):
+class PathsParameter(_BaseMultiParameter):
     type: ClassVar[ParamType] = ParamType.PATH
 
 
 # NOTE: Don't use @dataclass, this way can make `use_cache` keyword-only? (FastAPI does it this way)
 # @dataclass(frozen=True, init=False)
 @dataclass(frozen=True)
-class Depends(param.parameters.Param):
+class DependencyParameter(param.parameters.Param):
     dependency: Optional[Callable] = None
     use_cache: bool = True
 
@@ -102,5 +102,5 @@ class Depends(param.parameters.Param):
 
 
 @dataclass(frozen=True)
-class Promise(param.parameters.Param):
+class PromiseParameter(param.parameters.Param):
     promised_type: Union[None, Type[Request], Type[Response]] = None

@@ -10,7 +10,6 @@ from .types import (
     QueryParamTypes,
     TimeoutTypes,
     PathParamTypes,
-    Primitive,
 )
 
 
@@ -27,7 +26,7 @@ def convert_cookie(value: Any, /) -> str:
 
 
 def convert_path_param(value: PathParamValueTypes, /) -> str:
-    if isinstance(value, (str, int, float, bool, type(None))):
+    if isinstance(value, (str, int, float, bool)) or value is None:
         return primitive_value_to_str(value)
     else:
         return "/".join(primitive_value_to_str(v) for v in value)
