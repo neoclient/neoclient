@@ -16,7 +16,7 @@ from typing_extensions import ParamSpec
 from . import __version__
 from .enums import HttpMethod
 from .models import ClientOptions, OperationSpecification, RequestOptions
-from .operations import Operation, get_operation, has_operation, set_operation, get_fields
+from .operations import Operation, get_fields, CallableWithOperation
 from .types import (
     AuthTypes,
     CookieTypes,
@@ -41,7 +41,7 @@ PS = ParamSpec("PS")
 RT = TypeVar("RT")
 
 
-def get_method_kind(method: Union[FunctionType, MethodType], /) -> MethodKind:
+def get_method_kind(method: Union[FunctionType, MethodType, Callable], /) -> MethodKind:
     if isinstance(method, MethodType):
         if isinstance(method.__self__, type):
             return MethodKind.CLASS_METHOD
@@ -109,7 +109,7 @@ class FastClient:
         operations: Dict[str, Callable] = {
             member_name: member
             for member_name, member in inspect.getmembers(protocol)
-            if has_operation(member)
+            if isinstance(member, CallableWithOperation)
         }
 
         attributes: dict = {"__module__": protocol.__module__}
@@ -126,10 +126,10 @@ class FastClient:
         member_name: str
         member: Any
         for member_name, member in inspect.getmembers(obj):
-            if not has_operation(member):
+            if not isinstance(member, CallableWithOperation):
                 continue
 
-            bound_member = self.bind(member)
+            bound_member: CallableWithOperation = self.bind(member)
 
             method_kind: MethodKind = get_method_kind(member)
 
@@ -138,7 +138,7 @@ class FastClient:
             elif method_kind is MethodKind.CLASS_METHOD:
                 bound_member = bound_member.__get__(typ)
 
-            operation: Operation = get_operation(bound_member)
+            operation: Operation = bound_member.operation
 
             operation.func = bound_member
 
@@ -146,7 +146,7 @@ class FastClient:
 
         return obj
 
-    def _wrap(self, operation: Operation[PS, RT], /) -> Callable[PS, RT]:
+    def _wrap(self, operation: Operation[PS, RT], /) -> CallableWithOperation[PS, RT]:
         @functools.wraps(operation.func)
         def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> RT:
             if inspect.ismethod(operation.func):
@@ -155,14 +155,14 @@ class FastClient:
 
             return operation(*args, **kwargs)
 
+        setattr(wrapper, "operation", operation)
+
         operation.func = wrapper
 
-        set_operation(wrapper, operation)
+        return wrapper  # type: ignore
 
-        return wrapper
-
-    def bind(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
-        operation: Operation[PS, RT] = get_operation(func)
+    def bind(self, func: CallableWithOperation[PS, RT], /) -> CallableWithOperation[PS, RT]:
+        operation: Operation[PS, RT] = func.operation
 
         bound_operation: Operation[PS, RT] = Operation(
             operation.func, operation.specification, self.client
@@ -177,7 +177,7 @@ class FastClient:
         /,
         *,
         response: Optional[Callable[..., Any]] = None,
-    ):
+    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         specification: OperationSpecification = OperationSpecification(
             request=RequestOptions(
                 method=method,
@@ -186,14 +186,14 @@ class FastClient:
             response=response,
         )
 
-        def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
+        def decorator(func: Callable[PS, RT], /) -> CallableWithOperation[PS, RT]:
             logger.info(f"Creating operation: {method=} {endpoint=} {func=}")
 
             operation: Operation[PS, RT] = Operation(func, specification, self.client)
 
             logger.info(f"Created operation: {operation!r}")
 
-            wrapped_func: Callable[PS, RT] = self._wrap(operation)
+            wrapped_func: CallableWithOperation[PS, RT] = self._wrap(operation)
 
             # Assert params are valid
             get_fields(wrapped_func)
@@ -202,27 +202,27 @@ class FastClient:
 
         return decorator
 
-    def put(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
+    def put(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.PUT.name, endpoint, response=response)
 
-    def get(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
+    def get(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.GET.name, endpoint, response=response)
 
-    def post(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
+    def post(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.POST.name, endpoint, response=response)
 
-    def head(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
+    def head(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.HEAD.name, endpoint, response=response)
 
-    def patch(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None):
+    def patch(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.PATCH.name, endpoint, response=response)
 
     def delete(
         self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-    ):
+    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.DELETE.name, endpoint, response=response)
 
     def options(
         self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-    ):
+    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.OPTIONS.name, endpoint, response=response)

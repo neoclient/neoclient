@@ -12,13 +12,15 @@ from typing import (
     Protocol,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
 )
 
 import httpx
 import param
-import param.parameters
+from param.parameters import Param
+from roster import Register
 import pydantic
 from httpx import Response
 from param import (
@@ -27,7 +29,6 @@ from param import (
     ParameterManager,
     ParameterType,
     Resolvable,
-    Resolvers,
 )
 from param.errors import ResolutionError
 from pydantic import BaseModel
@@ -62,6 +63,13 @@ class Resolver(Protocol):
         context: ResolverContext,
     ) -> Any:
         ...
+
+
+R = TypeVar("R", bound=Resolver)
+
+
+class Resolvers(Register[Type[Param], R]):
+    pass
 
 
 resolvers: Resolvers[Resolver] = Resolvers()
@@ -270,8 +278,8 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
     response: Response
     cached_dependencies: Dict[Callable[..., Any], Any] = field(default_factory=dict)
 
-    def get_param(self, parameter: param.Parameter, /) -> param.parameters.Param:
-        param: Optional[param.parameters.Param] = super().get_param(parameter)
+    def get_param(self, parameter: param.Parameter, /) -> Param:
+        param: Optional[Param] = super().get_param(parameter)
 
         if param is not None:
             return param
@@ -359,7 +367,7 @@ class ResolutionParameterManager(ParameterManager[Resolver]):
         for resolvable in resolvables:
             parameter: param.Parameter = resolvable.parameter
 
-            if not isinstance(parameter.default, param.parameters.Param):
+            if not isinstance(parameter.default, Param):
                 raise Exception("Cannot resolve non-param")
 
             resolver: Resolver = self.get_resolver(type(parameter.default))

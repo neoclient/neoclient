@@ -1,9 +1,9 @@
-from fastclient import get, header, headers, params
+from fastclient import get, header, headers, query_params
 
 
-# @headers({"X-Foo": "x-bar"})
-@header("X-Foo", "x-bar")
-@params({"animal": "dog"})
+@headers({"X-Bar": "x-bar"})
+@header("X-Foo", "x-foo")
+@query_params({"animal": "dog"})
 @get("https://httpbin.org/get")
 def foo(message: str) -> dict:
     ...

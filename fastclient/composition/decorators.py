@@ -39,7 +39,6 @@ class CompositionFacilitator(Decorator):
     composer: RequestConsumer
 
     def __call__(self, func: C, /) -> C:
-        # TODO: Use get_operation(...) (but avoid cyclic dependency!)
         request: RequestOptions = func.operation.specification.request
 
         logger.info(

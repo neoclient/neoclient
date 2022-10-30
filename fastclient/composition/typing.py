@@ -1,10 +1,11 @@
-from typing import Callable, Protocol, TypeVar, runtime_checkable
+from typing import Protocol, TypeVar, runtime_checkable
 
 from typing_extensions import ParamSpec
 
 from ..models import RequestOptions
+from ..operations import CallableWithOperation
 
-C = TypeVar("C", bound=Callable)
+C = TypeVar("C", bound=CallableWithOperation)
 T = TypeVar("T", contravariant=True)
 
 PS = ParamSpec("PS")

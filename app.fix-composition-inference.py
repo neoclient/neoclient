@@ -10,7 +10,7 @@ class Person:
 client: FastClient = FastClient(base_url="http://127.0.0.1:8000/")
 
 
-# @path("name", "sam")
+@path("name", "sam")
 @client.get("/greet/{name}")
 def greet() -> str:
     ...

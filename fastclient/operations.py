@@ -1,7 +1,22 @@
 import dataclasses
 import inspect
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Generic, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar
+from types import MethodWrapperType
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Mapping,
+    Optional,
+    Protocol,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    runtime_checkable,
+)
 import urllib.parse
 from collections import Counter
 
@@ -16,37 +31,36 @@ from pydantic.fields import FieldInfo, ModelField
 from typing_extensions import ParamSpec
 
 from . import utils
-from .composition import compose
-from .errors import NotAnOperation, DuplicateParameters
+from .errors import DuplicateParameters
 from .models import OperationSpecification, RequestOptions
-from .parameters import _BaseSingleParameter, QueryParameter, PathParameter, BodyParameter, PathsParameter
+from .parameters import (
+    _BaseSingleParameter,
+    QueryParameter,
+    PathParameter,
+    BodyParameter,
+)
 from .resolution.resolvers import resolve_func
 
 PS = ParamSpec("PS")
-RT = TypeVar("RT")
+RT = TypeVar("RT", covariant=True)
 
 
-def get_operation(obj: Any, /) -> "Operation":
-    if not has_operation(obj):
-        raise NotAnOperation(f"{obj!r} is not an operation")
+@runtime_checkable
+class CallableWithOperation(Protocol[PS, RT]):
+    operation: "Operation"
 
-    return getattr(obj, "operation")
+    __get__: MethodWrapperType
 
+    def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> RT:
+        ...
 
-def has_operation(obj: Any, /) -> bool:
-    return hasattr(obj, "operation")
+# NOTE: Temporarily here due to a cyclic dependency
+from .composition import compose
 
-
-def set_operation(obj: Any, operation: "Operation", /) -> None:
-    setattr(obj, "operation", operation)
-
-
-def del_operation(obj: Any, /) -> None:
-    delattr(obj, "operation")
-
-
-def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, param.parameters.Param]]:
-    request: RequestOptions = get_operation(func).specification.request
+def get_fields(
+    func: CallableWithOperation, /
+) -> Dict[str, Tuple[Any, param.parameters.Param]]:
+    request: RequestOptions = func.operation.specification.request
 
     path_params: Set[str] = (
         utils.get_path_params(urllib.parse.unquote(str(request.url)))
@@ -70,12 +84,9 @@ def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, param.parameters.Param
                     alias=field_name,
                     default=param.parameters.Param.get_default(field_info),
                 )
-            elif (
-                isinstance(model_field.annotation, type)
-                and (
-                    issubclass(model_field.annotation, (BaseModel, dict))
-                    or dataclasses.is_dataclass(model_field.annotation)
-                )
+            elif isinstance(model_field.annotation, type) and (
+                issubclass(model_field.annotation, (BaseModel, dict))
+                or dataclasses.is_dataclass(model_field.annotation)
             ):
                 field_info = BodyParameter(
                     alias=field_name,
@@ -95,14 +106,17 @@ def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, param.parameters.Param
 
         fields[field_name] = (model_field.annotation, field_info)
 
-    total_body_fields: int = sum(isinstance(field_info, BodyParameter) for _, field_info in fields.values())
+    total_body_fields: int = sum(
+        isinstance(field_info, BodyParameter) for _, field_info in fields.values()
+    )
 
     if total_body_fields > 1:
         field: str
         annotation: Any
         parameter: FieldInfo
         for field, (annotation, parameter) in fields.items():
-            if not isinstance(parameter, BodyParameter): continue
+            if not isinstance(parameter, BodyParameter):
+                continue
 
             parameter = dataclasses.replace(parameter, embed=True)
 
@@ -114,16 +128,16 @@ def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, param.parameters.Param
     #       def foo(a: str = Query(alias="name"), b: str = Query(alias="name")): ...
     aliases: Sequence[str] = [parameter.alias for _, parameter in fields.values()]
     alias_counts: Mapping[str, int] = Counter(aliases)
-    duplicate_aliases: Set[str] = {alias for alias, count in alias_counts.items() if count > 1}
+    duplicate_aliases: Set[str] = {
+        alias for alias, count in alias_counts.items() if count > 1
+    }
     if duplicate_aliases:
-        raise DuplicateParameters(
-            f"Duplicate parameters: {duplicate_aliases!r}"
-        )
+        raise DuplicateParameters(f"Duplicate parameters: {duplicate_aliases!r}")
 
     return fields
 
 
-def create_model_cls(func: Callable, /) -> Type[BaseModel]:
+def create_model_cls(func: CallableWithOperation, /) -> Type[BaseModel]:
     class Config:
         allow_population_by_field_name: bool = True
         arbitrary_types_allowed: bool = True
@@ -133,14 +147,14 @@ def create_model_cls(func: Callable, /) -> Type[BaseModel]:
     return ValidatedFunction(func)._create_model(fields, config=Config)
 
 
-def create_model(func: Callable, arguments: Dict[str, Any]) -> BaseModel:
+def create_model(func: CallableWithOperation, arguments: Dict[str, Any]) -> BaseModel:
     model_cls: Type[BaseModel] = create_model_cls(func)
 
     return model_cls(**arguments)
 
 
 def bind_arguments(
-    func: Callable, args: Tuple[Any, ...], kwargs: Dict[str, Any]
+    func: CallableWithOperation, args: Tuple[Any, ...], kwargs: Dict[str, Any]
 ) -> Dict[str, Any]:
     arguments: Dict[str, Any] = utils.bind_arguments(func, args, kwargs)
 
@@ -153,7 +167,7 @@ def bind_arguments(
 
 def compose_func(
     request: RequestOptions,
-    func: Callable,
+    func: CallableWithOperation,
     args: Tuple[Any, ...],
     kwargs: Dict[str, Any],
 ) -> None:
@@ -189,7 +203,7 @@ def compose_func(
 
 @dataclass
 class Operation(Generic[PS, RT]):
-    func: Callable[PS, RT]
+    func: CallableWithOperation[PS, RT]
     specification: OperationSpecification
     client: Optional[Client]
 

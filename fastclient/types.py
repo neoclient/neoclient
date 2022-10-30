@@ -47,10 +47,13 @@ QueryParamTypes: TypeAlias = Union[
     bytes,
 ]
 
+# NOTE: In an upcoming release of `httpx` (> 0.23.0), `Dict` should be replaced by `Mapping`
+# Once this version is released, the dependency should be bumped and the types should be
+# updated here accordingly
 HeaderTypes: TypeAlias = Union[
     Headers,
-    Mapping[str, str],
-    Mapping[bytes, bytes],
+    Dict[str, str],
+    Dict[bytes, bytes],
     Sequence[Tuple[str, str]],
     Sequence[Tuple[bytes, bytes]],
 ]
