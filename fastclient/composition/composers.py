@@ -174,12 +174,12 @@ class PathParamsComposer(ParamsComposer[PathsParameter, PathParamTypes]):
 
 
 # NOTE: This resolver is currently untested
-# TODO: Add some middleware that sets/unsets `embed` as appropriate
 def compose_body(
     param: BodyParameter,
     argument: Any,
 ) -> RequestConsumer:
     # If the param is not required and has no value, it can be omitted
+    # NOTE: This functionality is shared with the "single" parameters (e.g. Query, Header, ...)
     if argument is None and param.default is not Required:
         return noop_consumer
 
