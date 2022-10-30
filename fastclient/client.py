@@ -6,7 +6,6 @@ from types import FunctionType, MethodType
 from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
 
 import httpx
-from httpx._auth import Auth
 from httpx._config import (
     DEFAULT_MAX_REDIRECTS,
     DEFAULT_TIMEOUT_CONFIG,

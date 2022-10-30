@@ -17,7 +17,7 @@ from typing_extensions import ParamSpec
 
 from . import utils
 from .composition import compose
-from .errors import NotAnOperation, IncompatiblePathParameters, DuplicateParameters
+from .errors import NotAnOperation, DuplicateParameters
 from .models import OperationSpecification, RequestOptions
 from .parameters import _BaseSingleParameter, QueryParameter, PathParameter, BodyParameter, PathsParameter
 from .resolution.resolvers import resolve_func
@@ -65,8 +65,6 @@ def get_fields(func: Callable, /) -> Dict[str, Tuple[Any, param.parameters.Param
         if not isinstance(field_info, param.parameters.Param):
             logger.info(f"Inferring parameter for field: {model_field!r}")
 
-            # NOTE: Need to check later that there's no conflict with any explicityly provided parameters
-            # E.g. (path_param: str, same_path_param: str = Param(alias="path_param"))
             if field_name in path_params:
                 field_info = PathParameter(
                     alias=field_name,
@@ -186,8 +184,7 @@ def compose_func(
     logger.info(f"Request after composition: {request!r}")
 
     # Validate the request (e.g. to ensure no path params have been missed)
-    # NOTE: Temporarily disabled as `RequestOptions.path_params` now used over formatting the URL.
-    # request.validate()
+    request.validate()
 
 
 @dataclass
@@ -205,9 +202,6 @@ class Operation(Generic[PS, RT]):
         )
 
         compose_func(request_options, self.func, args, kwargs)
-
-        # Validate the request options (e.g. no missing path parameters)
-        request_options.validate()
 
         request: httpx.Request = request_options.build_request(self.client)
 
