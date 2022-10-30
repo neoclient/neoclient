@@ -1,7 +1,6 @@
 from typing import Any, Callable, Optional, Type, Union
 
 from httpx import Request, Response
-from param.typing import Supplier
 from pydantic.fields import Undefined, UndefinedType
 
 from .parameters import (
@@ -17,6 +16,7 @@ from .parameters import (
     QueriesParameter,
     QueryParameter,
 )
+from .typing import Supplier
 
 
 def Query(

@@ -3,15 +3,16 @@ from dataclasses import dataclass
 from typing import Any, Generic, Protocol, Type, TypeVar
 
 import fastapi.encoders
-import param
-import param.parameters
-from param.errors import ResolutionError
 from pydantic import Required
 from roster import Register
 
 from fastclient.models import RequestOptions
 
+from ..errors import CompositionError
 from ..parameters import (
+    BaseMultiParameter,
+    BaseParameter,
+    BaseSingleParameter,
     BodyParameter,
     CookieParameter,
     CookiesParameter,
@@ -21,8 +22,6 @@ from ..parameters import (
     PathsParameter,
     QueriesParameter,
     QueryParameter,
-    _BaseMultiParameter,
-    _BaseSingleParameter,
 )
 from ..parsing import Parser
 from ..types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
@@ -39,9 +38,9 @@ from .consumers import (
 )
 from .typing import RequestConsumer
 
-P = TypeVar("P", contravariant=True, bound=param.parameters.Param)
-PA = TypeVar("PA", contravariant=True, bound=_BaseSingleParameter)
-PS = TypeVar("PS", contravariant=True, bound=_BaseMultiParameter)
+P = TypeVar("P", contravariant=True, bound=BaseParameter)
+PA = TypeVar("PA", contravariant=True, bound=BaseSingleParameter)
+PS = TypeVar("PS", contravariant=True, bound=BaseMultiParameter)
 T = TypeVar("T")
 
 
@@ -66,7 +65,7 @@ class ParamComposer(ABC, Composer[PA]):
         /,
     ) -> RequestConsumer:
         if param.alias is None:
-            raise ResolutionError("Cannot compose `Param` with no alias")
+            raise CompositionError("Cannot compose `Param` with no alias")
 
         if argument is None and param.default is not Required:
             return noop_consumer
@@ -187,7 +186,7 @@ def compose_body(
 
     if param.embed:
         if param.alias is None:
-            raise ResolutionError("Cannot embed `Body` with no alias")
+            raise CompositionError("Cannot embed `Body` with no alias")
 
         json_value = {param.alias: json_value}
 
@@ -210,7 +209,7 @@ def compose_body(
         return consume
 
 
-class Composers(Register[Type[param.parameters.Param], C]):
+class Composers(Register[Type[BaseParameter], C]):
     pass
 
 

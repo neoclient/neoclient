@@ -6,7 +6,6 @@ import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
 from httpx._auth import Auth
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
-from param.models import Parameter
 
 from . import converters, utils
 from .errors import IncompatiblePathParameters
@@ -298,12 +297,11 @@ class OperationSpecification:
 
 
 @dataclass(frozen=True)
-class ComposerContext:
-    request: RequestOptions
-    parameters: Dict[str, Parameter] = field(default_factory=dict)
-
-
-@dataclass(frozen=True)
 class ResolverContext:
     request: RequestOptions
     cached_dependencies: Dict[Callable[..., Any], Any] = field(default_factory=dict)
+
+
+@dataclass
+class ResolutionCache:
+    dependencies: MutableMapping[Callable, Any]
