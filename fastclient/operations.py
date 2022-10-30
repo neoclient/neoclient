@@ -1,5 +1,7 @@
 import dataclasses
 import inspect
+import urllib.parse
+from collections import Counter
 from dataclasses import dataclass
 from types import MethodWrapperType
 from typing import (
@@ -17,8 +19,6 @@ from typing import (
     TypeVar,
     runtime_checkable,
 )
-import urllib.parse
-from collections import Counter
 
 import httpx
 import param.parameters
@@ -34,10 +34,10 @@ from . import utils
 from .errors import DuplicateParameters
 from .models import OperationSpecification, RequestOptions
 from .parameters import (
-    _BaseSingleParameter,
-    QueryParameter,
-    PathParameter,
     BodyParameter,
+    PathParameter,
+    QueryParameter,
+    _BaseSingleParameter,
 )
 from .resolution.resolvers import resolve_func
 
@@ -54,8 +54,10 @@ class CallableWithOperation(Protocol[PS, RT]):
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> RT:
         ...
 
+
 # NOTE: Temporarily here due to a cyclic dependency
 from .composition import compose
+
 
 def get_fields(
     func: CallableWithOperation, /

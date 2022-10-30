@@ -6,17 +6,14 @@ from types import FunctionType, MethodType
 from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
 
 import httpx
-from httpx._config import (
-    DEFAULT_MAX_REDIRECTS,
-    DEFAULT_TIMEOUT_CONFIG,
-)
+from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 from loguru import logger
 from typing_extensions import ParamSpec
 
 from . import __version__
 from .enums import HttpMethod
 from .models import ClientOptions, OperationSpecification, RequestOptions
-from .operations import Operation, get_fields, CallableWithOperation
+from .operations import CallableWithOperation, Operation, get_fields
 from .types import (
     AuthTypes,
     CookieTypes,
@@ -161,7 +158,9 @@ class FastClient:
 
         return wrapper  # type: ignore
 
-    def bind(self, func: CallableWithOperation[PS, RT], /) -> CallableWithOperation[PS, RT]:
+    def bind(
+        self, func: CallableWithOperation[PS, RT], /
+    ) -> CallableWithOperation[PS, RT]:
         operation: Operation[PS, RT] = func.operation
 
         bound_operation: Operation[PS, RT] = Operation(
@@ -202,19 +201,29 @@ class FastClient:
 
         return decorator
 
-    def put(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    def put(
+        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.PUT.name, endpoint, response=response)
 
-    def get(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    def get(
+        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.GET.name, endpoint, response=response)
 
-    def post(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    def post(
+        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.POST.name, endpoint, response=response)
 
-    def head(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    def head(
+        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.HEAD.name, endpoint, response=response)
 
-    def patch(self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    def patch(
+        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.PATCH.name, endpoint, response=response)
 
     def delete(

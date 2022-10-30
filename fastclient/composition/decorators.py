@@ -5,6 +5,17 @@ from loguru import logger
 
 from fastclient.models import RequestOptions
 
+from ..types import (
+    CookieTypes,
+    HeaderTypes,
+    JsonTypes,
+    PathParamTypes,
+    QueryParamTypes,
+    RequestContent,
+    RequestData,
+    RequestFiles,
+    TimeoutTypes,
+)
 from .consumers import (
     ContentConsumer,
     CookieConsumer,
@@ -19,17 +30,6 @@ from .consumers import (
     QueryParamConsumer,
     QueryParamsConsumer,
     TimeoutConsumer,
-)
-from ..types import (
-    CookieTypes,
-    HeaderTypes,
-    JsonTypes,
-    QueryParamTypes,
-    PathParamTypes,
-    RequestContent,
-    RequestData,
-    RequestFiles,
-    TimeoutTypes,
 )
 from .typing import C, Decorator, RequestConsumer
 

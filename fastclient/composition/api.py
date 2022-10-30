@@ -3,10 +3,10 @@ from typing import Any, Optional
 import param.parameters
 from loguru import logger
 
-from .composers import composers, Composer
-from .typing import RequestConsumer
 from ..errors import CompositionError
 from ..models import RequestOptions
+from .composers import Composer, composers
+from .typing import RequestConsumer
 
 
 def compose(

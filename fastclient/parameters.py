@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, ClassVar, Generic, Optional, Type, Union, TypeVar
+from typing import Callable, ClassVar, Generic, Optional, Type, TypeVar, Union
 
 import param.parameters
 from httpx import Request, Response
@@ -7,12 +7,7 @@ from param.typing import Supplier
 from pydantic.fields import Undefined, UndefinedType
 
 from .enums import ParamType
-from .types import (
-    QueryParamTypes,
-    HeaderTypes,
-    CookieTypes,
-    PathParamTypes,
-)
+from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
 
 T = TypeVar("T")
 

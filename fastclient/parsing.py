@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Generic, Type, TypeVar
 
-from pydantic import BaseModel, BaseConfig, create_model
+from pydantic import BaseConfig, BaseModel, create_model
 from pydantic.typing import display_as_type
 
 T = TypeVar("T")

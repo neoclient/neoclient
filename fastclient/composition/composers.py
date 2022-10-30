@@ -11,6 +11,22 @@ from roster import Register
 
 from fastclient.models import RequestOptions
 
+from ..parameters import (
+    BodyParameter,
+    CookieParameter,
+    CookiesParameter,
+    HeaderParameter,
+    HeadersParameter,
+    PathParameter,
+    PathsParameter,
+    QueriesParameter,
+    QueryParameter,
+    _BaseMultiParameter,
+    _BaseSingleParameter,
+)
+from ..parsing import Parser
+from ..types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
+from ..utils import noop_consumer
 from .consumers import (
     CookieConsumer,
     CookiesConsumer,
@@ -21,23 +37,7 @@ from .consumers import (
     QueryParamConsumer,
     QueryParamsConsumer,
 )
-from ..parameters import (
-    BodyParameter,
-    CookieParameter,
-    CookiesParameter,
-    HeaderParameter,
-    HeadersParameter,
-    _BaseSingleParameter,
-    _BaseMultiParameter,
-    PathParameter,
-    PathsParameter,
-    QueryParameter,
-    QueriesParameter,
-)
-from ..parsing import Parser
-from ..types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
 from .typing import RequestConsumer
-from ..utils import noop_consumer
 
 P = TypeVar("P", contravariant=True, bound=param.parameters.Param)
 PA = TypeVar("PA", contravariant=True, bound=_BaseSingleParameter)

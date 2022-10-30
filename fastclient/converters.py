@@ -6,10 +6,10 @@ from httpx._utils import primitive_value_to_str
 from .types import (
     CookieTypes,
     HeaderTypes,
+    PathParamTypes,
     PathParamValueTypes,
     QueryParamTypes,
     TimeoutTypes,
-    PathParamTypes,
 )
 
 

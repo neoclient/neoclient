@@ -1,14 +1,6 @@
 import urllib.parse
 from dataclasses import dataclass, field
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    MutableMapping,
-    Optional,
-    Set,
-)
+from typing import Any, Callable, Dict, List, MutableMapping, Optional, Set
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
@@ -16,7 +8,7 @@ from httpx._auth import Auth
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 from param.models import Parameter
 
-from . import utils, converters
+from . import converters, utils
 from .errors import IncompatiblePathParameters
 from .types import (
     AuthTypes,
@@ -34,6 +26,7 @@ from .types import (
     TimeoutTypes,
     URLTypes,
 )
+
 
 @dataclass(init=False)
 class Client(httpx.Client):

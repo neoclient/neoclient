@@ -1,20 +1,7 @@
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Sequence,
-    Tuple,
-    Union,
-)
 from http.cookiejar import CookieJar
+from typing import Any, Callable, Dict, List, Mapping, Sequence, Tuple, Union
 
-from httpx import (
-    QueryParams,
-    Headers,
-    Cookies,
-)
+from httpx import Cookies, Headers, QueryParams
 from httpx._types import (
     AsyncByteStream,
     AuthTypes,

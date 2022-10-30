@@ -5,17 +5,17 @@ from param.typing import Supplier
 from pydantic.fields import Undefined, UndefinedType
 
 from .parameters import (
-    QueryParameter,
-    HeaderParameter,
-    CookieParameter,
-    PathParameter,
-    QueriesParameter,
-    HeadersParameter,
-    CookiesParameter,
-    PathsParameter,
     BodyParameter,
+    CookieParameter,
+    CookiesParameter,
     DependencyParameter,
+    HeaderParameter,
+    HeadersParameter,
+    PathParameter,
+    PathsParameter,
     PromiseParameter,
+    QueriesParameter,
+    QueryParameter,
 )
 
 

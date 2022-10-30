@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-
 from models import Person
 
 app: FastAPI = FastAPI()

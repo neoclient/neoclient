@@ -2,36 +2,26 @@ from dataclasses import replace
 from io import BytesIO
 from typing import Mapping
 
+from httpx import Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
-from httpx import (
-    QueryParams,
-    Headers,
-    Cookies,
-    Timeout,
-)
 
-from fastclient.types import (
-    JsonTypes,
-    RequestFiles,
-    RequestData,
-    RequestContent,
-)
-from fastclient.models import RequestOptions
 from fastclient.composition.consumers import (
-    QueryParamConsumer,
-    HeaderConsumer,
-    CookieConsumer,
-    PathParamConsumer,
-    QueryParamsConsumer,
-    HeadersConsumer,
-    CookiesConsumer,
-    PathParamsConsumer,
     ContentConsumer,
+    CookieConsumer,
+    CookiesConsumer,
     DataConsumer,
     FilesConsumer,
+    HeaderConsumer,
+    HeadersConsumer,
     JsonConsumer,
+    PathParamConsumer,
+    PathParamsConsumer,
+    QueryParamConsumer,
+    QueryParamsConsumer,
     TimeoutConsumer,
 )
+from fastclient.models import RequestOptions
+from fastclient.types import JsonTypes, RequestContent, RequestData, RequestFiles
 
 
 @fixture

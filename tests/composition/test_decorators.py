@@ -2,27 +2,22 @@ from dataclasses import replace
 from io import BytesIO
 from typing import Any, Callable, Mapping
 
+from httpx import Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
-from httpx import (
-    QueryParams,
-    Headers,
-    Cookies,
-    Timeout,
-)
 
 from fastclient import get
-from fastclient.models import RequestOptions
 from fastclient.composition import decorators
+from fastclient.models import RequestOptions
 from fastclient.types import (
-    JsonTypes,
-    QueryParamTypes,
-    HeaderTypes,
     CookieTypes,
+    HeaderTypes,
+    JsonTypes,
+    PathParamTypes,
+    QueryParamTypes,
     RequestContent,
     RequestData,
     RequestFiles,
     TimeoutTypes,
-    PathParamTypes,
 )
 
 

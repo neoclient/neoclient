@@ -19,20 +19,14 @@ from typing import (
 
 import httpx
 import param
-from param.parameters import Param
-from roster import Register
 import pydantic
 from httpx import Response
-from param import (
-    Arguments,
-    BoundArguments,
-    ParameterManager,
-    ParameterType,
-    Resolvable,
-)
+from param import Arguments, BoundArguments, ParameterManager, ParameterType, Resolvable
 from param.errors import ResolutionError
+from param.parameters import Param
 from pydantic import BaseModel
 from pydantic.fields import Undefined, UndefinedType
+from roster import Register
 
 from .. import utils
 from ..models import RequestOptions, ResolverContext
@@ -43,12 +37,12 @@ from ..parameters import (
     DependencyParameter,
     HeaderParameter,
     HeadersParameter,
-    _BaseSingleParameter,
     PathParameter,
     PathsParameter,
     PromiseParameter,
-    QueryParameter,
     QueriesParameter,
+    QueryParameter,
+    _BaseSingleParameter,
 )
 
 T = TypeVar("T")

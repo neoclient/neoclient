@@ -30,6 +30,6 @@ from .parameter_functions import (
     Path,
     Paths,
     Promise,
-    Query,
     Queries,
+    Query,
 )
