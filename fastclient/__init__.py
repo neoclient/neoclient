@@ -28,8 +28,8 @@ from .parameter_functions import (
     Header,
     Headers,
     Path,
-    PathParams,
+    Paths,
     Promise,
     Query,
-    QueryParams,
+    Queries,
 )

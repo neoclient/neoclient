@@ -1,23 +1,29 @@
 from dataclasses import dataclass
 from typing import Any, Generic, Type, TypeVar
 
-from pydantic import BaseModel, Field, Required, create_model
+from pydantic import BaseModel, BaseConfig, create_model
+from pydantic.typing import display_as_type
 
 T = TypeVar("T")
 
 
+def _generate_parsing_type_name(type_: Any) -> str:
+    return f"ParsingModel[{display_as_type(type_)}]"
+
+
 def parse_obj_as(type_: Type[T], obj: Any, /) -> T:
-    class BM(BaseModel):
-        class Config:
-            arbitrary_types_allowed: bool = True
+    class Config(BaseConfig):
+        arbitrary_types_allowed: bool = True
 
     model_cls: Type[BaseModel] = create_model(
-        "TempModel", __base__=BM, v=(type_, Field(Required))
+        _generate_parsing_type_name(type_),
+        __config__=Config,
+        __root__=(type_, ...),
     )
 
-    model: BaseModel = model_cls(v=obj)
+    model: BaseModel = model_cls(__root__=obj)
 
-    return model.v
+    return getattr(model, "__root__")
 
 
 @dataclass

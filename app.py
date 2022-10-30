@@ -14,10 +14,10 @@ from fastclient import (
     Header,
     Headers,
     Path,
-    PathParams,
+    Paths,
     Promise,
     Query,
-    QueryParams,
+    Queries,
     get,
     post,
 )
@@ -41,7 +41,7 @@ app = FastClient(follow_redirects=False)
 # def response(headers = Headers()):
 #     return headers
 
-# def response(query_params = QueryParams()):
+# def response(query_params = Queries()):
 #     return query_params
 
 
@@ -56,8 +56,8 @@ def response(
     # foo_2: str = Path(alias="foo"),
     # headers=Headers(),
     # cookies=Cookies(),
-    # params=QueryParams(),
-    # path_params = PathParams(),
+    # params=Queries(),
+    # path_params = Paths(),
     # body = Body(),
     request=Promise(httpx.Request),
     response=Promise(httpx.Response),
@@ -100,13 +100,13 @@ def foo(
     likes: str = Header(),
     pet: str = Cookie(),
     foo: str = Path(),
-    params: dict = QueryParams(),
+    params: dict = Queries(),
 ):
     ...
 
 
 # @post("https://httpbin.org/post")
-# def foo(name: str = Query(), user_agent = Header(), message = Cookie(), item_a: Item = Body(), item_b: Item = Body(), query_params = QueryParams()):
+# def foo(name: str = Query(), user_agent = Header(), message = Cookie(), item_a: Item = Body(), item_b: Item = Body(), query_params = Queries()):
 #     ...
 
 # @get("https://httpbin.org/ip", response=response)
