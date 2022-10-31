@@ -14,12 +14,27 @@ from typing import (
     Union,
 )
 
+import fastapi.encoders
 from httpx import Request, Response
+from pydantic import Required
 from pydantic.fields import FieldInfo, Undefined, UndefinedType
 
+from .errors import CompositionError
 from .enums import ParamType
+from .models import RequestOptions
 from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
 from .typing import Supplier
+from .composition_consumers import (
+    QueryConsumer,
+    HeaderConsumer,
+    CookieConsumer,
+    PathConsumer,
+    QueriesConsumer,
+    HeadersConsumer,
+    CookiesConsumer,
+    PathsConsumer,
+)
+from .parsing import Parser
 
 __all__: List[str] = [
     "QueryParameter",
@@ -37,8 +52,7 @@ __all__: List[str] = [
 
 T = TypeVar("T")
 
-
-@dataclass(frozen=True)
+@dataclass
 class BaseParameter(FieldInfo):
     default: Union[Any, UndefinedType] = Undefined
     default_factory: Optional[Supplier[Any]] = None
@@ -93,17 +107,6 @@ class BaseSingleParameter(BaseParameter):
 class BaseMultiParameter(BaseParameter, Generic[T]):
     type: ClassVar[ParamType]
 
-    def __init__(
-        self,
-        *,
-        default: Union[T, UndefinedType] = Undefined,
-        default_factory: Optional[Supplier[T]] = None,
-    ):
-        super().__init__(
-            default=default,
-            default_factory=default_factory,
-        )
-
 
 class QueryParameter(BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.QUERY
@@ -111,6 +114,15 @@ class QueryParameter(BaseSingleParameter):
     @staticmethod
     def generate_alias(alias: str):
         return alias.lower().replace("_", "-")
+
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+        if self.alias is None:
+            raise CompositionError(f"Cannot compose parameter {type(self)!r} without an alias")
+
+        if argument is None and self.default is not Required:
+            return
+
+        QueryConsumer.parse(self.alias, argument)(request)
 
 
 class HeaderParameter(BaseSingleParameter):
@@ -120,32 +132,79 @@ class HeaderParameter(BaseSingleParameter):
     def generate_alias(alias: str):
         return alias.title().replace("_", "-")
 
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+        if self.alias is None:
+            raise CompositionError(f"Cannot compose parameter {type(self)!r} without an alias")
+
+        if argument is None and self.default is not Required:
+            return
+
+        HeaderConsumer.parse(self.alias, argument)(request)
+
 
 class CookieParameter(BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.COOKIE
+
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+        if self.alias is None:
+            raise CompositionError(f"Cannot compose parameter {type(self)!r} without an alias")
+
+        if argument is None and self.default is not Required:
+            return
+
+        CookieConsumer.parse(self.alias, argument)(request)
 
 
 class PathParameter(BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.PATH
 
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+        if self.alias is None:
+            raise CompositionError(f"Cannot compose parameter {type(self)!r} without an alias")
+
+        if argument is None and self.default is not Required:
+            return
+
+        PathConsumer.parse(self.alias, argument)(request)
+
 
 class QueriesParameter(BaseMultiParameter[QueryParamTypes]):
     type: ClassVar[ParamType] = ParamType.QUERY
+
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+        params: QueryParamTypes = Parser(QueryParamTypes)(argument)
+
+        QueriesConsumer.parse(params)(request)
 
 
 class HeadersParameter(BaseMultiParameter[HeaderTypes]):
     type: ClassVar[ParamType] = ParamType.HEADER
 
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+        headers: HeaderTypes = Parser(HeaderTypes)(argument)
+
+        HeadersConsumer.parse(headers)(request)
+
 
 class CookiesParameter(BaseMultiParameter[CookieTypes]):
     type: ClassVar[ParamType] = ParamType.COOKIE
+
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+        cookies: CookieTypes = Parser(CookieTypes)(argument)
+
+        CookiesConsumer.parse(cookies)(request)
 
 
 class PathsParameter(BaseMultiParameter[PathParamTypes]):
     type: ClassVar[ParamType] = ParamType.PATH
 
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+        path_params: PathParamTypes = Parser(PathParamTypes)(argument)
 
-@dataclass(frozen=True)
+        PathsConsumer.parse(path_params)(request)
+
+
+@dataclass
 class BodyParameter(BaseParameter):
     embed: bool = False
 
@@ -153,25 +212,37 @@ class BodyParameter(BaseParameter):
     def generate_alias(alias: str):
         return alias
 
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+        # If the parameter is not required and has no value, it can be omitted
+        # NOTE: This functionality is shared with the "single" parameters (e.g. Query, Header, ...)
+        if argument is None and self.default is not Required:
+            return
 
-@dataclass(frozen=True, init=False)
+        json_value: Any = fastapi.encoders.jsonable_encoder(argument)
+
+        if self.embed:
+            if self.alias is None:
+                raise CompositionError(f"Cannot embed parameter {type(self)!r} without an alias")
+
+            json_value = {self.alias: json_value}
+
+        # If this parameter shouln't be embedded in any pre-existing json,
+        # make it the entire JSON request body
+        if not self.embed:
+            request.json = json_value
+        else:
+            if request.json is None:
+                request.json = json_value
+            else:
+                request.json.update(json_value)
+
+
+@dataclass
 class DependencyParameter(BaseParameter):
     dependency: Optional[Callable] = None
     use_cache: bool = True
 
-    def __init__(
-        self,
-        dependency: Optional[Callable] = None,
-        /,
-        *,
-        use_cache: bool = True,
-    ):
-        super().__init__()
 
-        object.__setattr__(self, "dependency", dependency)
-        object.__setattr__(self, "use_cache", use_cache)
-
-
-@dataclass(frozen=True)
+@dataclass
 class PromiseParameter(BaseParameter):
     promised_type: Union[None, Type[Request], Type[Response]] = None

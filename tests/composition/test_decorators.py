@@ -6,7 +6,7 @@ from httpx import Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
 
 from fastclient import get
-from fastclient.composition import decorators
+from fastclient.composition import composition_decorators
 from fastclient.models import RequestOptions
 from fastclient.types import (
     CookieTypes,
@@ -36,7 +36,7 @@ def test_query(func: Callable) -> None:
     key: str = "name"
     value: str = "sam"
 
-    decorators.query(key, value)(func)
+    composition_decorators.query(key, value)(func)
 
     assert func.operation.specification.request == replace(
         original_request, params=QueryParams({key: value})
@@ -49,7 +49,7 @@ def test_header(func: Callable) -> None:
     key: str = "name"
     value: str = "sam"
 
-    decorators.header(key, value)(func)
+    composition_decorators.header(key, value)(func)
 
     assert func.operation.specification.request == replace(
         original_request, headers=Headers({key: value})
@@ -62,7 +62,7 @@ def test_cookie(func: Callable) -> None:
     key: str = "name"
     value: str = "sam"
 
-    decorators.cookie(key, value)(func)
+    composition_decorators.cookie(key, value)(func)
 
     assert func.operation.specification.request == replace(
         original_request, cookies=Cookies({key: value})
@@ -75,7 +75,7 @@ def test_path(func: Callable) -> None:
     key: str = "name"
     value: str = "sam"
 
-    decorators.path(key, value)(func)
+    composition_decorators.path(key, value)(func)
 
     assert func.operation.specification.request == replace(
         original_request, path_params={key: value}
@@ -87,7 +87,7 @@ def test_query_params(func: Callable) -> None:
 
     query_params: QueryParamTypes = {"name": "sam"}
 
-    decorators.query_params(query_params)(func)
+    composition_decorators.query_params(query_params)(func)
 
     assert func.operation.specification.request == replace(
         original_request, params=QueryParams(query_params)
@@ -99,7 +99,7 @@ def test_headers(func: Callable) -> None:
 
     headers: HeaderTypes = {"name": "sam"}
 
-    decorators.headers(headers)(func)
+    composition_decorators.headers(headers)(func)
 
     assert func.operation.specification.request == replace(
         original_request, headers=Headers(headers)
@@ -111,7 +111,7 @@ def test_cookies(func: Callable) -> None:
 
     cookies: CookieTypes = {"name": "sam"}
 
-    decorators.cookies(cookies)(func)
+    composition_decorators.cookies(cookies)(func)
 
     assert func.operation.specification.request == replace(
         original_request, cookies=Cookies(cookies)
@@ -123,7 +123,7 @@ def test_path_params(func: Callable) -> None:
 
     path_params: PathParamTypes = {"name": "sam"}
 
-    decorators.path_params(path_params)(func)
+    composition_decorators.path_params(path_params)(func)
 
     assert func.operation.specification.request == replace(
         original_request, path_params=path_params
@@ -135,7 +135,7 @@ def test_content(func: Callable) -> None:
 
     content: RequestContent = "content"
 
-    decorators.content(content)(func)
+    composition_decorators.content(content)(func)
 
     assert func.operation.specification.request == replace(
         original_request, content=content
@@ -147,7 +147,7 @@ def test_data(func: Callable) -> None:
 
     data: RequestData = {"name": "sam"}
 
-    decorators.data(data)(func)
+    composition_decorators.data(data)(func)
 
     assert func.operation.specification.request == replace(original_request, data=data)
 
@@ -157,7 +157,7 @@ def test_files(func: Callable) -> None:
 
     files: RequestFiles = {"file.txt": BytesIO(b"content")}
 
-    decorators.files(files)(func)
+    composition_decorators.files(files)(func)
 
     assert func.operation.specification.request == replace(
         original_request, files=files
@@ -169,7 +169,7 @@ def test_json(func: Callable) -> None:
 
     json: JsonTypes = {"name": "sam"}
 
-    decorators.json(json)(func)
+    composition_decorators.json(json)(func)
 
     assert func.operation.specification.request == replace(original_request, json=json)
 
@@ -179,7 +179,7 @@ def test_timeout(func: Callable) -> None:
 
     timeout: TimeoutTypes = 5.0
 
-    decorators.timeout(timeout)(func)
+    composition_decorators.timeout(timeout)(func)
 
     assert func.operation.specification.request == replace(
         original_request, timeout=Timeout(timeout)

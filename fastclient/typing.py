@@ -1,4 +1,8 @@
-from typing import Protocol, TypeVar
+from typing import Any, Protocol, TypeVar, runtime_checkable
+
+from httpx import Response
+
+from .models import RequestOptions
 
 T_contra = TypeVar("T_contra", contravariant=True)
 T_co = TypeVar("T_co", covariant=True)
@@ -17,4 +21,16 @@ class Consumer(Protocol[T_contra]):
 
 class Function(Protocol[T_contra, R_co]):
     def __call__(self, value: T_contra, /) -> R_co:
+        ...
+
+
+@runtime_checkable
+class Resolvable(Protocol[T_co]):
+    def resolve(self, response: Response, /) -> T_co:
+        ...
+
+
+@runtime_checkable
+class Composable(Protocol):
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
         ...

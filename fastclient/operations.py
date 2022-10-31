@@ -15,7 +15,6 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    Type,
     TypeVar,
     runtime_checkable,
 )
@@ -29,7 +28,7 @@ from pydantic.fields import FieldInfo, ModelField
 from typing_extensions import ParamSpec
 
 from . import api, utils
-from .errors import DuplicateParameters
+from .errors import DuplicateParameters, CompositionError
 from .models import OperationSpecification, RequestOptions
 from .parameters import (
     BaseParameter,
@@ -39,6 +38,7 @@ from .parameters import (
     PathParameter,
     QueryParameter,
 )
+from .typing import Composable
 from .validation import ValidatedFunction
 
 PS = ParamSpec("PS")
@@ -56,7 +56,6 @@ class CallableWithOperation(Protocol[PS, RT]):
 
 
 # NOTE: The imports are temporarily here due to cyclic dependencies
-from .composition import compose
 from .resolution import resolve
 
 
@@ -167,10 +166,15 @@ def compose_func(
     field_name: str
     model_field: ModelField
     for field_name, model_field in model.__fields__.items():
-        field_info: BaseParameter = model_field.field_info
+        parameter: BaseParameter = model_field.field_info
         argument: Any = validated_arguments[field_name]
 
-        compose(request, field_info, argument)
+        logger.debug(f"Composing parameter {parameter!r} with argument {argument!r}")
+
+        if not isinstance(parameter, Composable):
+            raise CompositionError(f"Parameter {parameter!r} is not composable")
+
+        parameter.compose(request, argument)
 
     logger.info(f"Request after composition: {request!r}")
 
@@ -221,7 +225,9 @@ class Operation(Generic[PS, RT]):
             #     cached_dependencies={},
             # )
 
-            return resolve(response, DependencyParameter(self.specification.response))
+            return resolve(
+                response, DependencyParameter(dependency=self.specification.response)
+            )
 
         if return_annotation is inspect.Parameter.empty:
             return response.json()

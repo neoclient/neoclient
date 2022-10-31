@@ -5,7 +5,7 @@ from typing import Mapping
 from httpx import Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
 
-from fastclient.composition.consumers import (
+from fastclient.composition.composition_consumers import (
     ContentConsumer,
     CookieConsumer,
     CookiesConsumer,
@@ -14,10 +14,10 @@ from fastclient.composition.consumers import (
     HeaderConsumer,
     HeadersConsumer,
     JsonConsumer,
-    PathParamConsumer,
-    PathParamsConsumer,
-    QueryParamConsumer,
-    QueryParamsConsumer,
+    PathConsumer,
+    PathsConsumer,
+    QueryConsumer,
+    QueriesConsumer,
     TimeoutConsumer,
 )
 from fastclient.models import RequestOptions
@@ -35,11 +35,11 @@ def test_QueryParamConsumer(request_options: RequestOptions) -> None:
     key: str = "name"
     value: str = "sam"
 
-    QueryParamConsumer(key, value)(request_options)
+    QueryConsumer(key, value)(request_options)
 
     assert request_options == replace(ref_request_options, params={key: value})
 
-    assert QueryParamConsumer.parse("age", 123) == QueryParamConsumer("age", "123")
+    assert QueryConsumer.parse("age", 123) == QueryConsumer("age", "123")
 
 
 def test_HeaderConsumer(request_options: RequestOptions) -> None:
@@ -74,11 +74,11 @@ def test_PathParamConsumer(request_options: RequestOptions) -> None:
     key: str = "name"
     value: str = "sam"
 
-    PathParamConsumer(key, value)(request_options)
+    PathConsumer(key, value)(request_options)
 
     assert request_options == replace(ref_request_options, path_params={key: value})
 
-    assert PathParamConsumer.parse("age", 123) == PathParamConsumer("age", "123")
+    assert PathConsumer.parse("age", 123) == PathConsumer("age", "123")
 
 
 def test_QueryParamsConsumer(request_options: RequestOptions) -> None:
@@ -86,11 +86,11 @@ def test_QueryParamsConsumer(request_options: RequestOptions) -> None:
 
     params: QueryParams = QueryParams({"name": "sam"})
 
-    QueryParamsConsumer(params)(request_options)
+    QueriesConsumer(params)(request_options)
 
     assert request_options == replace(ref_request_options, params=params)
 
-    assert QueryParamsConsumer.parse({"name": "sam"}) == QueryParamsConsumer(
+    assert QueriesConsumer.parse({"name": "sam"}) == QueriesConsumer(
         QueryParams({"name": "sam"})
     )
 
@@ -128,11 +128,11 @@ def test_PathParamsConsumer(request_options: RequestOptions) -> None:
 
     path_params: Mapping[str, str] = {"name": "sam"}
 
-    PathParamsConsumer(path_params)(request_options)
+    PathsConsumer(path_params)(request_options)
 
     assert request_options == replace(ref_request_options, path_params=path_params)
 
-    assert PathParamsConsumer.parse({"age": 123}) == PathParamsConsumer({"age": "123"})
+    assert PathsConsumer.parse({"age": 123}) == PathsConsumer({"age": "123"})
 
 
 def test_ContentConsumer(request_options: RequestOptions) -> None:

@@ -3,9 +3,9 @@ from typing import Any, Mapping
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 
-from .. import converters
-from ..models import RequestOptions
-from ..types import (
+from . import converters
+from .models import RequestOptions
+from .types import (
     CookieTypes,
     HeaderTypes,
     JsonTypes,
@@ -16,11 +16,31 @@ from ..types import (
     RequestFiles,
     TimeoutTypes,
 )
-from .typing import RequestConsumer
+
+from typing import Protocol, TypeVar, runtime_checkable
+
+from typing_extensions import ParamSpec
+
+from .models import RequestOptions
+
+T = TypeVar("T", contravariant=True)
+
+PS = ParamSpec("PS")
+
+
+@runtime_checkable
+class RequestConsumer(Protocol):
+    def __call__(self, request: RequestOptions, /) -> None:
+        ...
+
+
+class RequestConsumerFactory(Protocol[PS]):
+    def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> RequestConsumer:
+        ...
 
 
 @dataclass
-class QueryParamConsumer(RequestConsumer):
+class QueryConsumer(RequestConsumer):
     key: str
     value: str
 
@@ -28,7 +48,7 @@ class QueryParamConsumer(RequestConsumer):
         request.params = request.params.set(self.key, self.value)
 
     @classmethod
-    def parse(cls, key: str, value: Any) -> "QueryParamConsumer":
+    def parse(cls, key: str, value: Any) -> "QueryConsumer":
         return cls(
             key,
             converters.convert_query_param(value),
@@ -68,7 +88,7 @@ class CookieConsumer(RequestConsumer):
 
 
 @dataclass
-class PathParamConsumer(RequestConsumer):
+class PathConsumer(RequestConsumer):
     key: str
     value: str
 
@@ -76,7 +96,7 @@ class PathParamConsumer(RequestConsumer):
         request.path_params[self.key] = self.value
 
     @classmethod
-    def parse(cls, key: str, value: Any) -> "PathParamConsumer":
+    def parse(cls, key: str, value: Any) -> "PathConsumer":
         return cls(
             key,
             converters.convert_path_param(value),
@@ -84,14 +104,14 @@ class PathParamConsumer(RequestConsumer):
 
 
 @dataclass
-class QueryParamsConsumer(RequestConsumer):
+class QueriesConsumer(RequestConsumer):
     params: QueryParams
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.params = request.params.merge(self.params)
 
     @classmethod
-    def parse(cls, params: QueryParamTypes) -> "QueryParamsConsumer":
+    def parse(cls, params: QueryParamTypes) -> "QueriesConsumer":
         return cls(converters.convert_query_params(params))
 
 
@@ -120,14 +140,14 @@ class CookiesConsumer(RequestConsumer):
 
 
 @dataclass
-class PathParamsConsumer(RequestConsumer):
+class PathsConsumer(RequestConsumer):
     path_params: Mapping[str, str]
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.path_params.update(self.path_params)
 
     @classmethod
-    def parse(cls, path_params: PathParamTypes) -> "PathParamsConsumer":
+    def parse(cls, path_params: PathParamTypes) -> "PathsConsumer":
         return cls(converters.convert_path_params(path_params))
 
 
