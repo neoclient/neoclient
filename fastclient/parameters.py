@@ -19,12 +19,12 @@ from httpx import Request, Response
 from pydantic import Required
 from pydantic.fields import FieldInfo, Undefined, UndefinedType
 
-from .errors import CompositionError
+from .errors import CompositionError, ResolutionError
 from .enums import ParamType
 from .models import RequestOptions
 from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
 from .typing import Supplier
-from .composition_consumers import (
+from .composition.consumers import (
     QueryConsumer,
     HeaderConsumer,
     CookieConsumer,
@@ -33,6 +33,10 @@ from .composition_consumers import (
     HeadersConsumer,
     CookiesConsumer,
     PathsConsumer,
+)
+from .resolution.functions import (
+    QueryResolutionFunction,
+    DependencyResolutionFunction,
 )
 from .parsing import Parser
 
@@ -51,6 +55,7 @@ __all__: List[str] = [
 ]
 
 T = TypeVar("T")
+
 
 @dataclass
 class BaseParameter(FieldInfo):
@@ -95,6 +100,12 @@ class BaseParameter(FieldInfo):
     def generate_alias(alias: str, /) -> str:
         return alias
 
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+        raise CompositionError(f"Parameter {type(self)!r} is not composable")
+
+    def resolve(self, response: Response, /) -> Any:
+        raise ResolutionError(f"Parameter {type(self)!r} is not resolvable")
+
 
 class BaseSingleParameter(BaseParameter):
     type: ClassVar[ParamType]
@@ -117,13 +128,22 @@ class QueryParameter(BaseSingleParameter):
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
-            raise CompositionError(f"Cannot compose parameter {type(self)!r} without an alias")
+            raise CompositionError(
+                f"Cannot compose parameter {type(self)!r} without an alias"
+            )
 
         if argument is None and self.default is not Required:
             return
 
         QueryConsumer.parse(self.alias, argument)(request)
 
+    def resolve(self, response: Response, /) -> Optional[str]:
+        if self.alias is None:
+            raise ResolutionError(
+                f"Cannot resolve parameter {type(self)!r} without an alias"
+            )
+
+        return QueryResolutionFunction(self.alias)(response)
 
 class HeaderParameter(BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.HEADER
@@ -134,7 +154,9 @@ class HeaderParameter(BaseSingleParameter):
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
-            raise CompositionError(f"Cannot compose parameter {type(self)!r} without an alias")
+            raise CompositionError(
+                f"Cannot compose parameter {type(self)!r} without an alias"
+            )
 
         if argument is None and self.default is not Required:
             return
@@ -160,7 +182,9 @@ class PathParameter(BaseSingleParameter):
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
-            raise CompositionError(f"Cannot compose parameter {type(self)!r} without an alias")
+            raise CompositionError(
+                f"Cannot compose parameter {type(self)!r} without an alias"
+            )
 
         if argument is None and self.default is not Required:
             return
@@ -222,7 +246,9 @@ class BodyParameter(BaseParameter):
 
         if self.embed:
             if self.alias is None:
-                raise CompositionError(f"Cannot embed parameter {type(self)!r} without an alias")
+                raise CompositionError(
+                    f"Cannot embed parameter {type(self)!r} without an alias"
+                )
 
             json_value = {self.alias: json_value}
 

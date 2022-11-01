@@ -1,31 +1,71 @@
-from typing import Any, Optional
+import dataclasses
+from typing import Any, Callable, Mapping, MutableMapping, Tuple, Type
 
 from httpx import Response
-from loguru import logger
+from pydantic import BaseModel
+from pydantic.fields import ModelField, FieldInfo
 
-from ..errors import ResolutionError
-from ..parameters import BaseParameter
-from .resolvers import Resolver, resolvers
-from .typing import ResolutionFunction
+from .. import api
+from ..parameters import BaseParameter, BodyParameter, QueryParameter
+from ..validation import ValidatedFunction
+
+def _get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
+    fields: MutableMapping[str, Tuple[Any, BaseParameter]] = {}
+
+    field_name: str
+    model_field: ModelField
+    for field_name, model_field in ValidatedFunction(func).model.__fields__.items():
+        field_info: FieldInfo = model_field.field_info
+
+        # Parameter Inference
+        if not isinstance(field_info, BaseParameter):
+            # TODO: Better inference (e.g. path params)
+
+            if isinstance(model_field.annotation, type) and (
+                issubclass(model_field.annotation, (BaseModel, dict))
+                or dataclasses.is_dataclass(model_field.annotation)
+            ):
+                field_info = BodyParameter(
+                    default=BaseParameter.get_default(field_info),
+                )
+            else:
+                field_info = QueryParameter(
+                    default=BaseParameter.get_default(field_info),
+                )
+
+        # if isinstance(field_info, BaseSingleParameter) and field_info.alias is None:
+        if field_info.alias is None:
+            field_info = dataclasses.replace(
+                field_info, alias=field_info.generate_alias(field_name)
+            )
+
+        fields[field_name] = (model_field.annotation, field_info)
+
+    # TODO: Validation? (e.g. no duplicate parameters?)
+
+    return fields
 
 
 def resolve(
+    func: Callable,
     response: Response,
-    parameter: BaseParameter,
 ) -> Any:
-    logger.info(f"Resolving parameter {parameter!r} for response {response!r}")
+    fields: Mapping[str, Tuple[Any, BaseParameter]] = _get_fields(func)
 
-    print("Resolvers:", resolvers)
+    model_cls: Type[BaseModel] = api.create_model_cls(func, fields)
 
-    resolver: Optional[Resolver] = resolvers.get(type(parameter))
+    arguments: MutableMapping[str, Any] = {}
 
-    if resolver is None:
-        raise ResolutionError(f"Failed to find resolver for parameter {parameter!r}")
+    field_name: str
+    model_field: ModelField
+    for field_name, model_field in model_cls.__fields__.items():
+        # TODO: Fix typing of this vvv (FieldInfo is not a BaseParameter)
+        parameter: BaseParameter = model_field.field_info
 
-    logger.info(f"Found resolver: {resolver!r}")
+        arguments[field_name] = parameter.resolve(response)
 
-    resolution_function: ResolutionFunction = resolver(parameter)
+    model: BaseModel = model_cls(**arguments)
 
-    logger.info(f"Applying resolution function: {resolver!r} to response {response!r}")
+    validated_arguments: Mapping[str, Any] = model.dict()
 
-    return resolution_function(response)
+    return func(**validated_arguments)

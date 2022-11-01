@@ -1,14 +1,14 @@
 from typing import Any, Callable, Mapping, Tuple, Type
 
 from pydantic import BaseModel
+from pydantic.fields import FieldInfo
 
 from . import utils
-from .parameters import BaseParameter
 from .validation import ValidatedFunction
 
 
 def create_model_cls(
-    func: Callable, fields: Mapping[str, Tuple[Any, BaseParameter]]
+    func: Callable, fields: Mapping[str, Tuple[Any, FieldInfo]]
 ) -> Type[BaseModel]:
     class Config:
         allow_population_by_field_name: bool = True
@@ -19,7 +19,7 @@ def create_model_cls(
 
 def create_model(
     func: Callable,
-    fields: Mapping[str, Tuple[Any, BaseParameter]],
+    fields: Mapping[str, Tuple[Any, FieldInfo]],
     arguments: Mapping[str, Any],
 ) -> BaseModel:
     model_cls: Type[BaseModel] = create_model_cls(func, fields)
@@ -35,5 +35,5 @@ def bind_arguments(
     return {
         key: value
         for key, value in arguments.items()
-        if not isinstance(value, BaseParameter)
+        if not isinstance(value, FieldInfo)
     }

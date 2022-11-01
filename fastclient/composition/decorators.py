@@ -5,7 +5,7 @@ from loguru import logger
 
 from fastclient.models import RequestOptions
 
-from .types import (
+from ..types import (
     CookieTypes,
     HeaderTypes,
     JsonTypes,
@@ -16,7 +16,7 @@ from .types import (
     RequestFiles,
     TimeoutTypes,
 )
-from .composition_consumers import (
+from .consumers import (
     RequestConsumer,
     ContentConsumer,
     CookieConsumer,
@@ -32,7 +32,7 @@ from .composition_consumers import (
     QueriesConsumer,
     TimeoutConsumer,
 )
-from .operations import CallableWithOperation
+from ..operations import CallableWithOperation
 
 C = TypeVar("C", bound=CallableWithOperation)
 

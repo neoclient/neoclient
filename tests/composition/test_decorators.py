@@ -6,7 +6,7 @@ from httpx import Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
 
 from fastclient import get
-from fastclient.composition import composition_decorators
+from fastclient.composition.composition import composition_decorators
 from fastclient.models import RequestOptions
 from fastclient.types import (
     CookieTypes,
