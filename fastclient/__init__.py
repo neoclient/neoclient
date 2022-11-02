@@ -1,6 +1,6 @@
 __version__: str = "0.1.0"
 
-from httpx import Request, Response
+# from httpx import Request, Response
 
 from .client import FastClient
 from .composition.decorators import (
@@ -29,7 +29,11 @@ from .parameter_functions import (
     Headers,
     Path,
     Paths,
-    Promise,
+    # Promise,
     Queries,
     Query,
+    URL,
+    Request,
+    Response,
+    StatusCode,
 )

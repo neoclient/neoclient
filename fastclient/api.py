@@ -14,7 +14,7 @@ def create_model_cls(
         allow_population_by_field_name: bool = True
         arbitrary_types_allowed: bool = True
 
-    return ValidatedFunction(func)._create_model(fields, config=Config)
+    return ValidatedFunction(func, config=Config)._create_model(fields, config=Config)
 
 
 def create_model(

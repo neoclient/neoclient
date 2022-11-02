@@ -5,6 +5,7 @@ from httpx import Response, Headers, Cookies, QueryParams
 from pydantic import BaseModel
 
 from .typing import ResolutionFunction
+from ..typing import Resolver
 
 __all__: List[str] = [
     "CookieResolutionFunction",
@@ -42,34 +43,40 @@ class CookieResolutionFunction(ResolutionFunction[Optional[str]]):
         return response.headers.get(self.name)
 
 
-@dataclass
 class QueriesResolutionFunction(ResolutionFunction[QueryParams]):
-    def __call__(self, response: Response, /) -> QueryParams:
+    @staticmethod
+    def __call__(response: Response, /) -> QueryParams:
         return response.request.url.params
 
 
-@dataclass
 class HeadersResolutionFunction(ResolutionFunction[Headers]):
-    def __call__(self, response: Response, /) -> Headers:
+    @staticmethod
+    def __call__(response: Response, /) -> Headers:
         return response.headers
 
 
-@dataclass
 class CookiesResolutionFunction(ResolutionFunction[Cookies]):
-    def __call__(self, response: Response, /) -> Cookies:
+    @staticmethod
+    def __call__(response: Response, /) -> Cookies:
         return response.cookies
+
+class BodyResolutionFunction(ResolutionFunction[Any]):
+    @staticmethod
+    def __call__(response: Response, /) -> Any:
+        # TODO: Massively improve this implementation
+        return response.json()
 
 
 @dataclass
 class DependencyResolutionFunction(ResolutionFunction[T]):
     model_cls: Type[BaseModel]
     dependency: Callable[..., T]
-    parameters: Mapping[str, ResolutionFunction]
+    resolvers: Mapping[str, Resolver]
 
     def __call__(self, response: Response, /) -> T:
         arguments: Mapping[str, Any] = {
-            parameter: resolution_function(response)
-            for parameter, resolution_function in self.parameters.items()
+            parameter: resolver(response)
+            for parameter, resolver in self.resolvers.items()
         }
 
         model: BaseModel = self.model_cls(**arguments)

@@ -1,6 +1,5 @@
-from typing import Any, Callable, Optional, Type, Union
+from typing import Any, Callable, Optional, Union
 
-from httpx import Request, Response
 from pydantic.fields import Undefined, UndefinedType
 
 from .parameters import (
@@ -12,9 +11,12 @@ from .parameters import (
     HeadersParameter,
     PathParameter,
     PathsParameter,
-    PromiseParameter,
     QueriesParameter,
     QueryParameter,
+    URLParameter,
+    RequestParameter,
+    ResponseParameter,
+    StatusCodeParameter,
 )
 from .typing import Supplier
 
@@ -124,7 +126,16 @@ def Depends(
     return DependencyParameter(dependency=dependency, use_cache=use_cache)
 
 
-def Promise(
-    promised_type: Union[None, Type[Request], Type[Response]] = None, /
-) -> PromiseParameter:
-    return PromiseParameter(promised_type=promised_type)
+def URL() -> URLParameter:
+    return URLParameter()
+
+
+def Request() -> RequestParameter:
+    return RequestParameter()
+
+
+def Response() -> ResponseParameter:
+    return ResponseParameter()
+
+def StatusCode() -> StatusCodeParameter:
+    return StatusCodeParameter()

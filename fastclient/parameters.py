@@ -7,23 +7,27 @@ from typing import (
     Generic,
     List,
     Mapping,
+    MutableMapping,
     Optional,
     Set,
+    Tuple,
     Type,
     TypeVar,
     Union,
 )
 
 import fastapi.encoders
-from httpx import Request, Response
-from pydantic import Required
-from pydantic.fields import FieldInfo, Undefined, UndefinedType
+import httpx
+from httpx import QueryParams, Headers, Cookies
+from pydantic import Required, BaseModel
+from pydantic.fields import FieldInfo, Undefined, UndefinedType, ModelField
 
+from . import api
 from .errors import CompositionError, ResolutionError
 from .enums import ParamType
 from .models import RequestOptions
 from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
-from .typing import Supplier
+from .typing import Supplier, Resolver, Composer
 from .composition.consumers import (
     QueryConsumer,
     HeaderConsumer,
@@ -35,7 +39,13 @@ from .composition.consumers import (
     PathsConsumer,
 )
 from .resolution.functions import (
+    BodyResolutionFunction,
     QueryResolutionFunction,
+    HeaderResolutionFunction,
+    CookieResolutionFunction,
+    QueriesResolutionFunction,
+    HeadersResolutionFunction,
+    CookiesResolutionFunction,
     DependencyResolutionFunction,
 )
 from .parsing import Parser
@@ -51,7 +61,10 @@ __all__: List[str] = [
     "PathsParameter",
     "BodyParameter",
     "DependencyParameter",
-    "PromiseParameter",
+    "URLParameter",
+    "ResponseParameter",
+    "RequestParameter",
+    "StatusCodeParameter",
 ]
 
 T = TypeVar("T")
@@ -103,7 +116,7 @@ class BaseParameter(FieldInfo):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         raise CompositionError(f"Parameter {type(self)!r} is not composable")
 
-    def resolve(self, response: Response, /) -> Any:
+    def resolve(self, response: httpx.Response, /) -> Any:
         raise ResolutionError(f"Parameter {type(self)!r} is not resolvable")
 
 
@@ -137,13 +150,14 @@ class QueryParameter(BaseSingleParameter):
 
         QueryConsumer.parse(self.alias, argument)(request)
 
-    def resolve(self, response: Response, /) -> Optional[str]:
+    def resolve(self, response: httpx.Response, /) -> Optional[str]:
         if self.alias is None:
             raise ResolutionError(
                 f"Cannot resolve parameter {type(self)!r} without an alias"
             )
 
         return QueryResolutionFunction(self.alias)(response)
+
 
 class HeaderParameter(BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.HEADER
@@ -163,18 +177,36 @@ class HeaderParameter(BaseSingleParameter):
 
         HeaderConsumer.parse(self.alias, argument)(request)
 
+    def resolve(self, response: httpx.Response, /) -> Optional[str]:
+        if self.alias is None:
+            raise ResolutionError(
+                f"Cannot resolve parameter {type(self)!r} without an alias"
+            )
+
+        return HeaderResolutionFunction(self.alias)(response)
+
 
 class CookieParameter(BaseSingleParameter):
     type: ClassVar[ParamType] = ParamType.COOKIE
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
-            raise CompositionError(f"Cannot compose parameter {type(self)!r} without an alias")
+            raise CompositionError(
+                f"Cannot compose parameter {type(self)!r} without an alias"
+            )
 
         if argument is None and self.default is not Required:
             return
 
         CookieConsumer.parse(self.alias, argument)(request)
+
+    def resolve(self, response: httpx.Response, /) -> Optional[str]:
+        if self.alias is None:
+            raise ResolutionError(
+                f"Cannot resolve parameter {type(self)!r} without an alias"
+            )
+
+        return CookieResolutionFunction(self.alias)(response)
 
 
 class PathParameter(BaseSingleParameter):
@@ -191,6 +223,9 @@ class PathParameter(BaseSingleParameter):
 
         PathConsumer.parse(self.alias, argument)(request)
 
+    def resolve(self, response: httpx.Response, /) -> Optional[str]:
+        raise NotImplementedError
+
 
 class QueriesParameter(BaseMultiParameter[QueryParamTypes]):
     type: ClassVar[ParamType] = ParamType.QUERY
@@ -199,6 +234,9 @@ class QueriesParameter(BaseMultiParameter[QueryParamTypes]):
         params: QueryParamTypes = Parser(QueryParamTypes)(argument)
 
         QueriesConsumer.parse(params)(request)
+
+    def resolve(self, response: httpx.Response, /) -> QueryParams:
+        return QueriesResolutionFunction()(response)
 
 
 class HeadersParameter(BaseMultiParameter[HeaderTypes]):
@@ -209,6 +247,9 @@ class HeadersParameter(BaseMultiParameter[HeaderTypes]):
 
         HeadersConsumer.parse(headers)(request)
 
+    def resolve(self, response: httpx.Response, /) -> Headers:
+        return HeadersResolutionFunction()(response)
+
 
 class CookiesParameter(BaseMultiParameter[CookieTypes]):
     type: ClassVar[ParamType] = ParamType.COOKIE
@@ -217,6 +258,9 @@ class CookiesParameter(BaseMultiParameter[CookieTypes]):
         cookies: CookieTypes = Parser(CookieTypes)(argument)
 
         CookiesConsumer.parse(cookies)(request)
+
+    def resolve(self, response: httpx.Response, /) -> Cookies:
+        return CookiesResolutionFunction()(response)
 
 
 class PathsParameter(BaseMultiParameter[PathParamTypes]):
@@ -262,13 +306,60 @@ class BodyParameter(BaseParameter):
             else:
                 request.json.update(json_value)
 
+    def resolve(self, response: httpx.Response, /) -> Any:
+        return BodyResolutionFunction()(response)
+
 
 @dataclass
 class DependencyParameter(BaseParameter):
     dependency: Optional[Callable] = None
     use_cache: bool = True
 
+    def resolve(self, response: httpx.Response, /) -> Any:
+        # TODO: Pls no import here
+        from .resolution.api import _get_fields
+
+        if self.dependency is None:
+            raise ResolutionError(
+                f"Cannot resolve parameter {type(self)!r} without a dependency"
+            )
+
+        fields: Mapping[str, Tuple[Any, BaseParameter]] = _get_fields(self.dependency)
+
+        model_cls: Type[BaseModel] = api.create_model_cls(self.dependency, fields)
+
+        resolvers: MutableMapping[str, Resolver] = {}
+
+        field_name: str
+        model_field: ModelField
+        for field_name, model_field in model_cls.__fields__.items():
+            parameter: BaseParameter = model_field.field_info
+
+            resolvers[field_name] = parameter.resolve
+
+        return DependencyResolutionFunction(model_cls, self.dependency, resolvers)(
+            response
+        )
+
 
 @dataclass
-class PromiseParameter(BaseParameter):
-    promised_type: Union[None, Type[Request], Type[Response]] = None
+class URLParameter(BaseParameter):
+    def resolve(self, response: httpx.Response, /) -> httpx.URL:
+        return response.request.url
+
+
+@dataclass
+class ResponseParameter(BaseParameter):
+    def resolve(self, response: httpx.Response, /) -> httpx.Response:
+        return response
+
+
+@dataclass
+class RequestParameter(BaseParameter):
+    def resolve(self, response: httpx.Response, /) -> httpx.Request:
+        return response.request
+
+@dataclass
+class StatusCodeParameter(BaseParameter):
+    def resolve(self, response: httpx.Response, /) -> int:
+        return response.status_code

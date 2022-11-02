@@ -1,8 +1,10 @@
+import inspect
 from functools import cached_property, wraps
 from inspect import Parameter, Signature, signature
 from typing import (
     Any,
     Callable,
+    Dict,
     Generic,
     Mapping,
     MutableMapping,
@@ -103,20 +105,21 @@ class ValidatedFunction(Generic[PS, RT]):
     def _create_model(
         self, fields: Mapping[str, Any], *, config: Optional[ConfigType] = None
     ) -> Type[BaseModel]:
-        CustomConfig: Type[Any]
+        configurations: Dict[str, Any] = {}
 
         if isinstance(config, dict):
-            CustomConfig = type("CustomConfig", (), config)
+            configurations.update(config)
         elif isinstance(config, type):
-            CustomConfig = config
-        else:
-            CustomConfig = type("CustomConfig", (), {})
+            member_name: str
+            member: Any
+            for member_name, member in inspect.getmembers(config):
+                if member_name.startswith("_"): continue
 
-        Config: Type[Any] = type(
-            "Config",
-            (CustomConfig,),
-            {"extra": getattr(CustomConfig, "extra", Extra.forbid)},
-        )
+                configurations[member_name] = member
+
+        configurations.setdefault("extra", Extra.forbid)
+
+        Config: Type[Any] = type("Config", (), configurations)
 
         ValidatedFunctionBaseModel: Type[BaseModel] = type(
             "ValidatedFunctionBaseModel", (BaseModel,), {"Config": Config}
