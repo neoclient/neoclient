@@ -20,34 +20,14 @@ import fastapi.encoders
 import httpx
 from httpx import QueryParams, Headers, Cookies
 from pydantic import Required, BaseModel
-from pydantic.fields import FieldInfo, Undefined, UndefinedType, ModelField
+from pydantic.fields import FieldInfo, Undefined, UndefinedType
 
 from . import api
 from .errors import CompositionError, ResolutionError
 from .enums import ParamType
 from .models import RequestOptions
 from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
-from .typing import Supplier, Resolver, Composer
-from .composition.consumers import (
-    QueryConsumer,
-    HeaderConsumer,
-    CookieConsumer,
-    PathConsumer,
-    QueriesConsumer,
-    HeadersConsumer,
-    CookiesConsumer,
-    PathsConsumer,
-)
-from .resolution.functions import (
-    BodyResolutionFunction,
-    QueryResolutionFunction,
-    HeaderResolutionFunction,
-    CookieResolutionFunction,
-    QueriesResolutionFunction,
-    HeadersResolutionFunction,
-    CookiesResolutionFunction,
-    DependencyResolutionFunction,
-)
+from .typing import Supplier
 from .parsing import Parser
 
 __all__: List[str] = [
@@ -118,6 +98,29 @@ class BaseParameter(FieldInfo):
 
     def resolve(self, response: httpx.Response, /) -> Any:
         raise ResolutionError(f"Parameter {type(self)!r} is not resolvable")
+
+
+# NOTE: Currently here to avoid cyclic dependencies
+from .composition.consumers import (
+    QueryConsumer,
+    HeaderConsumer,
+    CookieConsumer,
+    PathConsumer,
+    QueriesConsumer,
+    HeadersConsumer,
+    CookiesConsumer,
+    PathsConsumer,
+)
+from .resolution.functions import (
+    BodyResolutionFunction,
+    QueryResolutionFunction,
+    HeaderResolutionFunction,
+    CookieResolutionFunction,
+    QueriesResolutionFunction,
+    HeadersResolutionFunction,
+    CookiesResolutionFunction,
+    DependencyResolutionFunction,
+)
 
 
 class BaseSingleParameter(BaseParameter):
@@ -223,9 +226,6 @@ class PathParameter(BaseSingleParameter):
 
         PathConsumer.parse(self.alias, argument)(request)
 
-    def resolve(self, response: httpx.Response, /) -> Optional[str]:
-        raise NotImplementedError
-
 
 class QueriesParameter(BaseMultiParameter[QueryParamTypes]):
     type: ClassVar[ParamType] = ParamType.QUERY
@@ -328,16 +328,12 @@ class DependencyParameter(BaseParameter):
 
         model_cls: Type[BaseModel] = api.create_model_cls(self.dependency, fields)
 
-        resolvers: MutableMapping[str, Resolver] = {}
+        parameters: Mapping[str, BaseParameter] = {
+            field_name: model_field.field_info
+            for field_name, model_field in model_cls.__fields__.items()
+        }
 
-        field_name: str
-        model_field: ModelField
-        for field_name, model_field in model_cls.__fields__.items():
-            parameter: BaseParameter = model_field.field_info
-
-            resolvers[field_name] = parameter.resolve
-
-        return DependencyResolutionFunction(model_cls, self.dependency, resolvers)(
+        return DependencyResolutionFunction(model_cls, self.dependency, parameters)(
             response
         )
 
@@ -358,6 +354,7 @@ class ResponseParameter(BaseParameter):
 class RequestParameter(BaseParameter):
     def resolve(self, response: httpx.Response, /) -> httpx.Request:
         return response.request
+
 
 @dataclass
 class StatusCodeParameter(BaseParameter):

@@ -13,7 +13,7 @@ from typing_extensions import ParamSpec
 from . import __version__
 from .enums import HttpMethod
 from .models import ClientOptions, OperationSpecification, RequestOptions
-# from .composition.api import get_fields
+from .composition.api import get_fields
 from .operations import CallableWithOperation, Operation
 from .types import (
     AuthTypes,
@@ -196,8 +196,7 @@ class FastClient:
             wrapped_func: CallableWithOperation[PS, RT] = self._wrap(operation)
 
             # Assert params are valid
-            # NOTE: Temporarily disabled due to a cyclic dependency
-            # get_fields(operation.specification.request, wrapped_func)
+            get_fields(operation.specification.request, wrapped_func)
 
             return wrapped_func
 

@@ -32,15 +32,3 @@ class Resolver(Protocol[T_co]):
 class Composer(Protocol):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         ...
-
-
-# @runtime_checkable
-# class Resolvable(Protocol[T_co]):
-#     def resolve(self, response: Response, /) -> T_co:
-#         ...
-
-
-# @runtime_checkable
-# class Composable(Protocol):
-#     def compose(self, request: RequestOptions, argument: Any, /) -> None:
-#         ...

@@ -1,7 +1,5 @@
 __version__: str = "0.1.0"
 
-# from httpx import Request, Response
-
 from .client import FastClient
 from .composition.decorators import (
     content,
@@ -18,7 +16,16 @@ from .composition.decorators import (
     query_params,
     timeout,
 )
-from .methods import delete, get, head, options, patch, post, put, request
+from .methods import (
+    delete,
+    get,
+    head,
+    options,
+    patch,
+    post,
+    put,
+    request,
+)
 from .models import Client
 from .parameter_functions import (
     Body,
@@ -29,7 +36,6 @@ from .parameter_functions import (
     Headers,
     Path,
     Paths,
-    # Promise,
     Queries,
     Query,
     URL,

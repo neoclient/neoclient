@@ -5,6 +5,8 @@ from httpx import Response, Request, Headers, Cookies, QueryParams, URL
 from pydantic import BaseModel
 from pydantic.fields import ModelField, FieldInfo
 
+from fastclient.errors import ResolutionError
+
 from .. import api
 from ..parameters import (
     BaseParameter,
@@ -16,6 +18,7 @@ from ..parameters import (
     QueriesParameter,
     HeadersParameter,
     CookiesParameter,
+    DependencyParameter,
 )
 from ..validation import ValidatedFunction
 
@@ -31,43 +34,53 @@ def _get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
     model_field: ModelField
     for field_name, model_field in ValidatedFunction(func, config=Config).model.__fields__.items():
         field_info: FieldInfo = model_field.field_info
+        parameter: BaseParameter
 
+        if isinstance(field_info, BaseParameter):
+            parameter = field_info
         # Parameter Inference
-        if not isinstance(field_info, BaseParameter):
-            # TODO: Better inference (e.g. path params)
+        else:
+            # TODO: Support inference of path parameters
+            # TODO: Shift responsibility of inference to parameters themselves.
 
-            if (
+            if model_field.annotation is Request:
+                parameter = RequestParameter()
+            elif model_field.annotation is Response:
+                parameter = ResponseParameter()
+            elif model_field.annotation is URL:
+                parameter = URLParameter()
+            elif model_field.annotation is QueryParams:
+                parameter = QueriesParameter()
+            elif model_field.annotation is Headers:
+                parameter = HeadersParameter()
+            elif model_field.annotation is Cookies:
+                parameter = CookiesParameter()
+            elif (
                 isinstance(model_field.annotation, type)
                 and issubclass(model_field.annotation, (BaseModel, dict))
                 or dataclasses.is_dataclass(model_field.annotation)
             ):
-                field_info = BodyParameter(
+                parameter = BodyParameter(
                     default=BaseParameter.get_default(field_info),
                 )
-            elif model_field.annotation is Request:
-                field_info = RequestParameter()
-            elif model_field.annotation is Response:
-                field_info = ResponseParameter()
-            elif model_field.annotation is URL:
-                field_info = URLParameter()
-            elif model_field.annotation is QueryParams:
-                field_info = QueriesParameter()
-            elif model_field.annotation is Headers:
-                field_info = HeadersParameter()
-            elif model_field.annotation is Cookies:
-                field_info = CookiesParameter()
             else:
-                field_info = QueryParameter(
+                parameter = QueryParameter(
                     default=BaseParameter.get_default(field_info),
                 )
 
-        # if isinstance(field_info, BaseSingleParameter) and field_info.alias is None:
-        if field_info.alias is None:
-            field_info = dataclasses.replace(
-                field_info, alias=field_info.generate_alias(field_name)
+        # TODO: Depends .dependency must not be None
+        if isinstance(parameter, DependencyParameter) and parameter.dependency is None:
+            if not callable(model_field.annotation):
+                raise ResolutionError(f"Failed to resolve parameter: {parameter!r}. Dependency has non-callable annotation")
+            
+            parameter.dependency = model_field.annotation
+
+        if parameter.alias is None:
+            parameter = dataclasses.replace(
+                parameter, alias=parameter.generate_alias(field_name)
             )
 
-        fields[field_name] = (model_field.annotation, field_info)
+        fields[field_name] = (model_field.annotation, parameter)
 
     # TODO: Validation? (e.g. no duplicate parameters?)
 

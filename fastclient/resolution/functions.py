@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from .typing import ResolutionFunction
 from ..typing import Resolver
+from ..parameters import BaseParameter
 
 __all__: List[str] = [
     "CookieResolutionFunction",
@@ -71,12 +72,12 @@ class BodyResolutionFunction(ResolutionFunction[Any]):
 class DependencyResolutionFunction(ResolutionFunction[T]):
     model_cls: Type[BaseModel]
     dependency: Callable[..., T]
-    resolvers: Mapping[str, Resolver]
+    parameters: Mapping[str, BaseParameter]
 
     def __call__(self, response: Response, /) -> T:
         arguments: Mapping[str, Any] = {
-            parameter: resolver(response)
-            for parameter, resolver in self.resolvers.items()
+            parameter_name: parameter.resolve(response)
+            for parameter_name, parameter in self.parameters.items()
         }
 
         model: BaseModel = self.model_cls(**arguments)

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Protocol, TypeVar
+from typing import Any, TypeVar, Protocol
 
 from loguru import logger
 
@@ -35,6 +35,7 @@ from .consumers import (
 from ..operations import CallableWithOperation
 
 C = TypeVar("C", bound=CallableWithOperation)
+
 
 class Decorator(Protocol):
     def __call__(self, func: C, /) -> C:

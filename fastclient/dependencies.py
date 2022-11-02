@@ -2,159 +2,158 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
-import httpx
+from httpx import Request, Response, Headers, Cookies, QueryParams, URL
 
-from .parameter_functions import Cookies, Headers, Promise
 from .types import StreamTypes
 
 
 @dataclass
-class HeaderResponse:
+class HeaderDependency:
     name: str
 
-    def __call__(self, headers: httpx.Headers = Headers()) -> str:
+    def __call__(self, headers: Headers) -> str:
         return headers[self.name]
 
 
 @dataclass
-class CookieResponse:
+class CookieDependency:
     name: str
 
-    def __call__(self, cookies: httpx.Cookies = Cookies()) -> str:
+    def __call__(self, cookies: Cookies) -> str:
         return cookies[self.name]
 
 
-def charset_encoding(response: httpx.Response = Promise()) -> Optional[str]:
+def charset_encoding(response: Response) -> Optional[str]:
     return response.charset_encoding
 
 
-def content(response: httpx.Response = Promise()) -> bytes:
+def content(response: Response) -> bytes:
     return response.content
 
 
-def cookies(response: httpx.Response = Promise()) -> httpx.Cookies:
+def cookies(response: Response) -> Cookies:
     return response.cookies
 
 
-def elapsed(response: httpx.Response = Promise()) -> timedelta:
+def elapsed(response: Response) -> timedelta:
     return response.elapsed
 
 
-def encoding(response: httpx.Response = Promise()) -> Optional[str]:
+def encoding(response: Response) -> Optional[str]:
     return response.encoding
 
 
-def has_redirect_location(response: httpx.Response = Promise()) -> bool:
+def has_redirect_location(response: Response) -> bool:
     return response.has_redirect_location
 
 
-def headers(response: httpx.Response = Promise()) -> httpx.Headers:
+def headers(response: Response) -> Headers:
     return response.headers
 
 
-def history(response: httpx.Response = Promise()) -> List[httpx.Response]:
+def history(response: Response) -> List[Response]:
     return response.history
 
 
-def http_version(response: httpx.Response = Promise()) -> str:
+def http_version(response: Response) -> str:
     return response.http_version
 
 
-def is_client_error(response: httpx.Response = Promise()) -> bool:
+def is_client_error(response: Response) -> bool:
     return response.is_client_error
 
 
-def is_closed(response: httpx.Response = Promise()) -> bool:
+def is_closed(response: Response) -> bool:
     return response.is_closed
 
 
-def is_error(response: httpx.Response = Promise()) -> bool:
+def is_error(response: Response) -> bool:
     return response.is_error
 
 
-def is_informational(response: httpx.Response = Promise()) -> bool:
+def is_informational(response: Response) -> bool:
     return response.is_informational
 
 
-def is_redirect(response: httpx.Response = Promise()) -> bool:
+def is_redirect(response: Response) -> bool:
     return response.is_redirect
 
 
-def is_server_error(response: httpx.Response = Promise()) -> bool:
+def is_server_error(response: Response) -> bool:
     return response.is_server_error
 
 
-def is_stream_consumed(response: httpx.Response = Promise()) -> bool:
+def is_stream_consumed(response: Response) -> bool:
     return response.is_stream_consumed
 
 
-def is_success(response: httpx.Response = Promise()) -> bool:
+def is_success(response: Response) -> bool:
     return response.is_success
 
 
-def json(response: httpx.Response = Promise()) -> Any:
+def json(response: Response) -> Any:
     return response.json()
 
 
-def links(response: httpx.Response = Promise()) -> Dict[Optional[str], Dict[str, str]]:
+def links(response: Response) -> Dict[Optional[str], Dict[str, str]]:
     return response.links
 
 
-def next_request(response: httpx.Response = Promise()) -> Optional[httpx.Request]:
+def next_request(response: Response) -> Optional[Request]:
     return response.next_request
 
 
-def num_bytes_downloaded(response: httpx.Response = Promise()) -> int:
+def num_bytes_downloaded(response: Response) -> int:
     return response.num_bytes_downloaded
 
 
-def reason_phrase(response: httpx.Response = Promise()) -> str:
+def reason_phrase(response: Response) -> str:
     return response.reason_phrase
 
 
-def request(response: httpx.Response = Promise()) -> httpx.Request:
+def request(response: Response) -> Request:
     return response.request
 
 
-def response(response: httpx.Response = Promise()) -> httpx.Response:
+def response(response: Response) -> Response:
     return response
 
 
-def status_code(response: httpx.Response = Promise()) -> int:
+def status_code(response: Response) -> int:
     return response.status_code
 
 
-def stream(response: httpx.Response = Promise()) -> StreamTypes:
+def stream(response: Response) -> StreamTypes:
     return response.stream
 
 
-def text(response: httpx.Response = Promise()) -> str:
+def text(response: Response) -> str:
     return response.text
 
 
-def url(response: httpx.Response = Promise()) -> httpx.URL:
+def url(response: Response) -> URL:
     return response.url
 
 
-def request_content(request: httpx.Request = Promise()) -> bytes:
+def request_content(request: Request) -> bytes:
     return request.content
 
 
-def request_headers(request: httpx.Request = Promise()) -> httpx.Headers:
+def request_headers(request: Request) -> Headers:
     return request.headers
 
 
-def request_method(request: httpx.Request = Promise()) -> str:
+def request_method(request: Request) -> str:
     return request.method
 
 
-def request_params(request: httpx.Request = Promise()) -> httpx.QueryParams:
+def request_params(request: Request) -> QueryParams:
     return request.url.params
 
 
-def request_stream(request: httpx.Request = Promise()) -> StreamTypes:
+def request_stream(request: Request) -> StreamTypes:
     return request.stream
 
 
-def request_url(request: httpx.Request = Promise()) -> httpx.URL:
+def request_url(request: Request) -> URL:
     return request.url
