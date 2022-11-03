@@ -65,6 +65,32 @@ def b64decode(value: str):
 ```
 In this case, `value` is declared to be of type `str`.
 
+#### Explicit path parameters
+If you prefer explicitly stating that a parameter is a path parameter, you can use the `Path` parameter function:
+```python
+from fastclient import FastClient, Path
+
+client = FastClient("https://httpbin.org/")
+
+@client.get("/base64/{value}")
+def b64decode(value: str = Path()):
+    ...
+```
+This approach comes with added benefits, such as being able to specify a `default` value:
+```python
+from fastclient import FastClient, Path
+
+client = FastClient("https://httpbin.org/")
+
+@client.get("/base64/{value}")
+def b64decode(value: str = Path(default="SGVsbG8sIFdvcmxkIQ==")):
+    ...
+```
+```python
+>>> b64decode()
+'Hello, World!'
+```
+
 #### Missing path parameters
 FastClient will throw an error if you specify a path parameter in the request path, however do not create a function parameter for it. For example:
 ```python
