@@ -1,12 +1,12 @@
 from dataclasses import dataclass
 from typing import Any, Callable, List, Mapping, Optional, Tuple, Type, TypeVar
 
-from httpx import Response, Headers, Cookies, QueryParams
+from httpx import Cookies, Headers, QueryParams, Response
 from pydantic import BaseModel
 
 from .. import utils
-from .typing import ResolutionFunction
 from ..parameters import BaseParameter
+from .typing import ResolutionFunction
 
 __all__: List[str] = [
     "CookieResolutionFunction",
@@ -60,6 +60,7 @@ class CookiesResolutionFunction(ResolutionFunction[Cookies]):
     @staticmethod
     def __call__(response: Response, /) -> Cookies:
         return response.cookies
+
 
 class BodyResolutionFunction(ResolutionFunction[Any]):
     @staticmethod

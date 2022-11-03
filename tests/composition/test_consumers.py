@@ -16,8 +16,8 @@ from fastclient.composition.consumers import (
     JsonConsumer,
     PathConsumer,
     PathsConsumer,
-    QueryConsumer,
     QueriesConsumer,
+    QueryConsumer,
     TimeoutConsumer,
 )
 from fastclient.models import RequestOptions

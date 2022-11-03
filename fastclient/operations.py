@@ -2,14 +2,7 @@ import inspect
 from dataclasses import dataclass
 from json import JSONDecodeError
 from types import MethodWrapperType
-from typing import (
-    Any,
-    Generic,
-    Optional,
-    Protocol,
-    TypeVar,
-    runtime_checkable,
-)
+from typing import Any, Generic, Optional, Protocol, TypeVar, runtime_checkable
 
 import httpx
 import pydantic

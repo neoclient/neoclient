@@ -16,8 +16,6 @@ from ..types import (
     RequestFiles,
     TimeoutTypes,
 )
-
-from ..models import RequestOptions
 from .typing import RequestConsumer
 
 

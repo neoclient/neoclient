@@ -11,9 +11,9 @@ from loguru import logger
 from typing_extensions import ParamSpec
 
 from . import __version__
+from .composition.api import get_fields
 from .enums import HttpMethod
 from .models import ClientOptions, OperationSpecification, RequestOptions
-from .composition.api import get_fields
 from .operations import CallableWithOperation, Operation
 from .types import (
     AuthTypes,

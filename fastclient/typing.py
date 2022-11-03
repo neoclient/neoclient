@@ -1,5 +1,4 @@
 from typing import Any, Protocol, TypeVar
-from typing import Protocol, TypeVar
 
 from httpx import Response
 
@@ -23,6 +22,7 @@ class Consumer(Protocol[T_contra]):
 class Function(Protocol[T_contra, R_co]):
     def __call__(self, value: T_contra, /) -> R_co:
         ...
+
 
 class Resolver(Protocol[T_co]):
     def __call__(self, response: Response, /) -> T_co:

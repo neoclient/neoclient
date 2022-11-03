@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, TypeVar, Protocol
+from typing import Any, Protocol, TypeVar
 
 from loguru import logger
 
 from fastclient.models import RequestOptions
 
+from ..operations import CallableWithOperation
 from ..types import (
     CookieTypes,
     HeaderTypes,
@@ -17,7 +18,6 @@ from ..types import (
     TimeoutTypes,
 )
 from .consumers import (
-    RequestConsumer,
     ContentConsumer,
     CookieConsumer,
     CookiesConsumer,
@@ -28,11 +28,11 @@ from .consumers import (
     JsonConsumer,
     PathConsumer,
     PathsConsumer,
-    QueryConsumer,
     QueriesConsumer,
+    QueryConsumer,
+    RequestConsumer,
     TimeoutConsumer,
 )
-from ..operations import CallableWithOperation
 
 C = TypeVar("C", bound=CallableWithOperation)
 

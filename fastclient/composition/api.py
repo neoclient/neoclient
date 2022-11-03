@@ -1,15 +1,7 @@
 import dataclasses
 import urllib.parse
 from collections import Counter
-from typing import (
-    Any,
-    Callable,
-    Mapping,
-    MutableMapping,
-    Sequence,
-    Set,
-    Tuple,
-)
+from typing import Any, Callable, Mapping, MutableMapping, Sequence, Set, Tuple
 
 from loguru import logger
 from pydantic import BaseModel
@@ -105,6 +97,7 @@ def get_fields(
         raise DuplicateParameters(f"Duplicate parameters: {duplicate_aliases!r}")
 
     return fields
+
 
 def compose(
     func: Callable,

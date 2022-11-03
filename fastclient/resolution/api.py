@@ -1,9 +1,9 @@
 import dataclasses
 from typing import Any, Callable, Mapping, MutableMapping, Tuple, Type
 
-from httpx import Response, Request, Headers, Cookies, QueryParams, URL
+from httpx import URL, Cookies, Headers, QueryParams, Request, Response
 from pydantic import BaseModel
-from pydantic.fields import ModelField, FieldInfo
+from pydantic.fields import FieldInfo, ModelField
 
 from fastclient.errors import ResolutionError
 
@@ -11,14 +11,14 @@ from .. import api, utils
 from ..parameters import (
     BaseParameter,
     BodyParameter,
+    CookiesParameter,
+    DependencyParameter,
+    HeadersParameter,
+    QueriesParameter,
     QueryParameter,
     RequestParameter,
     ResponseParameter,
     URLParameter,
-    QueriesParameter,
-    HeadersParameter,
-    CookiesParameter,
-    DependencyParameter,
 )
 from ..validation import ValidatedFunction
 
@@ -32,7 +32,9 @@ def _get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
 
     field_name: str
     model_field: ModelField
-    for field_name, model_field in ValidatedFunction(func, config=Config).model.__fields__.items():
+    for field_name, model_field in ValidatedFunction(
+        func, config=Config
+    ).model.__fields__.items():
         field_info: FieldInfo = model_field.field_info
         parameter: BaseParameter
 
@@ -71,8 +73,10 @@ def _get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
         # TODO: Depends .dependency must not be None
         if isinstance(parameter, DependencyParameter) and parameter.dependency is None:
             if not callable(model_field.annotation):
-                raise ResolutionError(f"Failed to resolve parameter: {parameter!r}. Dependency has non-callable annotation")
-            
+                raise ResolutionError(
+                    f"Failed to resolve parameter: {parameter!r}. Dependency has non-callable annotation"
+                )
+
             parameter.dependency = model_field.annotation
 
         if parameter.alias is None:
@@ -106,7 +110,9 @@ def resolve(
         parameter: BaseParameter = model_field.field_info
 
         if isinstance(parameter, DependencyParameter):
-            arguments[field_name] = parameter.resolve(response, cached_dependencies=cached_depdendencies)
+            arguments[field_name] = parameter.resolve(
+                response, cached_dependencies=cached_depdendencies
+            )
         else:
             arguments[field_name] = parameter.resolve(response)
 
