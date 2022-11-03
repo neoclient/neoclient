@@ -365,18 +365,6 @@ typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""
 full = ["itsdangerous", "jinja2", "python-multipart", "pyyaml", "requests"]
 
 [[package]]
-name = "tombulled-param"
-version = "0.1.14"
-description = "Enhanced function parameters"
-category = "main"
-optional = false
-python-versions = ">=3.8,<4.0"
-
-[package.dependencies]
-pydantic = ">=1.10.2,<2.0.0"
-roster = ">=0.1.8,<0.2.0"
-
-[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -406,7 +394,7 @@ dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "d085d80507b210a5dfc4306197fc984d1c580d66b200c6a84496bd97ce1e232d"
+content-hash = "4639d9959ef51ba9b7d4edb08781b6d46e7f36904c3fb46787cff572a77a838d"
 
 [metadata.files]
 anyio = [
@@ -597,10 +585,6 @@ sniffio = [
 starlette = [
     {file = "starlette-0.19.1-py3-none-any.whl", hash = "sha256:5a60c5c2d051f3a8eb546136aa0c9399773a689595e099e0877704d5888279bf"},
     {file = "starlette-0.19.1.tar.gz", hash = "sha256:c6d21096774ecb9639acad41b86b7706e52ba3bf1dc13ea4ed9ad593d47e24c7"},
-]
-tombulled-param = [
-    {file = "tombulled_param-0.1.14-py3-none-any.whl", hash = "sha256:46d6abddc21304b9839ed4d034e67fac046eade78f7bbb789af99cd77f353e97"},
-    {file = "tombulled_param-0.1.14.tar.gz", hash = "sha256:2e673165dd6514db2188cf71fa8ed016efc24148ab6ae943bd85d04177da1be9"},
 ]
 tomli = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
