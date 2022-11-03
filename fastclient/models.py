@@ -279,14 +279,15 @@ class RequestOptions:
         return utils.partially_format(raw_url, **self.path_params)
 
     def validate(self):
-        formatted_url: str = self._get_formatted_url()
+        url: str = urllib.parse.unquote(str(self.url))
 
-        missing_path_params: Set[str] = utils.get_path_params(formatted_url)
+        expected_path_params: Set[str] = utils.get_path_params(url)
+        actual_path_params: Set[str] = set(self.path_params.keys())
 
         # Validate path params are correct
-        if missing_path_params:
+        if expected_path_params != actual_path_params:
             raise IncompatiblePathParameters(
-                f"Incompatible path params. Missing: {missing_path_params}"
+                f"Expected {tuple(expected_path_params)}, got {tuple(actual_path_params)}"
             )
 
 
