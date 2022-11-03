@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, Callable, List, Mapping, Optional, Type, TypeVar
+from typing import Any, Callable, List, Mapping, Optional, Tuple, Type, TypeVar
 
 from httpx import Response, Headers, Cookies, QueryParams
 from pydantic import BaseModel
 
+from .. import utils
 from .typing import ResolutionFunction
-from ..typing import Resolver
 from ..parameters import BaseParameter
 
 __all__: List[str] = [
@@ -84,4 +84,8 @@ class DependencyResolutionFunction(ResolutionFunction[T]):
 
         validated_arguments: Mapping[str, Any] = model.dict()
 
-        return self.dependency(**validated_arguments)
+        args: Tuple[Any, ...]
+        kwargs: Mapping[str, Any]
+        args, kwargs = utils.sort_arguments(self.dependency, validated_arguments)
+
+        return self.dependency(*args, **kwargs)

@@ -1,6 +1,6 @@
 import inspect
 import string
-from typing import Any, Callable, Mapping, Optional, Set, Tuple
+from typing import Any, Callable, List, Mapping, MutableMapping, Optional, Set, Tuple
 
 import parse
 
@@ -58,3 +58,32 @@ def noop_consumer(_: Any, /) -> None:
 
 def is_primitive(obj: Any, /) -> bool:
     return isinstance(obj, (str, int, float, bool, type(None)))
+
+
+def sort_arguments(
+    func: Callable, arguments: Mapping[str, Any]
+) -> Tuple[Tuple[Any, ...], Mapping[str, Any]]:
+    parameters: Mapping[str, inspect.Parameter] = inspect.signature(func).parameters
+
+    args: List[Any] = []
+    kwargs: MutableMapping[str, Any] = {}
+
+    parameter: inspect.Parameter
+    for parameter in parameters.values():
+        argument: Any = arguments[parameter.name]
+
+        if parameter.kind is inspect.Parameter.POSITIONAL_ONLY:
+            args.append(argument)
+        elif parameter.kind in (
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            inspect.Parameter.KEYWORD_ONLY,
+        ):
+            kwargs[parameter.name] = argument
+        elif parameter.kind is inspect.Parameter.VAR_POSITIONAL:
+            args.extend(argument)
+        elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
+            kwargs.update(argument)
+        else:
+            raise Exception(f"Unknown parameter kind: {parameter.kind}")
+
+    return (tuple(args), kwargs)

@@ -7,7 +7,7 @@ from pydantic.fields import ModelField, FieldInfo
 
 from fastclient.errors import ResolutionError
 
-from .. import api
+from .. import api, utils
 from ..parameters import (
     BaseParameter,
     BodyParameter,
@@ -114,4 +114,8 @@ def resolve(
 
     validated_arguments: Mapping[str, Any] = model.dict()
 
-    return func(**validated_arguments)
+    args: Tuple[Any, ...]
+    kwargs: Mapping[str, Any]
+    args, kwargs = utils.sort_arguments(func, validated_arguments)
+
+    return func(*args, **kwargs)
