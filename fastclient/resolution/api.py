@@ -95,6 +95,8 @@ def resolve(
 
     model_cls: Type[BaseModel] = api.create_model_cls(func, fields)
 
+    cached_depdendencies: MutableMapping[Callable, Any] = {}
+
     arguments: MutableMapping[str, Any] = {}
 
     field_name: str
@@ -103,7 +105,10 @@ def resolve(
         # TODO: Fix typing of this vvv (FieldInfo is not a BaseParameter)
         parameter: BaseParameter = model_field.field_info
 
-        arguments[field_name] = parameter.resolve(response)
+        if isinstance(parameter, DependencyParameter):
+            arguments[field_name] = parameter.resolve(response, cached_dependencies=cached_depdendencies)
+        else:
+            arguments[field_name] = parameter.resolve(response)
 
     model: BaseModel = model_cls(**arguments)
 

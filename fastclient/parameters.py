@@ -315,7 +315,7 @@ class DependencyParameter(BaseParameter):
     dependency: Optional[Callable] = None
     use_cache: bool = True
 
-    def resolve(self, response: httpx.Response, /) -> Any:
+    def resolve(self, response: httpx.Response, /, *, cached_dependencies: Optional[MutableMapping[Callable, Any]] = None) -> Any:
         # TODO: Pls no import here
         from .resolution.api import _get_fields
 
@@ -323,6 +323,12 @@ class DependencyParameter(BaseParameter):
             raise ResolutionError(
                 f"Cannot resolve parameter {type(self)!r} without a dependency"
             )
+
+        if cached_dependencies is None:
+            cached_dependencies = {}
+
+        if self.use_cache and self.dependency in cached_dependencies:
+            return cached_dependencies[self.dependency]
 
         fields: Mapping[str, Tuple[Any, BaseParameter]] = _get_fields(self.dependency)
 
@@ -333,9 +339,14 @@ class DependencyParameter(BaseParameter):
             for field_name, model_field in model_cls.__fields__.items()
         }
 
-        return DependencyResolutionFunction(model_cls, self.dependency, parameters)(
+        resolved: Any = DependencyResolutionFunction(model_cls, self.dependency, parameters)(
             response
         )
+
+        # Cache resolved dependency
+        cached_dependencies[self.dependency] = resolved
+
+        return resolved
 
 
 @dataclass
