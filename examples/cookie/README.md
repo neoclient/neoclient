@@ -1,5 +1,5 @@
-# examples/body
-Example for a single body parameter
+# examples/cookie
+Example for a single cookie parameter
 
 ## Start the Server
 ```console
@@ -13,13 +13,8 @@ INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 ## Use the Client
 ```python
 from example.client import greet
-from example.models import Person
-
-person: Person = Person(name="sam")
-
-greeting: str = greet(person)
 ```
 ```python
->>> greeting
+>>> greet("sam")
 'Hello, sam!'
 ```
