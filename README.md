@@ -6,8 +6,9 @@
 pip install git+https://github.com/tombulled/fastclient.git@main
 ```
 
-## Getting Started
-The simplest FastClient file looks like this:
+## Documentation
+### Introduction
+The simplest `fastclient` file could look like this:
 ```python
 from fastclient import get
 
@@ -20,40 +21,136 @@ def ip():
 {'origin': '1.2.3.4'}
 ```
 
-## User Guide
-### Path Parameters
-You can declare path "parameters" with the same syntax used by Python format strings:
+However, it's almost always better to create a `FastClient` instance for easy reusability:
 ```python
 from fastclient import FastClient
 
-app = FastClient("https://jsonplaceholder.typicode.com/")
+client = FastClient("https://httpbin.org/")
 
-@app.get("/posts/{post_id}")
-def get_post(post_id):
+@client.get("/ip")
+def ip():
     ...
 ```
 ```python
->>> get_post(1)
-{
-    'userId': 1,
-    'id': 1,
-    'title': 'sunt aut facere repellat provident occaecati excepturi optio reprehenderit',
-    'body': 'quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto'
-}
+>>> ip()
+{'origin': '1.2.3.4'}
+```
+
+### Path Parameters
+You can declare path parameters with the same syntax used by Python format strings:
+```python
+from fastclient import FastClient
+
+client = FastClient("https://httpbin.org/")
+
+@client.get("/base64/{value}")
+def b64decode(value):
+    ...
+```
+```python
+>>> b64decode("RmFzdENsaWVudCBpcyBhd2Vzb21lIQ==")
+'FastClient is awesome!'
 ```
 
 #### Path parameters with types
-You can declare the type of a path parameter in the function, using standard Python type annotations:
+You can declare the type of a path parameter in the function using standard Python type annotations:
 ```python
 from fastclient import FastClient
 
-app = FastClient("https://jsonplaceholder.typicode.com/")
+client = FastClient("https://httpbin.org/")
 
-@app.get("/posts/{post_id}")
-def get_post(post_id: int):
+@client.get("/base64/{value}")
+def b64decode(value: str):
     ...
 ```
-In this case, `post_id` is declared to be an `int`.
+In this case, `value` is declared to be of type `str`.
+
+#### Missing path parameters
+FastClient will throw an error if you specify a path parameter in the request path, however do not create a function parameter for it. For example:
+```python
+from fastclient import FastClient
+
+client = FastClient("https://httpbin.org/")
+
+@client.get("/base64/{value}")
+def b64decode():
+    ...
+```
+```python
+>>> b64decode()
+IncompatiblePathParameters: Expected ('value',), got ()
+```
+
+#### Pre-defined Values
+If you have a path operation that receives a path parameter, but you want the possible valid path parameter values to be predefined, you can use a standard Python Enum.
+```python
+from enum import Enum
+from fastclient import FastClient
+
+class Name(str, Enum):
+    def __str__(self):
+        return self.value
+        
+    BOB = "bob"
+    SALLY = "sally"
+
+client = FastClient("https://httpbin.org/")
+
+@client.get("/anything/{name}")
+def anything(name: Name):
+    ...
+```
+```python
+>>> anything(Name.BOB)
+{
+    'args': {},
+    'data': '',
+    'files': {},
+    'form': {},
+    'headers': {
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Host': 'httpbin.org',
+        'User-Agent': 'fastclient/0.1.0'
+    },
+    'json': None,
+    'method': 'GET',
+    'origin': '1.2.3.4',
+    'url': 'https://httpbin.org/anything/bob'
+}
+```
+
+#### Path parameters containing paths
+Let's say you have a path operation with a path `/do/{commands}`, where you expect `commands` to accept an arbitrary number of arguments which should be used as path segments. To achieve this, you can pass the path parameter a sequence:
+```python
+from typing import Sequence
+from fastclient import FastClient
+
+client = FastClient("https://httpbin.org/")
+
+@client.get("/anything/{commands}")
+def do(commands: Sequence[str]):
+    ...
+```
+```python
+>>> do(["turn", "left", "then", "turn", "right"])
+{
+    'args': {},
+    'data': '',
+    'files': {},
+    'form': {},
+    'headers': {
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Host': 'httpbin.org',
+        'User-Agent': 'fastclient/0.1.0'
+    },
+    'json': None,
+    'method': 'GET',
+    'origin': '1.2.3.4',
+    'url': 'https://httpbin.org/anything/turn/left/then/turn/right'
+}
+```
 
 ### Query Parameters
 When you declare other function parameters that are not part of the path parameters, they are automatically interpreted as "query" parameters.

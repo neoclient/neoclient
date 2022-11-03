@@ -1,5 +1,6 @@
 import inspect
 from dataclasses import dataclass
+from json import JSONDecodeError
 from types import MethodWrapperType
 from typing import (
     Any,
@@ -74,7 +75,12 @@ class Operation(Generic[PS, RT]):
             return resolve(self.specification.response, response)
 
         if return_annotation is inspect.Parameter.empty:
-            return response.json()
+            # TODO: Check "Content-Type" header and decide what to do from that
+            # E.g., if "application/json" call .json(), if "text/plain" use .text, etc.
+            try:
+                return response.json()
+            except JSONDecodeError:
+                return response.text
         if return_annotation is None:
             return None
         if return_annotation is Response:
