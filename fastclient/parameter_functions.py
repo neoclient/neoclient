@@ -13,10 +13,10 @@ from .parameters import (
     PathsParameter,
     QueriesParameter,
     QueryParameter,
-    URLParameter,
     RequestParameter,
     ResponseParameter,
     StatusCodeParameter,
+    URLParameter,
 )
 from .typing import Supplier
 
@@ -136,6 +136,7 @@ def Request() -> RequestParameter:
 
 def Response() -> ResponseParameter:
     return ResponseParameter()
+
 
 def StatusCode() -> StatusCodeParameter:
     return StatusCodeParameter()

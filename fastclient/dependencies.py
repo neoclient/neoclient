@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
-from httpx import Request, Response, Headers, Cookies, QueryParams, URL
+from httpx import URL, Cookies, Headers, QueryParams, Request, Response
 
 from .types import StreamTypes
 

@@ -113,7 +113,8 @@ class ValidatedFunction(Generic[PS, RT]):
             member_name: str
             member: Any
             for member_name, member in inspect.getmembers(config):
-                if member_name.startswith("_"): continue
+                if member_name.startswith("_"):
+                    continue
 
                 configurations[member_name] = member
 

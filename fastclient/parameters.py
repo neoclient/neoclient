@@ -18,17 +18,17 @@ from typing import (
 
 import fastapi.encoders
 import httpx
-from httpx import QueryParams, Headers, Cookies
-from pydantic import Required, BaseModel
+from httpx import Cookies, Headers, QueryParams
+from pydantic import BaseModel, Required
 from pydantic.fields import FieldInfo, Undefined, UndefinedType
 
 from . import api
-from .errors import CompositionError, ResolutionError
 from .enums import ParamType
+from .errors import CompositionError, ResolutionError
 from .models import RequestOptions
+from .parsing import Parser
 from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
 from .typing import Supplier
-from .parsing import Parser
 
 __all__: List[str] = [
     "QueryParameter",
@@ -102,24 +102,24 @@ class BaseParameter(FieldInfo):
 
 # NOTE: Currently here to avoid cyclic dependencies
 from .composition.consumers import (
-    QueryConsumer,
-    HeaderConsumer,
     CookieConsumer,
-    PathConsumer,
-    QueriesConsumer,
-    HeadersConsumer,
     CookiesConsumer,
+    HeaderConsumer,
+    HeadersConsumer,
+    PathConsumer,
     PathsConsumer,
+    QueriesConsumer,
+    QueryConsumer,
 )
 from .resolution.functions import (
     BodyResolutionFunction,
-    QueryResolutionFunction,
-    HeaderResolutionFunction,
     CookieResolutionFunction,
-    QueriesResolutionFunction,
-    HeadersResolutionFunction,
     CookiesResolutionFunction,
     DependencyResolutionFunction,
+    HeaderResolutionFunction,
+    HeadersResolutionFunction,
+    QueriesResolutionFunction,
+    QueryResolutionFunction,
 )
 
 
@@ -315,7 +315,13 @@ class DependencyParameter(BaseParameter):
     dependency: Optional[Callable] = None
     use_cache: bool = True
 
-    def resolve(self, response: httpx.Response, /, *, cached_dependencies: Optional[MutableMapping[Callable, Any]] = None) -> Any:
+    def resolve(
+        self,
+        response: httpx.Response,
+        /,
+        *,
+        cached_dependencies: Optional[MutableMapping[Callable, Any]] = None,
+    ) -> Any:
         # TODO: Pls no import here
         from .resolution.api import _get_fields
 
@@ -339,9 +345,9 @@ class DependencyParameter(BaseParameter):
             for field_name, model_field in model_cls.__fields__.items()
         }
 
-        resolved: Any = DependencyResolutionFunction(model_cls, self.dependency, parameters)(
-            response
-        )
+        resolved: Any = DependencyResolutionFunction(
+            model_cls, self.dependency, parameters
+        )(response)
 
         # Cache resolved dependency
         cached_dependencies[self.dependency] = resolved
