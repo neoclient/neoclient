@@ -16,3 +16,7 @@ class InvalidParameterSpecification(Exception):
 
 class CompositionError(Exception):
     pass
+
+
+class ResolutionError(Exception):
+    pass

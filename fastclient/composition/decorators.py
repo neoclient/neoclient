@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, TypeVar, Protocol
 
 from loguru import logger
 
@@ -17,6 +17,7 @@ from ..types import (
     TimeoutTypes,
 )
 from .consumers import (
+    RequestConsumer,
     ContentConsumer,
     CookieConsumer,
     CookiesConsumer,
@@ -25,13 +26,20 @@ from .consumers import (
     HeaderConsumer,
     HeadersConsumer,
     JsonConsumer,
-    PathParamConsumer,
-    PathParamsConsumer,
-    QueryParamConsumer,
-    QueryParamsConsumer,
+    PathConsumer,
+    PathsConsumer,
+    QueryConsumer,
+    QueriesConsumer,
     TimeoutConsumer,
 )
-from .typing import C, Decorator, RequestConsumer
+from ..operations import CallableWithOperation
+
+C = TypeVar("C", bound=CallableWithOperation)
+
+
+class Decorator(Protocol):
+    def __call__(self, func: C, /) -> C:
+        ...
 
 
 @dataclass
@@ -51,7 +59,7 @@ class CompositionFacilitator(Decorator):
 
 
 def query(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(QueryParamConsumer.parse(key, value))
+    return CompositionFacilitator(QueryConsumer.parse(key, value))
 
 
 def header(key: str, value: Any) -> Decorator:
@@ -63,11 +71,11 @@ def cookie(key: str, value: Any) -> Decorator:
 
 
 def path(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(PathParamConsumer.parse(key, value))
+    return CompositionFacilitator(PathConsumer.parse(key, value))
 
 
 def query_params(params: QueryParamTypes, /) -> Decorator:
-    return CompositionFacilitator(QueryParamsConsumer.parse(params))
+    return CompositionFacilitator(QueriesConsumer.parse(params))
 
 
 def headers(headers: HeaderTypes, /) -> Decorator:
@@ -79,7 +87,7 @@ def cookies(cookies: CookieTypes, /) -> Decorator:
 
 
 def path_params(path_params: PathParamTypes, /) -> Decorator:
-    return CompositionFacilitator(PathParamsConsumer.parse(path_params))
+    return CompositionFacilitator(PathsConsumer.parse(path_params))
 
 
 def content(content: RequestContent, /) -> Decorator:

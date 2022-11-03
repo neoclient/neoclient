@@ -1,6 +1,6 @@
 import inspect
 import string
-from typing import Any, Callable, Dict, Optional, Set, Tuple
+from typing import Any, Callable, List, Mapping, MutableMapping, Optional, Set, Tuple
 
 import parse
 
@@ -21,7 +21,7 @@ def get_path_params(url: str, /) -> Set[str]:
     return path_params
 
 
-def extract_path_params(url_format: str, url: str, /) -> Dict[str, Any]:
+def extract_path_params(url_format: str, url: str, /) -> Mapping[str, Any]:
     parse_result: Optional[parse.Result] = parse.parse(url_format, url)
 
     if parse_result is None:
@@ -33,7 +33,7 @@ def extract_path_params(url_format: str, url: str, /) -> Dict[str, Any]:
 
 
 def partially_format(string: str, /, **kwargs: Any) -> str:
-    default_kwargs: Dict[str, str] = {
+    default_kwargs: Mapping[str, str] = {
         path_param: f"{{{path_param}}}" for path_param in get_path_params(string)
     }
 
@@ -41,8 +41,8 @@ def partially_format(string: str, /, **kwargs: Any) -> str:
 
 
 def bind_arguments(
-    func: Callable, args: Tuple[Any, ...], kwargs: Dict[str, Any]
-) -> Dict[str, Any]:
+    func: Callable, args: Tuple[Any, ...], kwargs: Mapping[str, Any]
+) -> Mapping[str, Any]:
     bound_arguments: inspect.BoundArguments = inspect.signature(func).bind(
         *args, **kwargs
     )
@@ -58,3 +58,32 @@ def noop_consumer(_: Any, /) -> None:
 
 def is_primitive(obj: Any, /) -> bool:
     return isinstance(obj, (str, int, float, bool, type(None)))
+
+
+def sort_arguments(
+    func: Callable, arguments: Mapping[str, Any]
+) -> Tuple[Tuple[Any, ...], Mapping[str, Any]]:
+    parameters: Mapping[str, inspect.Parameter] = inspect.signature(func).parameters
+
+    args: List[Any] = []
+    kwargs: MutableMapping[str, Any] = {}
+
+    parameter: inspect.Parameter
+    for parameter in parameters.values():
+        argument: Any = arguments[parameter.name]
+
+        if parameter.kind is inspect.Parameter.POSITIONAL_ONLY:
+            args.append(argument)
+        elif parameter.kind in (
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            inspect.Parameter.KEYWORD_ONLY,
+        ):
+            kwargs[parameter.name] = argument
+        elif parameter.kind is inspect.Parameter.VAR_POSITIONAL:
+            args.extend(argument)
+        elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
+            kwargs.update(argument)
+        else:
+            raise Exception(f"Unknown parameter kind: {parameter.kind}")
+
+    return (tuple(args), kwargs)
