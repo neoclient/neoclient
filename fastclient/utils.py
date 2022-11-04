@@ -3,9 +3,9 @@ import string
 from typing import (
     Any,
     Callable,
-    List,
     Mapping,
     MutableMapping,
+    MutableSequence,
     Optional,
     Set,
     Tuple,
@@ -57,25 +57,28 @@ def unpack_arguments(
 ) -> Tuple[Tuple[Any, ...], Mapping[str, Any]]:
     parameters: Mapping[str, inspect.Parameter] = inspect.signature(func).parameters
 
-    args: List[Any] = []
+    args: MutableSequence[Any] = []
     kwargs: MutableMapping[str, Any] = {}
 
     parameter: inspect.Parameter
     for parameter in parameters.values():
+        if parameter.name not in arguments:
+            raise ValueError(f"Missing argument for parameter {parameter.name!r}")
+
         argument: Any = arguments[parameter.name]
 
-        if parameter.kind is inspect.Parameter.POSITIONAL_ONLY:
+        if parameter.kind == inspect.Parameter.POSITIONAL_ONLY:
             args.append(argument)
         elif parameter.kind in (
             inspect.Parameter.POSITIONAL_OR_KEYWORD,
             inspect.Parameter.KEYWORD_ONLY,
         ):
             kwargs[parameter.name] = argument
-        elif parameter.kind is inspect.Parameter.VAR_POSITIONAL:
+        elif parameter.kind == inspect.Parameter.VAR_POSITIONAL:
             args.extend(argument)
-        elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
-            kwargs.update(argument)
         else:
-            raise Exception(f"Unknown parameter kind: {parameter.kind}")
+            assert parameter.kind == inspect.Parameter.VAR_KEYWORD
+
+            kwargs.update(argument)
 
     return (tuple(args), kwargs)
