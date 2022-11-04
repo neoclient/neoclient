@@ -279,7 +279,7 @@ class RequestOptions:
     def validate(self):
         url: str = urllib.parse.unquote(str(self.url))
 
-        expected_path_params: Set[str] = utils.get_path_params(url)
+        expected_path_params: Set[str] = utils.parse_format_string(url)
         actual_path_params: Set[str] = set(self.path_params.keys())
 
         # Validate path params are correct

@@ -12,11 +12,15 @@ from typing import (
 )
 
 
-def get_path_params(url: str, /) -> Set[str]:
+def parse_format_string(format_string: str, /) -> Set[str]:
+    """
+    Extracts a set of field names from `format_string`
+    """
+
     path_params: Set[str] = set()
 
     field_name: Optional[str]
-    for _, field_name, _, _ in string.Formatter().parse(url):
+    for _, field_name, _, _ in string.Formatter().parse(format_string):
         if field_name is None:
             continue
 

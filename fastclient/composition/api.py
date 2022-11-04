@@ -25,7 +25,7 @@ def get_fields(
     func: Callable,
 ) -> Mapping[str, Tuple[Any, BaseParameter]]:
     path_params: Set[str] = (
-        utils.get_path_params(urllib.parse.unquote(str(request.url)))
+        utils.parse_format_string(urllib.parse.unquote(str(request.url)))
         if request is not None
         else set()
     )
