@@ -122,6 +122,6 @@ def resolve(
 
     args: Tuple[Any, ...]
     kwargs: Mapping[str, Any]
-    args, kwargs = utils.sort_arguments(func, validated_arguments)
+    args, kwargs = utils.unpack_arguments(func, validated_arguments)
 
     return func(*args, **kwargs)

@@ -52,7 +52,7 @@ def is_primitive(obj: Any, /) -> bool:
     return isinstance(obj, (str, int, float, bool, type(None)))
 
 
-def sort_arguments(
+def unpack_arguments(
     func: Callable, arguments: Mapping[str, Any]
 ) -> Tuple[Tuple[Any, ...], Mapping[str, Any]]:
     parameters: Mapping[str, inspect.Parameter] = inspect.signature(func).parameters
