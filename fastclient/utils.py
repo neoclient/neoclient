@@ -15,6 +15,10 @@ from typing import (
 def parse_format_string(format_string: str, /) -> Set[str]:
     """
     Extracts a set of field names from `format_string`
+
+    Example:
+        >>> parse_format_string("foo {bar}")
+        {"bar"}
     """
 
     path_params: Set[str] = set()
@@ -33,7 +37,7 @@ def parse_format_string(format_string: str, /) -> Set[str]:
 
 
 def bind_arguments(
-    func: Callable, args: Tuple[Any, ...], kwargs: Mapping[str, Any]
+    func: Callable, /, args: Tuple[Any, ...], kwargs: Mapping[str, Any]
 ) -> Mapping[str, Any]:
     bound_arguments: inspect.BoundArguments = inspect.signature(func).bind(
         *args, **kwargs
@@ -42,10 +46,6 @@ def bind_arguments(
     bound_arguments.apply_defaults()
 
     return bound_arguments.arguments
-
-
-def noop_consumer(_: Any, /) -> None:
-    return None
 
 
 def is_primitive(obj: Any, /) -> bool:
