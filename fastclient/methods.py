@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, TypeVar, Protocol
+from typing import Any, Callable, Optional, Protocol, TypeVar
 
 from typing_extensions import ParamSpec
 

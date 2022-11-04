@@ -49,7 +49,7 @@ def convert_headers(value: HeadersTypes, /) -> Headers:
         return Headers(dict(value))
     else:
         raise TypeError(f"Cannot convert headers of type {type(value)!r}")
-        
+
 
 def convert_cookies(value: CookiesTypes, /) -> Cookies:
     if isinstance(value, Cookies):

@@ -1,10 +1,4 @@
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    overload,
-)
+from typing import Any, Callable, Optional, TypeVar, overload
 
 T = TypeVar("T")
 
