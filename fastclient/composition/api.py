@@ -129,9 +129,6 @@ def compose(
 
     logger.info(f"Validated Arguments: {validated_arguments!r}")
 
-    # field_name: str
-    # model_field: ModelField
-    # for field_name, model_field in model.__fields__.items():
     field_name: str
     parameter: BaseParameter
     for field_name, (_, parameter) in fields.items():
