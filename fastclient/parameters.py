@@ -26,7 +26,7 @@ from . import api
 from .enums import ParamType
 from .errors import CompositionError, ResolutionError
 from .models import RequestOptions
-from .parsing import Parser
+from .parsing import parse_obj_as
 from .types import CookiesTypes, HeadersTypes, PathsTypes, QueriesTypes
 from .typing import Supplier
 
@@ -231,7 +231,7 @@ class QueriesParameter(BaseMultiParameter[QueriesTypes]):
     type: ClassVar[ParamType] = ParamType.QUERY
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
-        params: QueriesTypes = Parser(QueriesTypes)(argument)
+        params: QueriesTypes = parse_obj_as(QueriesTypes, argument)  # type: ignore
 
         QueriesConsumer.parse(params)(request)
 
@@ -243,7 +243,7 @@ class HeadersParameter(BaseMultiParameter[HeadersTypes]):
     type: ClassVar[ParamType] = ParamType.HEADER
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
-        headers: HeadersTypes = Parser(HeadersTypes)(argument)
+        headers: HeadersTypes = parse_obj_as(HeadersTypes, argument)  # type: ignore
 
         HeadersConsumer.parse(headers)(request)
 
@@ -255,7 +255,7 @@ class CookiesParameter(BaseMultiParameter[CookiesTypes]):
     type: ClassVar[ParamType] = ParamType.COOKIE
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
-        cookies: CookiesTypes = Parser(CookiesTypes)(argument)
+        cookies: CookiesTypes = parse_obj_as(CookiesTypes, argument)  # type: ignore
 
         CookiesConsumer.parse(cookies)(request)
 
@@ -267,7 +267,7 @@ class PathsParameter(BaseMultiParameter[PathsTypes]):
     type: ClassVar[ParamType] = ParamType.PATH
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
-        path_params: PathsTypes = Parser(PathsTypes)(argument)
+        path_params: PathsTypes = parse_obj_as(PathsTypes, argument)  # type: ignore
 
         PathsConsumer.parse(path_params)(request)
 
