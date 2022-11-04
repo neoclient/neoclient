@@ -19,19 +19,6 @@ def test_get_path_params() -> None:
         utils.get_path_params("http://foo.com/{bar }")
 
 
-def test_extract_path_params() -> None:
-    assert utils.extract_path_params("http://foo.com/", "http://foo.com/") == {}
-    assert utils.extract_path_params("http://foo.com/{bar}", "http://foo.com/bar") == {
-        "bar": "bar"
-    }
-    assert utils.extract_path_params(
-        "http://foo.com/{bar}/{baz}", "http://foo.com/bar/baz"
-    ) == {"bar": "bar", "baz": "baz"}
-
-    with pytest.raises(ValueError):
-        utils.extract_path_params("http://foo.com/{bar}", "http://foo.com/")
-
-
 def test_partially_format() -> None:
     assert utils.partially_format("foo") == "foo"
     assert utils.partially_format("foo", bar="bar") == "foo"

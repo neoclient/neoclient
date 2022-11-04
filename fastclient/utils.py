@@ -2,8 +2,6 @@ import inspect
 import string
 from typing import Any, Callable, List, Mapping, MutableMapping, Optional, Set, Tuple
 
-import parse
-
 
 def get_path_params(url: str, /) -> Set[str]:
     path_params: Set[str] = set()
@@ -19,17 +17,6 @@ def get_path_params(url: str, /) -> Set[str]:
         path_params.add(field_name)
 
     return path_params
-
-
-def extract_path_params(url_format: str, url: str, /) -> Mapping[str, Any]:
-    parse_result: Optional[parse.Result] = parse.parse(url_format, url)
-
-    if parse_result is None:
-        raise ValueError(
-            f"Failed to parse url {url!r} against format spec {url_format!r}"
-        )
-
-    return parse_result.named
 
 
 def partially_format(string: str, /, **kwargs: Any) -> str:

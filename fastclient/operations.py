@@ -2,7 +2,7 @@ import inspect
 from dataclasses import dataclass
 from json import JSONDecodeError
 from types import MethodWrapperType
-from typing import Any, Generic, Optional, Protocol, TypeVar, runtime_checkable
+from typing import Any, Callable, Generic, Optional, Protocol, TypeVar, runtime_checkable
 
 import httpx
 import pydantic
@@ -32,11 +32,23 @@ from .composition.api import compose
 from .resolution.api import resolve
 
 
-@dataclass
+@dataclass(init=False)
 class Operation(Generic[PS, RT]):
     func: CallableWithOperation[PS, RT]
     specification: OperationSpecification
     client: Optional[Client]
+
+    def __init__(
+        self,
+        func: Callable[PS, RT],
+        specification: OperationSpecification,
+        client: Optional[Client],
+    ) -> None:
+        setattr(func, "operation", self)
+
+        self.func = func
+        self.specification = specification
+        self.client = client
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
         request_options: RequestOptions = self.specification.request.merge(
