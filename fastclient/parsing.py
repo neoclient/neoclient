@@ -1,7 +1,11 @@
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, List, Optional, Type, TypeVar
 
 from pydantic import BaseConfig, BaseModel, create_model
 from pydantic.typing import display_as_type
+
+__all__: List[str] = [
+    "parse_obj_as",
+]
 
 T = TypeVar("T")
 
