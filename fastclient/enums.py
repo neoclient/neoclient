@@ -1,15 +1,17 @@
-import enum
+from enum import Enum
 
 
-class HiddenValue(enum.Enum):
+class HiddenValueEnum(Enum):
     def __repr__(self) -> str:
         return f"<{type(self).__name__}.{self.name}>"
 
 
-class HttpMethod(str, HiddenValue):
+class StrEnum(str, Enum):
     def __str__(self) -> str:
         return self.value
 
+
+class HttpMethod(HiddenValueEnum, StrEnum):
     PUT = "PUT"
     GET = "GET"
     POST = "POST"
@@ -17,10 +19,3 @@ class HttpMethod(str, HiddenValue):
     PATCH = "PATCH"
     DELETE = "DELETE"
     OPTIONS = "OPTIONS"
-
-
-class ParamType(HiddenValue):
-    QUERY = enum.auto()
-    HEADER = enum.auto()
-    COOKIE = enum.auto()
-    PATH = enum.auto()

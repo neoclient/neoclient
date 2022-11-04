@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from typing import (
     Any,
     Callable,
-    ClassVar,
     Dict,
     Generic,
     List,
@@ -23,7 +22,6 @@ from pydantic import BaseModel, Required
 from pydantic.fields import FieldInfo, Undefined, UndefinedType
 
 from . import api
-from .enums import ParamType
 from .errors import CompositionError, ResolutionError
 from .models import RequestOptions
 from .parsing import parse_obj_as
@@ -124,20 +122,16 @@ from .resolution.functions import (
 
 
 class BaseSingleParameter(BaseParameter):
-    type: ClassVar[ParamType]
-
     @staticmethod
     def generate_alias(alias: str):
         return alias
 
 
 class BaseMultiParameter(BaseParameter, Generic[T]):
-    type: ClassVar[ParamType]
+    pass
 
 
 class QueryParameter(BaseSingleParameter):
-    type: ClassVar[ParamType] = ParamType.QUERY
-
     @staticmethod
     def generate_alias(alias: str):
         return alias.lower().replace("_", "-")
@@ -163,8 +157,6 @@ class QueryParameter(BaseSingleParameter):
 
 
 class HeaderParameter(BaseSingleParameter):
-    type: ClassVar[ParamType] = ParamType.HEADER
-
     @staticmethod
     def generate_alias(alias: str):
         return alias.title().replace("_", "-")
@@ -190,8 +182,6 @@ class HeaderParameter(BaseSingleParameter):
 
 
 class CookieParameter(BaseSingleParameter):
-    type: ClassVar[ParamType] = ParamType.COOKIE
-
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
             raise CompositionError(
@@ -213,8 +203,6 @@ class CookieParameter(BaseSingleParameter):
 
 
 class PathParameter(BaseSingleParameter):
-    type: ClassVar[ParamType] = ParamType.PATH
-
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
             raise CompositionError(
@@ -228,8 +216,6 @@ class PathParameter(BaseSingleParameter):
 
 
 class QueriesParameter(BaseMultiParameter[QueriesTypes]):
-    type: ClassVar[ParamType] = ParamType.QUERY
-
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         params: QueriesTypes = parse_obj_as(QueriesTypes, argument)  # type: ignore
 
@@ -240,8 +226,6 @@ class QueriesParameter(BaseMultiParameter[QueriesTypes]):
 
 
 class HeadersParameter(BaseMultiParameter[HeadersTypes]):
-    type: ClassVar[ParamType] = ParamType.HEADER
-
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         headers: HeadersTypes = parse_obj_as(HeadersTypes, argument)  # type: ignore
 
@@ -252,8 +236,6 @@ class HeadersParameter(BaseMultiParameter[HeadersTypes]):
 
 
 class CookiesParameter(BaseMultiParameter[CookiesTypes]):
-    type: ClassVar[ParamType] = ParamType.COOKIE
-
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         cookies: CookiesTypes = parse_obj_as(CookiesTypes, argument)  # type: ignore
 
@@ -264,8 +246,6 @@ class CookiesParameter(BaseMultiParameter[CookiesTypes]):
 
 
 class PathsParameter(BaseMultiParameter[PathsTypes]):
-    type: ClassVar[ParamType] = ParamType.PATH
-
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         path_params: PathsTypes = parse_obj_as(PathsTypes, argument)  # type: ignore
 
