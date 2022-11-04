@@ -1,7 +1,7 @@
 import inspect
 from dataclasses import dataclass
 from json import JSONDecodeError
-from types import MethodWrapperType
+# from types import MethodWrapperType
 from typing import (
     Any,
     Callable,
@@ -29,7 +29,7 @@ RT = TypeVar("RT", covariant=True)
 class CallableWithOperation(Protocol[PS, RT]):
     operation: "Operation"
 
-    __get__: MethodWrapperType
+    # __get__: MethodWrapperType
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> RT:
         ...

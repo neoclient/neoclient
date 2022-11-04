@@ -128,13 +128,14 @@ class FastClient:
                 continue
 
             bound_member: CallableWithOperation = self.bind(member)
+            bound_member_callable: Callable = bound_member
 
             method_kind: MethodKind = get_method_kind(member)
 
             if method_kind is MethodKind.METHOD:
-                bound_member = bound_member.__get__(obj)
+                bound_member = bound_member_callable.__get__(obj)
             elif method_kind is MethodKind.CLASS_METHOD:
-                bound_member = bound_member.__get__(typ)
+                bound_member = bound_member_callable.__get__(typ)
 
             operation: Operation = bound_member.operation
 
@@ -153,11 +154,9 @@ class FastClient:
 
             return operation(*args, **kwargs)
 
-        setattr(wrapper, "operation", operation)
-
         operation.func = wrapper
 
-        return wrapper  # type: ignore
+        return wrapper
 
     def bind(
         self, func: CallableWithOperation[PS, RT], /
