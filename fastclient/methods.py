@@ -1,4 +1,5 @@
-from typing import Any, Callable, Optional, TypeVar
+from dataclasses import dataclass
+from typing import Any, Callable, Optional, TypeVar, Protocol
 
 from typing_extensions import ParamSpec
 
@@ -10,49 +11,33 @@ PS = ParamSpec("PS")
 RT = TypeVar("RT")
 
 
+class OperationDecorator(Protocol):
+    def __call__(
+        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+        ...
+
+
+@dataclass
+class MethodOperationDecorator(OperationDecorator):
+    method: str
+
+    def __call__(
+        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+        return FastClient().request(self.method, endpoint, response=response)
+
+
 def request(
     method: str, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
 ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
-    return FastClient().request(method, endpoint, response=response)
+    return MethodOperationDecorator(method)(endpoint, response=response)
 
 
-def put(
-    endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
-    return request(HttpMethod.PUT, endpoint, response=response)
-
-
-def get(
-    endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
-    return request(HttpMethod.GET, endpoint, response=response)
-
-
-def post(
-    endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
-    return request(HttpMethod.POST, endpoint, response=response)
-
-
-def head(
-    endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
-    return request(HttpMethod.HEAD, endpoint, response=response)
-
-
-def patch(
-    endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
-    return request(HttpMethod.PATCH, endpoint, response=response)
-
-
-def delete(
-    endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
-    return request(HttpMethod.DELETE, endpoint, response=response)
-
-
-def options(
-    endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
-    return request(HttpMethod.OPTIONS, endpoint, response=response)
+put: OperationDecorator = MethodOperationDecorator(HttpMethod.PUT)
+get: OperationDecorator = MethodOperationDecorator(HttpMethod.GET)
+post: OperationDecorator = MethodOperationDecorator(HttpMethod.POST)
+head: OperationDecorator = MethodOperationDecorator(HttpMethod.HEAD)
+patch: OperationDecorator = MethodOperationDecorator(HttpMethod.PATCH)
+delete: OperationDecorator = MethodOperationDecorator(HttpMethod.DELETE)
+options: OperationDecorator = MethodOperationDecorator(HttpMethod.OPTIONS)
