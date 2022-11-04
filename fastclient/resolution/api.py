@@ -104,11 +104,8 @@ def resolve(
     arguments: MutableMapping[str, Any] = {}
 
     field_name: str
-    model_field: ModelField
-    for field_name, model_field in model_cls.__fields__.items():
-        # TODO: Fix typing of this vvv (FieldInfo is not a BaseParameter)
-        parameter: BaseParameter = model_field.field_info
-
+    parameter: BaseParameter
+    for field_name, (_, parameter) in fields.items():
         if isinstance(parameter, DependencyParameter):
             arguments[field_name] = parameter.resolve(
                 response, cached_dependencies=cached_depdendencies
