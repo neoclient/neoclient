@@ -1,7 +1,7 @@
 import dataclasses
 import urllib.parse
 from collections import Counter
-from typing import Any, Callable, Mapping, MutableMapping, Sequence, Set, Tuple
+from typing import Any, Callable, Mapping, MutableMapping, MutableSequence, Sequence, Set, Tuple
 
 from loguru import logger
 from pydantic import BaseModel
@@ -29,6 +29,8 @@ def get_fields(
         if request is not None
         else set()
     )
+
+    parameter_aliases: MutableSequence[str] = []
 
     fields: MutableMapping[str, Tuple[Any, BaseParameter]] = {}
 
@@ -61,10 +63,16 @@ def get_fields(
 
             logger.info(f"Inferred field {model_field!r} as parameter {field_info!r}")
 
-        if isinstance(field_info, BaseSingleParameter) and field_info.alias is None:
+        if field_info.alias is None:
+            alias: str = field_info.generate_alias(model_field.name)
+
             field_info = dataclasses.replace(
-                field_info, alias=field_info.generate_alias(model_field.name)
+                field_info, alias=alias
             )
+
+            parameter_aliases.append(alias)
+        else:
+            parameter_aliases.append(field_info.alias)
 
         fields[field_name] = (model_field.annotation, field_info)
 
@@ -88,8 +96,7 @@ def get_fields(
     #   For example, the following function should fail validation:
     #       @get("/")
     #       def foo(a: str = Query(alias="name"), b: str = Query(alias="name")): ...
-    aliases: Sequence[str] = [parameter.alias for _, parameter in fields.values()]
-    alias_counts: Mapping[str, int] = Counter(aliases)
+    alias_counts: Mapping[str, int] = Counter(parameter_aliases)
     duplicate_aliases: Set[str] = {
         alias for alias, count in alias_counts.items() if count > 1
     }
