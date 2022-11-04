@@ -63,11 +63,11 @@ def _get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
                 or dataclasses.is_dataclass(model_field.annotation)
             ):
                 parameter = BodyParameter(
-                    default=BaseParameter.get_default(field_info),
+                    default=utils.get_default(field_info),
                 )
             else:
                 parameter = QueryParameter(
-                    default=BaseParameter.get_default(field_info),
+                    default=utils.get_default(field_info),
                 )
 
         # TODO: Depends .dependency must not be None

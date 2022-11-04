@@ -1,7 +1,7 @@
 import dataclasses
 import urllib.parse
 from collections import Counter
-from typing import Any, Callable, Mapping, MutableMapping, MutableSequence, Sequence, Set, Tuple
+from typing import Any, Callable, Mapping, MutableMapping, MutableSequence, Set, Tuple
 
 from loguru import logger
 from pydantic import BaseModel
@@ -12,7 +12,6 @@ from ..errors import DuplicateParameters
 from ..models import RequestOptions
 from ..parameters import (
     BaseParameter,
-    BaseSingleParameter,
     BodyParameter,
     PathParameter,
     QueryParameter,
@@ -46,7 +45,7 @@ def get_fields(
             if field_name in path_params:
                 field_info = PathParameter(
                     alias=field_name,
-                    default=BaseParameter.get_default(field_info),
+                    default=utils.get_default(field_info),
                 )
             elif isinstance(model_field.annotation, type) and (
                 issubclass(model_field.annotation, (BaseModel, dict))
@@ -54,11 +53,11 @@ def get_fields(
             ):
                 field_info = BodyParameter(
                     alias=field_name,
-                    default=BaseParameter.get_default(field_info),
+                    default=utils.get_default(field_info),
                 )
             else:
                 field_info = QueryParameter(
-                    default=BaseParameter.get_default(field_info),
+                    default=utils.get_default(field_info),
                 )
 
             logger.info(f"Inferred field {model_field!r} as parameter {field_info!r}")

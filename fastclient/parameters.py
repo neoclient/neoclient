@@ -78,15 +78,6 @@ class BaseParameter(FieldInfo):
     extra: Dict[str, Any] = field(default_factory=dict)
     alias_priority: Optional[int] = field(init=False, repr=False, default=None)
 
-    def has_default(self) -> bool:
-        return self.default is not Undefined or self.default_factory is not None
-
-    def get_default(self) -> Any:
-        if self.default_factory is not None:
-            return self.default_factory()
-        else:
-            return self.default
-
     @staticmethod
     def generate_alias(alias: str, /) -> str:
         return alias

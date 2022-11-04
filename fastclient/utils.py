@@ -12,11 +12,15 @@ from typing import (
     Tuple,
 )
 
+from pydantic.fields import FieldInfo, Undefined
+
 __all__: List[str] = [
     "parse_format_string",
     "bind_arguments",
     "is_primitive",
     "unpack_arguments",
+    "get_default",
+    "has_default",
 ]
 
 
@@ -90,3 +94,14 @@ def unpack_arguments(
             kwargs.update(argument)
 
     return (tuple(args), kwargs)
+
+
+def get_default(field_info: FieldInfo, /) -> Any:
+    if field_info.default_factory is not None:
+        return field_info.default_factory()
+    else:
+        return field_info.default
+
+
+def has_default(field_info: FieldInfo, /) -> bool:
+    return field_info.default is not Undefined or field_info.default_factory is not None
