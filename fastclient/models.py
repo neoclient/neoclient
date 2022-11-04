@@ -274,9 +274,7 @@ class RequestOptions:
         )
 
     def _get_formatted_url(self) -> str:
-        raw_url: str = urllib.parse.unquote(str(self.url))
-
-        return utils.partially_format(raw_url, **self.path_params)
+        return urllib.parse.unquote(str(self.url)).format(**self.path_params)
 
     def validate(self):
         url: str = urllib.parse.unquote(str(self.url))

@@ -1,6 +1,15 @@
 import inspect
 import string
-from typing import Any, Callable, List, Mapping, MutableMapping, Optional, Set, Tuple
+from typing import (
+    Any,
+    Callable,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Set,
+    Tuple,
+)
 
 
 def get_path_params(url: str, /) -> Set[str]:
@@ -17,14 +26,6 @@ def get_path_params(url: str, /) -> Set[str]:
         path_params.add(field_name)
 
     return path_params
-
-
-def partially_format(string: str, /, **kwargs: Any) -> str:
-    default_kwargs: Mapping[str, str] = {
-        path_param: f"{{{path_param}}}" for path_param in get_path_params(string)
-    }
-
-    return string.format(**{**default_kwargs, **kwargs})
 
 
 def bind_arguments(

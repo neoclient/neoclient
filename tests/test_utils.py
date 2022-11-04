@@ -19,17 +19,6 @@ def test_get_path_params() -> None:
         utils.get_path_params("http://foo.com/{bar }")
 
 
-def test_partially_format() -> None:
-    assert utils.partially_format("foo") == "foo"
-    assert utils.partially_format("foo", bar="bar") == "foo"
-    assert utils.partially_format("foo/{bar}", bar="bar") == "foo/bar"
-    assert utils.partially_format("foo/{bar}/{baz}", bar="bar") == "foo/bar/{baz}"
-    assert utils.partially_format("foo/{bar}/{baz}", baz="baz") == "foo/{bar}/baz"
-    assert (
-        utils.partially_format("foo/{bar}/{baz}", bar="bar", baz="baz") == "foo/bar/baz"
-    )
-
-
 def test_bind_arguments() -> None:
     def foo(x: str, /, y: str = "def_y", *, z: str = "def_z"):
         ...
