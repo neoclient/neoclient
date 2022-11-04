@@ -7,11 +7,11 @@ from fastclient.models import RequestOptions
 
 from ..operations import CallableWithOperation
 from ..types import (
-    CookieTypes,
-    HeaderTypes,
+    CookiesTypes,
+    HeadersTypes,
     JsonTypes,
-    PathParamTypes,
-    QueryParamTypes,
+    PathsTypes,
+    QueriesTypes,
     RequestContent,
     RequestData,
     RequestFiles,
@@ -74,19 +74,19 @@ def path(key: str, value: Any) -> Decorator:
     return CompositionFacilitator(PathConsumer.parse(key, value))
 
 
-def query_params(params: QueryParamTypes, /) -> Decorator:
+def query_params(params: QueriesTypes, /) -> Decorator:
     return CompositionFacilitator(QueriesConsumer.parse(params))
 
 
-def headers(headers: HeaderTypes, /) -> Decorator:
+def headers(headers: HeadersTypes, /) -> Decorator:
     return CompositionFacilitator(HeadersConsumer.parse(headers))
 
 
-def cookies(cookies: CookieTypes, /) -> Decorator:
+def cookies(cookies: CookiesTypes, /) -> Decorator:
     return CompositionFacilitator(CookiesConsumer.parse(cookies))
 
 
-def path_params(path_params: PathParamTypes, /) -> Decorator:
+def path_params(path_params: PathsTypes, /) -> Decorator:
     return CompositionFacilitator(PathsConsumer.parse(path_params))
 
 

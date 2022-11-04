@@ -17,11 +17,11 @@ from .models import ClientOptions, OperationSpecification, RequestOptions
 from .operations import CallableWithOperation, Operation
 from .types import (
     AuthTypes,
-    CookieTypes,
+    CookiesTypes,
     DefaultEncodingTypes,
     EventHooks,
-    HeaderTypes,
-    QueryParamTypes,
+    HeadersTypes,
+    QueriesTypes,
     TimeoutTypes,
     URLTypes,
 )
@@ -67,9 +67,9 @@ class FastClient:
         base_url: URLTypes = "",
         *,
         auth: Optional[AuthTypes] = None,
-        params: Optional[QueryParamTypes] = None,
-        headers: Optional[HeaderTypes] = None,
-        cookies: Optional[CookieTypes] = None,
+        params: Optional[QueriesTypes] = None,
+        headers: Optional[HeadersTypes] = None,
+        cookies: Optional[CookiesTypes] = None,
         timeout: TimeoutTypes = DEFAULT_TIMEOUT_CONFIG,
         follow_redirects: bool = False,
         max_redirects: int = DEFAULT_MAX_REDIRECTS,

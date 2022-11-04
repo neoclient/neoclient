@@ -27,7 +27,7 @@ from .enums import ParamType
 from .errors import CompositionError, ResolutionError
 from .models import RequestOptions
 from .parsing import Parser
-from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
+from .types import CookiesTypes, HeadersTypes, PathsTypes, QueriesTypes
 from .typing import Supplier
 
 __all__: List[str] = [
@@ -227,11 +227,11 @@ class PathParameter(BaseSingleParameter):
         PathConsumer.parse(self.alias, argument)(request)
 
 
-class QueriesParameter(BaseMultiParameter[QueryParamTypes]):
+class QueriesParameter(BaseMultiParameter[QueriesTypes]):
     type: ClassVar[ParamType] = ParamType.QUERY
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
-        params: QueryParamTypes = Parser(QueryParamTypes)(argument)
+        params: QueriesTypes = Parser(QueriesTypes)(argument)
 
         QueriesConsumer.parse(params)(request)
 
@@ -239,11 +239,11 @@ class QueriesParameter(BaseMultiParameter[QueryParamTypes]):
         return QueriesResolutionFunction()(response)
 
 
-class HeadersParameter(BaseMultiParameter[HeaderTypes]):
+class HeadersParameter(BaseMultiParameter[HeadersTypes]):
     type: ClassVar[ParamType] = ParamType.HEADER
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
-        headers: HeaderTypes = Parser(HeaderTypes)(argument)
+        headers: HeadersTypes = Parser(HeadersTypes)(argument)
 
         HeadersConsumer.parse(headers)(request)
 
@@ -251,11 +251,11 @@ class HeadersParameter(BaseMultiParameter[HeaderTypes]):
         return HeadersResolutionFunction()(response)
 
 
-class CookiesParameter(BaseMultiParameter[CookieTypes]):
+class CookiesParameter(BaseMultiParameter[CookiesTypes]):
     type: ClassVar[ParamType] = ParamType.COOKIE
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
-        cookies: CookieTypes = Parser(CookieTypes)(argument)
+        cookies: CookiesTypes = Parser(CookiesTypes)(argument)
 
         CookiesConsumer.parse(cookies)(request)
 
@@ -263,11 +263,11 @@ class CookiesParameter(BaseMultiParameter[CookieTypes]):
         return CookiesResolutionFunction()(response)
 
 
-class PathsParameter(BaseMultiParameter[PathParamTypes]):
+class PathsParameter(BaseMultiParameter[PathsTypes]):
     type: ClassVar[ParamType] = ParamType.PATH
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
-        path_params: PathParamTypes = Parser(PathParamTypes)(argument)
+        path_params: PathsTypes = Parser(PathsTypes)(argument)
 
         PathsConsumer.parse(path_params)(request)
 

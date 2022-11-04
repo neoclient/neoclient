@@ -1,5 +1,14 @@
 from http.cookiejar import CookieJar
-from typing import Any, Callable, Dict, List, Mapping, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    List,
+    Mapping,
+    Sequence,
+    Tuple,
+    Union,
+    TypeVar,
+)
 
 from httpx import Cookies, Headers, QueryParams
 from httpx._types import (
@@ -17,6 +26,8 @@ from httpx._types import (
 )
 from typing_extensions import TypeAlias
 
+StrOrBytes = TypeVar("StrOrBytes", str, bytes)
+
 Primitive: TypeAlias = Union[
     str,
     int,
@@ -24,33 +35,27 @@ Primitive: TypeAlias = Union[
     bool,
     None,
 ]
-
-QueryParamTypes: TypeAlias = Union[
+QueryTypes: TypeAlias = Any
+HeaderTypes: TypeAlias = Any
+CookieTypes: TypeAlias = Any
+PathTypes: TypeAlias = Union[Primitive, Sequence[Primitive]]
+QueriesTypes: TypeAlias = Union[
     QueryParams,
     Mapping[str, Union[Primitive, Sequence[Primitive]]],
-    List[Tuple[str, Primitive]],
-    Tuple[Tuple[str, Primitive], ...],
-    str,
-    bytes,
+    Sequence[Tuple[str, Primitive]],
 ]
-
-# NOTE: In an upcoming release of `httpx` (> 0.23.0), `Dict` should be replaced by `Mapping`
-# Once this version is released, the dependency should be bumped and the types should be
-# updated here accordingly
-HeaderTypes: TypeAlias = Union[
+HeadersTypes: TypeAlias = Union[
     Headers,
-    Dict[str, str],
-    Dict[bytes, bytes],
-    Sequence[Tuple[str, str]],
-    Sequence[Tuple[bytes, bytes]],
+    Mapping[StrOrBytes, StrOrBytes],
+    Sequence[Tuple[StrOrBytes, StrOrBytes]],
 ]
-
-CookieTypes: TypeAlias = Union[
+CookiesTypes: TypeAlias = Union[
     Cookies,
     CookieJar,
-    Dict[str, str],
-    List[Tuple[str, str]],
+    Mapping[str, str],
+    Sequence[Tuple[str, str]],
 ]
+PathsTypes: TypeAlias = Mapping[str, PathTypes]
 
 MethodTypes: TypeAlias = Union[str, bytes]
 JsonTypes: TypeAlias = Any
@@ -58,6 +63,3 @@ StreamTypes: TypeAlias = Union[SyncByteStream, AsyncByteStream]
 EventHooks: TypeAlias = Mapping[str, List[Callable]]
 DefaultEncodingTypes: TypeAlias = Union[str, Callable[[bytes], str]]
 EventHook: TypeAlias = Callable[..., Any]
-
-PathParamValueTypes: TypeAlias = Union[Primitive, Sequence[Primitive]]
-PathParamTypes: TypeAlias = Mapping[str, PathParamValueTypes]
