@@ -65,16 +65,7 @@ from .composition.decorators import (
     query_params,
     timeout,
 )
-from .methods import (
-    delete,
-    get,
-    head,
-    options,
-    patch,
-    post,
-    put,
-    request,
-)
+from .methods import delete, get, head, options, patch, post, put, request
 from .models import Client
 from .parameter_functions import (
     URL,

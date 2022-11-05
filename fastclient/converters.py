@@ -9,9 +9,9 @@ from .types import (
     HeadersTypes,
     PathsTypes,
     PathTypes,
+    Primitive,
     QueriesTypes,
     TimeoutTypes,
-    Primitive,
 )
 
 __all__: List[str] = [

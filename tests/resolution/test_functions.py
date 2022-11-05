@@ -1,22 +1,23 @@
 from http import HTTPStatus
 from typing import Any, Mapping, Tuple, Type
 
+from httpx import Cookies, Headers, QueryParams, Request, Response
+from pydantic import BaseModel
+
 from fastclient import api
 from fastclient.enums import HttpMethod
 from fastclient.parameters import BaseParameter
 from fastclient.resolution.api import _get_fields
 from fastclient.resolution.functions import (
-    QueryResolutionFunction,
-    HeaderResolutionFunction,
-    CookieResolutionFunction,
-    QueriesResolutionFunction,
-    HeadersResolutionFunction,
-    CookiesResolutionFunction,
     BodyResolutionFunction,
+    CookieResolutionFunction,
+    CookiesResolutionFunction,
     DependencyResolutionFunction,
+    HeaderResolutionFunction,
+    HeadersResolutionFunction,
+    QueriesResolutionFunction,
+    QueryResolutionFunction,
 )
-from httpx import Response, Request, QueryParams, Headers, Cookies
-from pydantic import BaseModel
 
 
 def test_QueryResolutionFunction() -> None:
@@ -127,6 +128,7 @@ def test_DependencyResolutionFunction() -> None:
         field: parameter for field, (_, parameter) in fields.items()
     }
 
-    assert DependencyResolutionFunction(model_cls, dependency, parameters)(
-        response
-    ) == response
+    assert (
+        DependencyResolutionFunction(model_cls, dependency, parameters)(response)
+        == response
+    )

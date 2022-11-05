@@ -1,5 +1,6 @@
+from httpx import Cookies, Headers, QueryParams, Timeout
+
 from fastclient import converters
-from httpx import QueryParams, Headers, Cookies, Timeout
 
 
 def test_convert_query_param() -> None:

@@ -3,10 +3,9 @@ from typing import Optional, Protocol
 import pytest
 from pydantic import BaseModel, Required
 
-from fastclient import Body, FastClient, Path, Query, get, post
+from fastclient import Body, FastClient, Path, Queries, Query, get, post
 from fastclient.errors import IncompatiblePathParameters
 from fastclient.models import RequestOptions
-from fastclient import Queries
 
 
 class Model(BaseModel):

@@ -1,7 +1,8 @@
-from typing import Union, Mapping
+from typing import Mapping, Union
+
+from httpx import QueryParams
 
 from fastclient.parsing import parse_obj_as
-from httpx import QueryParams
 
 
 def test_parse_obj_as() -> None:

@@ -1,8 +1,8 @@
 import pytest
+from pydantic.fields import FieldInfo, Undefined
 
 from fastclient import utils
 from fastclient.enums import MethodKind
-from pydantic.fields import FieldInfo, Undefined
 
 
 def test_parse_format_string() -> None:

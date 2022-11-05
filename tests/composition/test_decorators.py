@@ -4,7 +4,7 @@ from io import BytesIO
 from httpx import Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
 
-from fastclient import get, converters
+from fastclient import converters, get
 from fastclient.composition import decorators
 from fastclient.models import RequestOptions
 from fastclient.operations import CallableWithOperation
