@@ -4,7 +4,13 @@ from httpx import Response
 
 from .models import RequestOptions
 
-__all__: List[str] = ["Supplier", "Consumer", "Function", "Resolver", "Composer"]
+__all__: List[str] = [
+    "Supplier",
+    "Consumer",
+    "Function",
+    "Resolver",
+    "Composer",
+]
 
 T_contra = TypeVar("T_contra", contravariant=True)
 T_co = TypeVar("T_co", covariant=True)

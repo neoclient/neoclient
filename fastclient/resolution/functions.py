@@ -43,7 +43,7 @@ class CookieResolutionFunction(ResolutionFunction[Optional[str]]):
     name: str
 
     def __call__(self, response: Response, /) -> Optional[str]:
-        return response.headers.get(self.name)
+        return response.cookies.get(self.name)
 
 
 class QueriesResolutionFunction(ResolutionFunction[QueryParams]):
@@ -71,6 +71,8 @@ class BodyResolutionFunction(ResolutionFunction[Any]):
         return response.json()
 
 
+# TODO: This should have an `__init__` that only accepts the `dependency` callable and generates the rest.
+# Imagine it was going to be used as a decorator
 @dataclass
 class DependencyResolutionFunction(ResolutionFunction[T]):
     model_cls: Type[BaseModel]

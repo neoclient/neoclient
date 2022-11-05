@@ -1,5 +1,5 @@
 from http.cookiejar import CookieJar
-from typing import Any, Mapping, MutableMapping, Sequence
+from typing import Any, List, Mapping, MutableMapping, MutableSequence, Sequence
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 from httpx._utils import primitive_value_to_str
@@ -9,9 +9,22 @@ from .types import (
     HeadersTypes,
     PathsTypes,
     PathTypes,
+    Primitive,
     QueriesTypes,
     TimeoutTypes,
 )
+
+__all__: List[str] = [
+    "convert_query_param",
+    "convert_header",
+    "convert_cookie",
+    "convert_path_param",
+    "convert_query_params",
+    "convert_headers",
+    "convert_cookies",
+    "convert_path_params",
+    "convert_timeout",
+]
 
 
 def convert_query_param(value: Any, /) -> str:
@@ -29,8 +42,19 @@ def convert_cookie(value: Any, /) -> str:
 def convert_path_param(value: PathTypes, /) -> str:
     if isinstance(value, (str, int, float, bool)) or value is None:
         return primitive_value_to_str(value)
+    elif isinstance(value, Sequence):
+        segments: MutableSequence = []
+
+        segment: Primitive
+        for segment in value:
+            converted_segment: str = primitive_value_to_str(segment)
+
+            if converted_segment:
+                segments.append(converted_segment)
+
+        return "/".join(segments)
     else:
-        return "/".join(primitive_value_to_str(v) for v in value)
+        raise TypeError(f"Cannot convert path param of type {type(value)!r}")
 
 
 def convert_query_params(value: QueriesTypes, /) -> QueryParams:

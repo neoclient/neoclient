@@ -1,13 +1,13 @@
 from dataclasses import replace
 from io import BytesIO
-from typing import Any, Callable, Mapping
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
 
-from fastclient import get
+from fastclient import converters, get
 from fastclient.composition import decorators
 from fastclient.models import RequestOptions
+from fastclient.operations import CallableWithOperation
 from fastclient.types import (
     CookiesTypes,
     HeadersTypes,
@@ -22,7 +22,7 @@ from fastclient.types import (
 
 
 @fixture
-def func() -> Callable:
+def func() -> CallableWithOperation:
     @get("/")
     def foo():
         ...
@@ -30,7 +30,7 @@ def func() -> Callable:
     return foo
 
 
-def test_query(func: Callable) -> None:
+def test_query(func: CallableWithOperation) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
     key: str = "name"
@@ -43,7 +43,7 @@ def test_query(func: Callable) -> None:
     )
 
 
-def test_header(func: Callable) -> None:
+def test_header(func: CallableWithOperation) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
     key: str = "name"
@@ -56,7 +56,7 @@ def test_header(func: Callable) -> None:
     )
 
 
-def test_cookie(func: Callable) -> None:
+def test_cookie(func: CallableWithOperation) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
     key: str = "name"
@@ -69,7 +69,7 @@ def test_cookie(func: Callable) -> None:
     )
 
 
-def test_path(func: Callable) -> None:
+def test_path(func: CallableWithOperation) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
     key: str = "name"
@@ -82,7 +82,7 @@ def test_path(func: Callable) -> None:
     )
 
 
-def test_query_params(func: Callable) -> None:
+def test_query_params(func: CallableWithOperation) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
     query_params: QueriesTypes = {"name": "sam"}
@@ -90,11 +90,11 @@ def test_query_params(func: Callable) -> None:
     decorators.query_params(query_params)(func)
 
     assert func.operation.specification.request == replace(
-        original_request, params=QueryParams(query_params)
+        original_request, params=converters.convert_query_params(query_params)
     )
 
 
-def test_headers(func: Callable) -> None:
+def test_headers(func: CallableWithOperation) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
     headers: HeadersTypes = {"name": "sam"}
@@ -102,11 +102,11 @@ def test_headers(func: Callable) -> None:
     decorators.headers(headers)(func)
 
     assert func.operation.specification.request == replace(
-        original_request, headers=Headers(headers)
+        original_request, headers=converters.convert_headers(headers)
     )
 
 
-def test_cookies(func: Callable) -> None:
+def test_cookies(func: CallableWithOperation) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
     cookies: CookiesTypes = {"name": "sam"}
@@ -114,11 +114,11 @@ def test_cookies(func: Callable) -> None:
     decorators.cookies(cookies)(func)
 
     assert func.operation.specification.request == replace(
-        original_request, cookies=Cookies(cookies)
+        original_request, cookies=converters.convert_cookies(cookies)
     )
 
 
-def test_path_params(func: Callable) -> None:
+def test_path_params(func: CallableWithOperation) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
     path_params: PathsTypes = {"name": "sam"}
@@ -130,7 +130,7 @@ def test_path_params(func: Callable) -> None:
     )
 
 
-def test_content(func: Callable) -> None:
+def test_content(func: CallableWithOperation) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
     content: RequestContent = "content"
@@ -142,7 +142,7 @@ def test_content(func: Callable) -> None:
     )
 
 
-def test_data(func: Callable) -> None:
+def test_data(func: CallableWithOperation) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
     data: RequestData = {"name": "sam"}
@@ -152,7 +152,7 @@ def test_data(func: Callable) -> None:
     assert func.operation.specification.request == replace(original_request, data=data)
 
 
-def test_files(func: Callable) -> None:
+def test_files(func: CallableWithOperation) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
     files: RequestFiles = {"file.txt": BytesIO(b"content")}
@@ -164,7 +164,7 @@ def test_files(func: Callable) -> None:
     )
 
 
-def test_json(func: Callable) -> None:
+def test_json(func: CallableWithOperation) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
     json: JsonTypes = {"name": "sam"}
@@ -174,7 +174,7 @@ def test_json(func: Callable) -> None:
     assert func.operation.specification.request == replace(original_request, json=json)
 
 
-def test_timeout(func: Callable) -> None:
+def test_timeout(func: CallableWithOperation) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
     timeout: TimeoutTypes = 5.0
