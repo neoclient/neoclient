@@ -1,7 +1,7 @@
 import functools
 import inspect
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Optional, Type, TypeVar
+from typing import Any, Callable, List, Mapping, Optional, Type, TypeVar
 
 import httpx
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
@@ -24,6 +24,10 @@ from .types import (
     TimeoutTypes,
     URLTypes,
 )
+
+__all__: List[str] = [
+    "FastClient",
+]
 
 
 T = TypeVar("T")

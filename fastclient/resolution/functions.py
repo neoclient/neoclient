@@ -9,12 +9,14 @@ from ..parameters import BaseParameter
 from .typing import ResolutionFunction
 
 __all__: List[str] = [
+    "BodyResolutionFunction",
     "CookieResolutionFunction",
     "CookiesResolutionFunction",
     "DependencyResolutionFunction",
     "HeaderResolutionFunction",
     "HeadersResolutionFunction",
     "QueryResolutionFunction",
+    "QueriesResolutionFunction",
 ]
 
 T = TypeVar("T")

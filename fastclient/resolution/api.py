@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Callable, Mapping, MutableMapping, Tuple, Type
+from typing import Any, Callable, List, Mapping, MutableMapping, Tuple, Type
 
 from httpx import URL, Cookies, Headers, QueryParams, Request, Response
 from pydantic import BaseModel
@@ -21,6 +21,10 @@ from ..parameters import (
     URLParameter,
 )
 from ..validation import ValidatedFunction
+
+__all__: List[str] = [
+    "resolve",
+]
 
 
 def _get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
