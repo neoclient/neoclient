@@ -137,7 +137,7 @@ def anything(name: Name):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'fastclient/0.1.0'
+        'User-Agent': 'fastclient/0.1.3'
     },
     'json': None,
     'method': 'GET',
@@ -169,7 +169,7 @@ def do(commands: Sequence[str]):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'fastclient/0.1.0'
+        'User-Agent': 'fastclient/0.1.3'
     },
     'json': None,
     'method': 'GET',
@@ -197,7 +197,7 @@ def get(message: str):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'fastclient/0.1.0'
+        'User-Agent': 'fastclient/0.1.3'
     },
     'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get?message=Hello%2C+World!'
@@ -225,7 +225,7 @@ httpbin: Httpbin = FastClient("https://httpbin.org/").create(Httpbin)  # type: i
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'fastclient/0.1.0'
+        'User-Agent': 'fastclient/0.1.3'
     },
     'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get?message=Hello%2C+World!'
