@@ -154,9 +154,9 @@ class FastClient:
 
             return operation(*args, **kwargs)
 
-        operation.func = wrapper
+        setattr(wrapper, "operation", operation)
 
-        return wrapper
+        return wrapper  # type: ignore
 
     def bind(
         self, func: CallableWithOperation[PS, RT], /

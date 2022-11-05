@@ -1,7 +1,6 @@
 import inspect
 from dataclasses import dataclass
 from json import JSONDecodeError
-# from types import MethodWrapperType
 from typing import (
     Any,
     Callable,
@@ -29,8 +28,6 @@ RT = TypeVar("RT", covariant=True)
 class CallableWithOperation(Protocol[PS, RT]):
     operation: "Operation"
 
-    # __get__: MethodWrapperType
-
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> RT:
         ...
 
@@ -42,7 +39,7 @@ from .resolution.api import resolve
 
 @dataclass(init=False)
 class Operation(Generic[PS, RT]):
-    func: CallableWithOperation[PS, RT]
+    func: Callable[PS, RT]
     specification: OperationSpecification
     client: Optional[Client]
 

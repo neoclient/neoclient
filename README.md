@@ -197,7 +197,7 @@ def get(message: str):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'python-httpx/0.23.0',
+        'User-Agent': 'fastclient/0.1.0'
     },
     'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get?message=Hello%2C+World!'
@@ -225,8 +225,7 @@ httpbin: Httpbin = FastClient("https://httpbin.org/").create(Httpbin)  # type: i
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'python-httpx/0.23.0',
-        'X-Amzn-Trace-Id': 'Root=1-62fce22e-198b71ee738e804f05e7824f'
+        'User-Agent': 'fastclient/0.1.0'
     },
     'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get?message=Hello%2C+World!'
