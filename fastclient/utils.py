@@ -77,6 +77,9 @@ def unpack_arguments(
     args: MutableSequence[Any] = []
     kwargs: MutableMapping[str, Any] = {}
 
+    print("Unpacking parameters:", parameters)
+    print("Unpacking arguments:", arguments)
+
     parameter: inspect.Parameter
     for parameter in parameters.values():
         if parameter.name not in arguments:
@@ -97,6 +100,8 @@ def unpack_arguments(
             assert parameter.kind == inspect.Parameter.VAR_KEYWORD
 
             kwargs.update(argument)
+
+    print("Unpacked as:", args, kwargs)
 
     return (tuple(args), kwargs)
 
