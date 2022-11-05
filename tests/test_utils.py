@@ -116,3 +116,6 @@ def test_unpack_arguments() -> None:
             "key2": "val2",
         },
     )
+
+    with pytest.raises(ValueError):
+        utils.unpack_arguments(positional_only, {})
