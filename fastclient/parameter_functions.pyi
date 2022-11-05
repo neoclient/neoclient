@@ -2,6 +2,7 @@ from typing import Any, Callable, Optional, TypeVar, overload
 
 T = TypeVar("T")
 
+# Query
 @overload
 def Query(alias: Optional[str] = None, *, required: bool = False) -> Any: ...
 @overload
@@ -13,6 +14,8 @@ def Query(
     default_factory: Callable[[], T],
     required: bool = False,
 ) -> T: ...
+
+# Header
 @overload
 def Header(alias: Optional[str] = None, *, required: bool = False) -> Any: ...
 @overload
@@ -24,6 +27,8 @@ def Header(
     default_factory: Callable[[], T],
     required: bool = False,
 ) -> T: ...
+
+# Cookie
 @overload
 def Cookie(alias: Optional[str] = None, *, required: bool = False) -> Any: ...
 @overload
@@ -35,6 +40,8 @@ def Cookie(
     default_factory: Callable[[], T],
     required: bool = False,
 ) -> T: ...
+
+# Path
 @overload
 def Path(alias: Optional[str] = None, *, required: bool = False) -> Any: ...
 @overload
@@ -46,30 +53,40 @@ def Path(
     default_factory: Callable[[], T],
     required: bool = False,
 ) -> T: ...
+
+# Queries
 @overload
 def Queries() -> Any: ...
 @overload
 def Queries(*, default: T) -> T: ...
 @overload
 def Queries(*, default_factory: Callable[[], T]) -> T: ...
+
+# Headers
 @overload
 def Headers() -> Any: ...
 @overload
 def Headers(*, default: T) -> T: ...
 @overload
 def Headers(*, default_factory: Callable[[], T]) -> T: ...
+
+# Cookies
 @overload
 def Cookies() -> Any: ...
 @overload
 def Cookies(*, default: T) -> T: ...
 @overload
 def Cookies(*, default_factory: Callable[[], T]) -> T: ...
+
+# Paths
 @overload
 def Paths() -> Any: ...
 @overload
 def Paths(*, default: T) -> T: ...
 @overload
 def Paths(*, default_factory: Callable[[], T]) -> T: ...
+
+# Body
 @overload
 def Body(
     alias: Optional[str] = None, *, required: bool = False, embed: bool = False
@@ -90,15 +107,21 @@ def Body(
     required: bool = False,
     embed: bool = False,
 ) -> T: ...
+
+# Depends
 @overload
 def Depends(*, use_cache: bool = True) -> Any: ...
 @overload
 def Depends(dependency: Callable[..., T], /, *, use_cache: bool = True) -> T: ...
-@overload
-def Promise() -> Any: ...
-@overload
-def Promise(promised_type: T, /) -> T: ...
+
+# URL
 def URL() -> Any: ...
+
+# Request
 def Request() -> Any: ...
+
+# Response
 def Response() -> Any: ...
+
+# StatusCode
 def StatusCode() -> Any: ...

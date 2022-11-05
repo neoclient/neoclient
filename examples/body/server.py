@@ -1,6 +1,12 @@
+from dataclasses import dataclass
+
 from fastapi import FastAPI
 
-from .models import Person
+
+@dataclass
+class Person:
+    name: str
+
 
 app: FastAPI = FastAPI()
 

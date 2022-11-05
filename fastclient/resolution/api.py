@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Callable, Mapping, MutableMapping, Tuple, Type
+from typing import Any, Callable, List, Mapping, MutableMapping, Tuple, Type
 
 from httpx import URL, Cookies, Headers, QueryParams, Request, Response
 from pydantic import BaseModel
@@ -21,6 +21,10 @@ from ..parameters import (
     URLParameter,
 )
 from ..validation import ValidatedFunction
+
+__all__: List[str] = [
+    "resolve",
+]
 
 
 def _get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
@@ -63,11 +67,11 @@ def _get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
                 or dataclasses.is_dataclass(model_field.annotation)
             ):
                 parameter = BodyParameter(
-                    default=BaseParameter.get_default(field_info),
+                    default=utils.get_default(field_info),
                 )
             else:
                 parameter = QueryParameter(
-                    default=BaseParameter.get_default(field_info),
+                    default=utils.get_default(field_info),
                 )
 
         # TODO: Depends .dependency must not be None
@@ -104,11 +108,8 @@ def resolve(
     arguments: MutableMapping[str, Any] = {}
 
     field_name: str
-    model_field: ModelField
-    for field_name, model_field in model_cls.__fields__.items():
-        # TODO: Fix typing of this vvv (FieldInfo is not a BaseParameter)
-        parameter: BaseParameter = model_field.field_info
-
+    parameter: BaseParameter
+    for field_name, (_, parameter) in fields.items():
         if isinstance(parameter, DependencyParameter):
             arguments[field_name] = parameter.resolve(
                 response, cached_dependencies=cached_depdendencies
@@ -122,6 +123,6 @@ def resolve(
 
     args: Tuple[Any, ...]
     kwargs: Mapping[str, Any]
-    args, kwargs = utils.sort_arguments(func, validated_arguments)
+    args, kwargs = utils.unpack_arguments(func, validated_arguments)
 
     return func(*args, **kwargs)

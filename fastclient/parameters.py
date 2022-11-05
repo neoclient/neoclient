@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from typing import (
     Any,
     Callable,
-    ClassVar,
     Dict,
     Generic,
     List,
@@ -23,11 +22,10 @@ from pydantic import BaseModel, Required
 from pydantic.fields import FieldInfo, Undefined, UndefinedType
 
 from . import api
-from .enums import ParamType
 from .errors import CompositionError, ResolutionError
 from .models import RequestOptions
-from .parsing import Parser
-from .types import CookieTypes, HeaderTypes, PathParamTypes, QueryParamTypes
+from .parsing import parse_obj_as
+from .types import CookiesTypes, HeadersTypes, PathsTypes, QueriesTypes
 from .typing import Supplier
 
 __all__: List[str] = [
@@ -80,15 +78,6 @@ class BaseParameter(FieldInfo):
     extra: Dict[str, Any] = field(default_factory=dict)
     alias_priority: Optional[int] = field(init=False, repr=False, default=None)
 
-    def has_default(self) -> bool:
-        return self.default is not Undefined or self.default_factory is not None
-
-    def get_default(self) -> Any:
-        if self.default_factory is not None:
-            return self.default_factory()
-        else:
-            return self.default
-
     @staticmethod
     def generate_alias(alias: str, /) -> str:
         return alias
@@ -124,20 +113,16 @@ from .resolution.functions import (
 
 
 class BaseSingleParameter(BaseParameter):
-    type: ClassVar[ParamType]
-
     @staticmethod
     def generate_alias(alias: str):
         return alias
 
 
 class BaseMultiParameter(BaseParameter, Generic[T]):
-    type: ClassVar[ParamType]
+    pass
 
 
 class QueryParameter(BaseSingleParameter):
-    type: ClassVar[ParamType] = ParamType.QUERY
-
     @staticmethod
     def generate_alias(alias: str):
         return alias.lower().replace("_", "-")
@@ -163,8 +148,6 @@ class QueryParameter(BaseSingleParameter):
 
 
 class HeaderParameter(BaseSingleParameter):
-    type: ClassVar[ParamType] = ParamType.HEADER
-
     @staticmethod
     def generate_alias(alias: str):
         return alias.title().replace("_", "-")
@@ -190,8 +173,6 @@ class HeaderParameter(BaseSingleParameter):
 
 
 class CookieParameter(BaseSingleParameter):
-    type: ClassVar[ParamType] = ParamType.COOKIE
-
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
             raise CompositionError(
@@ -213,8 +194,6 @@ class CookieParameter(BaseSingleParameter):
 
 
 class PathParameter(BaseSingleParameter):
-    type: ClassVar[ParamType] = ParamType.PATH
-
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
             raise CompositionError(
@@ -227,11 +206,9 @@ class PathParameter(BaseSingleParameter):
         PathConsumer.parse(self.alias, argument)(request)
 
 
-class QueriesParameter(BaseMultiParameter[QueryParamTypes]):
-    type: ClassVar[ParamType] = ParamType.QUERY
-
+class QueriesParameter(BaseMultiParameter[QueriesTypes]):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
-        params: QueryParamTypes = Parser(QueryParamTypes)(argument)
+        params: QueriesTypes = parse_obj_as(QueriesTypes, argument)  # type: ignore
 
         QueriesConsumer.parse(params)(request)
 
@@ -239,11 +216,9 @@ class QueriesParameter(BaseMultiParameter[QueryParamTypes]):
         return QueriesResolutionFunction()(response)
 
 
-class HeadersParameter(BaseMultiParameter[HeaderTypes]):
-    type: ClassVar[ParamType] = ParamType.HEADER
-
+class HeadersParameter(BaseMultiParameter[HeadersTypes]):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
-        headers: HeaderTypes = Parser(HeaderTypes)(argument)
+        headers: HeadersTypes = parse_obj_as(HeadersTypes, argument)  # type: ignore
 
         HeadersConsumer.parse(headers)(request)
 
@@ -251,11 +226,9 @@ class HeadersParameter(BaseMultiParameter[HeaderTypes]):
         return HeadersResolutionFunction()(response)
 
 
-class CookiesParameter(BaseMultiParameter[CookieTypes]):
-    type: ClassVar[ParamType] = ParamType.COOKIE
-
+class CookiesParameter(BaseMultiParameter[CookiesTypes]):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
-        cookies: CookieTypes = Parser(CookieTypes)(argument)
+        cookies: CookiesTypes = parse_obj_as(CookiesTypes, argument)  # type: ignore
 
         CookiesConsumer.parse(cookies)(request)
 
@@ -263,11 +236,9 @@ class CookiesParameter(BaseMultiParameter[CookieTypes]):
         return CookiesResolutionFunction()(response)
 
 
-class PathsParameter(BaseMultiParameter[PathParamTypes]):
-    type: ClassVar[ParamType] = ParamType.PATH
-
+class PathsParameter(BaseMultiParameter[PathsTypes]):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
-        path_params: PathParamTypes = Parser(PathParamTypes)(argument)
+        path_params: PathsTypes = parse_obj_as(PathsTypes, argument)  # type: ignore
 
         PathsConsumer.parse(path_params)(request)
 
@@ -341,8 +312,7 @@ class DependencyParameter(BaseParameter):
         model_cls: Type[BaseModel] = api.create_model_cls(self.dependency, fields)
 
         parameters: Mapping[str, BaseParameter] = {
-            field_name: model_field.field_info
-            for field_name, model_field in model_cls.__fields__.items()
+            field: parameter for field, (_, parameter) in fields.items()
         }
 
         resolved: Any = DependencyResolutionFunction(

@@ -1,22 +1,38 @@
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, List, Mapping
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 
 from .. import converters
 from ..models import RequestOptions
 from ..types import (
-    CookieTypes,
-    HeaderTypes,
+    CookiesTypes,
+    HeadersTypes,
     JsonTypes,
-    PathParamTypes,
-    QueryParamTypes,
+    PathsTypes,
+    QueriesTypes,
     RequestContent,
     RequestData,
     RequestFiles,
     TimeoutTypes,
 )
 from .typing import RequestConsumer
+
+__all__: List[str] = [
+    "QueryConsumer",
+    "HeaderConsumer",
+    "CookieConsumer",
+    "PathConsumer",
+    "QueriesConsumer",
+    "HeadersConsumer",
+    "CookiesConsumer",
+    "PathsConsumer",
+    "ContentConsumer",
+    "DataConsumer",
+    "FilesConsumer",
+    "JsonConsumer",
+    "TimeoutConsumer",
+]
 
 
 @dataclass
@@ -91,7 +107,7 @@ class QueriesConsumer(RequestConsumer):
         request.params = request.params.merge(self.params)
 
     @classmethod
-    def parse(cls, params: QueryParamTypes) -> "QueriesConsumer":
+    def parse(cls, params: QueriesTypes) -> "QueriesConsumer":
         return cls(converters.convert_query_params(params))
 
 
@@ -103,7 +119,7 @@ class HeadersConsumer(RequestConsumer):
         request.headers.update(self.headers)
 
     @classmethod
-    def parse(cls, headers: HeaderTypes) -> "HeadersConsumer":
+    def parse(cls, headers: HeadersTypes) -> "HeadersConsumer":
         return cls(converters.convert_headers(headers))
 
 
@@ -115,7 +131,7 @@ class CookiesConsumer(RequestConsumer):
         request.cookies.update(self.cookies)
 
     @classmethod
-    def parse(cls, cookies: CookieTypes) -> "CookiesConsumer":
+    def parse(cls, cookies: CookiesTypes) -> "CookiesConsumer":
         return cls(converters.convert_cookies(cookies))
 
 
@@ -127,7 +143,7 @@ class PathsConsumer(RequestConsumer):
         request.path_params.update(self.path_params)
 
     @classmethod
-    def parse(cls, path_params: PathParamTypes) -> "PathsConsumer":
+    def parse(cls, path_params: PathsTypes) -> "PathsConsumer":
         return cls(converters.convert_path_params(path_params))
 
 

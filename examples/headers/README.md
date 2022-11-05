@@ -1,5 +1,5 @@
-# examples/cookie
-Example for the `Cookie` parameter
+# examples/headers
+Example for the `Headers` parameter
 
 ## Start the Server
 ```console
@@ -13,5 +13,11 @@ INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 ## Run the Example
 ```console
 $ python3 app.py
-Hello, sam!
+{'accept': '*/*',
+ 'accept-encoding': 'gzip, deflate, br',
+ 'age': '43',
+ 'connection': 'keep-alive',
+ 'host': '127.0.0.1:8000',
+ 'name': 'sam',
+ 'user-agent': 'fastclient/0.1.0'}
 ```

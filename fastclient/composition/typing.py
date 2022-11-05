@@ -1,8 +1,13 @@
-from typing import Protocol, TypeVar, runtime_checkable
+from typing import List, Protocol, TypeVar, runtime_checkable
 
 from typing_extensions import ParamSpec
 
 from ..models import RequestOptions
+
+__all__: List[str] = [
+    "RequestConsumer",
+    "RequestConsumerFactory",
+]
 
 T = TypeVar("T", contravariant=True)
 

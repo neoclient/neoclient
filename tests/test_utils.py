@@ -4,43 +4,19 @@ from fastclient import utils
 
 
 def test_get_path_params() -> None:
-    assert utils.get_path_params("http://foo.com/") == set()
-    assert utils.get_path_params("http://foo.com/{bar}") == {"bar"}
-    assert utils.get_path_params("http://foo.com/{bar}/{bar}") == {"bar"}
-    assert utils.get_path_params("http://foo.com/{bar}/{baz}") == {"bar", "baz"}
+    assert utils.parse_format_string("http://foo.com/") == set()
+    assert utils.parse_format_string("http://foo.com/{bar}") == {"bar"}
+    assert utils.parse_format_string("http://foo.com/{bar}/{bar}") == {"bar"}
+    assert utils.parse_format_string("http://foo.com/{bar}/{baz}") == {"bar", "baz"}
 
     with pytest.raises(ValueError):
-        utils.get_path_params("http://foo.com/{}")
+        utils.parse_format_string("http://foo.com/{}")
 
     with pytest.raises(ValueError):
-        utils.get_path_params("http://foo.com/{0}")
+        utils.parse_format_string("http://foo.com/{0}")
 
     with pytest.raises(ValueError):
-        utils.get_path_params("http://foo.com/{bar }")
-
-
-def test_extract_path_params() -> None:
-    assert utils.extract_path_params("http://foo.com/", "http://foo.com/") == {}
-    assert utils.extract_path_params("http://foo.com/{bar}", "http://foo.com/bar") == {
-        "bar": "bar"
-    }
-    assert utils.extract_path_params(
-        "http://foo.com/{bar}/{baz}", "http://foo.com/bar/baz"
-    ) == {"bar": "bar", "baz": "baz"}
-
-    with pytest.raises(ValueError):
-        utils.extract_path_params("http://foo.com/{bar}", "http://foo.com/")
-
-
-def test_partially_format() -> None:
-    assert utils.partially_format("foo") == "foo"
-    assert utils.partially_format("foo", bar="bar") == "foo"
-    assert utils.partially_format("foo/{bar}", bar="bar") == "foo/bar"
-    assert utils.partially_format("foo/{bar}/{baz}", bar="bar") == "foo/bar/{baz}"
-    assert utils.partially_format("foo/{bar}/{baz}", baz="baz") == "foo/{bar}/baz"
-    assert (
-        utils.partially_format("foo/{bar}/{baz}", bar="bar", baz="baz") == "foo/bar/baz"
-    )
+        utils.parse_format_string("http://foo.com/{bar }")
 
 
 def test_bind_arguments() -> None:

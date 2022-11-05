@@ -1,15 +1,47 @@
 import inspect
 import string
-from typing import Any, Callable, List, Mapping, MutableMapping, Optional, Set, Tuple
+from types import FunctionType, MethodType
+from typing import (
+    Any,
+    Callable,
+    List,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 
-import parse
+from pydantic.fields import FieldInfo, Undefined
+
+from .enums import MethodKind
+
+__all__: List[str] = [
+    "parse_format_string",
+    "bind_arguments",
+    "is_primitive",
+    "unpack_arguments",
+    "get_default",
+    "has_default",
+    "get_method_kind",
+]
 
 
-def get_path_params(url: str, /) -> Set[str]:
+def parse_format_string(format_string: str, /) -> Set[str]:
+    """
+    Extracts a set of field names from `format_string`
+
+    Example:
+        >>> parse_format_string("foo {bar}")
+        {"bar"}
+    """
+
     path_params: Set[str] = set()
 
     field_name: Optional[str]
-    for _, field_name, _, _ in string.Formatter().parse(url):
+    for _, field_name, _, _ in string.Formatter().parse(format_string):
         if field_name is None:
             continue
 
@@ -21,27 +53,8 @@ def get_path_params(url: str, /) -> Set[str]:
     return path_params
 
 
-def extract_path_params(url_format: str, url: str, /) -> Mapping[str, Any]:
-    parse_result: Optional[parse.Result] = parse.parse(url_format, url)
-
-    if parse_result is None:
-        raise ValueError(
-            f"Failed to parse url {url!r} against format spec {url_format!r}"
-        )
-
-    return parse_result.named
-
-
-def partially_format(string: str, /, **kwargs: Any) -> str:
-    default_kwargs: Mapping[str, str] = {
-        path_param: f"{{{path_param}}}" for path_param in get_path_params(string)
-    }
-
-    return string.format(**{**default_kwargs, **kwargs})
-
-
 def bind_arguments(
-    func: Callable, args: Tuple[Any, ...], kwargs: Mapping[str, Any]
+    func: Callable, /, args: Tuple[Any, ...], kwargs: Mapping[str, Any]
 ) -> Mapping[str, Any]:
     bound_arguments: inspect.BoundArguments = inspect.signature(func).bind(
         *args, **kwargs
@@ -52,38 +65,62 @@ def bind_arguments(
     return bound_arguments.arguments
 
 
-def noop_consumer(_: Any, /) -> None:
-    return None
-
-
 def is_primitive(obj: Any, /) -> bool:
     return isinstance(obj, (str, int, float, bool, type(None)))
 
 
-def sort_arguments(
+def unpack_arguments(
     func: Callable, arguments: Mapping[str, Any]
 ) -> Tuple[Tuple[Any, ...], Mapping[str, Any]]:
     parameters: Mapping[str, inspect.Parameter] = inspect.signature(func).parameters
 
-    args: List[Any] = []
+    args: MutableSequence[Any] = []
     kwargs: MutableMapping[str, Any] = {}
 
     parameter: inspect.Parameter
     for parameter in parameters.values():
+        if parameter.name not in arguments:
+            raise ValueError(f"Missing argument for parameter {parameter.name!r}")
+
         argument: Any = arguments[parameter.name]
 
-        if parameter.kind is inspect.Parameter.POSITIONAL_ONLY:
+        if parameter.kind == inspect.Parameter.POSITIONAL_ONLY:
             args.append(argument)
         elif parameter.kind in (
             inspect.Parameter.POSITIONAL_OR_KEYWORD,
             inspect.Parameter.KEYWORD_ONLY,
         ):
             kwargs[parameter.name] = argument
-        elif parameter.kind is inspect.Parameter.VAR_POSITIONAL:
+        elif parameter.kind == inspect.Parameter.VAR_POSITIONAL:
             args.extend(argument)
-        elif parameter.kind is inspect.Parameter.VAR_KEYWORD:
-            kwargs.update(argument)
         else:
-            raise Exception(f"Unknown parameter kind: {parameter.kind}")
+            assert parameter.kind == inspect.Parameter.VAR_KEYWORD
+
+            kwargs.update(argument)
 
     return (tuple(args), kwargs)
+
+
+def get_default(field_info: FieldInfo, /) -> Any:
+    if field_info.default_factory is not None:
+        return field_info.default_factory()
+    else:
+        return field_info.default
+
+
+def has_default(field_info: FieldInfo, /) -> bool:
+    return field_info.default is not Undefined or field_info.default_factory is not None
+
+
+def get_method_kind(method: Union[FunctionType, MethodType, Callable], /) -> MethodKind:
+    if isinstance(method, MethodType):
+        if isinstance(method.__self__, type):
+            return MethodKind.CLASS_METHOD
+        else:
+            return MethodKind.METHOD
+    elif isinstance(method, FunctionType):
+        return MethodKind.STATIC_METHOD
+    else:
+        raise ValueError(
+            f"Method {method!r} is not a function or method, cannot determine its kind"
+        )

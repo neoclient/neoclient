@@ -9,12 +9,14 @@ from ..parameters import BaseParameter
 from .typing import ResolutionFunction
 
 __all__: List[str] = [
+    "BodyResolutionFunction",
     "CookieResolutionFunction",
     "CookiesResolutionFunction",
     "DependencyResolutionFunction",
     "HeaderResolutionFunction",
     "HeadersResolutionFunction",
     "QueryResolutionFunction",
+    "QueriesResolutionFunction",
 ]
 
 T = TypeVar("T")
@@ -87,6 +89,6 @@ class DependencyResolutionFunction(ResolutionFunction[T]):
 
         args: Tuple[Any, ...]
         kwargs: Mapping[str, Any]
-        args, kwargs = utils.sort_arguments(self.dependency, validated_arguments)
+        args, kwargs = utils.unpack_arguments(self.dependency, validated_arguments)
 
         return self.dependency(*args, **kwargs)

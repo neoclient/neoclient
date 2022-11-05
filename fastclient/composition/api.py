@@ -1,7 +1,7 @@
 import dataclasses
 import urllib.parse
 from collections import Counter
-from typing import Any, Callable, Mapping, MutableMapping, Sequence, Set, Tuple
+from typing import Any, Callable, Mapping, MutableMapping, MutableSequence, Set, Tuple
 
 from loguru import logger
 from pydantic import BaseModel
@@ -10,13 +10,7 @@ from pydantic.fields import FieldInfo, ModelField
 from .. import api, utils
 from ..errors import DuplicateParameters
 from ..models import RequestOptions
-from ..parameters import (
-    BaseParameter,
-    BaseSingleParameter,
-    BodyParameter,
-    PathParameter,
-    QueryParameter,
-)
+from ..parameters import BaseParameter, BodyParameter, PathParameter, QueryParameter
 from ..validation import ValidatedFunction
 
 
@@ -25,10 +19,12 @@ def get_fields(
     func: Callable,
 ) -> Mapping[str, Tuple[Any, BaseParameter]]:
     path_params: Set[str] = (
-        utils.get_path_params(urllib.parse.unquote(str(request.url)))
+        utils.parse_format_string(urllib.parse.unquote(str(request.url)))
         if request is not None
         else set()
     )
+
+    parameter_aliases: MutableSequence[str] = []
 
     fields: MutableMapping[str, Tuple[Any, BaseParameter]] = {}
 
@@ -44,7 +40,7 @@ def get_fields(
             if field_name in path_params:
                 field_info = PathParameter(
                     alias=field_name,
-                    default=BaseParameter.get_default(field_info),
+                    default=utils.get_default(field_info),
                 )
             elif isinstance(model_field.annotation, type) and (
                 issubclass(model_field.annotation, (BaseModel, dict))
@@ -52,19 +48,23 @@ def get_fields(
             ):
                 field_info = BodyParameter(
                     alias=field_name,
-                    default=BaseParameter.get_default(field_info),
+                    default=utils.get_default(field_info),
                 )
             else:
                 field_info = QueryParameter(
-                    default=BaseParameter.get_default(field_info),
+                    default=utils.get_default(field_info),
                 )
 
             logger.info(f"Inferred field {model_field!r} as parameter {field_info!r}")
 
-        if isinstance(field_info, BaseSingleParameter) and field_info.alias is None:
-            field_info = dataclasses.replace(
-                field_info, alias=field_info.generate_alias(model_field.name)
-            )
+        if field_info.alias is None:
+            alias: str = field_info.generate_alias(model_field.name)
+
+            field_info = dataclasses.replace(field_info, alias=alias)
+
+            parameter_aliases.append(alias)
+        else:
+            parameter_aliases.append(field_info.alias)
 
         fields[field_name] = (model_field.annotation, field_info)
 
@@ -88,8 +88,7 @@ def get_fields(
     #   For example, the following function should fail validation:
     #       @get("/")
     #       def foo(a: str = Query(alias="name"), b: str = Query(alias="name")): ...
-    aliases: Sequence[str] = [parameter.alias for _, parameter in fields.values()]
-    alias_counts: Mapping[str, int] = Counter(aliases)
+    alias_counts: Mapping[str, int] = Counter(parameter_aliases)
     duplicate_aliases: Set[str] = {
         alias for alias, count in alias_counts.items() if count > 1
     }
@@ -124,9 +123,8 @@ def compose(
     logger.info(f"Validated Arguments: {validated_arguments!r}")
 
     field_name: str
-    model_field: ModelField
-    for field_name, model_field in model.__fields__.items():
-        parameter: BaseParameter = model_field.field_info
+    parameter: BaseParameter
+    for field_name, (_, parameter) in fields.items():
         argument: Any = validated_arguments[field_name]
 
         logger.debug(f"Composing parameter {parameter!r} with argument {argument!r}")

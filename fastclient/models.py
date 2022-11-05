@@ -1,5 +1,5 @@
 import urllib.parse
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, MutableMapping, Optional, Set
 
 import httpx
@@ -11,20 +11,27 @@ from . import converters, utils
 from .errors import IncompatiblePathParameters
 from .types import (
     AuthTypes,
-    CookieTypes,
+    CookiesTypes,
     DefaultEncodingTypes,
     EventHooks,
-    HeaderTypes,
+    HeadersTypes,
     JsonTypes,
     MethodTypes,
-    PathParamTypes,
-    QueryParamTypes,
+    PathsTypes,
+    QueriesTypes,
     RequestContent,
     RequestData,
     RequestFiles,
     TimeoutTypes,
     URLTypes,
 )
+
+__all__: List[str] = [
+    "Client",
+    "ClientOptions",
+    "RequestOptions",
+    "OperationSpecification",
+]
 
 
 @dataclass(init=False)
@@ -65,9 +72,9 @@ class ClientOptions:
     def __init__(
         self,
         auth: Optional[AuthTypes] = None,
-        params: Optional[QueryParamTypes] = None,
-        headers: Optional[HeaderTypes] = None,
-        cookies: Optional[CookieTypes] = None,
+        params: Optional[QueriesTypes] = None,
+        headers: Optional[HeadersTypes] = None,
+        cookies: Optional[CookiesTypes] = None,
         timeout: TimeoutTypes = DEFAULT_TIMEOUT_CONFIG,
         follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
         max_redirects: int = DEFAULT_MAX_REDIRECTS,
@@ -168,15 +175,15 @@ class RequestOptions:
         method: MethodTypes,
         url: URLTypes,
         *,
-        params: Optional[QueryParamTypes] = None,
-        headers: Optional[HeaderTypes] = None,
-        cookies: Optional[CookieTypes] = None,
+        params: Optional[QueriesTypes] = None,
+        headers: Optional[HeadersTypes] = None,
+        cookies: Optional[CookiesTypes] = None,
         content: Optional[RequestContent] = None,
         data: Optional[RequestData] = None,
         files: Optional[RequestFiles] = None,
         json: Optional[JsonTypes] = None,
         timeout: Optional[TimeoutTypes] = None,
-        path_params: Optional[PathParamTypes] = None,
+        path_params: Optional[PathsTypes] = None,
     ) -> None:
         ...
         self.method = method if isinstance(method, str) else method.decode()
@@ -274,14 +281,12 @@ class RequestOptions:
         )
 
     def _get_formatted_url(self) -> str:
-        raw_url: str = urllib.parse.unquote(str(self.url))
-
-        return utils.partially_format(raw_url, **self.path_params)
+        return urllib.parse.unquote(str(self.url)).format(**self.path_params)
 
     def validate(self):
         url: str = urllib.parse.unquote(str(self.url))
 
-        expected_path_params: Set[str] = utils.get_path_params(url)
+        expected_path_params: Set[str] = utils.parse_format_string(url)
         actual_path_params: Set[str] = set(self.path_params.keys())
 
         # Validate path params are correct
@@ -295,14 +300,3 @@ class RequestOptions:
 class OperationSpecification:
     request: RequestOptions
     response: Optional[Callable[..., Any]] = None
-
-
-@dataclass(frozen=True)
-class ResolverContext:
-    request: RequestOptions
-    cached_dependencies: Dict[Callable[..., Any], Any] = field(default_factory=dict)
-
-
-@dataclass
-class ResolutionCache:
-    dependencies: MutableMapping[Callable, Any]

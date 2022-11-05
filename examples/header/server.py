@@ -5,4 +5,4 @@ app: FastAPI = FastAPI()
 
 @app.get("/greet")
 def greet(name: str = Header()) -> str:
-    return f"Hello, {name}"
+    return f"Hello, {name}!"

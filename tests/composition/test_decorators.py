@@ -9,11 +9,11 @@ from fastclient import get
 from fastclient.composition import decorators
 from fastclient.models import RequestOptions
 from fastclient.types import (
-    CookieTypes,
-    HeaderTypes,
+    CookiesTypes,
+    HeadersTypes,
     JsonTypes,
-    PathParamTypes,
-    QueryParamTypes,
+    PathsTypes,
+    QueriesTypes,
     RequestContent,
     RequestData,
     RequestFiles,
@@ -85,7 +85,7 @@ def test_path(func: Callable) -> None:
 def test_query_params(func: Callable) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
-    query_params: QueryParamTypes = {"name": "sam"}
+    query_params: QueriesTypes = {"name": "sam"}
 
     decorators.query_params(query_params)(func)
 
@@ -97,7 +97,7 @@ def test_query_params(func: Callable) -> None:
 def test_headers(func: Callable) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
-    headers: HeaderTypes = {"name": "sam"}
+    headers: HeadersTypes = {"name": "sam"}
 
     decorators.headers(headers)(func)
 
@@ -109,7 +109,7 @@ def test_headers(func: Callable) -> None:
 def test_cookies(func: Callable) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
-    cookies: CookieTypes = {"name": "sam"}
+    cookies: CookiesTypes = {"name": "sam"}
 
     decorators.cookies(cookies)(func)
 
@@ -121,7 +121,7 @@ def test_cookies(func: Callable) -> None:
 def test_path_params(func: Callable) -> None:
     original_request: RequestOptions = replace(func.operation.specification.request)
 
-    path_params: PathParamTypes = {"name": "sam"}
+    path_params: PathsTypes = {"name": "sam"}
 
     decorators.path_params(path_params)(func)
 

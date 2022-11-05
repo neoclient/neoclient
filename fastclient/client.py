@@ -1,9 +1,7 @@
 import functools
 import inspect
 from dataclasses import dataclass
-from enum import Enum, auto
-from types import FunctionType, MethodType
-from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
+from typing import Any, Callable, List, Mapping, Optional, Type, TypeVar
 
 import httpx
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
@@ -12,45 +10,30 @@ from typing_extensions import ParamSpec
 
 from . import __version__
 from .composition.api import get_fields
-from .enums import HttpMethod
+from .enums import HttpMethod, MethodKind
 from .models import ClientOptions, OperationSpecification, RequestOptions
 from .operations import CallableWithOperation, Operation
 from .types import (
     AuthTypes,
-    CookieTypes,
+    CookiesTypes,
     DefaultEncodingTypes,
     EventHooks,
-    HeaderTypes,
-    QueryParamTypes,
+    HeadersTypes,
+    QueriesTypes,
     TimeoutTypes,
     URLTypes,
 )
+from .utils import get_method_kind
 
-
-class MethodKind(Enum):
-    METHOD = auto()
-    CLASS_METHOD = auto()
-    STATIC_METHOD = auto()
+__all__: List[str] = [
+    "FastClient",
+]
 
 
 T = TypeVar("T")
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
-
-
-def get_method_kind(method: Union[FunctionType, MethodType, Callable], /) -> MethodKind:
-    if isinstance(method, MethodType):
-        if isinstance(method.__self__, type):
-            return MethodKind.CLASS_METHOD
-        else:
-            return MethodKind.METHOD
-    elif isinstance(method, FunctionType):
-        return MethodKind.STATIC_METHOD
-    else:
-        raise ValueError(
-            "`method` is not a function or method, cannot determine its kind"
-        )
 
 
 class BaseService:
@@ -67,9 +50,9 @@ class FastClient:
         base_url: URLTypes = "",
         *,
         auth: Optional[AuthTypes] = None,
-        params: Optional[QueryParamTypes] = None,
-        headers: Optional[HeaderTypes] = None,
-        cookies: Optional[CookieTypes] = None,
+        params: Optional[QueriesTypes] = None,
+        headers: Optional[HeadersTypes] = None,
+        cookies: Optional[CookiesTypes] = None,
         timeout: TimeoutTypes = DEFAULT_TIMEOUT_CONFIG,
         follow_redirects: bool = False,
         max_redirects: int = DEFAULT_MAX_REDIRECTS,
@@ -96,15 +79,17 @@ class FastClient:
         self.client = client_options.build()
 
     @classmethod
-    def from_client(cls, client: Optional[httpx.Client], /) -> "FastClient":
-        obj = cls()
+    def from_client(
+        cls: Type["FastClient"], client: Optional[httpx.Client], /
+    ) -> "FastClient":
+        obj: FastClient = cls()
 
         obj.client = client
 
         return obj
 
     def create(self, protocol: Type[T], /) -> T:
-        operations: Dict[str, Callable] = {
+        operations: Mapping[str, Callable] = {
             member_name: member
             for member_name, member in inspect.getmembers(protocol)
             if isinstance(member, CallableWithOperation)
@@ -118,8 +103,13 @@ class FastClient:
 
             attributes[func.__name__] = static_attr
 
-        typ = type(protocol.__name__, (BaseService,), attributes)
-        obj = typ()
+        typ: Type[BaseService] = type(protocol.__name__, (BaseService,), attributes)
+
+        # NOTE: Although `typ` was assigned all of the operation members as attributes, it may
+        # be missing other non-operation methods or attributes that was cause it to not truly
+        # implement the protocol. Checks should be made and exceptions should be thrown to assert
+        # that this is not the case.
+        obj: T = typ()  # type: ignore
 
         member_name: str
         member: Any
@@ -128,16 +118,19 @@ class FastClient:
                 continue
 
             bound_member: CallableWithOperation = self.bind(member)
+            bound_member_callable: Callable = bound_member
 
             method_kind: MethodKind = get_method_kind(member)
 
             if method_kind is MethodKind.METHOD:
-                bound_member = bound_member.__get__(obj)
+                bound_member = bound_member_callable.__get__(obj)
             elif method_kind is MethodKind.CLASS_METHOD:
-                bound_member = bound_member.__get__(typ)
+                bound_member = bound_member_callable.__get__(typ)
 
             operation: Operation = bound_member.operation
 
+            # NOTE: Will this not propagate?? Surely a clone of the `Operation` should be made
+            # before changing anything
             operation.func = bound_member
 
             setattr(obj, member_name, bound_member)
@@ -154,8 +147,6 @@ class FastClient:
             return operation(*args, **kwargs)
 
         setattr(wrapper, "operation", operation)
-
-        operation.func = wrapper
 
         return wrapper  # type: ignore
 
