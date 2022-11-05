@@ -85,6 +85,7 @@ def test_convert_path_params() -> None:
         "names": "sam/bob",
     }
 
+
 def test_convert_timeout() -> None:
     assert converters.convert_timeout(1.25) == Timeout(1.25)
     assert converters.convert_timeout(None) == Timeout(None)

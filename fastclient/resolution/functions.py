@@ -43,7 +43,7 @@ class CookieResolutionFunction(ResolutionFunction[Optional[str]]):
     name: str
 
     def __call__(self, response: Response, /) -> Optional[str]:
-        return response.headers.get(self.name)
+        return response.cookies.get(self.name)
 
 
 class QueriesResolutionFunction(ResolutionFunction[QueryParams]):

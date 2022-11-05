@@ -30,9 +30,7 @@ def client() -> FastClient:
 def test_query_not_required_omitted(client: FastClient):
     class Service(Protocol):
         @get("get")
-        def get(
-            self, q: Optional[str] = Query()
-        ) -> RequestOptions:
+        def get(self, q: Optional[str] = Query()) -> RequestOptions:
             ...
 
     service: Service = client.create(Service)  # type: ignore
@@ -46,9 +44,7 @@ def test_query_not_required_omitted(client: FastClient):
 def test_query_required_not_omitted(client: FastClient):
     class Service(Protocol):
         @get("get")
-        def get(
-            self, q: Optional[str] = Query(default=Required)
-        ) -> RequestOptions:
+        def get(self, q: Optional[str] = Query(default=Required)) -> RequestOptions:
             ...
 
     service: Service = client.create(Service)  # type: ignore
