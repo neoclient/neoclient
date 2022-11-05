@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 
 
 class HiddenValueEnum(Enum):
@@ -19,3 +19,9 @@ class HttpMethod(HiddenValueEnum, StrEnum):
     PATCH = "PATCH"
     DELETE = "DELETE"
     OPTIONS = "OPTIONS"
+
+
+class MethodKind(HiddenValueEnum):
+    METHOD = auto()
+    CLASS_METHOD = auto()
+    STATIC_METHOD = auto()

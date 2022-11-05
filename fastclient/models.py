@@ -1,5 +1,5 @@
 import urllib.parse
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, MutableMapping, Optional, Set
 
 import httpx
@@ -25,6 +25,13 @@ from .types import (
     TimeoutTypes,
     URLTypes,
 )
+
+__all__: List[str] = [
+    "Client",
+    "ClientOptions",
+    "RequestOptions",
+    "OperationSpecification",
+]
 
 
 @dataclass(init=False)
@@ -293,14 +300,3 @@ class RequestOptions:
 class OperationSpecification:
     request: RequestOptions
     response: Optional[Callable[..., Any]] = None
-
-
-@dataclass(frozen=True)
-class ResolverContext:
-    request: RequestOptions
-    cached_dependencies: Dict[Callable[..., Any], Any] = field(default_factory=dict)
-
-
-@dataclass
-class ResolutionCache:
-    dependencies: MutableMapping[Callable, Any]

@@ -1,9 +1,7 @@
 import functools
 import inspect
 from dataclasses import dataclass
-from enum import Enum, auto
-from types import FunctionType, MethodType
-from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Mapping, Optional, Type, TypeVar
 
 import httpx
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
@@ -12,9 +10,10 @@ from typing_extensions import ParamSpec
 
 from . import __version__
 from .composition.api import get_fields
-from .enums import HttpMethod
+from .enums import HttpMethod, MethodKind
 from .models import ClientOptions, OperationSpecification, RequestOptions
 from .operations import CallableWithOperation, Operation
+from .utils import get_method_kind
 from .types import (
     AuthTypes,
     CookiesTypes,
@@ -27,30 +26,10 @@ from .types import (
 )
 
 
-class MethodKind(Enum):
-    METHOD = auto()
-    CLASS_METHOD = auto()
-    STATIC_METHOD = auto()
-
-
 T = TypeVar("T")
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
-
-
-def get_method_kind(method: Union[FunctionType, MethodType, Callable], /) -> MethodKind:
-    if isinstance(method, MethodType):
-        if isinstance(method.__self__, type):
-            return MethodKind.CLASS_METHOD
-        else:
-            return MethodKind.METHOD
-    elif isinstance(method, FunctionType):
-        return MethodKind.STATIC_METHOD
-    else:
-        raise ValueError(
-            "`method` is not a function or method, cannot determine its kind"
-        )
 
 
 class BaseService:
@@ -96,15 +75,15 @@ class FastClient:
         self.client = client_options.build()
 
     @classmethod
-    def from_client(cls, client: Optional[httpx.Client], /) -> "FastClient":
-        obj = cls()
+    def from_client(cls: Type["FastClient"], client: Optional[httpx.Client], /) -> "FastClient":
+        obj: FastClient = cls()
 
         obj.client = client
 
         return obj
 
     def create(self, protocol: Type[T], /) -> T:
-        operations: Dict[str, Callable] = {
+        operations: Mapping[str, Callable] = {
             member_name: member
             for member_name, member in inspect.getmembers(protocol)
             if isinstance(member, CallableWithOperation)
@@ -118,8 +97,13 @@ class FastClient:
 
             attributes[func.__name__] = static_attr
 
-        typ = type(protocol.__name__, (BaseService,), attributes)
-        obj = typ()
+        typ: Type[BaseService] = type(protocol.__name__, (BaseService,), attributes)
+
+        # NOTE: Although `typ` was assigned all of the operation members as attributes, it may
+        # be missing other non-operation methods or attributes that was cause it to not truly
+        # implement the protocol. Checks should be made and exceptions should be thrown to assert
+        # that this is not the case.
+        obj: T = typ()  # type: ignore
 
         member_name: str
         member: Any
@@ -139,6 +123,8 @@ class FastClient:
 
             operation: Operation = bound_member.operation
 
+            # NOTE: Will this not propagate?? Surely a clone of the `Operation` should be made
+            # before changing anything
             operation.func = bound_member
 
             setattr(obj, member_name, bound_member)

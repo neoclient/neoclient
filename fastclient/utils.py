@@ -1,5 +1,6 @@
 import inspect
 import string
+from types import FunctionType, MethodType
 from typing import (
     Any,
     Callable,
@@ -10,9 +11,12 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    Union,
 )
 
 from pydantic.fields import FieldInfo, Undefined
+
+from .enums import MethodKind
 
 __all__: List[str] = [
     "parse_format_string",
@@ -21,6 +25,7 @@ __all__: List[str] = [
     "unpack_arguments",
     "get_default",
     "has_default",
+    "get_method_kind",
 ]
 
 
@@ -105,3 +110,17 @@ def get_default(field_info: FieldInfo, /) -> Any:
 
 def has_default(field_info: FieldInfo, /) -> bool:
     return field_info.default is not Undefined or field_info.default_factory is not None
+
+
+def get_method_kind(method: Union[FunctionType, MethodType, Callable], /) -> MethodKind:
+    if isinstance(method, MethodType):
+        if isinstance(method.__self__, type):
+            return MethodKind.CLASS_METHOD
+        else:
+            return MethodKind.METHOD
+    elif isinstance(method, FunctionType):
+        return MethodKind.STATIC_METHOD
+    else:
+        raise ValueError(
+            f"Method {method!r} is not a function or method, cannot determine its kind"
+        )
