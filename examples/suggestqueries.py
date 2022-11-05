@@ -1,7 +1,8 @@
 from typing import Optional, Protocol
 
-from fastclient import FastClient, Query, get, query_params
 from rich.pretty import pprint
+
+from fastclient import FastClient, Query, get, query_params
 
 
 class SuggestQueries(Protocol):

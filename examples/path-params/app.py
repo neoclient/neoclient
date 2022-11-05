@@ -1,4 +1,5 @@
 from typing import Mapping
+
 from client import perform
 
 response: Mapping[str, str] = perform(
