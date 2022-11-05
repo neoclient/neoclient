@@ -8,8 +8,7 @@ test:
 	@poetry run python -m pytest ${ROOT_DIR}
 
 typecheck:
-	# TODO: Typecheck examples/ as well
-	@poetry run python -m mypy ${PROJECT} tests
+	@poetry run python -m mypy ${PROJECT}
 
 format:
 	@poetry run python -m isort ${ROOT_DIR}
