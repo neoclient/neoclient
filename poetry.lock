@@ -210,18 +210,6 @@ win32-setctime = {version = ">=1.0.0", markers = "sys_platform == \"win32\""}
 dev = ["Sphinx (>=4.1.1)", "black (>=19.10b0)", "colorama (>=0.3.4)", "docutils (==0.16)", "flake8 (>=3.7.7)", "isort (>=5.1.1)", "pytest (>=4.6.2)", "pytest-cov (>=2.7.1)", "sphinx-autobuild (>=0.7.1)", "sphinx-rtd-theme (>=0.4.3)", "tox (>=3.9.0)"]
 
 [[package]]
-name = "mediate"
-version = "0.1.6"
-description = "Middleware for every occasion"
-category = "main"
-optional = false
-python-versions = ">=3.8,<4.0"
-
-[package.dependencies]
-roster = ">=0.1.11,<0.2.0"
-typing-extensions = ">=4.4.0,<5.0.0"
-
-[[package]]
 name = "mypy"
 version = "0.982"
 description = "Optional static typing for Python"
@@ -378,14 +366,6 @@ typing-extensions = {version = ">=4.0.0,<5.0", markers = "python_version < \"3.9
 jupyter = ["ipywidgets (>=7.5.1,<8.0.0)"]
 
 [[package]]
-name = "roster"
-version = "0.1.11"
-description = "Python object registers. Keep track of your classes, functions and data."
-category = "main"
-optional = false
-python-versions = ">=3.8,<4.0"
-
-[[package]]
 name = "sniffio"
 version = "1.3.0"
 description = "Sniff out which async library your code is running under"
@@ -453,7 +433,7 @@ dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "a1b1da0e60d177139bc331660cbe944b0cae866ba0c1f8d82fb68648efbbbbc6"
+content-hash = "5b64a7a687cee8bf275cba33cd893c02a0330c09efc0c490a9fb15e06849dbae"
 
 [metadata.files]
 anyio = [
@@ -538,10 +518,6 @@ isort = [
 loguru = [
     {file = "loguru-0.6.0-py3-none-any.whl", hash = "sha256:4e2414d534a2ab57573365b3e6d0234dfb1d84b68b7f3b948e6fb743860a77c3"},
     {file = "loguru-0.6.0.tar.gz", hash = "sha256:066bd06758d0a513e9836fd9c6b5a75bfb3fd36841f4b996bc60b547a309d41c"},
-]
-mediate = [
-    {file = "mediate-0.1.6-py3-none-any.whl", hash = "sha256:e7c11caf380d6ee819c9198851e1c1a4fe2e090c67952497e76d8d1b4f838b61"},
-    {file = "mediate-0.1.6.tar.gz", hash = "sha256:c54dfb119fa917b09230d96e3613f17a6fa98bdacffdfdc4b68138b2a0ffbeca"},
 ]
 mypy = [
     {file = "mypy-0.982-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:5085e6f442003fa915aeb0a46d4da58128da69325d8213b4b35cc7054090aed5"},
@@ -646,10 +622,6 @@ rfc3986 = [
 rich = [
     {file = "rich-12.6.0-py3-none-any.whl", hash = "sha256:a4eb26484f2c82589bd9a17c73d32a010b1e29d89f1604cd9bf3a2097b81bb5e"},
     {file = "rich-12.6.0.tar.gz", hash = "sha256:ba3a3775974105c221d31141f2c116f4fd65c5ceb0698657a11e9f295ec93fd0"},
-]
-roster = [
-    {file = "roster-0.1.11-py3-none-any.whl", hash = "sha256:4703c3ff53b694452ff727e7b9e6e74616dd6c2df3b9de5c5dc9151936a315ba"},
-    {file = "roster-0.1.11.tar.gz", hash = "sha256:467c44075d554b387c52cddf025419c46af4daa74c6d900a057d6ad6fdec5f4d"},
 ]
 sniffio = [
     {file = "sniffio-1.3.0-py3-none-any.whl", hash = "sha256:eecefdce1e5bbfb7ad2eeaabf7c1eeb404d7757c379bd1f7e5cce9d8bf425384"},

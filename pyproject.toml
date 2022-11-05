@@ -15,7 +15,6 @@ httpx = "^0.23.0"
 pydantic = "^1.9.2"
 loguru = "^0.6.0"
 typing-extensions = "^4.3.0"
-mediate = "^0.1.6"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"
