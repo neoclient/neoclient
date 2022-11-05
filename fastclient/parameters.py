@@ -312,8 +312,7 @@ class DependencyParameter(BaseParameter):
         model_cls: Type[BaseModel] = api.create_model_cls(self.dependency, fields)
 
         parameters: Mapping[str, BaseParameter] = {
-            field: parameter
-            for field, (_, parameter) in fields.items()
+            field: parameter for field, (_, parameter) in fields.items()
         }
 
         resolved: Any = DependencyResolutionFunction(

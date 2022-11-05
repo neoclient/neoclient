@@ -10,12 +10,7 @@ from pydantic.fields import FieldInfo, ModelField
 from .. import api, utils
 from ..errors import DuplicateParameters
 from ..models import RequestOptions
-from ..parameters import (
-    BaseParameter,
-    BodyParameter,
-    PathParameter,
-    QueryParameter,
-)
+from ..parameters import BaseParameter, BodyParameter, PathParameter, QueryParameter
 from ..validation import ValidatedFunction
 
 
@@ -65,9 +60,7 @@ def get_fields(
         if field_info.alias is None:
             alias: str = field_info.generate_alias(model_field.name)
 
-            field_info = dataclasses.replace(
-                field_info, alias=alias
-            )
+            field_info = dataclasses.replace(field_info, alias=alias)
 
             parameter_aliases.append(alias)
         else:

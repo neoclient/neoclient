@@ -13,7 +13,6 @@ from .composition.api import get_fields
 from .enums import HttpMethod, MethodKind
 from .models import ClientOptions, OperationSpecification, RequestOptions
 from .operations import CallableWithOperation, Operation
-from .utils import get_method_kind
 from .types import (
     AuthTypes,
     CookiesTypes,
@@ -24,6 +23,7 @@ from .types import (
     TimeoutTypes,
     URLTypes,
 )
+from .utils import get_method_kind
 
 __all__: List[str] = [
     "FastClient",
@@ -79,7 +79,9 @@ class FastClient:
         self.client = client_options.build()
 
     @classmethod
-    def from_client(cls: Type["FastClient"], client: Optional[httpx.Client], /) -> "FastClient":
+    def from_client(
+        cls: Type["FastClient"], client: Optional[httpx.Client], /
+    ) -> "FastClient":
         obj: FastClient = cls()
 
         obj.client = client
