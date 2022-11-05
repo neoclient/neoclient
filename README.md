@@ -76,7 +76,7 @@ client = FastClient("https://httpbin.org/")
 def b64decode(value: str = Path()):
     ...
 ```
-This approach comes with added benefits, such as being able to specify a `default` value:
+This approach comes with added benefits, such as being able to specify validation constraints.
 ```python
 from fastclient import FastClient, Path
 
