@@ -1,3 +1,5 @@
 from client import greet
 
-print(greet("sam"))
+greeting: str = greet("sam")
+
+print(greeting)

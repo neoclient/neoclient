@@ -23,6 +23,11 @@ mypy = "^0.982"
 black = "^22.6.0"
 isort = "^5.10.1"
 
+[tool.poetry.group.examples.dependencies]
+fastapi = "^0.86.0"
+uvicorn = "^0.19.0"
+rich = "^12.6.0"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

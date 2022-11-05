@@ -1,5 +1,5 @@
-# examples/cookie
-Example for the `Cookie` parameter
+# examples/path-params
+Example for the `Paths` parameter
 
 ## Start the Server
 ```console
@@ -13,5 +13,5 @@ INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 ## Run the Example
 ```console
 $ python3 app.py
-Hello, sam!
+{'action': 'destroy', 'item': 'castle', 'time': 'now'}
 ```

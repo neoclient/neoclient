@@ -1,5 +1,5 @@
-# examples/cookie
-Example for the `Cookie` parameter
+# examples/path
+Example for the `Path` parameter
 
 ## Start the Server
 ```console
