@@ -1,6 +1,8 @@
 import pytest
 
 from fastclient import utils
+from fastclient.enums import MethodKind
+from pydantic.fields import FieldInfo, Undefined
 
 
 def test_parse_format_string() -> None:
@@ -119,3 +121,39 @@ def test_unpack_arguments() -> None:
 
     with pytest.raises(ValueError):
         utils.unpack_arguments(positional_only, {})
+
+
+def test_get_default() -> None:
+    assert utils.get_default(FieldInfo(default_factory=dict)) == {}
+    assert utils.get_default(FieldInfo(default="abc")) == "abc"
+    assert utils.get_default(FieldInfo()) == Undefined
+
+
+def test_has_default() -> None:
+    assert utils.has_default(FieldInfo(default_factory=dict))
+    assert utils.has_default(FieldInfo(default="abc"))
+    assert not utils.has_default(FieldInfo())
+
+
+def test_get_method_kind() -> None:
+    class Foo:
+        def instance_method(self):
+            ...
+
+        @classmethod
+        def class_method(cls):
+            ...
+
+        @staticmethod
+        def static_method():
+            ...
+
+    assert utils.get_method_kind(Foo.instance_method) is MethodKind.STATIC_METHOD
+    assert utils.get_method_kind(Foo.class_method) is MethodKind.CLASS_METHOD
+    assert utils.get_method_kind(Foo.static_method) is MethodKind.STATIC_METHOD
+
+    foo: Foo = Foo()
+
+    assert utils.get_method_kind(foo.instance_method) is MethodKind.METHOD
+    assert utils.get_method_kind(foo.class_method) is MethodKind.CLASS_METHOD
+    assert utils.get_method_kind(foo.static_method) is MethodKind.STATIC_METHOD
