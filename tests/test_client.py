@@ -56,6 +56,8 @@ def test_query_required_not_omitted(client: FastClient):
     )
 
 
+# TODO: Stop skipping this test
+@pytest.mark.skip(reason="Functionality temporarily removed, needs to be re-added")
 def test_error_if_extra_path_param(client: FastClient):
     with pytest.raises(IncompatiblePathParameters):
 

@@ -1,6 +1,10 @@
 from http import HTTPStatus
+from typing import Any, Mapping, Tuple, Type
 
+from fastclient import api
 from fastclient.enums import HttpMethod
+from fastclient.parameters import BaseParameter
+from fastclient.resolution.api import _get_fields
 from fastclient.resolution.functions import (
     QueryResolutionFunction,
     HeaderResolutionFunction,
@@ -12,6 +16,7 @@ from fastclient.resolution.functions import (
     DependencyResolutionFunction,
 )
 from httpx import Response, Request, QueryParams, Headers, Cookies
+from pydantic import BaseModel
 
 
 def test_QueryResolutionFunction() -> None:
@@ -109,4 +114,19 @@ def test_BodyResolutionFunction() -> None:
 
 
 def test_DependencyResolutionFunction() -> None:
-    raise NotImplementedError
+    def dependency(response: Response, /) -> Response:
+        return response
+
+    response: Response = Response(
+        HTTPStatus.OK, request=Request(HttpMethod.GET, "https://foo.com/")
+    )
+
+    fields: Mapping[str, Tuple[Any, BaseParameter]] = _get_fields(dependency)
+    model_cls: Type[BaseModel] = api.create_model_cls(dependency, fields)
+    parameters: Mapping[str, BaseParameter] = {
+        field: parameter for field, (_, parameter) in fields.items()
+    }
+
+    assert DependencyResolutionFunction(model_cls, dependency, parameters)(
+        response
+    ) == response
