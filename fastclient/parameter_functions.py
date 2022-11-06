@@ -2,6 +2,7 @@ from typing import Any, Callable, List, Optional, Union
 
 from pydantic.fields import Undefined, UndefinedType
 
+from .dependencies import DependencyParameter
 from .parameters import (
     BodyParameter,
     CookieParameter,
@@ -17,7 +18,6 @@ from .parameters import (
     StatusCodeParameter,
     URLParameter,
 )
-from .dependencies import DependencyParameter
 from .typing import Supplier
 
 __all__: List[str] = [

@@ -3,9 +3,9 @@ from typing import Any, Callable, List, Mapping, MutableMapping, Tuple, Type
 from httpx import Response
 from pydantic import BaseModel
 
-from .utils import get_fields
 from .. import api, utils
 from ..parameters import BaseParameter
+from .utils import get_fields
 
 __all__: List[str] = [
     "resolve",

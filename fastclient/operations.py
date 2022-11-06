@@ -18,8 +18,8 @@ from loguru import logger
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from .models import OperationSpecification, RequestOptions
 from .composition.api import compose
+from .models import OperationSpecification, RequestOptions
 from .resolution.api import resolve
 
 PS = ParamSpec("PS")
@@ -32,6 +32,7 @@ class CallableWithOperation(Protocol[PS, RT]):
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> RT:
         ...
+
 
 @dataclass
 class Operation(Generic[PS, RT]):

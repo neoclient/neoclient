@@ -1,7 +1,9 @@
 from http import HTTPStatus
-from fastclient.enums import HttpMethod
-from fastclient.dependencies import DependencyResolutionFunction
+
 from httpx import Request, Response
+
+from fastclient.dependencies import DependencyResolutionFunction
+from fastclient.enums import HttpMethod
 
 
 def test_DependencyResolutionFunction() -> None:

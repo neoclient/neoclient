@@ -1,19 +1,13 @@
 from dataclasses import dataclass
-from typing import (
-    Any,
-    Callable,
-    MutableMapping,
-    Optional,
-    TypeVar,
-)
+from typing import Any, Callable, MutableMapping, Optional, TypeVar
 
 from httpx import Response
 from pydantic.fields import ModelField
 
 from .errors import ResolutionError
 from .parameters import BaseParameter
-from .resolution.typing import ResolutionFunction
 from .resolution.api import resolve
+from .resolution.typing import ResolutionFunction
 
 T = TypeVar("T")
 

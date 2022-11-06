@@ -1,27 +1,12 @@
 from dataclasses import dataclass, field
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    Mapping,
-    Optional,
-    Set,
-    TypeVar,
-    Union,
-)
+from typing import Any, Dict, Generic, List, Mapping, Optional, Set, TypeVar, Union
 
 import fastapi.encoders
 import httpx
 from httpx import Cookies, Headers, QueryParams
 from pydantic import Required
-from pydantic.fields import FieldInfo, Undefined, UndefinedType, ModelField
+from pydantic.fields import FieldInfo, ModelField, Undefined, UndefinedType
 
-from .errors import CompositionError, ResolutionError
-from .models import RequestOptions
-from .parsing import parse_obj_as
-from .types import CookiesTypes, HeadersTypes, PathsTypes, QueriesTypes
-from .typing import Supplier
 from .composition.consumers import (
     CookieConsumer,
     CookiesConsumer,
@@ -32,6 +17,9 @@ from .composition.consumers import (
     QueriesConsumer,
     QueryConsumer,
 )
+from .errors import CompositionError, ResolutionError
+from .models import RequestOptions
+from .parsing import parse_obj_as
 from .resolution.functions import (
     BodyResolutionFunction,
     CookieResolutionFunction,
@@ -41,6 +29,8 @@ from .resolution.functions import (
     QueriesResolutionFunction,
     QueryResolutionFunction,
 )
+from .types import CookiesTypes, HeadersTypes, PathsTypes, QueriesTypes
+from .typing import Supplier
 
 __all__: List[str] = [
     "QueryParameter",
