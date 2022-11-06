@@ -18,7 +18,9 @@ from loguru import logger
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
+from .composition.api import compose
 from .models import OperationSpecification, RequestOptions
+from .resolution.api import resolve
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT", covariant=True)
@@ -30,11 +32,6 @@ class CallableWithOperation(Protocol[PS, RT]):
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> RT:
         ...
-
-
-# NOTE: The imports are temporarily here due to cyclic dependencies
-from .composition.api import compose
-from .resolution.api import resolve
 
 
 @dataclass
