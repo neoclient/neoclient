@@ -4,7 +4,7 @@ from httpx import Response
 from pydantic import BaseModel
 
 from .. import api, utils
-from ..parameters import BaseParameter
+from ..parameters import Parameter
 from .utils import get_fields
 
 __all__: List[str] = [
@@ -16,14 +16,14 @@ def resolve(
     func: Callable,
     response: Response,
 ) -> Any:
-    fields: Mapping[str, Tuple[Any, BaseParameter]] = get_fields(func)
+    fields: Mapping[str, Tuple[Any, Parameter]] = get_fields(func)
 
     model_cls: Type[BaseModel] = api.create_model_cls(func, fields)
 
     arguments: MutableMapping[str, Any] = {}
 
     field_name: str
-    parameter: BaseParameter
+    parameter: Parameter
     for field_name, (_, parameter) in fields.items():
         arguments[field_name] = parameter.resolve(response)
 

@@ -87,7 +87,10 @@ def convert_cookies(value: CookiesTypes, /) -> Cookies:
 
 
 def convert_path_params(path_params: PathsTypes, /) -> MutableMapping[str, str]:
-    return {key: convert_path_param(value) for key, value in path_params.items()}
+    if isinstance(path_params, Mapping):
+        return {key: convert_path_param(value) for key, value in path_params.items()}
+    else:
+        return {key: convert_path_param(value) for key, value in path_params}
 
 
 def convert_timeout(value: TimeoutTypes, /) -> Timeout:

@@ -4,8 +4,8 @@ from typing import Any, Callable, MutableMapping, Optional, TypeVar
 from httpx import Response
 from pydantic.fields import ModelField
 
-from .errors import ResolutionError
-from .parameters import BaseParameter
+from .errors import ResolutionError, PreparationError
+from .parameters import Parameter
 from .resolution.api import resolve
 from .resolution.typing import ResolutionFunction
 
@@ -21,7 +21,7 @@ class DependencyResolutionFunction(ResolutionFunction[T]):
 
 
 @dataclass
-class DependencyParameter(BaseParameter):
+class DependencyParameter(Parameter):
     dependency: Optional[Callable] = None
     use_cache: bool = True
 
@@ -51,13 +51,10 @@ class DependencyParameter(BaseParameter):
         return resolved
 
     def prepare(self, field: ModelField, /) -> None:
-        super().prepare(field)
-
         if self.dependency is None:
             if not callable(field.annotation):
-                # NOTE: This could also viably be a `CompositionError`, maybe throw a `PreparationError` instead?
-                raise ResolutionError(
-                    f"Failed to resolve parameter: {self!r}. Dependency has non-callable annotation"
+                raise PreparationError(
+                    f"Failed to prepare parameter: {self!r}. Dependency has non-callable annotation"
                 )
 
             self.dependency = field.annotation

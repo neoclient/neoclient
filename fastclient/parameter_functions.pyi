@@ -1,17 +1,66 @@
 from typing import Any, Callable, Optional, TypeVar, overload
 
+from .typing import Supplier
+
 T = TypeVar("T")
+
+# TODO TODO TODO
+# NOTE: These all need to be updated to support the extra parameters the `parameter_functions` now have
+# `Query` has been done as an example
+# TODO TODO TODO
 
 # Query
 @overload
-def Query(alias: Optional[str] = None) -> Any: ...
-@overload
-def Query(alias: Optional[str] = None, *, default: T) -> T: ...
+def Query(
+    alias: Optional[str] = ...,
+    const: Optional[bool] = ...,
+    gt: Optional[float] = ...,
+    ge: Optional[float] = ...,
+    lt: Optional[float] = ...,
+    le: Optional[float] = ...,
+    multiple_of: Optional[float] = ...,
+    allow_inf_nan: Optional[bool] = ...,
+    max_digits: Optional[int] = ...,
+    decimal_places: Optional[int] = ...,
+    min_length: Optional[int] = ...,
+    max_length: Optional[int] = ...,
+    regex: Optional[str] = ...,
+) -> Any: ...
 @overload
 def Query(
-    alias: Optional[str] = None,
+    default: T,
     *,
-    default_factory: Callable[[], T],
+    alias: Optional[str] = ...,
+    const: Optional[bool] = ...,
+    gt: Optional[float] = ...,
+    ge: Optional[float] = ...,
+    lt: Optional[float] = ...,
+    le: Optional[float] = ...,
+    multiple_of: Optional[float] = ...,
+    allow_inf_nan: Optional[bool] = ...,
+    max_digits: Optional[int] = ...,
+    decimal_places: Optional[int] = ...,
+    min_length: Optional[int] = ...,
+    max_length: Optional[int] = ...,
+    regex: Optional[str] = ...,
+) -> T: ...
+@overload
+def Query(
+    *,
+    default_factory: Supplier[T],
+    alias: Optional[str] = ...,
+    const: Optional[bool] = ...,
+    gt: Optional[float] = ...,
+    ge: Optional[float] = ...,
+    lt: Optional[float] = ...,
+    le: Optional[float] = ...,
+    multiple_of: Optional[float] = ...,
+    allow_inf_nan: Optional[bool] = ...,
+    max_digits: Optional[int] = ...,
+    decimal_places: Optional[int] = ...,
+    min_length: Optional[int] = ...,
+    max_length: Optional[int] = ...,
+    regex: Optional[str] = ...,
 ) -> T: ...
 
 # Header

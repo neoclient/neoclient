@@ -46,7 +46,10 @@ CookiesTypes: TypeAlias = Union[
     Mapping[str, str],
     Sequence[Tuple[str, str]],
 ]
-PathsTypes: TypeAlias = Mapping[str, PathTypes]
+PathsTypes: TypeAlias = Union[
+    Mapping[str, PathTypes],
+    Sequence[Tuple[str, PathTypes]],
+]
 
 MethodTypes: TypeAlias = Union[str, bytes]
 JsonTypes: TypeAlias = Any

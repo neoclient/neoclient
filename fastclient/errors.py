@@ -6,6 +6,10 @@ class IncompatiblePathParameters(Exception):
     pass
 
 
+class PreparationError(Exception):
+    pass
+
+
 class CompositionError(Exception):
     pass
 

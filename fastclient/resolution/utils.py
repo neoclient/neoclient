@@ -7,7 +7,7 @@ from pydantic.fields import FieldInfo, ModelField
 
 from .. import utils
 from ..parameters import (
-    BaseParameter,
+    Parameter,
     BodyParameter,
     CookiesParameter,
     HeadersParameter,
@@ -24,12 +24,12 @@ __all__: List[str] = [
 ]
 
 
-def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
+def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
     class Config:
         allow_population_by_field_name: bool = True
         arbitrary_types_allowed: bool = True
 
-    httpx_lookup: Mapping[Type[Any], Type[BaseParameter]] = {
+    httpx_lookup: Mapping[Type[Any], Type[Parameter]] = {
         Request: RequestParameter,
         Response: ResponseParameter,
         URL: URLParameter,
@@ -38,7 +38,7 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
         Cookies: CookiesParameter,
     }
 
-    fields: MutableMapping[str, Tuple[Any, BaseParameter]] = {}
+    fields: MutableMapping[str, Tuple[Any, Parameter]] = {}
 
     field_name: str
     model_field: ModelField
@@ -46,12 +46,10 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
         func, config=Config
     ).model.__fields__.items():
         field_info: FieldInfo = model_field.field_info
-        parameter: BaseParameter
+        parameter: Parameter
 
-        if isinstance(field_info, BaseParameter):
-            parameter = field_info
-        else:
-            # TODO: Support inference of path parameters
+        if not isinstance(field_info, Parameter):
+            # TODO: Support inference of path parameters?
 
             if model_field.annotation in httpx_lookup:
                 parameter = httpx_lookup[model_field.annotation]()
@@ -67,10 +65,15 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
                 parameter = QueryParameter(
                     default=utils.get_default(field_info),
                 )
+        else:
+            parameter = field_info
 
-        parameter.prepare(model_field)
+        # Create a clone of the parameter so that any mutations do not affect the original
+        parameter_clone: Parameter = dataclasses.replace(parameter)
 
-        fields[field_name] = (model_field.annotation, parameter)
+        parameter_clone.prepare(model_field)
+
+        fields[field_name] = (model_field.annotation, parameter_clone)
 
     # TODO: Validation? (e.g. no duplicate parameters?)
 

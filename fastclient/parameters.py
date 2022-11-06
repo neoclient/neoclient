@@ -1,11 +1,11 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Generic, List, Mapping, Optional, Set, TypeVar, Union
+from typing import Any, Dict, List, Mapping, Optional, Set, TypeVar, Union
 
 import fastapi.encoders
 import httpx
 from httpx import Cookies, Headers, QueryParams
 from pydantic import Required
-from pydantic.fields import FieldInfo, ModelField, Undefined, UndefinedType
+from pydantic.fields import FieldInfo, ModelField, Undefined
 
 from .composition.consumers import (
     CookieConsumer,
@@ -52,8 +52,8 @@ T = TypeVar("T")
 
 
 @dataclass
-class BaseParameter(FieldInfo):
-    default: Union[Any, UndefinedType] = Undefined
+class Parameter(FieldInfo):
+    default: Any = Undefined
     default_factory: Optional[Supplier[Any]] = None
     alias: Optional[str] = None
     title: Optional[str] = None
@@ -81,10 +81,6 @@ class BaseParameter(FieldInfo):
     extra: Dict[str, Any] = field(default_factory=dict)
     alias_priority: Optional[int] = field(init=False, repr=False, default=None)
 
-    @staticmethod
-    def generate_alias(alias: str, /) -> str:
-        return alias
-
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         raise CompositionError(f"Parameter {type(self)!r} is not composable")
 
@@ -92,27 +88,11 @@ class BaseParameter(FieldInfo):
         raise ResolutionError(f"Parameter {type(self)!r} is not resolvable")
 
     def prepare(self, field: ModelField, /) -> None:
-        # NOTE: Ideally these `.prepare` calls wouldn't modify the existing parameter and would
-        # instead return a modified copy.
         if self.alias is None:
-            self.alias = self.generate_alias(field.name)
+            self.alias = field.name
 
 
-class BaseSingleParameter(BaseParameter):
-    @staticmethod
-    def generate_alias(alias: str):
-        return alias
-
-
-class BaseMultiParameter(BaseParameter, Generic[T]):
-    pass
-
-
-class QueryParameter(BaseSingleParameter):
-    @staticmethod
-    def generate_alias(alias: str):
-        return alias.lower().replace("_", "-")
-
+class QueryParameter(Parameter):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
             raise CompositionError(
@@ -133,10 +113,9 @@ class QueryParameter(BaseSingleParameter):
         return QueryResolutionFunction(self.alias)(response)
 
 
-class HeaderParameter(BaseSingleParameter):
-    @staticmethod
-    def generate_alias(alias: str):
-        return alias.title().replace("_", "-")
+@dataclass
+class HeaderParameter(Parameter):
+    convert_underscores: bool = True
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
@@ -147,7 +126,11 @@ class HeaderParameter(BaseSingleParameter):
         if argument is None and self.default is not Required:
             return
 
-        HeaderConsumer.parse(self.alias, argument)(request)
+        key: str = (
+            self.alias.replace("_", "-") if self.convert_underscores else self.alias
+        )
+
+        HeaderConsumer.parse(key, argument)(request)
 
     def resolve(self, response: httpx.Response, /) -> Optional[str]:
         if self.alias is None:
@@ -155,10 +138,14 @@ class HeaderParameter(BaseSingleParameter):
                 f"Cannot resolve parameter {type(self)!r} without an alias"
             )
 
-        return HeaderResolutionFunction(self.alias)(response)
+        key: str = (
+            self.alias.replace("_", "-") if self.convert_underscores else self.alias
+        )
+
+        return HeaderResolutionFunction(key)(response)
 
 
-class CookieParameter(BaseSingleParameter):
+class CookieParameter(Parameter):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
             raise CompositionError(
@@ -179,7 +166,7 @@ class CookieParameter(BaseSingleParameter):
         return CookieResolutionFunction(self.alias)(response)
 
 
-class PathParameter(BaseSingleParameter):
+class PathParameter(Parameter):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
             raise CompositionError(
@@ -192,7 +179,7 @@ class PathParameter(BaseSingleParameter):
         PathConsumer.parse(self.alias, argument)(request)
 
 
-class QueriesParameter(BaseMultiParameter[QueriesTypes]):
+class QueriesParameter(Parameter):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         params: QueriesTypes = parse_obj_as(QueriesTypes, argument)  # type: ignore
 
@@ -202,7 +189,7 @@ class QueriesParameter(BaseMultiParameter[QueriesTypes]):
         return QueriesResolutionFunction()(response)
 
 
-class HeadersParameter(BaseMultiParameter[HeadersTypes]):
+class HeadersParameter(Parameter):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         headers: HeadersTypes = parse_obj_as(HeadersTypes, argument)  # type: ignore
 
@@ -212,7 +199,7 @@ class HeadersParameter(BaseMultiParameter[HeadersTypes]):
         return HeadersResolutionFunction()(response)
 
 
-class CookiesParameter(BaseMultiParameter[CookiesTypes]):
+class CookiesParameter(Parameter):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         cookies: CookiesTypes = parse_obj_as(CookiesTypes, argument)  # type: ignore
 
@@ -222,7 +209,7 @@ class CookiesParameter(BaseMultiParameter[CookiesTypes]):
         return CookiesResolutionFunction()(response)
 
 
-class PathsParameter(BaseMultiParameter[PathsTypes]):
+class PathsParameter(Parameter):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         path_params: PathsTypes = parse_obj_as(PathsTypes, argument)  # type: ignore
 
@@ -230,16 +217,11 @@ class PathsParameter(BaseMultiParameter[PathsTypes]):
 
 
 @dataclass
-class BodyParameter(BaseParameter):
+class BodyParameter(Parameter):
     embed: bool = False
-
-    @staticmethod
-    def generate_alias(alias: str):
-        return alias
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         # If the parameter is not required and has no value, it can be omitted
-        # NOTE: This functionality is shared with the "single" parameters (e.g. Query, Header, ...)
         if argument is None and self.default is not Required:
             return
 
@@ -267,25 +249,21 @@ class BodyParameter(BaseParameter):
         return BodyResolutionFunction()(response)
 
 
-@dataclass
-class URLParameter(BaseParameter):
+class URLParameter(Parameter):
     def resolve(self, response: httpx.Response, /) -> httpx.URL:
         return response.request.url
 
 
-@dataclass
-class ResponseParameter(BaseParameter):
+class ResponseParameter(Parameter):
     def resolve(self, response: httpx.Response, /) -> httpx.Response:
         return response
 
 
-@dataclass
-class RequestParameter(BaseParameter):
+class RequestParameter(Parameter):
     def resolve(self, response: httpx.Response, /) -> httpx.Request:
         return response.request
 
 
-@dataclass
-class StatusCodeParameter(BaseParameter):
+class StatusCodeParameter(Parameter):
     def resolve(self, response: httpx.Response, /) -> int:
         return response.status_code
