@@ -6,7 +6,6 @@ from .parameters import (
     BodyParameter,
     CookieParameter,
     CookiesParameter,
-    DependencyParameter,
     HeaderParameter,
     HeadersParameter,
     PathParameter,
@@ -18,6 +17,7 @@ from .parameters import (
     StatusCodeParameter,
     URLParameter,
 )
+from .dependencies import DependencyParameter
 from .typing import Supplier
 
 __all__: List[str] = [

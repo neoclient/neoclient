@@ -1,16 +1,12 @@
 from dataclasses import dataclass, field
 from typing import (
     Any,
-    Callable,
     Dict,
     Generic,
     List,
     Mapping,
-    MutableMapping,
     Optional,
     Set,
-    Tuple,
-    Type,
     TypeVar,
     Union,
 )
@@ -18,15 +14,33 @@ from typing import (
 import fastapi.encoders
 import httpx
 from httpx import Cookies, Headers, QueryParams
-from pydantic import BaseModel, Required
-from pydantic.fields import FieldInfo, Undefined, UndefinedType
+from pydantic import Required
+from pydantic.fields import FieldInfo, Undefined, UndefinedType, ModelField
 
-from . import api
 from .errors import CompositionError, ResolutionError
 from .models import RequestOptions
 from .parsing import parse_obj_as
 from .types import CookiesTypes, HeadersTypes, PathsTypes, QueriesTypes
 from .typing import Supplier
+from .composition.consumers import (
+    CookieConsumer,
+    CookiesConsumer,
+    HeaderConsumer,
+    HeadersConsumer,
+    PathConsumer,
+    PathsConsumer,
+    QueriesConsumer,
+    QueryConsumer,
+)
+from .resolution.functions import (
+    BodyResolutionFunction,
+    CookieResolutionFunction,
+    CookiesResolutionFunction,
+    HeaderResolutionFunction,
+    HeadersResolutionFunction,
+    QueriesResolutionFunction,
+    QueryResolutionFunction,
+)
 
 __all__: List[str] = [
     "QueryParameter",
@@ -38,7 +52,6 @@ __all__: List[str] = [
     "CookiesParameter",
     "PathsParameter",
     "BodyParameter",
-    "DependencyParameter",
     "URLParameter",
     "ResponseParameter",
     "RequestParameter",
@@ -88,28 +101,11 @@ class BaseParameter(FieldInfo):
     def resolve(self, response: httpx.Response, /) -> Any:
         raise ResolutionError(f"Parameter {type(self)!r} is not resolvable")
 
-
-# NOTE: Currently here to avoid cyclic dependencies
-from .composition.consumers import (
-    CookieConsumer,
-    CookiesConsumer,
-    HeaderConsumer,
-    HeadersConsumer,
-    PathConsumer,
-    PathsConsumer,
-    QueriesConsumer,
-    QueryConsumer,
-)
-from .resolution.functions import (
-    BodyResolutionFunction,
-    CookieResolutionFunction,
-    CookiesResolutionFunction,
-    DependencyResolutionFunction,
-    HeaderResolutionFunction,
-    HeadersResolutionFunction,
-    QueriesResolutionFunction,
-    QueryResolutionFunction,
-)
+    def prepare(self, field: ModelField, /) -> None:
+        # NOTE: Ideally these `.prepare` calls wouldn't modify the existing parameter and would
+        # instead return a modified copy.
+        if self.alias is None:
+            self.alias = self.generate_alias(field.name)
 
 
 class BaseSingleParameter(BaseParameter):
@@ -279,50 +275,6 @@ class BodyParameter(BaseParameter):
 
     def resolve(self, response: httpx.Response, /) -> Any:
         return BodyResolutionFunction()(response)
-
-
-@dataclass
-class DependencyParameter(BaseParameter):
-    dependency: Optional[Callable] = None
-    use_cache: bool = True
-
-    def resolve(
-        self,
-        response: httpx.Response,
-        /,
-        *,
-        cached_dependencies: Optional[MutableMapping[Callable, Any]] = None,
-    ) -> Any:
-        # TODO: Pls no import here
-        from .resolution.api import _get_fields
-
-        if self.dependency is None:
-            raise ResolutionError(
-                f"Cannot resolve parameter {type(self)!r} without a dependency"
-            )
-
-        if cached_dependencies is None:
-            cached_dependencies = {}
-
-        if self.use_cache and self.dependency in cached_dependencies:
-            return cached_dependencies[self.dependency]
-
-        fields: Mapping[str, Tuple[Any, BaseParameter]] = _get_fields(self.dependency)
-
-        model_cls: Type[BaseModel] = api.create_model_cls(self.dependency, fields)
-
-        parameters: Mapping[str, BaseParameter] = {
-            field: parameter for field, (_, parameter) in fields.items()
-        }
-
-        resolved: Any = DependencyResolutionFunction(
-            model_cls, self.dependency, parameters
-        )(response)
-
-        # Cache resolved dependency
-        cached_dependencies[self.dependency] = resolved
-
-        return resolved
 
 
 @dataclass
