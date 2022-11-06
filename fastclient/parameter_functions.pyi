@@ -4,152 +4,344 @@ from .typing import Supplier
 
 T = TypeVar("T")
 
-# TODO TODO TODO
-# NOTE: These all need to be updated to support the extra parameters the `parameter_functions` now have
-# `Query` has been done as an example
-# TODO TODO TODO
-
 # Query
 @overload
 def Query(
-    alias: Optional[str] = ...,
-    const: Optional[bool] = ...,
-    gt: Optional[float] = ...,
-    ge: Optional[float] = ...,
-    lt: Optional[float] = ...,
-    le: Optional[float] = ...,
-    multiple_of: Optional[float] = ...,
-    allow_inf_nan: Optional[bool] = ...,
-    max_digits: Optional[int] = ...,
-    decimal_places: Optional[int] = ...,
-    min_length: Optional[int] = ...,
-    max_length: Optional[int] = ...,
-    regex: Optional[str] = ...,
+    alias: Optional[str] = None,
+    const: Optional[bool] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    allow_inf_nan: Optional[bool] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
 ) -> Any: ...
 @overload
 def Query(
     default: T,
     *,
-    alias: Optional[str] = ...,
-    const: Optional[bool] = ...,
-    gt: Optional[float] = ...,
-    ge: Optional[float] = ...,
-    lt: Optional[float] = ...,
-    le: Optional[float] = ...,
-    multiple_of: Optional[float] = ...,
-    allow_inf_nan: Optional[bool] = ...,
-    max_digits: Optional[int] = ...,
-    decimal_places: Optional[int] = ...,
-    min_length: Optional[int] = ...,
-    max_length: Optional[int] = ...,
-    regex: Optional[str] = ...,
+    alias: Optional[str] = None,
+    const: Optional[bool] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    allow_inf_nan: Optional[bool] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
 ) -> T: ...
 @overload
 def Query(
     *,
     default_factory: Supplier[T],
-    alias: Optional[str] = ...,
-    const: Optional[bool] = ...,
-    gt: Optional[float] = ...,
-    ge: Optional[float] = ...,
-    lt: Optional[float] = ...,
-    le: Optional[float] = ...,
-    multiple_of: Optional[float] = ...,
-    allow_inf_nan: Optional[bool] = ...,
-    max_digits: Optional[int] = ...,
-    decimal_places: Optional[int] = ...,
-    min_length: Optional[int] = ...,
-    max_length: Optional[int] = ...,
-    regex: Optional[str] = ...,
+    alias: Optional[str] = None,
+    const: Optional[bool] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    allow_inf_nan: Optional[bool] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
 ) -> T: ...
 
 # Header
 @overload
-def Header(alias: Optional[str] = None) -> Any: ...
-@overload
-def Header(alias: Optional[str] = None, *, default: T) -> T: ...
-@overload
 def Header(
     alias: Optional[str] = None,
+    const: Optional[bool] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    allow_inf_nan: Optional[bool] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
+    convert_underscores: bool = True,
+) -> Any: ...
+@overload
+def Header(
+    default: T,
     *,
-    default_factory: Callable[[], T],
+    alias: Optional[str] = None,
+    const: Optional[bool] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    allow_inf_nan: Optional[bool] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
+    convert_underscores: bool = True,
+) -> T: ...
+@overload
+def Header(
+    *,
+    default_factory: Supplier[T],
+    alias: Optional[str] = None,
+    const: Optional[bool] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    allow_inf_nan: Optional[bool] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
+    convert_underscores: bool = True,
 ) -> T: ...
 
 # Cookie
 @overload
-def Cookie(alias: Optional[str] = None) -> Any: ...
-@overload
-def Cookie(alias: Optional[str] = None, *, default: T) -> T: ...
-@overload
 def Cookie(
     alias: Optional[str] = None,
+    const: Optional[bool] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    allow_inf_nan: Optional[bool] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
+) -> Any: ...
+@overload
+def Cookie(
+    default: T,
     *,
-    default_factory: Callable[[], T],
+    alias: Optional[str] = None,
+    const: Optional[bool] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    allow_inf_nan: Optional[bool] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
+) -> T: ...
+@overload
+def Cookie(
+    *,
+    default_factory: Supplier[T],
+    alias: Optional[str] = None,
+    const: Optional[bool] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    allow_inf_nan: Optional[bool] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
 ) -> T: ...
 
 # Path
 @overload
-def Path(alias: Optional[str] = None) -> Any: ...
-@overload
-def Path(alias: Optional[str] = None, *, default: T) -> T: ...
-@overload
 def Path(
     alias: Optional[str] = None,
+    const: Optional[bool] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    allow_inf_nan: Optional[bool] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
+) -> Any: ...
+@overload
+def Path(
+    default: T,
     *,
-    default_factory: Callable[[], T],
+    alias: Optional[str] = None,
+    const: Optional[bool] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    allow_inf_nan: Optional[bool] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
+) -> T: ...
+@overload
+def Path(
+    *,
+    default_factory: Supplier[T],
+    alias: Optional[str] = None,
+    const: Optional[bool] = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
+    allow_inf_nan: Optional[bool] = None,
+    max_digits: Optional[int] = None,
+    decimal_places: Optional[int] = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    regex: Optional[str] = None,
 ) -> T: ...
 
 # Queries
 @overload
-def Queries() -> Any: ...
+def Queries(
+    *,
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
+) -> Any: ...
 @overload
-def Queries(*, default: T) -> T: ...
+def Queries(
+    default: T,
+    *,
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
+) -> T: ...
 @overload
-def Queries(*, default_factory: Callable[[], T]) -> T: ...
+def Queries(
+    *,
+    default_factory: Supplier[T],
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
+) -> T: ...
 
 # Headers
 @overload
-def Headers() -> Any: ...
+def Headers(
+    *,
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
+) -> Any: ...
 @overload
-def Headers(*, default: T) -> T: ...
+def Headers(
+    default: T,
+    *,
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
+) -> T: ...
 @overload
-def Headers(*, default_factory: Callable[[], T]) -> T: ...
+def Headers(
+    *,
+    default_factory: Supplier[T],
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
+) -> T: ...
 
 # Cookies
 @overload
-def Cookies() -> Any: ...
+def Cookies(
+    *,
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
+) -> Any: ...
 @overload
-def Cookies(*, default: T) -> T: ...
+def Cookies(
+    default: T,
+    *,
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
+) -> T: ...
 @overload
-def Cookies(*, default_factory: Callable[[], T]) -> T: ...
+def Cookies(
+    *,
+    default_factory: Supplier[T],
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
+) -> T: ...
 
 # Paths
 @overload
-def Paths() -> Any: ...
+def Paths(
+    *,
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
+) -> Any: ...
 @overload
-def Paths(*, default: T) -> T: ...
+def Paths(
+    default: T,
+    *,
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
+) -> T: ...
 @overload
-def Paths(*, default_factory: Callable[[], T]) -> T: ...
+def Paths(
+    *,
+    default_factory: Supplier[T],
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
+) -> T: ...
 
 # Body
 @overload
 def Body(
-    alias: Optional[str] = None, *, required: bool = False, embed: bool = False
+    *,
+    alias: Optional[str] = None,
+    embed: bool = False,
 ) -> Any: ...
 @overload
 def Body(
-    alias: Optional[str] = None,
-    *,
     default: T,
-    required: bool = False,
+    *,
+    alias: Optional[str] = None,
     embed: bool = False,
 ) -> T: ...
 @overload
 def Body(
-    alias: Optional[str] = None,
     *,
     default_factory: Callable[[], T],
-    required: bool = False,
+    alias: Optional[str] = None,
     embed: bool = False,
 ) -> T: ...
 

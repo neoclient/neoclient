@@ -256,11 +256,12 @@ def Paths(
     )
 
 
+# TODO: Add more parameters for this
 def Body(
     default: Any = Undefined,
     *,
-    alias: Optional[str] = None,
     default_factory: Optional[Supplier[Any]] = None,
+    alias: Optional[str] = None,
     embed: bool = False,
 ) -> BodyParameter:
     return BodyParameter(
