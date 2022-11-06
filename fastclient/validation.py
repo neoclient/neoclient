@@ -6,6 +6,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    List,
     Mapping,
     MutableMapping,
     MutableSequence,
@@ -23,6 +24,12 @@ from pydantic.main import BaseModel, create_model
 from pydantic.typing import get_all_type_hints
 from pydantic.utils import to_camel
 from typing_extensions import ParamSpec
+
+__all__: List[str] = [
+    "create_func_model",
+    "validate",
+    "ValidatedFunction",
+]
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
@@ -64,6 +71,40 @@ def validate(
         return decorate
 
 
+def create_func_model(
+    function: Callable,
+    fields: Mapping[str, Any],
+    *,
+    config: Optional[ConfigType] = None,
+) -> Type[BaseModel]:
+    configurations: Dict[str, Any] = {}
+
+    if isinstance(config, dict):
+        configurations.update(config)
+    elif isinstance(config, type):
+        member_name: str
+        member: Any
+        for member_name, member in inspect.getmembers(config):
+            if member_name.startswith("_"):
+                continue
+
+            configurations[member_name] = member
+
+    configurations.setdefault("extra", Extra.forbid)
+
+    Config: Type[Any] = type("Config", (), configurations)
+
+    ValidatedFunctionBaseModel: Type[BaseModel] = type(
+        "ValidatedFunctionBaseModel", (BaseModel,), {"Config": Config}
+    )
+
+    return create_model(
+        to_camel(function.__name__),
+        __base__=ValidatedFunctionBaseModel,
+        **fields,
+    )
+
+
 class ValidatedFunction(Generic[PS, RT]):
     function: Callable[PS, RT]
     model: Type[BaseModel]
@@ -97,40 +138,10 @@ class ValidatedFunction(Generic[PS, RT]):
             else:
                 fields[parameter_name] = (annotation, default)
 
-        self.model = self._create_model(fields, config=config)
+        self.model = create_func_model(function, fields, config=config)
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__}(function={self.function!r})>"
-
-    def _create_model(
-        self, fields: Mapping[str, Any], *, config: Optional[ConfigType] = None
-    ) -> Type[BaseModel]:
-        configurations: Dict[str, Any] = {}
-
-        if isinstance(config, dict):
-            configurations.update(config)
-        elif isinstance(config, type):
-            member_name: str
-            member: Any
-            for member_name, member in inspect.getmembers(config):
-                if member_name.startswith("_"):
-                    continue
-
-                configurations[member_name] = member
-
-        configurations.setdefault("extra", Extra.forbid)
-
-        Config: Type[Any] = type("Config", (), configurations)
-
-        ValidatedFunctionBaseModel: Type[BaseModel] = type(
-            "ValidatedFunctionBaseModel", (BaseModel,), {"Config": Config}
-        )
-
-        return create_model(
-            to_camel(self.function.__name__),
-            __base__=ValidatedFunctionBaseModel,
-            **fields,
-        )
 
     @cached_property
     def signature(self) -> Signature:
