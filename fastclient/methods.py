@@ -5,7 +5,7 @@ from typing_extensions import ParamSpec
 
 from .client import FastClient
 from .enums import HttpMethod
-from .operations import CallableWithOperation
+from .operation import CallableWithOperation
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")

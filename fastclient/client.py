@@ -11,7 +11,7 @@ from . import __version__
 from .composition.api import get_fields
 from .enums import HttpMethod, MethodKind
 from .models import ClientOptions, OperationSpecification, RequestOptions
-from .operations import CallableWithOperation, Operation
+from .operation import CallableWithOperation, Operation
 from .types import (
     AuthTypes,
     CookiesTypes,

@@ -3,7 +3,7 @@ from typing import Any, List, Protocol, TypeVar
 
 from fastclient.models import RequestOptions
 
-from .operations import CallableWithOperation
+from .operation import CallableWithOperation
 from .types import (
     CookiesTypes,
     HeadersTypes,

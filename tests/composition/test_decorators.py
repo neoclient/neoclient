@@ -7,7 +7,7 @@ from pytest import fixture
 from fastclient import converters, get
 from fastclient import decorators
 from fastclient.models import RequestOptions
-from fastclient.operations import CallableWithOperation
+from fastclient.operation import CallableWithOperation
 from fastclient.types import (
     CookiesTypes,
     HeadersTypes,
