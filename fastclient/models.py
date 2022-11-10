@@ -122,23 +122,6 @@ class ClientOptions:
             default_encoding=self.default_encoding,
         )
 
-    def is_default(self) -> bool:
-        return all(
-            (
-                self.auth == None,
-                self.params == QueryParams(),
-                self.headers == Headers(),
-                self.cookies == Cookies(),
-                self.timeout == DEFAULT_TIMEOUT_CONFIG,
-                self.follow_redirects == DEFAULT_FOLLOW_REDIRECTS,
-                self.max_redirects == DEFAULT_MAX_REDIRECTS,
-                self.event_hooks == DEFAULT_EVENT_HOOKS,
-                self.base_url == DEFAULT_BASE_URL,
-                self.trust_env == DEFAULT_TRUST_ENV,
-                self.default_encoding == DEFAULT_ENCODING,
-            )
-        )
-
     @classmethod
     def from_client(cls, client: httpx.Client, /) -> "ClientOptions":
         return cls(

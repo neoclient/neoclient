@@ -5,7 +5,6 @@ from typing import Any, Callable, List, Mapping, Optional, Type, TypeVar
 
 import httpx
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
-from loguru import logger
 from typing_extensions import ParamSpec
 
 from . import __version__
@@ -178,11 +177,7 @@ class FastClient:
         )
 
         def decorator(func: Callable[PS, RT], /) -> CallableWithOperation[PS, RT]:
-            logger.info(f"Creating operation: {method=} {endpoint=} {func=}")
-
             operation: Operation[PS, RT] = Operation(func, specification, self.client)
-
-            logger.info(f"Created operation: {operation!r}")
 
             wrapped_func: CallableWithOperation[PS, RT] = self._wrap(operation)
 

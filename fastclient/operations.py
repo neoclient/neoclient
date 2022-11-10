@@ -14,7 +14,6 @@ from typing import (
 import httpx
 import pydantic
 from httpx import Client, Response
-from loguru import logger
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
@@ -51,8 +50,6 @@ class Operation(Generic[PS, RT]):
         compose(self.func, request_options, args, kwargs)
 
         request: httpx.Request = request_options.build_request(self.client)
-
-        logger.info(f"Built httpx request: {request!r}")
 
         return_annotation: Any = inspect.signature(self.func).return_annotation
 
