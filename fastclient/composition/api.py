@@ -10,7 +10,7 @@ from pydantic.fields import FieldInfo, ModelField
 from .. import api, utils
 from ..errors import DuplicateParameters
 from ..models import RequestOptions
-from ..parameters import Parameter, BodyParameter, PathParameter, QueryParameter
+from ..params import Parameter, BodyParameter, PathParameter, QueryParameter
 from ..validation import ValidatedFunction
 
 

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo, ModelField
 
 from .. import utils
-from ..parameters import (
+from ..params import (
     Parameter,
     BodyParameter,
     CookiesParameter,

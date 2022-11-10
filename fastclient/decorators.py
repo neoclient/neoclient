@@ -1,12 +1,10 @@
 from dataclasses import dataclass
 from typing import Any, List, Protocol, TypeVar
 
-from loguru import logger
-
 from fastclient.models import RequestOptions
 
-from ..operations import CallableWithOperation
-from ..types import (
+from .operations import CallableWithOperation
+from .types import (
     CookiesTypes,
     HeadersTypes,
     JsonTypes,
@@ -17,7 +15,7 @@ from ..types import (
     RequestFiles,
     TimeoutTypes,
 )
-from .consumers import (
+from .composition.consumers import (
     ContentConsumer,
     CookieConsumer,
     CookiesConsumer,
@@ -30,9 +28,9 @@ from .consumers import (
     PathsConsumer,
     QueriesConsumer,
     QueryConsumer,
-    RequestConsumer,
     TimeoutConsumer,
 )
+from .typing import RequestConsumer
 
 __all__: List[str] = [
     "query",
@@ -64,10 +62,6 @@ class CompositionFacilitator(Decorator):
 
     def __call__(self, func: C, /) -> C:
         request: RequestOptions = func.operation.specification.request
-
-        logger.info(
-            f"Composing {func!r} with request {request!r} using {self.composer!r}"
-        )
 
         self.composer(request)
 

@@ -87,9 +87,9 @@ class Parameter(FieldInfo):
     def resolve(self, response: httpx.Response, /) -> Any:
         raise ResolutionError(f"Parameter {type(self)!r} is not resolvable")
 
-    def prepare(self, field: ModelField, /) -> None:
+    def prepare(self, model_field: ModelField, /) -> None:
         if self.alias is None:
-            self.alias = field.name
+            self.alias = model_field.name
 
 
 class QueryParameter(Parameter):

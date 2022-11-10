@@ -16,7 +16,7 @@ from ..types import (
     RequestFiles,
     TimeoutTypes,
 )
-from .typing import RequestConsumer
+from ..typing import RequestConsumer
 
 __all__: List[str] = [
     "QueryConsumer",

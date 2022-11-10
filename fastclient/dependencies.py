@@ -5,7 +5,7 @@ from httpx import Response
 from pydantic.fields import ModelField
 
 from .errors import ResolutionError, PreparationError
-from .parameters import Parameter
+from .params import Parameter
 from .resolution.api import resolve
 from .resolution.typing import ResolutionFunction
 

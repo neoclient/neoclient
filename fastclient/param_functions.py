@@ -3,7 +3,7 @@ from typing import Any, Callable, List, Optional
 from pydantic.fields import Undefined
 
 from .dependencies import DependencyParameter
-from .parameters import (
+from .params import (
     BodyParameter,
     CookieParameter,
     CookiesParameter,

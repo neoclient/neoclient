@@ -4,7 +4,7 @@ from httpx import Response
 from pydantic import BaseModel
 
 from .. import api, utils
-from ..parameters import Parameter
+from ..params import Parameter
 from .utils import get_fields
 
 __all__: List[str] = [
