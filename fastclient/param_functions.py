@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional, Sequence
 
 from pydantic.fields import Undefined
 
@@ -20,7 +20,7 @@ from .params import (
 )
 from .typing import Supplier
 
-__all__: List[str] = [
+__all__: Sequence[str] = (
     "Query",
     "Header",
     "Cookie",
@@ -35,7 +35,7 @@ __all__: List[str] = [
     "Request",
     "Response",
     "StatusCode",
-]
+)
 
 
 def Query(

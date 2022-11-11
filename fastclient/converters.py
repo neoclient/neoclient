@@ -1,5 +1,5 @@
 from http.cookiejar import CookieJar
-from typing import Any, List, Mapping, MutableMapping, MutableSequence, Sequence
+from typing import Any, Mapping, MutableMapping, MutableSequence, Sequence
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 from httpx._utils import primitive_value_to_str
@@ -14,7 +14,7 @@ from .types import (
     TimeoutTypes,
 )
 
-__all__: List[str] = [
+__all__: Sequence[str] = (
     "convert_query_param",
     "convert_header",
     "convert_cookie",
@@ -24,7 +24,7 @@ __all__: List[str] = [
     "convert_cookies",
     "convert_path_params",
     "convert_timeout",
-]
+)
 
 
 def convert_query_param(value: Any, /) -> str:

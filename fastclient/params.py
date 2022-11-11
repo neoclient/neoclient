@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional, Set, TypeVar, Union
+from typing import Any, Dict, Mapping, Optional, Sequence, Set, TypeVar, Union
 
 import fastapi.encoders
 import httpx
@@ -32,7 +32,7 @@ from .resolution.functions import (
 from .types import CookiesTypes, HeadersTypes, PathsTypes, QueriesTypes
 from .typing import Supplier
 
-__all__: List[str] = [
+__all__: Sequence[str] = (
     "QueryParameter",
     "HeaderParameter",
     "CookieParameter",
@@ -46,7 +46,7 @@ __all__: List[str] = [
     "ResponseParameter",
     "RequestParameter",
     "StatusCodeParameter",
-]
+)
 
 T = TypeVar("T")
 

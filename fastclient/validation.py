@@ -6,11 +6,11 @@ from typing import (
     Callable,
     Dict,
     Generic,
-    List,
     Mapping,
     MutableMapping,
     MutableSequence,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -25,11 +25,11 @@ from pydantic.typing import get_all_type_hints
 from pydantic.utils import to_camel
 from typing_extensions import ParamSpec
 
-__all__: List[str] = [
+__all__: Sequence[str] = (
     "create_func_model",
     "validate",
     "ValidatedFunction",
-]
+)
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")

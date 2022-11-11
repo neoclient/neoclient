@@ -4,11 +4,11 @@ from types import FunctionType, MethodType
 from typing import (
     Any,
     Callable,
-    List,
     Mapping,
     MutableMapping,
     MutableSequence,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Union,
@@ -18,7 +18,7 @@ from pydantic.fields import FieldInfo, Undefined
 
 from .enums import MethodKind
 
-__all__: List[str] = [
+__all__: Sequence[str] = (
     "parse_format_string",
     "bind_arguments",
     "is_primitive",
@@ -26,7 +26,7 @@ __all__: List[str] = [
     "get_default",
     "has_default",
     "get_method_kind",
-]
+)
 
 
 def parse_format_string(format_string: str, /) -> Set[str]:

@@ -1,15 +1,15 @@
-from typing import Any, List, Protocol, TypeVar
+from typing import Any, Protocol, Sequence, TypeVar
 
 from httpx import Response
 
 from .models import RequestOptions
 
-__all__: List[str] = [
+__all__: Sequence[str] = (
     "Composer",
     "RequestConsumer",
     "Resolver",
     "Supplier",
-]
+)
 
 T_contra = TypeVar("T_contra", contravariant=True)
 T_co = TypeVar("T_co", covariant=True)

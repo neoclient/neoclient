@@ -7,6 +7,7 @@ from typing import (
     Generic,
     Optional,
     Protocol,
+    Sequence,
     TypeVar,
     runtime_checkable,
 )
@@ -20,6 +21,11 @@ from typing_extensions import ParamSpec
 from .composition.api import compose
 from .models import OperationSpecification, RequestOptions
 from .resolution.api import resolve
+
+__all__: Sequence[str] = (
+    "CallableWithOperation",
+    "Operation",
+)
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT", covariant=True)

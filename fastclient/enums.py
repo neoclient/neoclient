@@ -1,4 +1,7 @@
 from enum import Enum, auto
+from typing import Sequence
+
+__all__: Sequence[str] = ("HttpMethod",)
 
 
 class HiddenValueEnum(Enum):

@@ -1,6 +1,6 @@
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, MutableMapping, Optional, Set
+from typing import Any, Callable, Dict, List, MutableMapping, Optional, Sequence, Set
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
@@ -26,12 +26,12 @@ from .types import (
     URLTypes,
 )
 
-__all__: List[str] = [
+__all__: Sequence[str] = (
     "Client",
     "ClientOptions",
     "RequestOptions",
     "OperationSpecification",
-]
+)
 
 
 @dataclass(init=False)

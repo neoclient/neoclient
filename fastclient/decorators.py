@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, List, Protocol, TypeVar
+from typing import Any, Protocol, Sequence, TypeVar
 
 from fastclient.models import RequestOptions
 
@@ -32,7 +32,7 @@ from .composition.consumers import (
 )
 from .typing import RequestConsumer
 
-__all__: List[str] = [
+__all__: Sequence[str] = (
     "query",
     "header",
     "cookie",
@@ -46,7 +46,7 @@ __all__: List[str] = [
     "files",
     "json",
     "timeout",
-]
+)
 
 C = TypeVar("C", bound=CallableWithOperation)
 

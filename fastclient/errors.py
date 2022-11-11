@@ -1,3 +1,14 @@
+from typing import Sequence
+
+
+__all__: Sequence[str] = (
+    "DuplicateParameters",
+    "IncompatiblePathParameters",
+    "PreparationError",
+    "CompositionError",
+    "ResolutionError",
+)
+
 class DuplicateParameters(Exception):
     pass
 
