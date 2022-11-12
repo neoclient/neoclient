@@ -12,6 +12,7 @@ from .converters import (
     convert_query_param,
     convert_header,
     convert_cookie,
+    convert_path_param,
 )
 from .composition.consumers import (
     CookieConsumer,
@@ -99,7 +100,7 @@ class Parameter(FieldInfo):
             self.alias = model_field.name
 
 
-class SingletonParameter(ABC, Parameter):
+class ComposableSingletonParameter(ABC, Parameter):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
             raise CompositionError(
@@ -109,19 +110,12 @@ class SingletonParameter(ABC, Parameter):
         if argument is None and self.default is not Required:
             return
 
-        consumer: RequestConsumer = self.build_consumer(self.alias, argument)
+        consumer: RequestConsumer = self.build_consumer(
+            self.parse_key(self.alias),
+            self.parse_value(argument),
+        )
 
         consumer(request)
-
-    def resolve(self, response: httpx.Response, /) -> Optional[str]:
-        if self.alias is None:
-            raise ResolutionError(
-                f"Cannot resolve parameter {type(self)!r} without an alias"
-            )
-
-        resolver: ResolutionFunction[Optional[str]] = self.build_resolver(self.alias)
-
-        return resolver(response)
 
     def parse_key(self, key: str, /) -> str:
         return key
@@ -134,12 +128,29 @@ class SingletonParameter(ABC, Parameter):
     def build_consumer(self, key: str, value: str) -> RequestConsumer:
         ...
 
+
+class ResolvableSingletonParameter(ABC, Parameter):
+    def resolve(self, response: httpx.Response, /) -> Optional[str]:
+        if self.alias is None:
+            raise ResolutionError(
+                f"Cannot resolve parameter {type(self)!r} without an alias"
+            )
+
+        resolver: ResolutionFunction[Optional[str]] = self.build_resolver(
+            self.parse_key(self.alias),
+        )
+
+        return resolver(response)
+
+    def parse_key(self, key: str, /) -> str:
+        return key
+
     @abstractmethod
     def build_resolver(self, key: str) -> ResolutionFunction[Optional[str]]:
         ...
 
 
-class QueryParameter(SingletonParameter):
+class QueryParameter(ComposableSingletonParameter, ResolvableSingletonParameter):
     def parse_value(self, value: Any, /) -> str:
         return convert_query_param(value)
 
@@ -151,7 +162,7 @@ class QueryParameter(SingletonParameter):
 
 
 @dataclass
-class HeaderParameter(SingletonParameter):
+class HeaderParameter(ComposableSingletonParameter, ResolvableSingletonParameter):
     convert_underscores: bool = True
 
     def parse_key(self, key: str, /) -> str:
@@ -170,7 +181,7 @@ class HeaderParameter(SingletonParameter):
         return HeaderResolutionFunction(key)
 
 
-class CookieParameter(Parameter):
+class CookieParameter(ComposableSingletonParameter, ResolvableSingletonParameter):
     def parse_value(self, value: Any, /) -> str:
         return convert_cookie(value)
 
@@ -181,24 +192,19 @@ class CookieParameter(Parameter):
         return CookieResolutionFunction(key)
 
 
-class PathParameter(Parameter):
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
-        if self.alias is None:
-            raise CompositionError(
-                f"Cannot compose parameter {type(self)!r} without an alias"
-            )
+class PathParameter(ComposableSingletonParameter):
+    def parse_value(self, value: Any, /) -> str:
+        return convert_path_param(value)
 
-        if argument is None and self.default is not Required:
-            return
-
-        PathConsumer.parse(self.alias, argument)(request)
+    def build_consumer(self, key: str, value: str) -> RequestConsumer:
+        return PathConsumer(key, value)
 
 
 class QueriesParameter(Parameter):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         params: QueriesTypes = parse_obj_as(QueriesTypes, argument)  # type: ignore
 
-        QueriesConsumer.parse(params)(request)
+        QueriesConsumer(params)(request)
 
     def resolve(self, response: httpx.Response, /) -> QueryParams:
         return QueriesResolutionFunction()(response)
@@ -208,7 +214,7 @@ class HeadersParameter(Parameter):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         headers: HeadersTypes = parse_obj_as(HeadersTypes, argument)  # type: ignore
 
-        HeadersConsumer.parse(headers)(request)
+        HeadersConsumer(headers)(request)
 
     def resolve(self, response: httpx.Response, /) -> Headers:
         return HeadersResolutionFunction()(response)
@@ -218,7 +224,7 @@ class CookiesParameter(Parameter):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         cookies: CookiesTypes = parse_obj_as(CookiesTypes, argument)  # type: ignore
 
-        CookiesConsumer.parse(cookies)(request)
+        CookiesConsumer(cookies)(request)
 
     def resolve(self, response: httpx.Response, /) -> Cookies:
         return CookiesResolutionFunction()(response)
@@ -228,7 +234,7 @@ class PathsParameter(Parameter):
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         path_params: PathsTypes = parse_obj_as(PathsTypes, argument)  # type: ignore
 
-        PathsConsumer.parse(path_params)(request)
+        PathsConsumer(path_params)(request)
 
 
 @dataclass

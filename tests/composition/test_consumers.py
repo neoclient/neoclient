@@ -39,7 +39,7 @@ def test_QueryParamConsumer(request_options: RequestOptions) -> None:
 
     assert request_options == replace(ref_request_options, params={key: value})
 
-    assert QueryConsumer.parse("age", 123) == QueryConsumer("age", "123")
+    assert QueryConsumer("age", 123) == QueryConsumer("age", "123")
 
 
 def test_HeaderConsumer(request_options: RequestOptions) -> None:
@@ -52,7 +52,7 @@ def test_HeaderConsumer(request_options: RequestOptions) -> None:
 
     assert request_options == replace(ref_request_options, headers={key: value})
 
-    assert HeaderConsumer.parse("age", 123) == HeaderConsumer("age", "123")
+    assert HeaderConsumer("age", 123) == HeaderConsumer("age", "123")
 
 
 def test_CookieConsumer(request_options: RequestOptions) -> None:
@@ -65,7 +65,7 @@ def test_CookieConsumer(request_options: RequestOptions) -> None:
 
     assert request_options == replace(ref_request_options, cookies={key: value})
 
-    assert CookieConsumer.parse("age", 123) == CookieConsumer("age", "123")
+    assert CookieConsumer("age", 123) == CookieConsumer("age", "123")
 
 
 def test_PathParamConsumer(request_options: RequestOptions) -> None:
@@ -78,7 +78,7 @@ def test_PathParamConsumer(request_options: RequestOptions) -> None:
 
     assert request_options == replace(ref_request_options, path_params={key: value})
 
-    assert PathConsumer.parse("age", 123) == PathConsumer("age", "123")
+    assert PathConsumer("age", 123) == PathConsumer("age", "123")
 
 
 def test_QueryParamsConsumer(request_options: RequestOptions) -> None:
@@ -90,7 +90,7 @@ def test_QueryParamsConsumer(request_options: RequestOptions) -> None:
 
     assert request_options == replace(ref_request_options, params=params)
 
-    assert QueriesConsumer.parse({"name": "sam"}) == QueriesConsumer(
+    assert QueriesConsumer({"name": "sam"}) == QueriesConsumer(
         QueryParams({"name": "sam"})
     )
 
@@ -104,7 +104,7 @@ def test_HeadersConsumer(request_options: RequestOptions) -> None:
 
     assert request_options == replace(ref_request_options, headers=headers)
 
-    assert HeadersConsumer.parse({"name": "sam"}) == HeadersConsumer(
+    assert HeadersConsumer({"name": "sam"}) == HeadersConsumer(
         Headers({"name": "sam"})
     )
 
@@ -118,7 +118,7 @@ def test_CookiesConsumer(request_options: RequestOptions) -> None:
 
     assert request_options == replace(ref_request_options, cookies=cookies)
 
-    assert CookiesConsumer.parse({"name": "sam"}) == CookiesConsumer(
+    assert CookiesConsumer({"name": "sam"}) == CookiesConsumer(
         Cookies({"name": "sam"})
     )
 
@@ -132,7 +132,7 @@ def test_PathParamsConsumer(request_options: RequestOptions) -> None:
 
     assert request_options == replace(ref_request_options, path_params=path_params)
 
-    assert PathsConsumer.parse({"age": 123}) == PathsConsumer({"age": "123"})
+    assert PathsConsumer({"age": 123}) == PathsConsumer({"age": "123"})
 
 
 def test_ContentConsumer(request_options: RequestOptions) -> None:
@@ -184,4 +184,4 @@ def test_TimeoutConsumer(request_options: RequestOptions) -> None:
 
     assert request_options == replace(ref_request_options, timeout=timeout)
 
-    assert TimeoutConsumer.parse(5.0) == TimeoutConsumer(Timeout(5.0))
+    assert TimeoutConsumer(5.0) == TimeoutConsumer(Timeout(5.0))
