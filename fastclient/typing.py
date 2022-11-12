@@ -7,7 +7,6 @@ from .models import RequestOptions
 __all__: Sequence[str] = (
     "Composer",
     "RequestConsumer",
-    "ResolutionFunction",
     "Resolver",
     "Supplier",
 )
@@ -34,9 +33,4 @@ class Composer(Protocol):
 
 class RequestConsumer(Protocol):
     def __call__(self, request: RequestOptions, /) -> None:
-        ...
-
-
-class ResolutionFunction(Protocol[T_co]):
-    def __call__(self, response: Response, /) -> T_co:
         ...
