@@ -1,16 +1,31 @@
 import functools
 import inspect
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Optional, Sequence, Type, TypeVar
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Type, TypeVar
 
 import httpx
+from httpx import QueryParams, Headers, Cookies, Timeout, URL
+from httpx._auth import Auth
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 from typing_extensions import ParamSpec
 
-from . import __version__
+from . import __version__, converters
+from .defaults import (
+    DEFAULT_BASE_URL,
+    DEFAULT_AUTH,
+    DEFAULT_PARAMS,
+    DEFAULT_HEADERS,
+    DEFAULT_COOKIES,
+    DEFAULT_TIMEOUT,
+    DEFAULT_FOLLOW_REDIRECTS,
+    DEFAULT_MAX_REDIRECTS,
+    DEFAULT_EVENT_HOOKS,
+    DEFAULT_TRUST_ENV,
+    DEFAULT_ENCODING,
+)
 from .composition import get_fields
 from .enums import HttpMethod, MethodKind
-from .models import ClientOptions, OperationSpecification, RequestOptions
+from .models import OperationSpecification, RequestOptions
 from .operation import CallableWithOperation, Operation
 from .types import (
     AuthTypes,
@@ -24,9 +39,7 @@ from .types import (
 )
 from .utils import get_method_kind
 
-__all__: Sequence[str] = (
-    "FastClient",
-)
+__all__: Sequence[str] = ("FastClient",)
 
 
 T = TypeVar("T")
@@ -41,25 +54,52 @@ class BaseService:
 
 
 @dataclass(init=False)
-class FastClient:
-    client: Optional[httpx.Client]
+class Client(httpx.Client):
+    auth: Optional[Auth]
+    params: QueryParams
+    headers: Headers
+    cookies: Cookies
+    timeout: Timeout
+    follow_redirects: bool
+    max_redirects: int
+    event_hooks: Dict[str, List[Callable]]
+    base_url: URL
+    trust_env: bool
 
     def __init__(
         self,
-        base_url: URLTypes = "",
+        base_url: URLTypes = DEFAULT_BASE_URL,
         *,
-        auth: Optional[AuthTypes] = None,
-        params: Optional[QueriesTypes] = None,
-        headers: Optional[HeadersTypes] = None,
-        cookies: Optional[CookiesTypes] = None,
+        auth: Optional[AuthTypes] = DEFAULT_AUTH,
+        params: Optional[QueriesTypes] = DEFAULT_PARAMS,
+        headers: Optional[HeadersTypes] = DEFAULT_HEADERS,
+        cookies: Optional[CookiesTypes] = DEFAULT_COOKIES,
         timeout: TimeoutTypes = DEFAULT_TIMEOUT_CONFIG,
-        follow_redirects: bool = False,
+        follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
         max_redirects: int = DEFAULT_MAX_REDIRECTS,
-        event_hooks: Optional[EventHooks] = None,
-        trust_env: bool = True,
-        default_encoding: DefaultEncodingTypes = "utf-8",
+        event_hooks: Optional[EventHooks] = DEFAULT_EVENT_HOOKS,
+        trust_env: bool = DEFAULT_TRUST_ENV,
+        default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
     ) -> None:
-        client_options: ClientOptions = ClientOptions(
+        params = (
+            converters.convert_query_params(params)
+            if params is not None
+            else QueryParams()
+        )
+        headers = (
+            converters.convert_headers(headers) if headers is not None else Headers()
+        )
+        cookies = (
+            converters.convert_cookies(cookies) if cookies is not None else Cookies()
+        )
+        timeout = (
+            converters.convert_timeout(timeout) if timeout is not None else Timeout()
+        )
+        base_url = URL(base_url)
+
+        headers.setdefault("user-agent", f"fastclient/{__version__}")
+
+        super().__init__(
             auth=auth,
             params=params,
             headers=headers,
@@ -73,9 +113,39 @@ class FastClient:
             default_encoding=default_encoding,
         )
 
-        client_options.headers.setdefault("user-agent", f"fastclient/{__version__}")
 
-        self.client = client_options.build()
+@dataclass(init=False)
+class FastClient:
+    client: Optional[httpx.Client]
+
+    def __init__(
+        self,
+        base_url: URLTypes = DEFAULT_BASE_URL,
+        *,
+        auth: Optional[AuthTypes] = DEFAULT_AUTH,
+        params: Optional[QueriesTypes] = DEFAULT_PARAMS,
+        headers: Optional[HeadersTypes] = DEFAULT_HEADERS,
+        cookies: Optional[CookiesTypes] = DEFAULT_COOKIES,
+        timeout: TimeoutTypes = DEFAULT_TIMEOUT_CONFIG,
+        follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
+        max_redirects: int = DEFAULT_MAX_REDIRECTS,
+        event_hooks: Optional[EventHooks] = DEFAULT_EVENT_HOOKS,
+        trust_env: bool = DEFAULT_TRUST_ENV,
+        default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
+    ) -> None:
+        self.client = Client(
+            auth=auth,
+            params=params,
+            headers=headers,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            max_redirects=max_redirects,
+            event_hooks=event_hooks,
+            base_url=base_url,
+            trust_env=trust_env,
+            default_encoding=default_encoding,
+        )
 
     @classmethod
     def from_client(
