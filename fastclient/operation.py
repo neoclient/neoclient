@@ -18,9 +18,9 @@ from httpx import Client, Response
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from .composition.api import compose
+from .composition import compose
 from .models import OperationSpecification, RequestOptions
-from .resolution.api import resolve
+from .resolution import resolve
 
 __all__: Sequence[str] = (
     "CallableWithOperation",

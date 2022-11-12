@@ -3,7 +3,7 @@ from http import HTTPStatus
 from httpx import Cookies, Headers, QueryParams, Request, Response
 
 from fastclient.enums import HttpMethod
-from fastclient.resolution.resolvers import (
+from fastclient.resolvers import (
     BodyResolver,
     CookieResolver,
     CookiesResolver,

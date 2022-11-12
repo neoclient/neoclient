@@ -8,7 +8,7 @@ from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 from typing_extensions import ParamSpec
 
 from . import __version__
-from .composition.api import get_fields
+from .composition import get_fields
 from .enums import HttpMethod, MethodKind
 from .models import ClientOptions, OperationSpecification, RequestOptions
 from .operation import CallableWithOperation, Operation

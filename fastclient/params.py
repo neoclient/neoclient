@@ -14,7 +14,7 @@ from .converters import (
     convert_cookie,
     convert_path_param,
 )
-from .composition.consumers import (
+from .consumers import (
     CookieConsumer,
     CookiesConsumer,
     HeaderConsumer,
@@ -27,7 +27,7 @@ from .composition.consumers import (
 from .errors import CompositionError, ResolutionError
 from .models import RequestOptions
 from .utils import parse_obj_as
-from .resolution.resolvers import (
+from .resolvers import (
     BodyResolver,
     CookieResolver,
     CookiesResolver,

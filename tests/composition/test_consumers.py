@@ -5,7 +5,7 @@ from typing import Mapping
 from httpx import Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
 
-from fastclient.composition.consumers import (
+from fastclient.consumers import (
     ContentConsumer,
     CookieConsumer,
     CookiesConsumer,

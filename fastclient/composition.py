@@ -6,11 +6,11 @@ from typing import Any, Callable, Mapping, MutableMapping, MutableSequence, Set,
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo, ModelField
 
-from .. import api, utils
-from ..errors import DuplicateParameters
-from ..models import RequestOptions
-from ..params import Parameter, BodyParameter, PathParameter, QueryParameter
-from ..validation import ValidatedFunction
+from . import api, utils
+from .errors import DuplicateParameters
+from .models import RequestOptions
+from .params import Parameter, BodyParameter, PathParameter, QueryParameter
+from .validation import ValidatedFunction
 
 
 def get_fields(

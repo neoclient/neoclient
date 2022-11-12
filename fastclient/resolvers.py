@@ -3,7 +3,7 @@ from typing import Any, Optional, Sequence, TypeVar
 
 from httpx import Cookies, Headers, QueryParams, Response
 
-from ..typing import Resolver
+from .typing import Resolver
 
 __all__: Sequence[str] = (
     "BodyResolver",

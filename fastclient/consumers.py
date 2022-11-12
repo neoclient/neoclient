@@ -3,9 +3,9 @@ from typing import Mapping, Sequence
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 
-from .. import converters
-from ..models import RequestOptions
-from ..types import (
+from . import converters
+from .models import RequestOptions
+from .types import (
     JsonTypes,
     RequestContent,
     RequestData,
@@ -18,7 +18,7 @@ from ..types import (
     TimeoutTypes,
     PathsTypes,
 )
-from ..typing import RequestConsumer
+from .typing import RequestConsumer
 
 __all__: Sequence[str] = (
     "QueryConsumer",

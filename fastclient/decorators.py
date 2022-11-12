@@ -19,7 +19,7 @@ from .types import (
     CookieTypes,
     PathTypes,
 )
-from .composition.consumers import (
+from .consumers import (
     ContentConsumer,
     CookieConsumer,
     CookiesConsumer,

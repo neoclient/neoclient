@@ -5,8 +5,8 @@ from httpx import URL, Cookies, Headers, QueryParams, Request, Response
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo, ModelField
 
-from .. import api, utils
-from ..params import (
+from . import api, utils
+from .params import (
     Parameter,
     BodyParameter,
     CookiesParameter,
@@ -17,7 +17,7 @@ from ..params import (
     ResponseParameter,
     URLParameter,
 )
-from ..validation import ValidatedFunction
+from .validation import ValidatedFunction
 
 
 def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
