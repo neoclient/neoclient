@@ -7,13 +7,13 @@ from pydantic.fields import ModelField
 from .errors import ResolutionError, PreparationError
 from .params import Parameter
 from .resolution.api import resolve
-from .typing import ResolutionFunction
+from .typing import Resolver
 
 T = TypeVar("T")
 
 
 @dataclass
-class DependencyResolutionFunction(ResolutionFunction[T]):
+class DependencyResolver(Resolver[T]):
     dependency: Callable[..., T]
 
     def __call__(self, response: Response, /) -> T:
@@ -43,7 +43,7 @@ class DependencyParameter(Parameter):
         if self.use_cache and self.dependency in cached_dependencies:
             return cached_dependencies[self.dependency]
 
-        resolved: Any = DependencyResolutionFunction(self.dependency)(response)
+        resolved: Any = DependencyResolver(self.dependency)(response)
 
         # Cache resolved dependency
         cached_dependencies[self.dependency] = resolved
