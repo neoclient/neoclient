@@ -1,4 +1,5 @@
-from typing import Sequence
+from dataclasses import dataclass
+from typing import Any, Sequence
 
 
 __all__: Sequence[str] = (
@@ -7,7 +8,9 @@ __all__: Sequence[str] = (
     "PreparationError",
     "CompositionError",
     "ResolutionError",
+    "ConversionError",
 )
+
 
 class DuplicateParameters(Exception):
     pass
@@ -27,3 +30,12 @@ class CompositionError(Exception):
 
 class ResolutionError(Exception):
     pass
+
+
+@dataclass
+class ConversionError(Exception):
+    subject: str
+    value: Any
+
+    def __str__(self) -> str:
+        return f"Cannot convert {self.subject} from type {type(self.value)}"
