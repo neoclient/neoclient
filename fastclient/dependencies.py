@@ -7,7 +7,7 @@ from pydantic.fields import ModelField
 from .errors import ResolutionError, PreparationError
 from .params import Parameter
 from .resolution.api import resolve
-from .resolution.typing import ResolutionFunction
+from .typing import ResolutionFunction
 
 T = TypeVar("T")
 

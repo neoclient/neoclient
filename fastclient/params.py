@@ -36,9 +36,8 @@ from .resolution.functions import (
     QueriesResolutionFunction,
     QueryResolutionFunction,
 )
-from .resolution.typing import ResolutionFunction
 from .types import CookiesTypes, HeadersTypes, PathsTypes, QueriesTypes
-from .typing import Supplier, RequestConsumer
+from .typing import Supplier, RequestConsumer, ResolutionFunction
 
 __all__: Sequence[str] = (
     "QueryParameter",

@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, List, Optional, TypeVar
+from typing import Any, Optional, Sequence, TypeVar
 
 from httpx import Cookies, Headers, QueryParams, Response
 
-from .typing import ResolutionFunction
+from ..typing import ResolutionFunction
 
-__all__: List[str] = [
+__all__: Sequence[str] = (
     "BodyResolutionFunction",
     "CookieResolutionFunction",
     "CookiesResolutionFunction",
@@ -13,7 +13,7 @@ __all__: List[str] = [
     "HeadersResolutionFunction",
     "QueryResolutionFunction",
     "QueriesResolutionFunction",
-]
+)
 
 T = TypeVar("T")
 
