@@ -26,7 +26,7 @@ from .composition.consumers import (
 )
 from .errors import CompositionError, ResolutionError
 from .models import RequestOptions
-from .parsing import parse_obj_as
+from .utils import parse_obj_as
 from .resolution.functions import (
     BodyResolutionFunction,
     CookieResolutionFunction,

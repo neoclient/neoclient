@@ -1,3 +1,6 @@
+from typing import Mapping, Union
+
+from httpx import QueryParams
 import pytest
 from pydantic.fields import FieldInfo, Undefined
 
@@ -157,3 +160,10 @@ def test_get_method_kind() -> None:
     assert utils.get_method_kind(foo.instance_method) is MethodKind.METHOD
     assert utils.get_method_kind(foo.class_method) is MethodKind.CLASS_METHOD
     assert utils.get_method_kind(foo.static_method) is MethodKind.STATIC_METHOD
+
+
+def test_parse_obj_as() -> None:
+    assert utils.parse_obj_as(str, "123") == "123"
+    assert utils.parse_obj_as(str, 123) == "123"
+    assert utils.parse_obj_as(Union[str, int], "abc") == "abc"  # type: ignore
+    assert utils.parse_obj_as(Mapping[str, str], QueryParams({"name": "sam", "age": "43"})) == QueryParams({"name": "sam", "age": "43"})  # type: ignore
