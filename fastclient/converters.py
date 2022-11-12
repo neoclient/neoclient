@@ -4,6 +4,7 @@ from typing import Any, Mapping, MutableMapping, MutableSequence, Sequence
 from httpx import Cookies, Headers, QueryParams, Timeout
 from httpx._utils import primitive_value_to_str
 
+from .utils import is_primitive
 from .types import (
     CookiesTypes,
     HeadersTypes,
@@ -12,6 +13,7 @@ from .types import (
     Primitive,
     QueriesTypes,
     TimeoutTypes,
+    QueryTypes,
 )
 
 __all__: Sequence[str] = (
@@ -27,16 +29,25 @@ __all__: Sequence[str] = (
 )
 
 
-def convert_query_param(value: Any, /) -> str:
-    return primitive_value_to_str(value)
+def convert_query_param(value: QueryTypes, /) -> str:
+    if is_primitive(value):
+        return primitive_value_to_str(value)
+    else:
+        return str(value)
 
 
 def convert_header(value: Any, /) -> str:
-    return primitive_value_to_str(value)
+    if is_primitive(value):
+        return primitive_value_to_str(value)
+    else:
+        return str(value)
 
 
 def convert_cookie(value: Any, /) -> str:
-    return primitive_value_to_str(value)
+    if is_primitive(value):
+        return primitive_value_to_str(value)
+    else:
+        return str(value)
 
 
 def convert_path_param(value: PathTypes, /) -> str:

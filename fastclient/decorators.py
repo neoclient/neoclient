@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Protocol, Sequence, TypeVar
+from typing import Protocol, Sequence, TypeVar
 
 from fastclient.models import RequestOptions
 
@@ -14,6 +14,10 @@ from .types import (
     RequestData,
     RequestFiles,
     TimeoutTypes,
+    QueryTypes,
+    HeaderTypes,
+    CookieTypes,
+    PathTypes,
 )
 from .composition.consumers import (
     ContentConsumer,
@@ -68,36 +72,36 @@ class CompositionFacilitator(Decorator):
         return func
 
 
-def query(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(QueryConsumer.parse(key, value))
+def query(key: str, value: QueryTypes) -> Decorator:
+    return CompositionFacilitator(QueryConsumer(key, value))
 
 
-def header(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(HeaderConsumer.parse(key, value))
+def header(key: str, value: HeaderTypes) -> Decorator:
+    return CompositionFacilitator(HeaderConsumer(key, value))
 
 
-def cookie(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(CookieConsumer.parse(key, value))
+def cookie(key: str, value: CookieTypes) -> Decorator:
+    return CompositionFacilitator(CookieConsumer(key, value))
 
 
-def path(key: str, value: Any) -> Decorator:
-    return CompositionFacilitator(PathConsumer.parse(key, value))
+def path(key: str, value: PathTypes) -> Decorator:
+    return CompositionFacilitator(PathConsumer(key, value))
 
 
 def query_params(params: QueriesTypes, /) -> Decorator:
-    return CompositionFacilitator(QueriesConsumer.parse(params))
+    return CompositionFacilitator(QueriesConsumer(params))
 
 
 def headers(headers: HeadersTypes, /) -> Decorator:
-    return CompositionFacilitator(HeadersConsumer.parse(headers))
+    return CompositionFacilitator(HeadersConsumer(headers))
 
 
 def cookies(cookies: CookiesTypes, /) -> Decorator:
-    return CompositionFacilitator(CookiesConsumer.parse(cookies))
+    return CompositionFacilitator(CookiesConsumer(cookies))
 
 
 def path_params(path_params: PathsTypes, /) -> Decorator:
-    return CompositionFacilitator(PathsConsumer.parse(path_params))
+    return CompositionFacilitator(PathsConsumer(path_params))
 
 
 def content(content: RequestContent, /) -> Decorator:
@@ -117,4 +121,4 @@ def json(json: JsonTypes, /) -> Decorator:
 
 
 def timeout(timeout: TimeoutTypes, /) -> Decorator:
-    return CompositionFacilitator(TimeoutConsumer.parse(timeout))
+    return CompositionFacilitator(TimeoutConsumer(timeout))
