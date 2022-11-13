@@ -1,3 +1,4 @@
+import functools
 import inspect
 from dataclasses import dataclass
 from json import JSONDecodeError
@@ -89,3 +90,17 @@ class Operation(Generic[PS, RT]):
             return return_annotation.parse_obj(response.json())
 
         return pydantic.parse_raw_as(return_annotation, response.text)
+
+    @property
+    def wrapper(self) -> CallableWithOperation[PS, RT]:
+        @functools.wraps(self.func)
+        def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> RT:
+            if inspect.ismethod(self.func):
+                # Read off `self` or `cls`
+                _, *args = args  # type: ignore
+
+            return self(*args, **kwargs)
+
+        setattr(wrapper, "operation", self)
+
+        return wrapper  # type: ignore
