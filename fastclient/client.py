@@ -23,7 +23,7 @@ from .defaults import (
     DEFAULT_TIMEOUT,
     DEFAULT_TRUST_ENV,
 )
-from .enums import HttpMethod, MethodKind
+from .enums import HttpMethod, MethodKind, HeaderName
 from .models import OperationSpecification, RequestOptions
 from .operation import CallableWithOperation, Operation
 from .types import (
@@ -98,7 +98,7 @@ class Client(httpx.Client):
         )
         base_url = URL(base_url)
 
-        headers.setdefault("user-agent", USER_AGENT)
+        headers.setdefault(HeaderName.USER_AGENT, USER_AGENT)
 
         super().__init__(
             auth=auth,
