@@ -185,10 +185,6 @@ class FastClient:
 
         typ: Type[BaseService] = type(protocol.__name__, (BaseService,), attributes)
 
-        # NOTE: Although `typ` was assigned all of the operation members as attributes, it may
-        # be missing other non-operation methods or attributes that was cause it to not truly
-        # implement the protocol. Checks should be made and exceptions should be thrown to assert
-        # that this is not the case.
         obj: T = typ()  # type: ignore
 
         member_name: str
@@ -209,8 +205,6 @@ class FastClient:
 
             operation: Operation = bound_member.operation
 
-            # NOTE: Will this not propagate?? Surely a clone of the `Operation` should be made
-            # before changing anything
             operation.func = bound_member
 
             setattr(obj, member_name, bound_member)
