@@ -26,6 +26,33 @@ from httpx._types import (
 )
 from typing_extensions import TypeAlias
 
+__all__: Sequence[str] = (
+    "AuthTypes",
+    "CertTypes",
+    "ProxiesTypes",
+    "RequestContent",
+    "RequestData",
+    "RequestFiles",
+    "TimeoutTypes",
+    "URLTypes",
+    "VerifyTypes",
+    "Primitive",
+    "QueryTypes",
+    "HeaderTypes",
+    "CookieTypes",
+    "PathTypes",
+    "QueriesTypes",
+    "HeadersTypes",
+    "CookiesTypes",
+    "PathsTypes",
+    "MethodTypes",
+    "JsonTypes",
+    "StreamTypes",
+    "EventHook",
+    "EventHooks",
+    "DefaultEncodingTypes",
+)
+
 StrOrBytes = TypeVar("StrOrBytes", str, bytes)
 
 Primitive: TypeAlias = Union[
@@ -63,6 +90,6 @@ PathsTypes: TypeAlias = Union[
 MethodTypes: TypeAlias = Union[str, bytes]
 JsonTypes: TypeAlias = Any
 StreamTypes: TypeAlias = Union[SyncByteStream, AsyncByteStream]
-EventHooks: TypeAlias = Mapping[str, List[Callable]]
-DefaultEncodingTypes: TypeAlias = Union[str, Callable[[bytes], str]]
 EventHook: TypeAlias = Callable[..., Any]
+EventHooks: TypeAlias = Mapping[str, List[EventHook]]
+DefaultEncodingTypes: TypeAlias = Union[str, Callable[[bytes], str]]
