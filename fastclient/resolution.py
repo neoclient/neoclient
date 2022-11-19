@@ -69,8 +69,6 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
 
         fields[field_name] = (model_field.annotation, parameter_clone)
 
-    # TODO: Validation? (e.g. no duplicate parameters?)
-
     return fields
 
 
