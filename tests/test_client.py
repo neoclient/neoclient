@@ -90,17 +90,6 @@ def test_query_required_not_omitted(client: FastClient):
     )
 
 
-# TODO: Stop skipping this test
-@pytest.mark.skip(reason="Functionality temporarily removed, needs to be re-added")
-def test_error_if_extra_path_param(client: FastClient):
-    with pytest.raises(IncompatiblePathParameters):
-
-        class Service(Protocol):
-            @get("/users/")
-            def get(self, id: str = Path()) -> RequestOptions:
-                ...
-
-
 def test_single_body_param(client: FastClient):
     class Service(Protocol):
         @post("/items/")
