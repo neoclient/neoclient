@@ -1,10 +1,16 @@
-from typing import Any, Callable, Mapping, Tuple, Type
+from typing import Any, Callable, Mapping, Sequence, Tuple, Type
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
 from . import utils
-from .validation import ValidatedFunction
+from .validation import create_func_model
+
+__all__: Sequence[str] = (
+    "create_model_cls",
+    "create_model",
+    "bind_arguments",
+)
 
 
 def create_model_cls(
@@ -14,7 +20,7 @@ def create_model_cls(
         allow_population_by_field_name: bool = True
         arbitrary_types_allowed: bool = True
 
-    return ValidatedFunction(func, config=Config)._create_model(fields, config=Config)
+    return create_func_model(func, fields, config=Config)
 
 
 def create_model(

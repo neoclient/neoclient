@@ -4,16 +4,16 @@ from typing import Any, Callable, MutableMapping, Optional, TypeVar
 from httpx import Response
 from pydantic.fields import ModelField
 
-from .errors import ResolutionError
-from .parameters import BaseParameter
-from .resolution.api import resolve
-from .resolution.typing import ResolutionFunction
+from .errors import PreparationError, ResolutionError
+from .params import Parameter
+from .resolution import resolve
+from .typing import Resolver
 
 T = TypeVar("T")
 
 
 @dataclass
-class DependencyResolutionFunction(ResolutionFunction[T]):
+class DependencyResolver(Resolver[T]):
     dependency: Callable[..., T]
 
     def __call__(self, response: Response, /) -> T:
@@ -21,7 +21,7 @@ class DependencyResolutionFunction(ResolutionFunction[T]):
 
 
 @dataclass
-class DependencyParameter(BaseParameter):
+class DependencyParameter(Parameter):
     dependency: Optional[Callable] = None
     use_cache: bool = True
 
@@ -43,7 +43,7 @@ class DependencyParameter(BaseParameter):
         if self.use_cache and self.dependency in cached_dependencies:
             return cached_dependencies[self.dependency]
 
-        resolved: Any = DependencyResolutionFunction(self.dependency)(response)
+        resolved: Any = DependencyResolver(self.dependency)(response)
 
         # Cache resolved dependency
         cached_dependencies[self.dependency] = resolved
@@ -51,13 +51,10 @@ class DependencyParameter(BaseParameter):
         return resolved
 
     def prepare(self, field: ModelField, /) -> None:
-        super().prepare(field)
-
         if self.dependency is None:
             if not callable(field.annotation):
-                # NOTE: This could also viably be a `CompositionError`, maybe throw a `PreparationError` instead?
-                raise ResolutionError(
-                    f"Failed to resolve parameter: {self!r}. Dependency has non-callable annotation"
+                raise PreparationError(
+                    f"Failed to prepare parameter: {self!r}. Dependency has non-callable annotation"
                 )
 
             self.dependency = field.annotation

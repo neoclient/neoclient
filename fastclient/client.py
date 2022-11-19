@@ -1,18 +1,31 @@
-import functools
+import dataclasses
 import inspect
 from dataclasses import dataclass
-from typing import Any, Callable, List, Mapping, Optional, Type, TypeVar
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Type, TypeVar
 
 import httpx
-from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
-from loguru import logger
+from httpx import URL, Cookies, Headers, QueryParams, Timeout
+from httpx._auth import Auth
 from typing_extensions import ParamSpec
 
-from . import __version__
-from .composition.api import get_fields
-from .enums import HttpMethod, MethodKind
-from .models import ClientOptions, OperationSpecification, RequestOptions
-from .operations import CallableWithOperation, Operation
+from . import __version__, converters
+from .composition import get_fields, validate_fields
+from .defaults import (
+    DEFAULT_AUTH,
+    DEFAULT_BASE_URL,
+    DEFAULT_COOKIES,
+    DEFAULT_ENCODING,
+    DEFAULT_EVENT_HOOKS,
+    DEFAULT_FOLLOW_REDIRECTS,
+    DEFAULT_HEADERS,
+    DEFAULT_MAX_REDIRECTS,
+    DEFAULT_PARAMS,
+    DEFAULT_TIMEOUT,
+    DEFAULT_TRUST_ENV,
+)
+from .enums import HttpMethod, MethodKind, HeaderName
+from .models import OperationSpecification, RequestOptions
+from .operation import CallableWithOperation, Operation
 from .types import (
     AuthTypes,
     CookiesTypes,
@@ -25,9 +38,7 @@ from .types import (
 )
 from .utils import get_method_kind
 
-__all__: List[str] = [
-    "FastClient",
-]
+__all__: Sequence[str] = ("FastClient",)
 
 
 T = TypeVar("T")
@@ -35,32 +46,61 @@ T = TypeVar("T")
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
 
+USER_AGENT: str = f"fastclient/{__version__}"
+
 
 class BaseService:
     def __repr__(self) -> str:
-        return f"<{type(self).__name__}()>"
+        return f"{type(self).__name__}()"
 
 
 @dataclass(init=False)
-class FastClient:
-    client: Optional[httpx.Client]
+class Client(httpx.Client):
+    auth: Optional[Auth]
+    params: QueryParams
+    headers: Headers
+    cookies: Cookies
+    timeout: Timeout
+    follow_redirects: bool
+    max_redirects: int
+    event_hooks: Dict[str, List[Callable]]
+    base_url: URL
+    trust_env: bool
 
     def __init__(
         self,
-        base_url: URLTypes = "",
+        base_url: URLTypes = DEFAULT_BASE_URL,
         *,
-        auth: Optional[AuthTypes] = None,
-        params: Optional[QueriesTypes] = None,
-        headers: Optional[HeadersTypes] = None,
-        cookies: Optional[CookiesTypes] = None,
-        timeout: TimeoutTypes = DEFAULT_TIMEOUT_CONFIG,
-        follow_redirects: bool = False,
+        auth: Optional[AuthTypes] = DEFAULT_AUTH,
+        params: Optional[QueriesTypes] = DEFAULT_PARAMS,
+        headers: Optional[HeadersTypes] = DEFAULT_HEADERS,
+        cookies: Optional[CookiesTypes] = DEFAULT_COOKIES,
+        timeout: TimeoutTypes = DEFAULT_TIMEOUT,
+        follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
         max_redirects: int = DEFAULT_MAX_REDIRECTS,
-        event_hooks: Optional[EventHooks] = None,
-        trust_env: bool = True,
-        default_encoding: DefaultEncodingTypes = "utf-8",
+        event_hooks: Optional[EventHooks] = DEFAULT_EVENT_HOOKS,
+        trust_env: bool = DEFAULT_TRUST_ENV,
+        default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
     ) -> None:
-        client_options: ClientOptions = ClientOptions(
+        params = (
+            converters.convert_query_params(params)
+            if params is not None
+            else QueryParams()
+        )
+        headers = (
+            converters.convert_headers(headers) if headers is not None else Headers()
+        )
+        cookies = (
+            converters.convert_cookies(cookies) if cookies is not None else Cookies()
+        )
+        timeout = (
+            converters.convert_timeout(timeout) if timeout is not None else Timeout()
+        )
+        base_url = URL(base_url)
+
+        headers.setdefault(HeaderName.USER_AGENT, USER_AGENT)
+
+        super().__init__(
             auth=auth,
             params=params,
             headers=headers,
@@ -74,9 +114,39 @@ class FastClient:
             default_encoding=default_encoding,
         )
 
-        client_options.headers.setdefault("user-agent", f"fastclient/{__version__}")
 
-        self.client = client_options.build()
+@dataclass(init=False)
+class FastClient:
+    client: Optional[httpx.Client]
+
+    def __init__(
+        self,
+        base_url: URLTypes = DEFAULT_BASE_URL,
+        *,
+        auth: Optional[AuthTypes] = DEFAULT_AUTH,
+        params: Optional[QueriesTypes] = DEFAULT_PARAMS,
+        headers: Optional[HeadersTypes] = DEFAULT_HEADERS,
+        cookies: Optional[CookiesTypes] = DEFAULT_COOKIES,
+        timeout: TimeoutTypes = DEFAULT_TIMEOUT,
+        follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
+        max_redirects: int = DEFAULT_MAX_REDIRECTS,
+        event_hooks: Optional[EventHooks] = DEFAULT_EVENT_HOOKS,
+        trust_env: bool = DEFAULT_TRUST_ENV,
+        default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
+    ) -> None:
+        self.client = Client(
+            auth=auth,
+            params=params,
+            headers=headers,
+            cookies=cookies,
+            timeout=timeout,
+            follow_redirects=follow_redirects,
+            max_redirects=max_redirects,
+            event_hooks=event_hooks,
+            base_url=base_url,
+            trust_env=trust_env,
+            default_encoding=default_encoding,
+        )
 
     @classmethod
     def from_client(
@@ -105,10 +175,6 @@ class FastClient:
 
         typ: Type[BaseService] = type(protocol.__name__, (BaseService,), attributes)
 
-        # NOTE: Although `typ` was assigned all of the operation members as attributes, it may
-        # be missing other non-operation methods or attributes that was cause it to not truly
-        # implement the protocol. Checks should be made and exceptions should be thrown to assert
-        # that this is not the case.
         obj: T = typ()  # type: ignore
 
         member_name: str
@@ -129,37 +195,20 @@ class FastClient:
 
             operation: Operation = bound_member.operation
 
-            # NOTE: Will this not propagate?? Surely a clone of the `Operation` should be made
-            # before changing anything
             operation.func = bound_member
 
             setattr(obj, member_name, bound_member)
 
         return obj
 
-    def _wrap(self, operation: Operation[PS, RT], /) -> CallableWithOperation[PS, RT]:
-        @functools.wraps(operation.func)
-        def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> RT:
-            if inspect.ismethod(operation.func):
-                # Read off `self` or `cls`
-                _, *args = args  # type: ignore
-
-            return operation(*args, **kwargs)
-
-        setattr(wrapper, "operation", operation)
-
-        return wrapper  # type: ignore
-
     def bind(
         self, func: CallableWithOperation[PS, RT], /
     ) -> CallableWithOperation[PS, RT]:
-        operation: Operation[PS, RT] = func.operation
-
-        bound_operation: Operation[PS, RT] = Operation(
-            operation.func, operation.specification, self.client
+        bound_operation: Operation[PS, RT] = dataclasses.replace(
+            func.operation, client=self.client
         )
 
-        return self._wrap(bound_operation)
+        return bound_operation.wrapper
 
     def request(
         self,
@@ -167,7 +216,7 @@ class FastClient:
         endpoint: str,
         /,
         *,
-        response: Optional[Callable[..., Any]] = None,
+        response: Optional[Callable] = None,
     ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         specification: OperationSpecification = OperationSpecification(
             request=RequestOptions(
@@ -178,52 +227,46 @@ class FastClient:
         )
 
         def decorator(func: Callable[PS, RT], /) -> CallableWithOperation[PS, RT]:
-            logger.info(f"Creating operation: {method=} {endpoint=} {func=}")
-
             operation: Operation[PS, RT] = Operation(func, specification, self.client)
 
-            logger.info(f"Created operation: {operation!r}")
+            # Validate operation function parameters are acceptable
+            validate_fields(get_fields(specification.request, func))
 
-            wrapped_func: CallableWithOperation[PS, RT] = self._wrap(operation)
-
-            # Assert params are valid
-            get_fields(operation.specification.request, wrapped_func)
-
-            return wrapped_func
+            return operation.wrapper
 
         return decorator
 
     def put(
-        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+        self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.PUT.name, endpoint, response=response)
 
     def get(
-        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+        self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.GET.name, endpoint, response=response)
 
     def post(
-        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+        self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.POST.name, endpoint, response=response)
 
     def head(
-        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+        self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.HEAD.name, endpoint, response=response)
 
     def patch(
-        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+        self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.PATCH.name, endpoint, response=response)
 
     def delete(
-        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+        self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.DELETE.name, endpoint, response=response)
 
     def options(
-        self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
+        self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
         return self.request(HttpMethod.OPTIONS.name, endpoint, response=response)

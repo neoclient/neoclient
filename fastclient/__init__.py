@@ -1,56 +1,19 @@
-__version__: str = "0.1.3"
+r"""
+  __           _       _ _            _
+ / _| __ _ ___| |_ ___| (_) ___ _ __ | |_
+| |_ / _` / __| __/ __| | |/ _ \ '_ \| __|
+|  _| (_| \__ \ || (__| | |  __/ | | | |_
+|_|  \__,_|___/\__\___|_|_|\___|_| |_|\__|
 
-__all__ = [
-    # .client
-    "FastClient",
-    # .composition.decorators
-    "content",
-    "cookie",
-    "cookies",
-    "data",
-    "files",
-    "header",
-    "headers",
-    "json",
-    "path",
-    "path_params",
-    "query",
-    "query_params",
-    "timeout",
-    # .methods
-    "delete",
-    "get",
-    "head",
-    "options",
-    "patch",
-    "post",
-    "put",
-    "request",
-    # .models
-    "Client",
-    # .parameter_functions
-    "URL",
-    "Body",
-    "Cookie",
-    "Cookies",
-    "Depends",
-    "Header",
-    "Headers",
-    "Path",
-    "Paths",
-    "Queries",
-    "Query",
-    "Request",
-    "Response",
-    "StatusCode",
-]
+       Fast API Clients for Python
+       ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+               @tombulled
+"""
 
-from loguru import logger
-
-logger.disable(__name__)
+__version__: str = "0.1.5"
 
 from .client import FastClient
-from .composition.decorators import (
+from .decorators import (
     content,
     cookie,
     cookies,
@@ -66,8 +29,7 @@ from .composition.decorators import (
     timeout,
 )
 from .methods import delete, get, head, options, patch, post, put, request
-from .models import Client
-from .parameter_functions import (
+from .param_functions import (
     URL,
     Body,
     Cookie,

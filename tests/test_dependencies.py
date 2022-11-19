@@ -2,11 +2,11 @@ from http import HTTPStatus
 
 from httpx import Request, Response
 
-from fastclient.dependencies import DependencyResolutionFunction
+from fastclient.dependencies import DependencyResolver
 from fastclient.enums import HttpMethod
 
 
-def test_DependencyResolutionFunction() -> None:
+def test_DependencyResolver() -> None:
     def dependency(response: Response, /) -> Response:
         return response
 
@@ -14,4 +14,4 @@ def test_DependencyResolutionFunction() -> None:
         HTTPStatus.OK, request=Request(HttpMethod.GET, "https://foo.com/")
     )
 
-    assert DependencyResolutionFunction(dependency)(response) == response
+    assert DependencyResolver(dependency)(response) == response

@@ -1,11 +1,22 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Protocol, TypeVar
+from typing import Any, Callable, Optional, Protocol, Sequence, TypeVar
 
 from typing_extensions import ParamSpec
 
 from .client import FastClient
 from .enums import HttpMethod
-from .operations import CallableWithOperation
+from .operation import CallableWithOperation
+
+__all__: Sequence[str] = (
+    "request",
+    "put",
+    "get",
+    "post",
+    "head",
+    "patch",
+    "delete",
+    "options",
+)
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT")

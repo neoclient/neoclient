@@ -1,35 +1,31 @@
 import dataclasses
-from typing import Any, Callable, List, Mapping, MutableMapping, Tuple, Type
+from typing import Any, Callable, Mapping, MutableMapping, Tuple, Type
 
 from httpx import URL, Cookies, Headers, QueryParams, Request, Response
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo, ModelField
 
-from .. import utils
-from ..parameters import (
-    BaseParameter,
+from . import api, utils
+from .params import (
     BodyParameter,
     CookiesParameter,
     HeadersParameter,
+    Parameter,
     QueriesParameter,
     QueryParameter,
     RequestParameter,
     ResponseParameter,
     URLParameter,
 )
-from ..validation import ValidatedFunction
-
-__all__: List[str] = [
-    "get_fields",
-]
+from .validation import ValidatedFunction
 
 
-def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
+def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
     class Config:
         allow_population_by_field_name: bool = True
         arbitrary_types_allowed: bool = True
 
-    httpx_lookup: Mapping[Type[Any], Type[BaseParameter]] = {
+    httpx_lookup: Mapping[Type[Any], Type[Parameter]] = {
         Request: RequestParameter,
         Response: ResponseParameter,
         URL: URLParameter,
@@ -38,7 +34,7 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
         Cookies: CookiesParameter,
     }
 
-    fields: MutableMapping[str, Tuple[Any, BaseParameter]] = {}
+    fields: MutableMapping[str, Tuple[Any, Parameter]] = {}
 
     field_name: str
     model_field: ModelField
@@ -46,13 +42,9 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
         func, config=Config
     ).model.__fields__.items():
         field_info: FieldInfo = model_field.field_info
-        parameter: BaseParameter
+        parameter: Parameter
 
-        if isinstance(field_info, BaseParameter):
-            parameter = field_info
-        else:
-            # TODO: Support inference of path parameters
-
+        if not isinstance(field_info, Parameter):
             if model_field.annotation in httpx_lookup:
                 parameter = httpx_lookup[model_field.annotation]()
             elif (
@@ -67,11 +59,40 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, BaseParameter]]:
                 parameter = QueryParameter(
                     default=utils.get_default(field_info),
                 )
+        else:
+            parameter = field_info
 
-        parameter.prepare(model_field)
+        # Create a clone of the parameter so that any mutations do not affect the original
+        parameter_clone: Parameter = dataclasses.replace(parameter)
 
-        fields[field_name] = (model_field.annotation, parameter)
+        parameter_clone.prepare(model_field)
 
-    # TODO: Validation? (e.g. no duplicate parameters?)
+        fields[field_name] = (model_field.annotation, parameter_clone)
 
     return fields
+
+
+def resolve(
+    func: Callable,
+    response: Response,
+) -> Any:
+    fields: Mapping[str, Tuple[Any, Parameter]] = get_fields(func)
+
+    model_cls: Type[BaseModel] = api.create_model_cls(func, fields)
+
+    arguments: MutableMapping[str, Any] = {}
+
+    field_name: str
+    parameter: Parameter
+    for field_name, (_, parameter) in fields.items():
+        arguments[field_name] = parameter.resolve(response)
+
+    model: BaseModel = model_cls(**arguments)
+
+    validated_arguments: Mapping[str, Any] = model.dict()
+
+    args: Tuple[Any, ...]
+    kwargs: Mapping[str, Any]
+    args, kwargs = utils.unpack_arguments(func, validated_arguments)
+
+    return func(*args, **kwargs)

@@ -1,11 +1,13 @@
-from typing import Optional, Protocol
+from typing import Callable, Optional, Protocol
 
 import pytest
 from pydantic import BaseModel, Required
 
-from fastclient import Body, FastClient, Path, Queries, Query, get, post
+from fastclient import Body, FastClient, Path, Queries, Query
 from fastclient.errors import IncompatiblePathParameters
-from fastclient.models import RequestOptions
+from fastclient.methods import get, post, request
+from fastclient.models import OperationSpecification, RequestOptions
+from fastclient.operation import CallableWithOperation
 
 
 class Model(BaseModel):
@@ -24,6 +26,39 @@ class Item(Model):
 @pytest.fixture
 def client() -> FastClient:
     return FastClient()
+
+
+def test_bind(client: FastClient) -> None:
+    method: str = "METHOD"
+    endpoint: str = "/endpoint"
+    response: Callable = lambda: None
+
+    @request(method, endpoint, response=response)
+    def foo():
+        ...
+
+    bound_foo: CallableWithOperation = client.bind(foo)
+
+    assert bound_foo.operation.client == client.client
+
+
+def test_request(client: FastClient) -> None:
+    method: str = "METHOD"
+    endpoint: str = "/endpoint"
+    response: Callable = lambda: None
+
+    @client.request(method, endpoint, response=response)
+    def foo():
+        ...
+
+    assert foo.operation.specification == OperationSpecification(
+        request=RequestOptions(
+            method=method,
+            url=endpoint,
+        ),
+        response=response,
+    )
+    assert foo.operation.client == client.client
 
 
 def test_query_not_required_omitted(client: FastClient):
@@ -53,17 +88,6 @@ def test_query_required_not_omitted(client: FastClient):
         url="get",
         params={"q": "foo"},
     )
-
-
-# TODO: Stop skipping this test
-@pytest.mark.skip(reason="Functionality temporarily removed, needs to be re-added")
-def test_error_if_extra_path_param(client: FastClient):
-    with pytest.raises(IncompatiblePathParameters):
-
-        class Service(Protocol):
-            @get("/users/")
-            def get(self, id: str = Path()) -> RequestOptions:
-                ...
 
 
 def test_single_body_param(client: FastClient):

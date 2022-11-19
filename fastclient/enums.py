@@ -1,4 +1,11 @@
 from enum import Enum, auto
+from typing import Sequence
+
+__all__: Sequence[str] = (
+    "HttpMethod",
+    "MethodKind",
+    "HeaderName",
+)
 
 
 class HiddenValueEnum(Enum):
@@ -25,3 +32,8 @@ class MethodKind(HiddenValueEnum):
     METHOD = auto()
     CLASS_METHOD = auto()
     STATIC_METHOD = auto()
+
+
+class HeaderName(HiddenValueEnum, StrEnum):
+    USER_AGENT = "User-Agent"
+    CONTENT_TYPE = "Content-Type"

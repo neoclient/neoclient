@@ -1,3 +1,4 @@
+import functools
 import inspect
 from dataclasses import dataclass
 from json import JSONDecodeError
@@ -7,6 +8,7 @@ from typing import (
     Generic,
     Optional,
     Protocol,
+    Sequence,
     TypeVar,
     runtime_checkable,
 )
@@ -14,13 +16,17 @@ from typing import (
 import httpx
 import pydantic
 from httpx import Client, Response
-from loguru import logger
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from .composition.api import compose
+from .composition import compose
 from .models import OperationSpecification, RequestOptions
-from .resolution.api import resolve
+from .resolution import resolve
+
+__all__: Sequence[str] = (
+    "CallableWithOperation",
+    "Operation",
+)
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT", covariant=True)
@@ -52,8 +58,6 @@ class Operation(Generic[PS, RT]):
 
         request: httpx.Request = request_options.build_request(self.client)
 
-        logger.info(f"Built httpx request: {request!r}")
-
         return_annotation: Any = inspect.signature(self.func).return_annotation
 
         if return_annotation is RequestOptions:
@@ -66,12 +70,9 @@ class Operation(Generic[PS, RT]):
         response: Response = client.send(request)
 
         if self.specification.response is not None:
-            # TODO: Pass `request_options` as well through the resolution process
             return resolve(self.specification.response, response)
 
         if return_annotation is inspect.Parameter.empty:
-            # TODO: Check "Content-Type" header and decide what to do from that
-            # E.g., if "application/json" call .json(), if "text/plain" use .text, etc.
             try:
                 return response.json()
             except JSONDecodeError:
@@ -86,3 +87,17 @@ class Operation(Generic[PS, RT]):
             return return_annotation.parse_obj(response.json())
 
         return pydantic.parse_raw_as(return_annotation, response.text)
+
+    @property
+    def wrapper(self) -> CallableWithOperation[PS, RT]:
+        @functools.wraps(self.func)
+        def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> RT:
+            if inspect.ismethod(self.func):
+                # Read off `self` or `cls`
+                _, *args = args  # type: ignore
+
+            return self(*args, **kwargs)
+
+        setattr(wrapper, "operation", self)
+
+        return wrapper  # type: ignore

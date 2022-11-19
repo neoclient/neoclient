@@ -1,16 +1,18 @@
 from dataclasses import dataclass
-from typing import Any, List, Mapping
+from typing import Mapping, Sequence
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 
-from .. import converters
-from ..models import RequestOptions
-from ..types import (
-    CookiesTypes,
-    HeadersTypes,
+from . import converters
+from .models import RequestOptions
+from .types import (
+    CookieTypes,
+    HeaderTypes,
     JsonTypes,
     PathsTypes,
+    PathTypes,
     QueriesTypes,
+    QueryTypes,
     RequestContent,
     RequestData,
     RequestFiles,
@@ -18,7 +20,7 @@ from ..types import (
 )
 from .typing import RequestConsumer
 
-__all__: List[str] = [
+__all__: Sequence[str] = (
     "QueryConsumer",
     "HeaderConsumer",
     "CookieConsumer",
@@ -32,119 +34,103 @@ __all__: List[str] = [
     "FilesConsumer",
     "JsonConsumer",
     "TimeoutConsumer",
-]
+)
 
 
-@dataclass
+@dataclass(init=False)
 class QueryConsumer(RequestConsumer):
     key: str
     value: str
 
+    def __init__(self, key: str, value: QueryTypes) -> None:
+        self.key = key
+        self.value = converters.convert_query_param(value)
+
     def __call__(self, request: RequestOptions, /) -> None:
         request.params = request.params.set(self.key, self.value)
 
-    @classmethod
-    def parse(cls, key: str, value: Any) -> "QueryConsumer":
-        return cls(
-            key,
-            converters.convert_query_param(value),
-        )
 
-
-@dataclass
+@dataclass(init=False)
 class HeaderConsumer(RequestConsumer):
     key: str
     value: str
 
+    def __init__(self, key: str, value: HeaderTypes) -> None:
+        self.key = key
+        self.value = converters.convert_header(value)
+
     def __call__(self, request: RequestOptions, /) -> None:
         request.headers[self.key] = self.value
 
-    @classmethod
-    def parse(cls, key: str, value: Any) -> "HeaderConsumer":
-        return cls(
-            key,
-            converters.convert_header(value),
-        )
 
-
-@dataclass
+@dataclass(init=False)
 class CookieConsumer(RequestConsumer):
     key: str
     value: str
 
+    def __init__(self, key: str, value: CookieTypes) -> None:
+        self.key = key
+        self.value = converters.convert_cookie(value)
+
     def __call__(self, request: RequestOptions, /) -> None:
         request.cookies[self.key] = self.value
 
-    @classmethod
-    def parse(cls, key: str, value: Any) -> "CookieConsumer":
-        return cls(
-            key,
-            converters.convert_cookie(value),
-        )
 
-
-@dataclass
+@dataclass(init=False)
 class PathConsumer(RequestConsumer):
     key: str
     value: str
 
+    def __init__(self, key: str, value: PathTypes) -> None:
+        self.key = key
+        self.value = converters.convert_path_param(value)
+
     def __call__(self, request: RequestOptions, /) -> None:
         request.path_params[self.key] = self.value
 
-    @classmethod
-    def parse(cls, key: str, value: Any) -> "PathConsumer":
-        return cls(
-            key,
-            converters.convert_path_param(value),
-        )
 
-
-@dataclass
+@dataclass(init=False)
 class QueriesConsumer(RequestConsumer):
     params: QueryParams
+
+    def __init__(self, params: QueriesTypes, /) -> None:
+        self.params = converters.convert_query_params(params)
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.params = request.params.merge(self.params)
 
-    @classmethod
-    def parse(cls, params: QueriesTypes) -> "QueriesConsumer":
-        return cls(converters.convert_query_params(params))
 
-
-@dataclass
+@dataclass(init=False)
 class HeadersConsumer(RequestConsumer):
     headers: Headers
+
+    def __init__(self, headers: HeaderTypes, /) -> None:
+        self.headers = converters.convert_headers(headers)
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.headers.update(self.headers)
 
-    @classmethod
-    def parse(cls, headers: HeadersTypes) -> "HeadersConsumer":
-        return cls(converters.convert_headers(headers))
 
-
-@dataclass
+@dataclass(init=False)
 class CookiesConsumer(RequestConsumer):
     cookies: Cookies
+
+    def __init__(self, cookies: CookieTypes, /) -> None:
+        self.cookies = converters.convert_cookies(cookies)
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.cookies.update(self.cookies)
 
-    @classmethod
-    def parse(cls, cookies: CookiesTypes) -> "CookiesConsumer":
-        return cls(converters.convert_cookies(cookies))
 
-
-@dataclass
+@dataclass(init=False)
 class PathsConsumer(RequestConsumer):
     path_params: Mapping[str, str]
 
+    def __init__(self, path_params: PathsTypes, /) -> None:
+        self.path_params = converters.convert_path_params(path_params)
+
     def __call__(self, request: RequestOptions, /) -> None:
         request.path_params.update(self.path_params)
-
-    @classmethod
-    def parse(cls, path_params: PathsTypes) -> "PathsConsumer":
-        return cls(converters.convert_path_params(path_params))
 
 
 @dataclass
@@ -179,13 +165,12 @@ class JsonConsumer(RequestConsumer):
         request.json = self.json
 
 
-@dataclass
+@dataclass(init=False)
 class TimeoutConsumer(RequestConsumer):
     timeout: Timeout
 
+    def __init__(self, timeout: TimeoutTypes, /) -> None:
+        self.timeout = converters.convert_timeout(timeout)
+
     def __call__(self, request: RequestOptions, /) -> None:
         request.timeout = self.timeout
-
-    @classmethod
-    def parse(cls, timeout: TimeoutTypes) -> "TimeoutConsumer":
-        return cls(converters.convert_timeout(timeout))

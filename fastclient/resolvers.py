@@ -1,25 +1,25 @@
 from dataclasses import dataclass
-from typing import Any, List, Optional, TypeVar
+from typing import Any, Optional, Sequence, TypeVar
 
 from httpx import Cookies, Headers, QueryParams, Response
 
-from .typing import ResolutionFunction
+from .typing import Resolver
 
-__all__: List[str] = [
-    "BodyResolutionFunction",
-    "CookieResolutionFunction",
-    "CookiesResolutionFunction",
-    "HeaderResolutionFunction",
-    "HeadersResolutionFunction",
-    "QueryResolutionFunction",
-    "QueriesResolutionFunction",
-]
+__all__: Sequence[str] = (
+    "BodyResolver",
+    "CookieResolver",
+    "CookiesResolver",
+    "HeaderResolver",
+    "HeadersResolver",
+    "QueryResolver",
+    "QueriesResolver",
+)
 
 T = TypeVar("T")
 
 
 @dataclass
-class QueryResolutionFunction(ResolutionFunction[Optional[str]]):
+class QueryResolver(Resolver[Optional[str]]):
     name: str
 
     def __call__(self, response: Response, /) -> Optional[str]:
@@ -27,7 +27,7 @@ class QueryResolutionFunction(ResolutionFunction[Optional[str]]):
 
 
 @dataclass
-class HeaderResolutionFunction(ResolutionFunction[Optional[str]]):
+class HeaderResolver(Resolver[Optional[str]]):
     name: str
 
     def __call__(self, response: Response, /) -> Optional[str]:
@@ -35,33 +35,32 @@ class HeaderResolutionFunction(ResolutionFunction[Optional[str]]):
 
 
 @dataclass
-class CookieResolutionFunction(ResolutionFunction[Optional[str]]):
+class CookieResolver(Resolver[Optional[str]]):
     name: str
 
     def __call__(self, response: Response, /) -> Optional[str]:
         return response.cookies.get(self.name)
 
 
-class QueriesResolutionFunction(ResolutionFunction[QueryParams]):
+class QueriesResolver(Resolver[QueryParams]):
     @staticmethod
     def __call__(response: Response, /) -> QueryParams:
         return response.request.url.params
 
 
-class HeadersResolutionFunction(ResolutionFunction[Headers]):
+class HeadersResolver(Resolver[Headers]):
     @staticmethod
     def __call__(response: Response, /) -> Headers:
         return response.headers
 
 
-class CookiesResolutionFunction(ResolutionFunction[Cookies]):
+class CookiesResolver(Resolver[Cookies]):
     @staticmethod
     def __call__(response: Response, /) -> Cookies:
         return response.cookies
 
 
-class BodyResolutionFunction(ResolutionFunction[Any]):
+class BodyResolver(Resolver[Any]):
     @staticmethod
     def __call__(response: Response, /) -> Any:
-        # TODO: Massively improve this implementation
         return response.json()

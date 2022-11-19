@@ -1,20 +1,25 @@
 from http.cookiejar import CookieJar
-from typing import Any, List, Mapping, MutableMapping, MutableSequence, Sequence
+from typing import Any, Mapping, MutableMapping, MutableSequence, Sequence
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 from httpx._utils import primitive_value_to_str
 
+from .errors import ConversionError
 from .types import (
     CookiesTypes,
+    CookieTypes,
     HeadersTypes,
+    HeaderTypes,
     PathsTypes,
     PathTypes,
     Primitive,
     QueriesTypes,
+    QueryTypes,
     TimeoutTypes,
 )
+from .utils import is_primitive
 
-__all__: List[str] = [
+__all__: Sequence[str] = (
     "convert_query_param",
     "convert_header",
     "convert_cookie",
@@ -24,19 +29,28 @@ __all__: List[str] = [
     "convert_cookies",
     "convert_path_params",
     "convert_timeout",
-]
+)
 
 
-def convert_query_param(value: Any, /) -> str:
-    return primitive_value_to_str(value)
+def convert_query_param(value: QueryTypes, /) -> str:
+    if is_primitive(value):
+        return primitive_value_to_str(value)
+    else:
+        return str(value)
 
 
-def convert_header(value: Any, /) -> str:
-    return primitive_value_to_str(value)
+def convert_header(value: HeaderTypes, /) -> str:
+    if is_primitive(value):
+        return primitive_value_to_str(value)
+    else:
+        return str(value)
 
 
-def convert_cookie(value: Any, /) -> str:
-    return primitive_value_to_str(value)
+def convert_cookie(value: CookieTypes, /) -> str:
+    if is_primitive(value):
+        return primitive_value_to_str(value)
+    else:
+        return str(value)
 
 
 def convert_path_param(value: PathTypes, /) -> str:
@@ -54,7 +68,7 @@ def convert_path_param(value: PathTypes, /) -> str:
 
         return "/".join(segments)
     else:
-        raise TypeError(f"Cannot convert path param of type {type(value)!r}")
+        raise ConversionError("path param", value)
 
 
 def convert_query_params(value: QueriesTypes, /) -> QueryParams:
@@ -63,7 +77,7 @@ def convert_query_params(value: QueriesTypes, /) -> QueryParams:
     elif isinstance(value, (Mapping, Sequence)):
         return QueryParams(dict(value))
     else:
-        raise TypeError(f"Cannot convert query params of type {type(value)!r}")
+        raise ConversionError("query params", value)
 
 
 def convert_headers(value: HeadersTypes, /) -> Headers:
@@ -72,7 +86,7 @@ def convert_headers(value: HeadersTypes, /) -> Headers:
     elif isinstance(value, (Mapping, Sequence)):
         return Headers(dict(value))
     else:
-        raise TypeError(f"Cannot convert headers of type {type(value)!r}")
+        raise ConversionError("headers", value)
 
 
 def convert_cookies(value: CookiesTypes, /) -> Cookies:
@@ -83,11 +97,14 @@ def convert_cookies(value: CookiesTypes, /) -> Cookies:
     elif isinstance(value, (Mapping, Sequence)):
         return Cookies(dict(value))
     else:
-        raise TypeError(f"Cannot convert cookies of type {type(value)!r}")
+        raise ConversionError("cookies", value)
 
 
 def convert_path_params(path_params: PathsTypes, /) -> MutableMapping[str, str]:
-    return {key: convert_path_param(value) for key, value in path_params.items()}
+    if isinstance(path_params, Mapping):
+        return {key: convert_path_param(value) for key, value in path_params.items()}
+    else:
+        return {key: convert_path_param(value) for key, value in path_params}
 
 
 def convert_timeout(value: TimeoutTypes, /) -> Timeout:

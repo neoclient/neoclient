@@ -3,18 +3,18 @@ from http import HTTPStatus
 from httpx import Cookies, Headers, QueryParams, Request, Response
 
 from fastclient.enums import HttpMethod
-from fastclient.resolution.functions import (
-    BodyResolutionFunction,
-    CookieResolutionFunction,
-    CookiesResolutionFunction,
-    HeaderResolutionFunction,
-    HeadersResolutionFunction,
-    QueriesResolutionFunction,
-    QueryResolutionFunction,
+from fastclient.resolvers import (
+    BodyResolver,
+    CookieResolver,
+    CookiesResolver,
+    HeaderResolver,
+    HeadersResolver,
+    QueriesResolver,
+    QueryResolver,
 )
 
 
-def test_QueryResolutionFunction() -> None:
+def test_QueryResolver() -> None:
     response_with_param: Response = Response(
         HTTPStatus.OK,
         request=Request(
@@ -31,11 +31,11 @@ def test_QueryResolutionFunction() -> None:
         ),
     )
 
-    assert QueryResolutionFunction("name")(response_with_param) == "sam"
-    assert QueryResolutionFunction("name")(response_without_param) is None
+    assert QueryResolver("name")(response_with_param) == "sam"
+    assert QueryResolver("name")(response_without_param) is None
 
 
-def test_HeaderResolutionFunction() -> None:
+def test_HeaderResolver() -> None:
     response_with_header: Response = Response(
         HTTPStatus.OK,
         request=Request(HttpMethod.GET, "https://foo.com/"),
@@ -46,11 +46,11 @@ def test_HeaderResolutionFunction() -> None:
         request=Request(HttpMethod.GET, "https://foo.com/"),
     )
 
-    assert HeaderResolutionFunction("name")(response_with_header) == "sam"
-    assert HeaderResolutionFunction("name")(response_without_header) is None
+    assert HeaderResolver("name")(response_with_header) == "sam"
+    assert HeaderResolver("name")(response_without_header) is None
 
 
-def test_CookieResolutionFunction() -> None:
+def test_CookieResolver() -> None:
     response_with_cookie: Response = Response(
         HTTPStatus.OK,
         request=Request(HttpMethod.GET, "https://foo.com/"),
@@ -61,11 +61,11 @@ def test_CookieResolutionFunction() -> None:
         request=Request(HttpMethod.GET, "https://foo.com/"),
     )
 
-    assert CookieResolutionFunction("name")(response_with_cookie) == "sam"
-    assert CookieResolutionFunction("name")(response_without_cookie) is None
+    assert CookieResolver("name")(response_with_cookie) == "sam"
+    assert CookieResolver("name")(response_without_cookie) is None
 
 
-def test_QueriesResolutionFunction() -> None:
+def test_QueriesResolver() -> None:
     response: Response = Response(
         HTTPStatus.OK,
         request=Request(
@@ -75,34 +75,34 @@ def test_QueriesResolutionFunction() -> None:
         ),
     )
 
-    assert QueriesResolutionFunction()(response) == QueryParams({"name": "sam"})
+    assert QueriesResolver()(response) == QueryParams({"name": "sam"})
 
 
-def test_HeadersResolutionFunction() -> None:
+def test_HeadersResolver() -> None:
     response: Response = Response(
         HTTPStatus.OK,
         request=Request(HttpMethod.GET, "https://foo.com/"),
         headers={"name": "sam"},
     )
 
-    assert HeadersResolutionFunction()(response) == Headers({"name": "sam"})
+    assert HeadersResolver()(response) == Headers({"name": "sam"})
 
 
-def test_CookiesResolutionFunction() -> None:
+def test_CookiesResolver() -> None:
     response: Response = Response(
         HTTPStatus.OK,
         request=Request(HttpMethod.GET, "https://foo.com/"),
         headers={"Set-Cookie": "name=sam; Path=/"},
     )
 
-    assert CookiesResolutionFunction()(response) == Cookies({"name": "sam"})
+    assert CookiesResolver()(response) == Cookies({"name": "sam"})
 
 
-def test_BodyResolutionFunction() -> None:
+def test_BodyResolver() -> None:
     response: Response = Response(
         HTTPStatus.OK,
         request=Request(HttpMethod.GET, "https://foo.com/"),
         json={"name": "sam"},
     )
 
-    assert BodyResolutionFunction()(response) == {"name": "sam"}
+    assert BodyResolver()(response) == {"name": "sam"}

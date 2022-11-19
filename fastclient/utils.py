@@ -4,21 +4,25 @@ from types import FunctionType, MethodType
 from typing import (
     Any,
     Callable,
-    List,
     Mapping,
     MutableMapping,
     MutableSequence,
     Optional,
+    Sequence,
     Set,
     Tuple,
+    Type,
+    TypeVar,
     Union,
 )
 
+from pydantic import BaseConfig, BaseModel, create_model
 from pydantic.fields import FieldInfo, Undefined
+from pydantic.typing import display_as_type
 
 from .enums import MethodKind
 
-__all__: List[str] = [
+__all__: Sequence[str] = (
     "parse_format_string",
     "bind_arguments",
     "is_primitive",
@@ -26,7 +30,10 @@ __all__: List[str] = [
     "get_default",
     "has_default",
     "get_method_kind",
-]
+    "parse_obj_as",
+)
+
+T = TypeVar("T")
 
 
 def parse_format_string(format_string: str, /) -> Set[str]:
@@ -124,3 +131,20 @@ def get_method_kind(method: Union[FunctionType, MethodType, Callable], /) -> Met
         raise ValueError(
             f"Method {method!r} is not a function or method, cannot determine its kind"
         )
+
+
+def parse_obj_as(type_: Type[T], obj: Any) -> T:
+    parsing_type_name: str = f"ParsingModel[{display_as_type(type_)}]"
+
+    class Config(BaseConfig):
+        arbitrary_types_allowed: bool = True
+
+    model_cls: Type[BaseModel] = create_model(
+        parsing_type_name,
+        __config__=Config,
+        __root__=(type_, ...),
+    )
+
+    model: BaseModel = model_cls(__root__=obj)
+
+    return getattr(model, "__root__")
