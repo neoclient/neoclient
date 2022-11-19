@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fastclient"
-version = "0.1.4"
+version = "0.1.5"
 description = "Fast API Clients for Python"
 authors = ["Tom Bulled <26026015+tombulled@users.noreply.github.com>"]
 license = "MIT"
