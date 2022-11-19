@@ -5,19 +5,19 @@ from httpx import Cookies, Headers, QueryParams, Timeout
 from httpx._utils import primitive_value_to_str
 
 from .errors import ConversionError
-from .utils import is_primitive
 from .types import (
     CookiesTypes,
+    CookieTypes,
     HeadersTypes,
+    HeaderTypes,
     PathsTypes,
     PathTypes,
     Primitive,
     QueriesTypes,
-    TimeoutTypes,
     QueryTypes,
-    HeaderTypes,
-    CookieTypes,
+    TimeoutTypes,
 )
+from .utils import is_primitive
 
 __all__: Sequence[str] = (
     "convert_query_param",

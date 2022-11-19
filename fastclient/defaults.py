@@ -1,6 +1,6 @@
 from typing import Optional, Sequence
 
-from httpx import Timeout, URL
+from httpx import URL, Timeout
 
 from .types import (
     AuthTypes,

@@ -1,7 +1,7 @@
 from typing import Mapping, Union
 
-from httpx import QueryParams
 import pytest
+from httpx import QueryParams
 from pydantic.fields import FieldInfo, Undefined
 
 from fastclient import utils

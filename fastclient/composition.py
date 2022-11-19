@@ -18,7 +18,7 @@ from pydantic.fields import FieldInfo, ModelField
 from . import api, utils
 from .errors import DuplicateParameters
 from .models import RequestOptions
-from .params import Parameter, BodyParameter, PathParameter, QueryParameter
+from .params import BodyParameter, Parameter, PathParameter, QueryParameter
 from .validation import ValidatedFunction
 
 __all__: Sequence[str] = (

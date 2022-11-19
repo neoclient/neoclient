@@ -8,12 +8,6 @@ from httpx import Cookies, Headers, QueryParams
 from pydantic import Required
 from pydantic.fields import FieldInfo, ModelField, Undefined
 
-from .converters import (
-    convert_query_param,
-    convert_header,
-    convert_cookie,
-    convert_path_param,
-)
 from .consumers import (
     CookieConsumer,
     CookiesConsumer,
@@ -24,9 +18,14 @@ from .consumers import (
     QueriesConsumer,
     QueryConsumer,
 )
+from .converters import (
+    convert_cookie,
+    convert_header,
+    convert_path_param,
+    convert_query_param,
+)
 from .errors import CompositionError, ResolutionError
 from .models import RequestOptions
-from .utils import parse_obj_as
 from .resolvers import (
     BodyResolver,
     CookieResolver,
@@ -37,7 +36,8 @@ from .resolvers import (
     QueryResolver,
 )
 from .types import CookiesTypes, HeadersTypes, PathsTypes, QueriesTypes
-from .typing import Supplier, RequestConsumer, Resolver
+from .typing import RequestConsumer, Resolver, Supplier
+from .utils import parse_obj_as
 
 __all__: Sequence[str] = (
     "QueryParameter",

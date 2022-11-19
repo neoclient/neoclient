@@ -104,9 +104,7 @@ def test_HeadersConsumer(request_options: RequestOptions) -> None:
 
     assert request_options == replace(ref_request_options, headers=headers)
 
-    assert HeadersConsumer({"name": "sam"}) == HeadersConsumer(
-        Headers({"name": "sam"})
-    )
+    assert HeadersConsumer({"name": "sam"}) == HeadersConsumer(Headers({"name": "sam"}))
 
 
 def test_CookiesConsumer(request_options: RequestOptions) -> None:
@@ -118,9 +116,7 @@ def test_CookiesConsumer(request_options: RequestOptions) -> None:
 
     assert request_options == replace(ref_request_options, cookies=cookies)
 
-    assert CookiesConsumer({"name": "sam"}) == CookiesConsumer(
-        Cookies({"name": "sam"})
-    )
+    assert CookiesConsumer({"name": "sam"}) == CookiesConsumer(Cookies({"name": "sam"}))
 
 
 def test_PathParamsConsumer(request_options: RequestOptions) -> None:

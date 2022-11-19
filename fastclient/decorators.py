@@ -3,22 +3,6 @@ from typing import Protocol, Sequence, TypeVar
 
 from fastclient.models import RequestOptions
 
-from .operation import CallableWithOperation
-from .types import (
-    CookiesTypes,
-    HeadersTypes,
-    JsonTypes,
-    PathsTypes,
-    QueriesTypes,
-    RequestContent,
-    RequestData,
-    RequestFiles,
-    TimeoutTypes,
-    QueryTypes,
-    HeaderTypes,
-    CookieTypes,
-    PathTypes,
-)
 from .consumers import (
     ContentConsumer,
     CookieConsumer,
@@ -33,6 +17,22 @@ from .consumers import (
     QueriesConsumer,
     QueryConsumer,
     TimeoutConsumer,
+)
+from .operation import CallableWithOperation
+from .types import (
+    CookiesTypes,
+    CookieTypes,
+    HeadersTypes,
+    HeaderTypes,
+    JsonTypes,
+    PathsTypes,
+    PathTypes,
+    QueriesTypes,
+    QueryTypes,
+    RequestContent,
+    RequestData,
+    RequestFiles,
+    TimeoutTypes,
 )
 from .typing import RequestConsumer
 

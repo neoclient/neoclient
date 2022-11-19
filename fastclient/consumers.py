@@ -6,17 +6,17 @@ from httpx import Cookies, Headers, QueryParams, Timeout
 from . import converters
 from .models import RequestOptions
 from .types import (
+    CookieTypes,
+    HeaderTypes,
     JsonTypes,
+    PathsTypes,
+    PathTypes,
+    QueriesTypes,
+    QueryTypes,
     RequestContent,
     RequestData,
     RequestFiles,
-    QueryTypes,
-    HeaderTypes,
-    CookieTypes,
-    PathTypes,
-    QueriesTypes,
     TimeoutTypes,
-    PathsTypes,
 )
 from .typing import RequestConsumer
 

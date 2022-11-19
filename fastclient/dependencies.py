@@ -4,7 +4,7 @@ from typing import Any, Callable, MutableMapping, Optional, TypeVar
 from httpx import Response
 from pydantic.fields import ModelField
 
-from .errors import ResolutionError, PreparationError
+from .errors import PreparationError, ResolutionError
 from .params import Parameter
 from .resolution import resolve
 from .typing import Resolver

@@ -132,6 +132,7 @@ def get_method_kind(method: Union[FunctionType, MethodType, Callable], /) -> Met
             f"Method {method!r} is not a function or method, cannot determine its kind"
         )
 
+
 def parse_obj_as(type_: Type[T], obj: Any) -> T:
     parsing_type_name: str = f"ParsingModel[{display_as_type(type_)}]"
 

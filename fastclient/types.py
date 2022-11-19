@@ -1,14 +1,5 @@
 from http.cookiejar import CookieJar
-from typing import (
-    Any,
-    Callable,
-    List,
-    Mapping,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, List, Mapping, Sequence, Tuple, TypeVar, Union
 
 from httpx import Cookies, Headers, QueryParams
 from httpx._types import (

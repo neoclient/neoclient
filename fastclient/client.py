@@ -1,38 +1,28 @@
 import dataclasses
 import inspect
 from dataclasses import dataclass
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    TypeVar,
-)
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Type, TypeVar
 
 import httpx
-from httpx import QueryParams, Headers, Cookies, Timeout, URL
+from httpx import URL, Cookies, Headers, QueryParams, Timeout
 from httpx._auth import Auth
 from typing_extensions import ParamSpec
 
 from . import __version__, converters
-from .defaults import (
-    DEFAULT_BASE_URL,
-    DEFAULT_AUTH,
-    DEFAULT_PARAMS,
-    DEFAULT_HEADERS,
-    DEFAULT_COOKIES,
-    DEFAULT_TIMEOUT,
-    DEFAULT_FOLLOW_REDIRECTS,
-    DEFAULT_MAX_REDIRECTS,
-    DEFAULT_EVENT_HOOKS,
-    DEFAULT_TRUST_ENV,
-    DEFAULT_ENCODING,
-)
 from .composition import get_fields, validate_fields
+from .defaults import (
+    DEFAULT_AUTH,
+    DEFAULT_BASE_URL,
+    DEFAULT_COOKIES,
+    DEFAULT_ENCODING,
+    DEFAULT_EVENT_HOOKS,
+    DEFAULT_FOLLOW_REDIRECTS,
+    DEFAULT_HEADERS,
+    DEFAULT_MAX_REDIRECTS,
+    DEFAULT_PARAMS,
+    DEFAULT_TIMEOUT,
+    DEFAULT_TRUST_ENV,
+)
 from .enums import HttpMethod, MethodKind
 from .models import OperationSpecification, RequestOptions
 from .operation import CallableWithOperation, Operation

@@ -4,9 +4,9 @@ import pytest
 from pydantic import BaseModel, Required
 
 from fastclient import Body, FastClient, Path, Queries, Query
-from fastclient.methods import get, post, request
 from fastclient.errors import IncompatiblePathParameters
-from fastclient.models import RequestOptions, OperationSpecification
+from fastclient.methods import get, post, request
+from fastclient.models import OperationSpecification, RequestOptions
 from fastclient.operation import CallableWithOperation
 
 

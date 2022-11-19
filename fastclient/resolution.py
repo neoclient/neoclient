@@ -7,10 +7,10 @@ from pydantic.fields import FieldInfo, ModelField
 
 from . import api, utils
 from .params import (
-    Parameter,
     BodyParameter,
     CookiesParameter,
     HeadersParameter,
+    Parameter,
     QueriesParameter,
     QueryParameter,
     RequestParameter,
