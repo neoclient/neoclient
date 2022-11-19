@@ -63,5 +63,4 @@ class CookiesResolver(Resolver[Cookies]):
 class BodyResolver(Resolver[Any]):
     @staticmethod
     def __call__(response: Response, /) -> Any:
-        # TODO: Massively improve this implementation
         return response.json()

@@ -45,8 +45,6 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
         parameter: Parameter
 
         if not isinstance(field_info, Parameter):
-            # TODO: Support inference of path parameters?
-
             if model_field.annotation in httpx_lookup:
                 parameter = httpx_lookup[model_field.annotation]()
             elif (

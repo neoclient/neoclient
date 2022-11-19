@@ -1,7 +1,16 @@
 import dataclasses
 import urllib.parse
 from collections import Counter
-from typing import Any, Callable, Mapping, MutableMapping, MutableSequence, Set, Tuple
+from typing import (
+    Any,
+    Callable,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    Sequence,
+    Set,
+    Tuple,
+)
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo, ModelField
@@ -11,6 +20,12 @@ from .errors import DuplicateParameters
 from .models import RequestOptions
 from .params import Parameter, BodyParameter, PathParameter, QueryParameter
 from .validation import ValidatedFunction
+
+__all__: Sequence[str] = (
+    "get_fields",
+    "validate_fields",
+    "compose",
+)
 
 
 def get_fields(
@@ -22,8 +37,6 @@ def get_fields(
         if request is not None
         else set()
     )
-
-    parameter_aliases: MutableSequence[str] = []
 
     fields: MutableMapping[str, Tuple[Any, Parameter]] = {}
 
@@ -60,9 +73,6 @@ def get_fields(
 
         parameter_clone.prepare(model_field)
 
-        if parameter_clone.alias is not None:
-            parameter_aliases.append(parameter_clone.alias)
-
         fields[field_name] = (model_field.annotation, parameter_clone)
 
     total_body_fields: int = sum(
@@ -81,6 +91,16 @@ def get_fields(
 
             fields[field] = (annotation, param)
 
+    return fields
+
+
+def validate_fields(fields: Mapping[str, Tuple[Any, Parameter]], /) -> None:
+    parameter_aliases: MutableSequence[str] = [
+        parameter.alias
+        for _, parameter in fields.values()
+        if parameter.alias is not None
+    ]
+
     # Validate that there are no parameters using the same alias
     #   For example, the following function should fail validation:
     #       @get("/")
@@ -92,8 +112,6 @@ def get_fields(
     if duplicate_aliases:
         raise DuplicateParameters(f"Duplicate parameters: {duplicate_aliases!r}")
 
-    return fields
-
 
 def compose(
     func: Callable,
@@ -104,6 +122,9 @@ def compose(
     arguments: Mapping[str, Any] = api.bind_arguments(func, args, kwargs)
 
     fields: Mapping[str, Tuple[Any, Parameter]] = get_fields(request, func)
+
+    # Validate that the fields are acceptable
+    validate_fields(fields)
 
     model: BaseModel = api.create_model(func, fields, arguments)
 

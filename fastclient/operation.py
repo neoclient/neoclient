@@ -70,12 +70,9 @@ class Operation(Generic[PS, RT]):
         response: Response = client.send(request)
 
         if self.specification.response is not None:
-            # TODO: Pass `request_options` as well through the resolution process
             return resolve(self.specification.response, response)
 
         if return_annotation is inspect.Parameter.empty:
-            # TODO: Check "Content-Type" header and decide what to do from that
-            # E.g., if "application/json" call .json(), if "text/plain" use .text, etc.
             try:
                 return response.json()
             except JSONDecodeError:

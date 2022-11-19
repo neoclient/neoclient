@@ -256,7 +256,6 @@ def Paths(
     )
 
 
-# TODO: Add more parameters for this
 def Body(
     default: Any = Undefined,
     *,

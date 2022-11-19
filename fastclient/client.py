@@ -32,7 +32,7 @@ from .defaults import (
     DEFAULT_TRUST_ENV,
     DEFAULT_ENCODING,
 )
-from .composition import get_fields
+from .composition import get_fields, validate_fields
 from .enums import HttpMethod, MethodKind
 from .models import OperationSpecification, RequestOptions
 from .operation import CallableWithOperation, Operation
@@ -239,9 +239,8 @@ class FastClient:
         def decorator(func: Callable[PS, RT], /) -> CallableWithOperation[PS, RT]:
             operation: Operation[PS, RT] = Operation(func, specification, self.client)
 
-            # Assert params are valid
-            # TODO: Validation should still be done, but not quite in this way
-            get_fields(specification.request, func)
+            # Validate operation function parameters are acceptable
+            validate_fields(get_fields(specification.request, func))
 
             return operation.wrapper
 
