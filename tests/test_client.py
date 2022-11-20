@@ -3,11 +3,10 @@ from typing import Callable, Optional, Protocol
 import pytest
 from pydantic import BaseModel, Required
 
-from fastclient import Body, FastClient, Path, Queries, Query
-from fastclient.errors import IncompatiblePathParameters
+from fastclient import Body, FastClient, Queries, Query
 from fastclient.methods import get, post, request
 from fastclient.models import OperationSpecification, RequestOptions
-from fastclient.operation import CallableWithOperation
+from fastclient.operation import get_operation
 
 
 class Model(BaseModel):
@@ -37,9 +36,9 @@ def test_bind(client: FastClient) -> None:
     def foo():
         ...
 
-    bound_foo: CallableWithOperation = client.bind(foo)
+    bound_foo: Callable = client.bind(foo)
 
-    assert bound_foo.operation.client == client.client
+    assert get_operation(bound_foo).client == client.client
 
 
 def test_request(client: FastClient) -> None:
@@ -51,14 +50,14 @@ def test_request(client: FastClient) -> None:
     def foo():
         ...
 
-    assert foo.operation.specification == OperationSpecification(
+    assert get_operation(foo).specification == OperationSpecification(
         request=RequestOptions(
             method=method,
             url=endpoint,
         ),
         response=response,
     )
-    assert foo.operation.client == client.client
+    assert get_operation(foo).client == client.client
 
 
 def test_query_not_required_omitted(client: FastClient):

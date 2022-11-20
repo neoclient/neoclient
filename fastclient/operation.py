@@ -2,16 +2,7 @@ import functools
 import inspect
 from dataclasses import dataclass
 from json import JSONDecodeError
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Optional,
-    Protocol,
-    Sequence,
-    TypeVar,
-    runtime_checkable,
-)
+from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
 
 import httpx
 import pydantic
@@ -20,24 +11,38 @@ from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
 from .composition import compose
+from .errors import NotAnOperationError
 from .models import OperationSpecification, RequestOptions
 from .resolution import resolve
 
 __all__: Sequence[str] = (
-    "CallableWithOperation",
+    "set_operation",
+    "has_operation",
+    "get_operation",
     "Operation",
 )
 
 PS = ParamSpec("PS")
 RT = TypeVar("RT", covariant=True)
 
+ATTRIBUTE_OPERATION: str = "operation"
 
-@runtime_checkable
-class CallableWithOperation(Protocol[PS, RT]):
-    operation: "Operation"
 
-    def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> RT:
-        ...
+def set_operation(func: Callable, operation: "Operation", /) -> None:
+    setattr(func, ATTRIBUTE_OPERATION, operation)
+
+
+def has_operation(func: Callable, /) -> bool:
+    return hasattr(func, ATTRIBUTE_OPERATION)
+
+
+def get_operation(func: Callable, /) -> "Operation":
+    operation: Optional[Operation] = getattr(func, ATTRIBUTE_OPERATION)
+
+    if operation is None:
+        raise NotAnOperationError(f"{func!r} is not an operation")
+
+    return operation
 
 
 @dataclass
@@ -89,7 +94,7 @@ class Operation(Generic[PS, RT]):
         return pydantic.parse_raw_as(return_annotation, response.text)
 
     @property
-    def wrapper(self) -> CallableWithOperation[PS, RT]:
+    def wrapper(self) -> Callable[PS, RT]:
         @functools.wraps(self.func)
         def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> RT:
             if inspect.ismethod(self.func):
@@ -98,6 +103,6 @@ class Operation(Generic[PS, RT]):
 
             return self(*args, **kwargs)
 
-        setattr(wrapper, "operation", self)
+        set_operation(wrapper, self)
 
-        return wrapper  # type: ignore
+        return wrapper
