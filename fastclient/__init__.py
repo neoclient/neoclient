@@ -10,7 +10,7 @@ r"""
                @tombulled
 """
 
-__version__: str = "0.1.5"
+__version__: str = "0.1.6"
 
 from .client import FastClient
 from .decorators import (
