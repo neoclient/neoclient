@@ -23,9 +23,9 @@ from .defaults import (
     DEFAULT_TIMEOUT,
     DEFAULT_TRUST_ENV,
 )
-from .enums import HttpMethod, MethodKind, HeaderName
+from .enums import HeaderName, HttpMethod, MethodKind
 from .models import OperationSpecification, RequestOptions
-from .operation import get_operation, has_operation, Operation
+from .operation import Operation, get_operation, has_operation
 from .types import (
     AuthTypes,
     CookiesTypes,
@@ -200,9 +200,7 @@ class FastClient:
 
         return obj
 
-    def bind(
-        self, func: Callable[PS, RT], /
-    ) -> Callable[PS, RT]:
+    def bind(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
         operation: Operation = get_operation(func)
 
         bound_operation: Operation[PS, RT] = dataclasses.replace(

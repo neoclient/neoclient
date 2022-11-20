@@ -31,7 +31,9 @@ def func() -> Callable:
 
 
 def test_query(func: Callable) -> None:
-    original_request: RequestOptions = replace(get_operation(func).specification.request)
+    original_request: RequestOptions = replace(
+        get_operation(func).specification.request
+    )
 
     key: str = "name"
     value: str = "sam"
@@ -44,7 +46,9 @@ def test_query(func: Callable) -> None:
 
 
 def test_header(func: Callable) -> None:
-    original_request: RequestOptions = replace(get_operation(func).specification.request)
+    original_request: RequestOptions = replace(
+        get_operation(func).specification.request
+    )
 
     key: str = "name"
     value: str = "sam"
@@ -57,7 +61,9 @@ def test_header(func: Callable) -> None:
 
 
 def test_cookie(func: Callable) -> None:
-    original_request: RequestOptions = replace(get_operation(func).specification.request)
+    original_request: RequestOptions = replace(
+        get_operation(func).specification.request
+    )
 
     key: str = "name"
     value: str = "sam"
@@ -70,7 +76,9 @@ def test_cookie(func: Callable) -> None:
 
 
 def test_path(func: Callable) -> None:
-    original_request: RequestOptions = replace(get_operation(func).specification.request)
+    original_request: RequestOptions = replace(
+        get_operation(func).specification.request
+    )
 
     key: str = "name"
     value: str = "sam"
@@ -83,7 +91,9 @@ def test_path(func: Callable) -> None:
 
 
 def test_query_params(func: Callable) -> None:
-    original_request: RequestOptions = replace(get_operation(func).specification.request)
+    original_request: RequestOptions = replace(
+        get_operation(func).specification.request
+    )
 
     query_params: QueriesTypes = {"name": "sam"}
 
@@ -95,7 +105,9 @@ def test_query_params(func: Callable) -> None:
 
 
 def test_headers(func: Callable) -> None:
-    original_request: RequestOptions = replace(get_operation(func).specification.request)
+    original_request: RequestOptions = replace(
+        get_operation(func).specification.request
+    )
 
     headers: HeadersTypes = {"name": "sam"}
 
@@ -107,7 +119,9 @@ def test_headers(func: Callable) -> None:
 
 
 def test_cookies(func: Callable) -> None:
-    original_request: RequestOptions = replace(get_operation(func).specification.request)
+    original_request: RequestOptions = replace(
+        get_operation(func).specification.request
+    )
 
     cookies: CookiesTypes = {"name": "sam"}
 
@@ -119,7 +133,9 @@ def test_cookies(func: Callable) -> None:
 
 
 def test_path_params(func: Callable) -> None:
-    original_request: RequestOptions = replace(get_operation(func).specification.request)
+    original_request: RequestOptions = replace(
+        get_operation(func).specification.request
+    )
 
     path_params: PathsTypes = {"name": "sam"}
 
@@ -131,7 +147,9 @@ def test_path_params(func: Callable) -> None:
 
 
 def test_content(func: Callable) -> None:
-    original_request: RequestOptions = replace(get_operation(func).specification.request)
+    original_request: RequestOptions = replace(
+        get_operation(func).specification.request
+    )
 
     content: RequestContent = "content"
 
@@ -143,17 +161,23 @@ def test_content(func: Callable) -> None:
 
 
 def test_data(func: Callable) -> None:
-    original_request: RequestOptions = replace(get_operation(func).specification.request)
+    original_request: RequestOptions = replace(
+        get_operation(func).specification.request
+    )
 
     data: RequestData = {"name": "sam"}
 
     decorators.data(data)(func)
 
-    assert get_operation(func).specification.request == replace(original_request, data=data)
+    assert get_operation(func).specification.request == replace(
+        original_request, data=data
+    )
 
 
 def test_files(func: Callable) -> None:
-    original_request: RequestOptions = replace(get_operation(func).specification.request)
+    original_request: RequestOptions = replace(
+        get_operation(func).specification.request
+    )
 
     files: RequestFiles = {"file.txt": BytesIO(b"content")}
 
@@ -165,17 +189,23 @@ def test_files(func: Callable) -> None:
 
 
 def test_json(func: Callable) -> None:
-    original_request: RequestOptions = replace(get_operation(func).specification.request)
+    original_request: RequestOptions = replace(
+        get_operation(func).specification.request
+    )
 
     json: JsonTypes = {"name": "sam"}
 
     decorators.json(json)(func)
 
-    assert get_operation(func).specification.request == replace(original_request, json=json)
+    assert get_operation(func).specification.request == replace(
+        original_request, json=json
+    )
 
 
 def test_timeout(func: Callable) -> None:
-    original_request: RequestOptions = replace(get_operation(func).specification.request)
+    original_request: RequestOptions = replace(
+        get_operation(func).specification.request
+    )
 
     timeout: TimeoutTypes = 5.0
 

@@ -2,14 +2,7 @@ import functools
 import inspect
 from dataclasses import dataclass
 from json import JSONDecodeError
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Optional,
-    Sequence,
-    TypeVar,
-)
+from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
 
 import httpx
 import pydantic
@@ -112,4 +105,4 @@ class Operation(Generic[PS, RT]):
 
         set_operation(wrapper, self)
 
-        return wrapper  # type: ignore
+        return wrapper
