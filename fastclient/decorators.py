@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Protocol, Sequence, TypeVar
+from typing import Callable, Protocol, Sequence, TypeVar
 
 from fastclient.models import RequestOptions
 
@@ -18,7 +18,7 @@ from .consumers import (
     QueryConsumer,
     TimeoutConsumer,
 )
-from .operation import CallableWithOperation
+from .operation import get_operation
 from .types import (
     CookiesTypes,
     CookieTypes,
@@ -52,7 +52,7 @@ __all__: Sequence[str] = (
     "timeout",
 )
 
-C = TypeVar("C", bound=CallableWithOperation)
+C = TypeVar("C", bound=Callable)
 
 
 class Decorator(Protocol):
@@ -65,7 +65,7 @@ class CompositionFacilitator(Decorator):
     composer: RequestConsumer
 
     def __call__(self, func: C, /) -> C:
-        request: RequestOptions = func.operation.specification.request
+        request: RequestOptions = get_operation(func).specification.request
 
         self.composer(request)
 

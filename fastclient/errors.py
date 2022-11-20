@@ -8,6 +8,7 @@ __all__: Sequence[str] = (
     "CompositionError",
     "ResolutionError",
     "ConversionError",
+    "NotAnOperationError",
 )
 
 
@@ -38,3 +39,7 @@ class ConversionError(Exception):
 
     def __str__(self) -> str:
         return f"Cannot convert {self.subject} from type {type(self.value)}"
+
+
+class NotAnOperationError(Exception):
+    pass

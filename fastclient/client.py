@@ -25,7 +25,7 @@ from .defaults import (
 )
 from .enums import HttpMethod, MethodKind, HeaderName
 from .models import OperationSpecification, RequestOptions
-from .operation import CallableWithOperation, Operation
+from .operation import get_operation, has_operation, Operation
 from .types import (
     AuthTypes,
     CookiesTypes,
@@ -162,7 +162,7 @@ class FastClient:
         operations: Mapping[str, Callable] = {
             member_name: member
             for member_name, member in inspect.getmembers(protocol)
-            if isinstance(member, CallableWithOperation)
+            if has_operation(member)
         }
 
         attributes: dict = {"__module__": protocol.__module__}
@@ -180,20 +180,19 @@ class FastClient:
         member_name: str
         member: Any
         for member_name, member in inspect.getmembers(obj):
-            if not isinstance(member, CallableWithOperation):
+            if not has_operation(member):
                 continue
 
-            bound_member: CallableWithOperation = self.bind(member)
-            bound_member_callable: Callable = bound_member
+            bound_member: Callable = self.bind(member)
 
             method_kind: MethodKind = get_method_kind(member)
 
             if method_kind is MethodKind.METHOD:
-                bound_member = bound_member_callable.__get__(obj)
+                bound_member = bound_member.__get__(obj)
             elif method_kind is MethodKind.CLASS_METHOD:
-                bound_member = bound_member_callable.__get__(typ)
+                bound_member = bound_member.__get__(typ)
 
-            operation: Operation = bound_member.operation
+            operation: Operation = get_operation(bound_member)
 
             operation.func = bound_member
 
@@ -202,10 +201,12 @@ class FastClient:
         return obj
 
     def bind(
-        self, func: CallableWithOperation[PS, RT], /
-    ) -> CallableWithOperation[PS, RT]:
+        self, func: Callable[PS, RT], /
+    ) -> Callable[PS, RT]:
+        operation: Operation = get_operation(func)
+
         bound_operation: Operation[PS, RT] = dataclasses.replace(
-            func.operation, client=self.client
+            operation, client=self.client
         )
 
         return bound_operation.wrapper
@@ -217,7 +218,7 @@ class FastClient:
         /,
         *,
         response: Optional[Callable] = None,
-    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         specification: OperationSpecification = OperationSpecification(
             request=RequestOptions(
                 method=method,
@@ -226,7 +227,7 @@ class FastClient:
             response=response,
         )
 
-        def decorator(func: Callable[PS, RT], /) -> CallableWithOperation[PS, RT]:
+        def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
             operation: Operation[PS, RT] = Operation(func, specification, self.client)
 
             # Validate operation function parameters are acceptable
@@ -238,35 +239,35 @@ class FastClient:
 
     def put(
         self, endpoint: str, /, *, response: Optional[Callable] = None
-    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HttpMethod.PUT.name, endpoint, response=response)
 
     def get(
         self, endpoint: str, /, *, response: Optional[Callable] = None
-    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HttpMethod.GET.name, endpoint, response=response)
 
     def post(
         self, endpoint: str, /, *, response: Optional[Callable] = None
-    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HttpMethod.POST.name, endpoint, response=response)
 
     def head(
         self, endpoint: str, /, *, response: Optional[Callable] = None
-    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HttpMethod.HEAD.name, endpoint, response=response)
 
     def patch(
         self, endpoint: str, /, *, response: Optional[Callable] = None
-    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HttpMethod.PATCH.name, endpoint, response=response)
 
     def delete(
         self, endpoint: str, /, *, response: Optional[Callable] = None
-    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HttpMethod.DELETE.name, endpoint, response=response)
 
     def options(
         self, endpoint: str, /, *, response: Optional[Callable] = None
-    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HttpMethod.OPTIONS.name, endpoint, response=response)

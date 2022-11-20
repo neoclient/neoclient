@@ -5,7 +5,6 @@ from typing_extensions import ParamSpec
 
 from .client import FastClient
 from .enums import HttpMethod
-from .operation import CallableWithOperation
 
 __all__: Sequence[str] = (
     "request",
@@ -25,7 +24,7 @@ RT = TypeVar("RT")
 class OperationDecorator(Protocol):
     def __call__(
         self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         ...
 
 
@@ -35,13 +34,13 @@ class MethodOperationDecorator(OperationDecorator):
 
     def __call__(
         self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-    ) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+    ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return FastClient().request(self.method, endpoint, response=response)
 
 
 def request(
     method: str, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
-) -> Callable[[Callable[PS, RT]], CallableWithOperation[PS, RT]]:
+) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
     return MethodOperationDecorator(method)(endpoint, response=response)
 
 
