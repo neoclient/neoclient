@@ -1,10 +1,28 @@
 import dataclasses
 import inspect
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Type, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+)
 
 import httpx
-from httpx import URL, Cookies, Headers, QueryParams, Timeout
+from httpx import (
+    URL,
+    Cookies,
+    Headers,
+    QueryParams,
+    Timeout,
+    Request,
+    Response,
+)
 from httpx._auth import Auth
 from typing_extensions import ParamSpec
 
@@ -24,6 +42,7 @@ from .defaults import (
     DEFAULT_TRUST_ENV,
 )
 from .enums import HeaderName, HttpMethod, MethodKind
+from .middleware import Middleware
 from .models import OperationSpecification, RequestOptions
 from .operation import Operation, get_operation, has_operation
 from .types import (
@@ -118,6 +137,7 @@ class Client(httpx.Client):
 @dataclass(init=False)
 class FastClient:
     client: Optional[httpx.Client]
+    middleware: Middleware
 
     def __init__(
         self,
@@ -147,6 +167,7 @@ class FastClient:
             trust_env=trust_env,
             default_encoding=default_encoding,
         )
+        self.middleware = Middleware()
 
     @classmethod
     def from_client(
@@ -226,7 +247,12 @@ class FastClient:
         )
 
         def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
-            operation: Operation[PS, RT] = Operation(func, specification, self.client)
+            operation: Operation[PS, RT] = Operation(
+                func=func,
+                specification=specification,
+                client=self.client,
+                middleware=self.middleware,
+            )
 
             # Validate operation function parameters are acceptable
             validate_fields(get_fields(specification.request, func))
