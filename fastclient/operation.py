@@ -19,7 +19,6 @@ from httpx import Client, Response
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from . import utils
 from .composition import compose
 from .models import OperationSpecification, RequestOptions
 from .resolution import resolve
