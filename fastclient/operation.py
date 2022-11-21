@@ -73,7 +73,12 @@ class Operation(Generic[PS, RT]):
 
         client: Client = self.client if self.client is not None else Client()
 
-        @self.middleware.compose
+        middleware: Middleware = Middleware()
+
+        middleware.record.extend(self.specification.middleware.record)
+        middleware.record.extend(self.middleware.record)
+
+        @middleware.compose
         def send_request(request: Request, /) -> Response:
             return client.send(request)
 

@@ -1,15 +1,15 @@
 from dataclasses import dataclass, field
-from typing import Protocol, Sequence
+from typing import Optional, Protocol, Sequence
 
 import mediate
 from httpx import Request, Response
 
-from .errors import UnexpectedStatusCodeError
+from .errors import ExpectedStatusCodeError, ExpectedHeaderError
 
 __all__: Sequence[str] = (
     "Middleware",
     "RequestMiddleware",
-    "StatusCodeMiddleware",
+    "ExpectedStatusCodeMiddleware",
     "raise_for_status",
 )
 
@@ -24,7 +24,7 @@ class RequestMiddleware(Protocol):
 
 
 @dataclass(init=False)
-class StatusCodeMiddleware:
+class ExpectedStatusCodeMiddleware:
     codes: Sequence[int] = field(default_factory=list)
 
     def __init__(self, *codes: int) -> None:
@@ -34,8 +34,26 @@ class StatusCodeMiddleware:
         response: Response = call_next(request)
 
         if response.status_code not in self.codes:
-            raise UnexpectedStatusCodeError(
+            raise ExpectedStatusCodeError(
                 f"Response contained an unexpected status code: {response.status_code}"
+            )
+
+        return response
+
+
+@dataclass
+class ExpectedHeaderMiddleware:
+    name: str
+    value: Optional[str] = None
+
+    def __call__(self, call_next: RequestMiddleware, request: Request, /) -> Response:
+        response: Response = call_next(request)
+
+        if self.name not in response.headers:
+            raise ExpectedHeaderError(f"Response missing required header {self.name!r}")
+        elif self.value is not None and response.headers[self.name] != self.value:
+            raise ExpectedHeaderError(
+                f"Response header {self.name!r} has incorrect value. Expected {self.value!r}, got {response.headers[self.name]!r}"
             )
 
         return response
