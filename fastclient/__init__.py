@@ -27,6 +27,7 @@ from .decorators import (
     query,
     query_params,
     timeout,
+    middleware,
 )
 from .methods import delete, get, head, options, patch, post, put, request
 from .param_functions import (

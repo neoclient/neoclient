@@ -37,7 +37,7 @@ def has_operation(func: Callable, /) -> bool:
 
 
 def get_operation(func: Callable, /) -> "Operation":
-    operation: Optional[Operation] = getattr(func, ATTRIBUTE_OPERATION)
+    operation: Optional[Operation] = getattr(func, ATTRIBUTE_OPERATION, None)
 
     if operation is None:
         raise NotAnOperationError(f"{func!r} is not an operation")

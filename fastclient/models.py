@@ -1,5 +1,5 @@
 import urllib.parse
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, MutableMapping, Optional, Sequence, Set
 
 import httpx
@@ -7,6 +7,7 @@ from httpx import URL, Cookies, Headers, QueryParams, Timeout
 
 from . import converters, utils
 from .errors import IncompatiblePathParameters
+from .middleware import Middleware
 from .types import (
     CookiesTypes,
     HeadersTypes,
@@ -172,3 +173,4 @@ class RequestOptions:
 class OperationSpecification:
     request: RequestOptions
     response: Optional[Callable[..., Any]] = None
+    middleware: Middleware = field(default_factory=Middleware)
