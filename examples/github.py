@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Optional, Protocol
 
-from fastclient import FastClient, get
+from neoclient import FastClient, get
 
 
 @dataclass

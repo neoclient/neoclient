@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from fastclient import FastClient
+from neoclient import FastClient
 
 
 @dataclass

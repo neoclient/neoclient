@@ -1,4 +1,4 @@
-from fastclient import Cookie, FastClient
+from neoclient import Cookie, FastClient
 
 client: FastClient = FastClient(base_url="http://127.0.0.1:8000/")
 

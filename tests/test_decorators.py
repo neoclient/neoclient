@@ -5,11 +5,11 @@ from typing import Callable
 from httpx import Cookies, Headers, QueryParams, Request, Response, Timeout
 from pytest import fixture
 
-from fastclient import converters, decorators, get
-from fastclient.middleware import RequestMiddleware
-from fastclient.models import RequestOptions
-from fastclient.operation import get_operation
-from fastclient.types import (
+from neoclient import converters, decorators, get
+from neoclient.middleware import RequestMiddleware
+from neoclient.models import RequestOptions
+from neoclient.operation import get_operation
+from neoclient.types import (
     CookiesTypes,
     HeadersTypes,
     JsonTypes,

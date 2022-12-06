@@ -53,7 +53,7 @@ T = TypeVar("T")
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
 
-USER_AGENT: str = f"fastclient/{__version__}"
+USER_AGENT: str = f"neoclient/{__version__}"
 
 
 class BaseService:

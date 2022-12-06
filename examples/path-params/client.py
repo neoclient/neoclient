@@ -1,6 +1,6 @@
 from typing import Mapping
 
-from fastclient import FastClient, Paths
+from neoclient import FastClient, Paths
 
 client: FastClient = FastClient(base_url="http://127.0.0.1:8000/")
 

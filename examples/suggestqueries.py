@@ -2,7 +2,7 @@ from typing import Optional, Protocol
 
 from rich.pretty import pprint
 
-from fastclient import FastClient, Query, get, query_params
+from neoclient import FastClient, Query, get, query_params
 
 
 class SuggestQueries(Protocol):
@@ -19,9 +19,9 @@ class SuggestQueries(Protocol):
         ...
 
 
-fastclient: FastClient = FastClient("https://suggestqueries.google.com/")
+client: FastClient = FastClient("https://suggestqueries.google.com/")
 
-suggest_queries: SuggestQueries = fastclient.create(SuggestQueries)  # type: ignore
+suggest_queries: SuggestQueries = client.create(SuggestQueries)  # type: ignore
 
 results: list = suggest_queries.complete_search(
     "foo", client="youtube", datasource="yt"
