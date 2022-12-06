@@ -22,12 +22,12 @@ from .decorators import (
     header,
     headers,
     json,
+    middleware,
     path,
     path_params,
     query,
     query_params,
     timeout,
-    middleware,
 )
 from .methods import delete, get, head, options, patch, post, put, request
 from .param_functions import (

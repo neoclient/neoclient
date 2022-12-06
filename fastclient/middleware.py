@@ -4,7 +4,7 @@ from typing import Optional, Protocol, Sequence
 import mediate
 from httpx import Request, Response
 
-from .errors import ExpectedStatusCodeError, ExpectedHeaderError
+from .errors import ExpectedHeaderError, ExpectedStatusCodeError
 
 __all__: Sequence[str] = (
     "Middleware",

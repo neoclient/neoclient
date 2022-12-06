@@ -2,7 +2,7 @@ from dataclasses import replace
 from io import BytesIO
 from typing import Callable
 
-from httpx import Cookies, Headers, QueryParams, Timeout, Request, Response
+from httpx import Cookies, Headers, QueryParams, Request, Response, Timeout
 from pytest import fixture
 
 from fastclient import converters, decorators, get
@@ -227,4 +227,7 @@ def test_middleware(func: Callable) -> None:
     decorators.middleware(middleware_foo)(func)
     decorators.middleware(middleware_bar)(func)
 
-    assert get_operation(func).specification.middleware.record == [middleware_foo, middleware_bar]
+    assert get_operation(func).specification.middleware.record == [
+        middleware_foo,
+        middleware_bar,
+    ]

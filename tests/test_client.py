@@ -1,7 +1,7 @@
 from typing import Callable, Optional, Protocol
 
-from httpx import Request, Response, Headers
 import pytest
+from httpx import Headers, Request, Response
 from pydantic import BaseModel, Required
 
 from fastclient import Body, FastClient, Queries, Query

@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Callable, Protocol, Sequence, TypeVar
 
-from mediate.protocols import MiddlewareCallable
 from httpx import Request, Response
+from mediate.protocols import MiddlewareCallable
 
 from .consumers import (
     ContentConsumer,

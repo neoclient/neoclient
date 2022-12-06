@@ -1,28 +1,10 @@
 import dataclasses
 import inspect
 from dataclasses import dataclass
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    TypeVar,
-)
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Type, TypeVar
 
 import httpx
-from httpx import (
-    URL,
-    Cookies,
-    Headers,
-    QueryParams,
-    Timeout,
-    Request,
-    Response,
-)
+from httpx import URL, Cookies, Headers, QueryParams, Request, Response, Timeout
 from httpx._auth import Auth
 from mediate.protocols import MiddlewareCallable
 from roster import Record
@@ -59,7 +41,11 @@ from .types import (
 )
 from .utils import get_method_kind
 
-__all__: Sequence[str] = ("Session", "Client", "FastClient",)
+__all__: Sequence[str] = (
+    "Session",
+    "Client",
+    "FastClient",
+)
 
 
 T = TypeVar("T")
