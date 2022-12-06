@@ -1,6 +1,6 @@
-from neoclient import FastClient
+from neoclient import NeoClient
 
-client = FastClient("https://httpbin.org/")
+client = NeoClient("https://httpbin.org/")
 
 
 @client.middleware

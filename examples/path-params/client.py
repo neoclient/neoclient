@@ -1,8 +1,8 @@
 from typing import Mapping
 
-from neoclient import FastClient, Paths
+from neoclient import NeoClient, Paths
 
-client: FastClient = FastClient(base_url="http://127.0.0.1:8000/")
+client: NeoClient = NeoClient(base_url="http://127.0.0.1:8000/")
 
 
 @client.get("/{action}/{item}/{time}")

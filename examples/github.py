@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import List, Optional, Protocol
 
-from neoclient import FastClient, get
+from neoclient import NeoClient, get
 
 
 @dataclass
@@ -17,7 +17,7 @@ class GitHubService(Protocol):
         ...
 
 
-client: FastClient = FastClient("https://api.github.com/")
+client: NeoClient = NeoClient("https://api.github.com/")
 
 service: GitHubService = client.create(GitHubService)
 
