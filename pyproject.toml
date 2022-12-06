@@ -5,8 +5,8 @@ description = "Fast API Clients for Python"
 authors = ["Tom Bulled <26026015+tombulled@users.noreply.github.com>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://pypi.org/project/retrofit/"
-repository = "https://github.com/tombulled/retrofit"
+homepage = "https://github.com/tombulled/fastclient"
+repository = "https://github.com/tombulled/fastclient"
 keywords = ["python", "api", "http", "client", "json", "framework", "web", "rest"]
 
 [tool.poetry.dependencies]
