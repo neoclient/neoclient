@@ -5,7 +5,7 @@ from typing import Mapping
 from httpx import Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
 
-from fastclient.consumers import (
+from neoclient.consumers import (
     ContentConsumer,
     CookieConsumer,
     CookiesConsumer,
@@ -20,8 +20,8 @@ from fastclient.consumers import (
     QueryConsumer,
     TimeoutConsumer,
 )
-from fastclient.models import RequestOptions
-from fastclient.types import JsonTypes, RequestContent, RequestData, RequestFiles
+from neoclient.models import RequestOptions
+from neoclient.types import JsonTypes, RequestContent, RequestData, RequestFiles
 
 
 @fixture

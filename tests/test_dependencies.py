@@ -2,8 +2,8 @@ from http import HTTPStatus
 
 from httpx import Request, Response
 
-from fastclient.dependencies import DependencyResolver
-from fastclient.enums import HttpMethod
+from neoclient.dependencies import DependencyResolver
+from neoclient.enums import HttpMethod
 
 
 def test_DependencyResolver() -> None:

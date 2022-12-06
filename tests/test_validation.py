@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from fastclient.validation import validate
+from neoclient.validation import validate
 
 
 def test_validate_all_no_defaults() -> None:

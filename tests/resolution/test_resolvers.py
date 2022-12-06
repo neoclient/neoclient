@@ -2,8 +2,8 @@ from http import HTTPStatus
 
 from httpx import Cookies, Headers, QueryParams, Request, Response
 
-from fastclient.enums import HttpMethod
-from fastclient.resolvers import (
+from neoclient.enums import HttpMethod
+from neoclient.resolvers import (
     BodyResolver,
     CookieResolver,
     CookiesResolver,

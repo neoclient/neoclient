@@ -4,8 +4,8 @@ import pytest
 from httpx import QueryParams
 from pydantic.fields import FieldInfo, Undefined
 
-from fastclient import utils
-from fastclient.enums import MethodKind
+from neoclient import utils
+from neoclient.enums import MethodKind
 
 
 def test_parse_format_string() -> None:

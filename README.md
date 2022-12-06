@@ -1,16 +1,16 @@
-# fastclient
+# neoclient
 :rocket: Fast API Clients for Python
 
 ## Installation
 ```console
-pip install git+https://github.com/tombulled/fastclient.git@main
+pip install git+https://github.com/tombulled/neoclient@main
 ```
 
 ## Documentation
 ### Introduction
-The simplest `fastclient` file could look like this:
+The simplest `neoclient` file could look like this:
 ```python
-from fastclient import get
+from neoclient import get
 
 @get("https://httpbin.org/ip")
 def ip():
@@ -23,7 +23,7 @@ def ip():
 
 However, it's almost always better to create a `FastClient` instance for easy reusability:
 ```python
-from fastclient import FastClient
+from neoclient import FastClient
 
 client = FastClient("https://httpbin.org/")
 
@@ -39,7 +39,7 @@ def ip():
 ### Path Parameters
 You can declare path parameters with the same syntax used by Python format strings:
 ```python
-from fastclient import FastClient
+from neoclient import FastClient
 
 client = FastClient("https://httpbin.org/")
 
@@ -55,7 +55,7 @@ def b64decode(value):
 #### Path parameters with types
 You can declare the type of a path parameter in the function using standard Python type annotations:
 ```python
-from fastclient import FastClient
+from neoclient import FastClient
 
 client = FastClient("https://httpbin.org/")
 
@@ -68,7 +68,7 @@ In this case, `value` is declared to be of type `str`.
 #### Explicit path parameters
 If you prefer explicitly stating that a parameter is a path parameter, you can use the `Path` parameter function:
 ```python
-from fastclient import FastClient, Path
+from neoclient import FastClient, Path
 
 client = FastClient("https://httpbin.org/")
 
@@ -78,7 +78,7 @@ def b64decode(value: str = Path()):
 ```
 This approach comes with added benefits, such as being able to specify validation constraints.
 ```python
-from fastclient import FastClient, Path
+from neoclient import FastClient, Path
 
 client = FastClient("https://httpbin.org/")
 
@@ -94,7 +94,7 @@ def b64decode(value: str = Path(default="SGVsbG8sIFdvcmxkIQ==")):
 #### Missing path parameters
 FastClient will throw an error if you specify a path parameter in the request path, however do not create a function parameter for it. For example:
 ```python
-from fastclient import FastClient
+from neoclient import FastClient
 
 client = FastClient("https://httpbin.org/")
 
@@ -111,7 +111,7 @@ IncompatiblePathParameters: Expected ('value',), got ()
 If you have a path operation that receives a path parameter, but you want the possible valid path parameter values to be predefined, you can use a standard Python Enum.
 ```python
 from enum import Enum
-from fastclient import FastClient
+from neoclient import FastClient
 
 class Name(str, Enum):
     def __str__(self):
@@ -137,7 +137,7 @@ def anything(name: Name):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'fastclient/0.1.8'
+        'User-Agent': 'neoclient/0.1.8'
     },
     'json': None,
     'method': 'GET',
@@ -150,7 +150,7 @@ def anything(name: Name):
 Let's say you have a path operation with a path `/do/{commands}`, where you expect `commands` to accept an arbitrary number of arguments which should be used as path segments. To achieve this, you can pass the path parameter a sequence:
 ```python
 from typing import Sequence
-from fastclient import FastClient
+from neoclient import FastClient
 
 client = FastClient("https://httpbin.org/")
 
@@ -169,7 +169,7 @@ def do(commands: Sequence[str]):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'fastclient/0.1.8'
+        'User-Agent': 'neoclient/0.1.8'
     },
     'json': None,
     'method': 'GET',
@@ -181,7 +181,7 @@ def do(commands: Sequence[str]):
 ### Query Parameters
 When you declare other function parameters that are not part of the path parameters, they are automatically interpreted as "query" parameters.
 ```python
-from fastclient import FastClient
+from neoclient import FastClient
 
 app = FastClient("https://httpbin.org/")
 
@@ -197,7 +197,7 @@ def get(message: str):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'fastclient/0.1.8'
+        'User-Agent': 'neoclient/0.1.8'
     },
     'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get?message=Hello%2C+World!'
@@ -207,7 +207,7 @@ def get(message: str):
 ## Advanced User Guide
 FastClient can turn your HTTP API into a Python protocol.
 ```python
-from fastclient import FastClient, get
+from neoclient import FastClient, get
 from typing import Protocol
 
 class Httpbin(Protocol):
@@ -225,7 +225,7 @@ httpbin: Httpbin = FastClient("https://httpbin.org/").create(Httpbin)  # type: i
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'fastclient/0.1.8'
+        'User-Agent': 'neoclient/0.1.8'
     },
     'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get?message=Hello%2C+World!'

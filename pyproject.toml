@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "fastclient"
+name = "neoclient"
 version = "0.1.8"
 description = "Fast API Clients for Python"
 authors = ["Tom Bulled <26026015+tombulled@users.noreply.github.com>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/tombulled/fastclient"
-repository = "https://github.com/tombulled/fastclient"
+homepage = "https://github.com/tombulled/neoclient"
+repository = "https://github.com/tombulled/neoclient"
 keywords = ["python", "api", "http", "client", "json", "framework", "web", "rest"]
 
 [tool.poetry.dependencies]

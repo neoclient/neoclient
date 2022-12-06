@@ -4,10 +4,10 @@
 # from param.typing import Consumer
 # from pydantic.fields import Undefined
 
-# from fastclient import Cookie, Cookies, Header, Headers, Path, PathParams, QueryParams
-# from fastclient.composition.composers import Composer, composers
-# from fastclient.models import RequestOptions
-# from fastclient.parameters import Query
+# from neoclient import Cookie, Cookies, Header, Headers, Path, PathParams, QueryParams
+# from neoclient.composition.composers import Composer, composers
+# from neoclient.models import RequestOptions
+# from neoclient.parameters import Query
 
 
 # def test_compose_query_param() -> None:

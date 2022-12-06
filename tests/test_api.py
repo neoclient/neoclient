@@ -1,11 +1,11 @@
 # import param
 # import pytest
 
-# from fastclient import api
-# from fastclient.errors import DuplicateParameter, IncompatiblePathParameters
-# from fastclient.methods import get
-# from fastclient.operations import get_operation
-# from fastclient.parameter_functions import Body, Path, Query
+# from neoclient import api
+# from neoclient.errors import DuplicateParameter, IncompatiblePathParameters
+# from neoclient.methods import get
+# from neoclient.operations import get_operation
+# from neoclient.parameter_functions import Body, Path, Query
 
 
 # def test_get_params_duplicate_explicit():

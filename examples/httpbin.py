@@ -3,7 +3,7 @@ from typing import Protocol
 from pydantic import BaseModel
 from rich.pretty import pprint
 
-from fastclient import FastClient, get
+from neoclient import FastClient, get
 
 
 class Response(BaseModel):
@@ -19,9 +19,9 @@ class Httpbin(Protocol):
         ...
 
 
-fastclient: FastClient = FastClient("https://httpbin.org/")
+client: FastClient = FastClient("https://httpbin.org/")
 
-httpbin: Httpbin = fastclient.create(Httpbin)  # type: ignore
+httpbin: Httpbin = client.create(Httpbin)  # type: ignore
 
 response: Response = httpbin.get("Hello, World!")
 

@@ -1,4 +1,4 @@
-from fastclient import FastClient
+from neoclient import FastClient
 
 client = FastClient("https://httpbin.org/")
 

@@ -4,11 +4,11 @@ import pytest
 from httpx import Headers, Request, Response
 from pydantic import BaseModel, Required
 
-from fastclient import Body, FastClient, Queries, Query
-from fastclient.methods import get, post, request
-from fastclient.middleware import RequestMiddleware
-from fastclient.models import OperationSpecification, RequestOptions
-from fastclient.operation import get_operation
+from neoclient import Body, FastClient, Queries, Query
+from neoclient.methods import get, post, request
+from neoclient.middleware import RequestMiddleware
+from neoclient.models import OperationSpecification, RequestOptions
+from neoclient.operation import get_operation
 
 
 class Model(BaseModel):
