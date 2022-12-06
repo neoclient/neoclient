@@ -44,7 +44,7 @@ from .utils import get_method_kind
 __all__: Sequence[str] = (
     "Session",
     "Client",
-    "FastClient",
+    "NeoClient",
 )
 
 
@@ -253,7 +253,7 @@ class Client:
         return self.request(HttpMethod.OPTIONS.name, endpoint, response=response)
 
 
-class FastClient(Client):
+class NeoClient(Client):
     def __init__(
         self,
         base_url: URLTypes = DEFAULT_BASE_URL,

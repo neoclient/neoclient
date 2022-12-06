@@ -2,7 +2,7 @@ from typing import Optional, Protocol
 
 from rich.pretty import pprint
 
-from neoclient import FastClient, Query, get, query_params
+from neoclient import NeoClient, Query, get, query_params
 
 
 class SuggestQueries(Protocol):
@@ -19,7 +19,7 @@ class SuggestQueries(Protocol):
         ...
 
 
-client: FastClient = FastClient("https://suggestqueries.google.com/")
+client: NeoClient = NeoClient("https://suggestqueries.google.com/")
 
 suggest_queries: SuggestQueries = client.create(SuggestQueries)  # type: ignore
 

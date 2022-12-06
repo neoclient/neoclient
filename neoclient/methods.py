@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional, Protocol, Sequence, TypeVar
 
 from typing_extensions import ParamSpec
 
-from .client import FastClient
+from .client import NeoClient
 from .enums import HttpMethod
 
 __all__: Sequence[str] = (
@@ -35,7 +35,7 @@ class MethodOperationDecorator(OperationDecorator):
     def __call__(
         self, endpoint: str, /, *, response: Optional[Callable[..., Any]] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-        return FastClient().request(self.method, endpoint, response=response)
+        return NeoClient().request(self.method, endpoint, response=response)
 
 
 def request(
