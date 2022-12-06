@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Callable, Protocol, Sequence, TypeVar
 
-from fastclient.models import RequestOptions
+from httpx import Request, Response
+from mediate.protocols import MiddlewareCallable
 
 from .consumers import (
     ContentConsumer,
@@ -18,6 +19,7 @@ from .consumers import (
     QueryConsumer,
     TimeoutConsumer,
 )
+from .models import OperationSpecification, RequestOptions
 from .operation import get_operation
 from .types import (
     CookiesTypes,
@@ -122,3 +124,14 @@ def json(json: JsonTypes, /) -> Decorator:
 
 def timeout(timeout: TimeoutTypes, /) -> Decorator:
     return CompositionFacilitator(TimeoutConsumer(timeout))
+
+
+def middleware(middleware: MiddlewareCallable[Request, Response], /) -> Decorator:
+    def decorate(func: C, /) -> C:
+        specification: OperationSpecification = get_operation(func).specification
+
+        specification.middleware.add(middleware)
+
+        return func
+
+    return decorate

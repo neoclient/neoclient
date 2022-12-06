@@ -9,6 +9,8 @@ __all__: Sequence[str] = (
     "ResolutionError",
     "ConversionError",
     "NotAnOperationError",
+    "ExpectedStatusCodeError",
+    "ExpectedHeaderError",
 )
 
 
@@ -42,4 +44,12 @@ class ConversionError(Exception):
 
 
 class NotAnOperationError(Exception):
+    pass
+
+
+class ExpectedStatusCodeError(Exception):
+    pass
+
+
+class ExpectedHeaderError(Exception):
     pass

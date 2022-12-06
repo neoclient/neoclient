@@ -22,6 +22,7 @@ from .decorators import (
     header,
     headers,
     json,
+    middleware,
     path,
     path_params,
     query,

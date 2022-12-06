@@ -2,10 +2,11 @@ from dataclasses import replace
 from io import BytesIO
 from typing import Callable
 
-from httpx import Cookies, Headers, QueryParams, Timeout
+from httpx import Cookies, Headers, QueryParams, Request, Response, Timeout
 from pytest import fixture
 
 from fastclient import converters, decorators, get
+from fastclient.middleware import RequestMiddleware
 from fastclient.models import RequestOptions
 from fastclient.operation import get_operation
 from fastclient.types import (
@@ -214,3 +215,19 @@ def test_timeout(func: Callable) -> None:
     assert get_operation(func).specification.request == replace(
         original_request, timeout=Timeout(timeout)
     )
+
+
+def test_middleware(func: Callable) -> None:
+    def middleware_foo(call_next: RequestMiddleware, request: Request) -> Response:
+        return call_next(request)
+
+    def middleware_bar(call_next: RequestMiddleware, request: Request) -> Response:
+        return call_next(request)
+
+    decorators.middleware(middleware_foo)(func)
+    decorators.middleware(middleware_bar)(func)
+
+    assert get_operation(func).specification.middleware.record == [
+        middleware_foo,
+        middleware_bar,
+    ]

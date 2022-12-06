@@ -1,10 +1,12 @@
 from typing import Callable, Optional, Protocol
 
 import pytest
+from httpx import Headers, Request, Response
 from pydantic import BaseModel, Required
 
 from fastclient import Body, FastClient, Queries, Query
 from fastclient.methods import get, post, request
+from fastclient.middleware import RequestMiddleware
 from fastclient.models import OperationSpecification, RequestOptions
 from fastclient.operation import get_operation
 
@@ -60,7 +62,7 @@ def test_request(client: FastClient) -> None:
     assert get_operation(foo).client == client.client
 
 
-def test_query_not_required_omitted(client: FastClient):
+def test_query_not_required_omitted(client: FastClient) -> None:
     class Service(Protocol):
         @get("get")
         def get(self, q: Optional[str] = Query()) -> RequestOptions:
@@ -74,7 +76,7 @@ def test_query_not_required_omitted(client: FastClient):
     )
 
 
-def test_query_required_not_omitted(client: FastClient):
+def test_query_required_not_omitted(client: FastClient) -> None:
     class Service(Protocol):
         @get("get")
         def get(self, q: Optional[str] = Query(default=Required)) -> RequestOptions:
@@ -89,7 +91,7 @@ def test_query_required_not_omitted(client: FastClient):
     )
 
 
-def test_single_body_param(client: FastClient):
+def test_single_body_param(client: FastClient) -> None:
     class Service(Protocol):
         @post("/items/")
         def create_item(self, item: Item = Body()) -> RequestOptions:
@@ -104,7 +106,7 @@ def test_single_body_param(client: FastClient):
     )
 
 
-def test_multiple_body_params(client: FastClient):
+def test_multiple_body_params(client: FastClient) -> None:
     class Service(Protocol):
         @post("/items/")
         def create_item(
@@ -126,7 +128,7 @@ def test_multiple_body_params(client: FastClient):
     )
 
 
-def test_multiple_body_params_embedded(client: FastClient):
+def test_multiple_body_params_embedded(client: FastClient) -> None:
     class Service(Protocol):
         @post("/items/")
         def create_item(
@@ -148,7 +150,7 @@ def test_multiple_body_params_embedded(client: FastClient):
     )
 
 
-def test_single_query_param(client: FastClient):
+def test_single_query_param(client: FastClient) -> None:
     class Service(Protocol):
         @get("/items/")
         def create_item(self, sort: str = Query()) -> RequestOptions:
@@ -165,7 +167,7 @@ def test_single_query_param(client: FastClient):
     )
 
 
-def test_multiple_query_params(client: FastClient):
+def test_multiple_query_params(client: FastClient) -> None:
     class Service(Protocol):
         @get("/items/")
         def create_item(self, params: dict = Queries()) -> RequestOptions:
@@ -180,3 +182,26 @@ def test_multiple_query_params(client: FastClient):
             "sort": "ascending",
         },
     )
+
+
+def test_client_middleware(client: FastClient) -> None:
+    @client.middleware
+    def some_middleware(_: RequestMiddleware, request: Request) -> Response:
+        request.headers["name"] = "sam"
+
+        # As a mock HTTP server is not currently being used, the response is faked
+        return Response(
+            200,
+            headers=Headers({"food": "pizza"}),
+            text="Hello!",
+            request=request,
+        )
+
+    @client.get("/foo")
+    def foo() -> Response:
+        ...
+
+    response: Response = foo()
+
+    assert response.request.headers.get("name") == "sam"
+    assert response.headers.get("food") == "pizza"

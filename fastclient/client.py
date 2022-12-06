@@ -4,8 +4,10 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Type, TypeVar
 
 import httpx
-from httpx import URL, Cookies, Headers, QueryParams, Timeout
+from httpx import URL, Cookies, Headers, QueryParams, Request, Response, Timeout
 from httpx._auth import Auth
+from mediate.protocols import MiddlewareCallable
+from roster import Record
 from typing_extensions import ParamSpec
 
 from . import __version__, converters
@@ -24,6 +26,7 @@ from .defaults import (
     DEFAULT_TRUST_ENV,
 )
 from .enums import HeaderName, HttpMethod, MethodKind
+from .middleware import Middleware
 from .models import OperationSpecification, RequestOptions
 from .operation import Operation, get_operation, has_operation
 from .types import (
@@ -38,7 +41,11 @@ from .types import (
 )
 from .utils import get_method_kind
 
-__all__: Sequence[str] = ("FastClient",)
+__all__: Sequence[str] = (
+    "Session",
+    "Client",
+    "FastClient",
+)
 
 
 T = TypeVar("T")
@@ -55,7 +62,7 @@ class BaseService:
 
 
 @dataclass(init=False)
-class Client(httpx.Client):
+class Session(httpx.Client):
     auth: Optional[Auth]
     params: QueryParams
     headers: Headers
@@ -116,47 +123,17 @@ class Client(httpx.Client):
 
 
 @dataclass(init=False)
-class FastClient:
+class Client:
     client: Optional[httpx.Client]
+    middleware: Middleware
 
     def __init__(
         self,
-        base_url: URLTypes = DEFAULT_BASE_URL,
-        *,
-        auth: Optional[AuthTypes] = DEFAULT_AUTH,
-        params: Optional[QueriesTypes] = DEFAULT_PARAMS,
-        headers: Optional[HeadersTypes] = DEFAULT_HEADERS,
-        cookies: Optional[CookiesTypes] = DEFAULT_COOKIES,
-        timeout: TimeoutTypes = DEFAULT_TIMEOUT,
-        follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
-        max_redirects: int = DEFAULT_MAX_REDIRECTS,
-        event_hooks: Optional[EventHooks] = DEFAULT_EVENT_HOOKS,
-        trust_env: bool = DEFAULT_TRUST_ENV,
-        default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
+        client: Optional[httpx.Client] = None,
+        middleware: Optional[Middleware] = None,
     ) -> None:
-        self.client = Client(
-            auth=auth,
-            params=params,
-            headers=headers,
-            cookies=cookies,
-            timeout=timeout,
-            follow_redirects=follow_redirects,
-            max_redirects=max_redirects,
-            event_hooks=event_hooks,
-            base_url=base_url,
-            trust_env=trust_env,
-            default_encoding=default_encoding,
-        )
-
-    @classmethod
-    def from_client(
-        cls: Type["FastClient"], client: Optional[httpx.Client], /
-    ) -> "FastClient":
-        obj: FastClient = cls()
-
-        obj.client = client
-
-        return obj
+        self.client = client
+        self.middleware = middleware if middleware is not None else Middleware()
 
     def create(self, protocol: Type[T], /) -> T:
         operations: Mapping[str, Callable] = {
@@ -226,7 +203,12 @@ class FastClient:
         )
 
         def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
-            operation: Operation[PS, RT] = Operation(func, specification, self.client)
+            operation: Operation[PS, RT] = Operation(
+                func=func,
+                specification=specification,
+                client=self.client,
+                middleware=self.middleware,
+            )
 
             # Validate operation function parameters are acceptable
             validate_fields(get_fields(specification.request, func))
@@ -269,3 +251,42 @@ class FastClient:
         self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HttpMethod.OPTIONS.name, endpoint, response=response)
+
+
+class FastClient(Client):
+    def __init__(
+        self,
+        base_url: URLTypes = DEFAULT_BASE_URL,
+        *,
+        auth: Optional[AuthTypes] = DEFAULT_AUTH,
+        params: Optional[QueriesTypes] = DEFAULT_PARAMS,
+        headers: Optional[HeadersTypes] = DEFAULT_HEADERS,
+        cookies: Optional[CookiesTypes] = DEFAULT_COOKIES,
+        timeout: TimeoutTypes = DEFAULT_TIMEOUT,
+        follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
+        max_redirects: int = DEFAULT_MAX_REDIRECTS,
+        event_hooks: Optional[EventHooks] = DEFAULT_EVENT_HOOKS,
+        trust_env: bool = DEFAULT_TRUST_ENV,
+        default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
+        middleware: Optional[Sequence[MiddlewareCallable[Request, Response]]] = None,
+    ) -> None:
+        super().__init__(
+            client=Session(
+                auth=auth,
+                params=params,
+                headers=headers,
+                cookies=cookies,
+                timeout=timeout,
+                follow_redirects=follow_redirects,
+                max_redirects=max_redirects,
+                event_hooks=event_hooks,
+                base_url=base_url,
+                trust_env=trust_env,
+                default_encoding=default_encoding,
+            ),
+            middleware=(
+                Middleware(record=Record(middleware))
+                if middleware is not None
+                else Middleware()
+            ),
+        )

@@ -1,17 +1,17 @@
 import functools
 import inspect
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from json import JSONDecodeError
 from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
 
-import httpx
 import pydantic
-from httpx import Client, Response
+from httpx import Client, Request, Response
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
 from .composition import compose
 from .errors import NotAnOperationError
+from .middleware import Middleware
 from .models import OperationSpecification, RequestOptions
 from .resolution import resolve
 
@@ -37,7 +37,7 @@ def has_operation(func: Callable, /) -> bool:
 
 
 def get_operation(func: Callable, /) -> "Operation":
-    operation: Optional[Operation] = getattr(func, ATTRIBUTE_OPERATION)
+    operation: Optional[Operation] = getattr(func, ATTRIBUTE_OPERATION, None)
 
     if operation is None:
         raise NotAnOperationError(f"{func!r} is not an operation")
@@ -50,6 +50,7 @@ class Operation(Generic[PS, RT]):
     func: Callable[PS, RT]
     specification: OperationSpecification
     client: Optional[Client]
+    middleware: Middleware = field(default_factory=Middleware)
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
         request_options: RequestOptions = self.specification.request.merge(
@@ -61,18 +62,27 @@ class Operation(Generic[PS, RT]):
 
         compose(self.func, request_options, args, kwargs)
 
-        request: httpx.Request = request_options.build_request(self.client)
+        request: Request = request_options.build_request(self.client)
 
         return_annotation: Any = inspect.signature(self.func).return_annotation
 
         if return_annotation is RequestOptions:
             return request_options
-        if return_annotation is httpx.Request:
+        if return_annotation is Request:
             return request
 
         client: Client = self.client if self.client is not None else Client()
 
-        response: Response = client.send(request)
+        middleware: Middleware = Middleware()
+
+        middleware.record.extend(self.specification.middleware.record)
+        middleware.record.extend(self.middleware.record)
+
+        @middleware.compose
+        def send_request(request: Request, /) -> Response:
+            return client.send(request)
+
+        response: Response = send_request(request)
 
         if self.specification.response is not None:
             return resolve(self.specification.response, response)
