@@ -4,10 +4,10 @@ from .typing import Supplier
 
 T = TypeVar("T")
 
-# Query
 @overload
 def Query(
-    alias: Optional[str] = None,
+    name: Optional[str] = None,
+    *,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -23,9 +23,9 @@ def Query(
 ) -> Any: ...
 @overload
 def Query(
-    default: T,
+    name: Optional[str] = None,
     *,
-    alias: Optional[str] = None,
+    default: T,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -38,12 +38,12 @@ def Query(
     min_length: Optional[int] = None,
     max_length: Optional[int] = None,
     regex: Optional[str] = None,
-) -> T: ...
+) -> Any: ...
 @overload
 def Query(
+    name: Optional[str] = None,
     *,
     default_factory: Supplier[T],
-    alias: Optional[str] = None,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -58,10 +58,10 @@ def Query(
     regex: Optional[str] = None,
 ) -> T: ...
 
-# Header
 @overload
 def Header(
-    alias: Optional[str] = None,
+    name: Optional[str] = None,
+    *,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -78,9 +78,9 @@ def Header(
 ) -> Any: ...
 @overload
 def Header(
-    default: T,
+    name: Optional[str] = None,
     *,
-    alias: Optional[str] = None,
+    default: T,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -97,9 +97,9 @@ def Header(
 ) -> T: ...
 @overload
 def Header(
+    name: Optional[str] = None,
     *,
     default_factory: Supplier[T],
-    alias: Optional[str] = None,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -115,10 +115,10 @@ def Header(
     convert_underscores: bool = True,
 ) -> T: ...
 
-# Cookie
 @overload
 def Cookie(
-    alias: Optional[str] = None,
+    name: Optional[str] = None,
+    *,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -134,9 +134,9 @@ def Cookie(
 ) -> Any: ...
 @overload
 def Cookie(
-    default: T,
+    name: Optional[str] = None,
     *,
-    alias: Optional[str] = None,
+    default: T,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -152,9 +152,9 @@ def Cookie(
 ) -> T: ...
 @overload
 def Cookie(
+    name: Optional[str] = None,
     *,
     default_factory: Supplier[T],
-    alias: Optional[str] = None,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -169,10 +169,10 @@ def Cookie(
     regex: Optional[str] = None,
 ) -> T: ...
 
-# Path
 @overload
 def Path(
-    alias: Optional[str] = None,
+    name: Optional[str] = None,
+    *,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -188,9 +188,9 @@ def Path(
 ) -> Any: ...
 @overload
 def Path(
-    default: T,
+    name: Optional[str] = None,
     *,
-    alias: Optional[str] = None,
+    default: T,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -206,9 +206,9 @@ def Path(
 ) -> T: ...
 @overload
 def Path(
+    name: Optional[str] = None,
     *,
     default_factory: Supplier[T],
-    alias: Optional[str] = None,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,

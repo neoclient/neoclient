@@ -39,10 +39,10 @@ __all__: Sequence[str] = (
 
 
 def Query(
-    default: Any = Undefined,
+    name: Optional[str] = None,
     *,
+    default: Any = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
-    alias: Optional[str] = None,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -59,7 +59,7 @@ def Query(
     return QueryParameter(
         default=default,
         default_factory=default_factory,
-        alias=alias,
+        alias=name,
         const=const,
         gt=gt,
         ge=ge,
@@ -76,10 +76,10 @@ def Query(
 
 
 def Header(
-    default: Any = Undefined,
+    name: Optional[str] = None,
     *,
+    default: Any = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
-    alias: Optional[str] = None,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -97,7 +97,7 @@ def Header(
     return HeaderParameter(
         default=default,
         default_factory=default_factory,
-        alias=alias,
+        alias=name,
         const=const,
         gt=gt,
         ge=ge,
@@ -115,10 +115,10 @@ def Header(
 
 
 def Cookie(
-    default: Any = Undefined,
+    name: Optional[str] = None,
     *,
+    default: Any = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
-    alias: Optional[str] = None,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -135,7 +135,7 @@ def Cookie(
     return CookieParameter(
         default=default,
         default_factory=default_factory,
-        alias=alias,
+        alias=name,
         const=const,
         gt=gt,
         ge=ge,
@@ -152,10 +152,10 @@ def Cookie(
 
 
 def Path(
-    default: Any = Undefined,
+    name: Optional[str] = None,
     *,
+    default: Any = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
-    alias: Optional[str] = None,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
     ge: Optional[float] = None,
@@ -172,7 +172,7 @@ def Path(
     return PathParameter(
         default=default,
         default_factory=default_factory,
-        alias=alias,
+        alias=name,
         const=const,
         gt=gt,
         ge=ge,
@@ -189,8 +189,8 @@ def Path(
 
 
 def Queries(
-    default: Any = Undefined,
     *,
+    default: Any = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
@@ -206,8 +206,8 @@ def Queries(
 
 
 def Headers(
-    default: Any = Undefined,
     *,
+    default: Any = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
@@ -223,8 +223,8 @@ def Headers(
 
 
 def Cookies(
-    default: Any = Undefined,
     *,
+    default: Any = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
@@ -240,8 +240,8 @@ def Cookies(
 
 
 def Paths(
-    default: Any = Undefined,
     *,
+    default: Any = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
@@ -257,8 +257,8 @@ def Paths(
 
 
 def Body(
-    default: Any = Undefined,
     *,
+    default: Any = Undefined,
     default_factory: Optional[Supplier[Any]] = None,
     alias: Optional[str] = None,
     embed: bool = False,

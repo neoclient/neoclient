@@ -60,9 +60,9 @@ T = TypeVar("T")
 
 @dataclass
 class Parameter(FieldInfo):
+    alias: Optional[str] = None
     default: Any = Undefined
     default_factory: Optional[Supplier[Any]] = None
-    alias: Optional[str] = None
     title: Optional[str] = None
     description: Optional[str] = None
     exclude: Union[Set[Union[int, str]], Mapping[Union[int, str], Any], Any] = None

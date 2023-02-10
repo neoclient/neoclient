@@ -1,9 +1,9 @@
 # neoclient
-:rocket: Fast API Clients for Python
+🚀 Fast API Clients for Python
 
 ## Installation
 ```console
-pip install git+https://github.com/tombulled/neoclient@main
+pip install neoclient
 ```
 
 ## Documentation
