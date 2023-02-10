@@ -35,5 +35,15 @@ class MethodKind(HiddenValueEnum):
 
 
 class HeaderName(HiddenValueEnum, StrEnum):
-    USER_AGENT = "User-Agent"
+    CONNECTION = "Connection"
     CONTENT_TYPE = "Content-Type"
+    KEEP_ALIVE = "Keep-Alive"
+    LOCATION = "Location"
+    PROXY_AUTHENTICATE = "Proxy-Authenticate"
+    PROXY_AUTHORIZATION = "Proxy-Authorization"
+    SERVER = "Server"
+    TE = "TE"
+    TRAILER = "Trailer"
+    TRANSFER_ENCODING = "Transfer-Encoding"
+    UPGRADE = "Upgrade"
+    USER_AGENT = "User-Agent"
