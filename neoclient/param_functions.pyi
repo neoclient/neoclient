@@ -57,7 +57,6 @@ def Query(
     max_length: Optional[int] = None,
     regex: Optional[str] = None,
 ) -> T: ...
-
 @overload
 def Header(
     name: Optional[str] = None,
@@ -114,7 +113,6 @@ def Header(
     regex: Optional[str] = None,
     convert_underscores: bool = True,
 ) -> T: ...
-
 @overload
 def Cookie(
     name: Optional[str] = None,
@@ -168,7 +166,6 @@ def Cookie(
     max_length: Optional[int] = None,
     regex: Optional[str] = None,
 ) -> T: ...
-
 @overload
 def Path(
     name: Optional[str] = None,
