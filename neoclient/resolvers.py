@@ -31,6 +31,7 @@ class HeaderResolver(Resolver[Optional[str]]):
     name: str
 
     def __call__(self, response: Response, /) -> Optional[str]:
+        print("HeaderResolver.__call__ invoked")
         return response.headers.get(self.name)
 
 

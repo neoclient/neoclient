@@ -58,35 +58,39 @@ __all__: Sequence[str] = (
 T = TypeVar("T")
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Parameter(FieldInfo):
     alias: Optional[str] = None
     default: Any = Undefined
     default_factory: Optional[Supplier[Any]] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    exclude: Union[Set[Union[int, str]], Mapping[Union[int, str], Any], Any] = None
-    include: Union[Set[Union[int, str]], Mapping[Union[int, str], Any], Any] = None
-    const: Optional[bool] = None
-    gt: Optional[float] = None
-    ge: Optional[float] = None
-    lt: Optional[float] = None
-    le: Optional[float] = None
-    multiple_of: Optional[float] = None
-    allow_inf_nan: Optional[bool] = None
-    max_digits: Optional[int] = None
-    decimal_places: Optional[int] = None
-    min_items: Optional[int] = None
-    max_items: Optional[int] = None
-    unique_items: Optional[bool] = None
-    min_length: Optional[int] = None
-    max_length: Optional[int] = None
-    allow_mutation: bool = True
-    regex: Optional[str] = None
-    discriminator: Optional[str] = None
-    repr: bool = True
-    extra: Dict[str, Any] = field(default_factory=dict)
-    alias_priority: Optional[int] = field(init=False, repr=False, default=None)
+    title: Optional[str] = field(default=None, compare=False)
+    description: Optional[str] = field(default=None, compare=False)
+    exclude: Union[Set[Union[int, str]], Mapping[Union[int, str], Any], Any] = field(
+        default=None, compare=False
+    )
+    include: Union[Set[Union[int, str]], Mapping[Union[int, str], Any], Any] = field(
+        default=None, compare=False
+    )
+    const: Optional[bool] = field(default=None, compare=False)
+    gt: Optional[float] = field(default=None, compare=False)
+    ge: Optional[float] = field(default=None, compare=False)
+    lt: Optional[float] = field(default=None, compare=False)
+    le: Optional[float] = field(default=None, compare=False)
+    multiple_of: Optional[float] = field(default=None, compare=False)
+    allow_inf_nan: Optional[bool] = field(default=None, compare=False)
+    max_digits: Optional[int] = field(default=None, compare=False)
+    decimal_places: Optional[int] = field(default=None, compare=False)
+    min_items: Optional[int] = field(default=None, compare=False)
+    max_items: Optional[int] = field(default=None, compare=False)
+    unique_items: Optional[bool] = field(default=None, compare=False)
+    min_length: Optional[int] = field(default=None, compare=False)
+    max_length: Optional[int] = field(default=None, compare=False)
+    allow_mutation: bool = field(default=True, compare=False)
+    regex: Optional[str] = field(default=None, compare=False)
+    discriminator: Optional[str] = field(default=None, compare=False)
+    repr: bool = field(default=True, compare=False)
+    extra: Dict[str, Any] = field(default_factory=dict, compare=False)
+    alias_priority: Optional[int] = field(init=False, repr=False, default=None, compare=False)
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         raise CompositionError(f"Parameter {type(self)!r} is not composable")
@@ -160,7 +164,7 @@ class QueryParameter(ComposableSingletonParameter, ResolvableSingletonParameter)
         return QueryResolver(key)
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class HeaderParameter(ComposableSingletonParameter, ResolvableSingletonParameter):
     convert_underscores: bool = True
 
@@ -236,7 +240,7 @@ class PathsParameter(Parameter):
         PathsConsumer(path_params)(request)
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class BodyParameter(Parameter):
     embed: bool = False
 

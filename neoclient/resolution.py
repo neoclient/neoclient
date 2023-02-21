@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Callable, Mapping, MutableMapping, Tuple, Type
+from typing import Any, Callable, Mapping, MutableMapping, Optional, Tuple, Type
 
 from httpx import URL, Cookies, Headers, QueryParams, Request, Response
 from pydantic import BaseModel
@@ -75,7 +75,12 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
 def resolve(
     func: Callable,
     response: Response,
+    *,
+    cache: Optional[MutableMapping[Parameter, Any]] = None,
 ) -> Any:
+    if cache is None:
+        cache = {}
+
     fields: Mapping[str, Tuple[Any, Parameter]] = get_fields(func)
 
     model_cls: Type[BaseModel] = api.create_model_cls(func, fields)
@@ -85,7 +90,20 @@ def resolve(
     field_name: str
     parameter: Parameter
     for field_name, (_, parameter) in fields.items():
-        arguments[field_name] = parameter.resolve(response)
+        resolution: Any
+        
+        if parameter in cache:
+            resolution = cache[parameter]
+        else:
+            # NOTE: For now, the cache is not passed deeper into the resolution process.
+            # This makes the cache effective only at the first layer of resolution.
+            # Ideally, the cache should be passed along, however it is only likely
+            # to be of use to the `DependencyParameter` parameter.
+            resolution = parameter.resolve(response)
+
+            cache[parameter] = resolution
+
+        arguments[field_name] = resolution
 
     model: BaseModel = model_cls(**arguments)
 
