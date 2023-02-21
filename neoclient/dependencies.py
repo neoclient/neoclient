@@ -16,11 +16,17 @@ T = TypeVar("T")
 class DependencyResolver(Resolver[T]):
     dependency: Callable[..., T]
 
-    def __call__(self, response: Response, /) -> T:
-        return resolve(self.dependency, response)
+    def __call__(
+        self,
+        response: Response,
+        /,
+        *,
+        cache: Optional[MutableMapping[Parameter, Any]] = None,
+    ) -> T:
+        return resolve(self.dependency, response, cache=cache)
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class DependencyParameter(Parameter):
     dependency: Optional[Callable] = None
     use_cache: bool = True
@@ -32,6 +38,11 @@ class DependencyParameter(Parameter):
         *,
         cached_dependencies: Optional[MutableMapping[Callable, Any]] = None,
     ) -> Any:
+        # NOTE: As `resolution.resolve` does not currently pass resolution cache
+        # to `Parameter.resolve` during resolution, we maintain our own cache at
+        # this layer for now.
+        cache: MutableMapping[Parameter, Any] = {}
+
         if self.dependency is None:
             raise ResolutionError(
                 f"Cannot resolve parameter {type(self)!r} without a dependency"
@@ -43,7 +54,7 @@ class DependencyParameter(Parameter):
         if self.use_cache and self.dependency in cached_dependencies:
             return cached_dependencies[self.dependency]
 
-        resolved: Any = DependencyResolver(self.dependency)(response)
+        resolved: Any = DependencyResolver(self.dependency)(response, cache=cache)
 
         # Cache resolved dependency
         cached_dependencies[self.dependency] = resolved
