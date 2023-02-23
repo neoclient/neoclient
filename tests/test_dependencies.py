@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 import pytest
 from httpx import Headers, Request, Response
-from pydantic import BaseConfig, Required
+from pydantic import BaseConfig
 from pydantic.fields import ModelField
 
 from neoclient import Cookie
