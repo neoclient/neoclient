@@ -1,6 +1,6 @@
 from typing import Mapping
 
-from neoclient import NeoClient, Headers
+from neoclient import Headers, NeoClient
 
 client: NeoClient = NeoClient(base_url="http://127.0.0.1:8000/")
 

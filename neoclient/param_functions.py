@@ -1,6 +1,6 @@
 from typing import Any, Callable, Optional, Sequence
 
-from pydantic.fields import Undefined
+from pydantic import Required
 
 from .dependencies import DependencyParameter
 from .params import (
@@ -41,7 +41,7 @@ __all__: Sequence[str] = (
 def Query(
     name: Optional[str] = None,
     *,
-    default: Any = Undefined,
+    default: Any = Required,
     default_factory: Optional[Supplier[Any]] = None,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
@@ -78,7 +78,7 @@ def Query(
 def Header(
     name: Optional[str] = None,
     *,
-    default: Any = Undefined,
+    default: Any = Required,
     default_factory: Optional[Supplier[Any]] = None,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
@@ -117,7 +117,7 @@ def Header(
 def Cookie(
     name: Optional[str] = None,
     *,
-    default: Any = Undefined,
+    default: Any = Required,
     default_factory: Optional[Supplier[Any]] = None,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
@@ -154,7 +154,7 @@ def Cookie(
 def Path(
     name: Optional[str] = None,
     *,
-    default: Any = Undefined,
+    default: Any = Required,
     default_factory: Optional[Supplier[Any]] = None,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
@@ -190,7 +190,7 @@ def Path(
 
 def Queries(
     *,
-    default: Any = Undefined,
+    default: Any = Required,
     default_factory: Optional[Supplier[Any]] = None,
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
@@ -207,7 +207,7 @@ def Queries(
 
 def Headers(
     *,
-    default: Any = Undefined,
+    default: Any = Required,
     default_factory: Optional[Supplier[Any]] = None,
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
@@ -224,7 +224,7 @@ def Headers(
 
 def Cookies(
     *,
-    default: Any = Undefined,
+    default: Any = Required,
     default_factory: Optional[Supplier[Any]] = None,
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
@@ -241,7 +241,7 @@ def Cookies(
 
 def Paths(
     *,
-    default: Any = Undefined,
+    default: Any = Required,
     default_factory: Optional[Supplier[Any]] = None,
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
@@ -258,7 +258,7 @@ def Paths(
 
 def Body(
     *,
-    default: Any = Undefined,
+    default: Any = Required,
     default_factory: Optional[Supplier[Any]] = None,
     alias: Optional[str] = None,
     embed: bool = False,
