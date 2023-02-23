@@ -162,10 +162,15 @@ class DependencyParameter(Parameter):
         return DependencyResolver(self.dependency)(response, cache=cache)
 
     def prepare(self, field: ModelField, /) -> None:
-        if self.dependency is None:
-            if not callable(field.annotation):
-                raise PreparationError(
-                    f"Failed to prepare parameter: {self!r}. Dependency has non-callable annotation"
-                )
+        if self.dependency is not None:
+            return
 
-            self.dependency = field.annotation
+        # NOTE: The annotation will nearly always be callable (e.g. `int`)
+        # This check needs to be changed to check for non primitive callables,
+        # and more generally, nothing out of the standard library.
+        if not callable(field.annotation):
+            raise PreparationError(
+                f"Failed to prepare parameter: {self!r}. Dependency has non-callable annotation"
+            )
+
+        self.dependency = field.annotation
