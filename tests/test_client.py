@@ -65,7 +65,7 @@ def test_request(client: NeoClient) -> None:
 def test_query_not_required_omitted(client: NeoClient) -> None:
     class Service(Protocol):
         @get("get")
-        def get(self, q: Optional[str] = Query()) -> RequestOptions:
+        def get(self, q: Optional[str] = Query(default=None)) -> RequestOptions:
             ...
 
     service: Service = client.create(Service)  # type: ignore

@@ -6,7 +6,7 @@ import fastapi.encoders
 import httpx
 from httpx import Cookies, Headers, QueryParams
 from pydantic import Required
-from pydantic.fields import FieldInfo, ModelField, Undefined
+from pydantic.fields import FieldInfo, ModelField
 
 from .consumers import (
     CookieConsumer,
@@ -61,7 +61,7 @@ T = TypeVar("T")
 @dataclass(unsafe_hash=True)
 class Parameter(FieldInfo):
     alias: Optional[str] = None
-    default: Any = Undefined
+    default: Any = Required
     default_factory: Optional[Supplier[Any]] = None
     title: Optional[str] = field(default=None, compare=False)
     description: Optional[str] = field(default=None, compare=False)

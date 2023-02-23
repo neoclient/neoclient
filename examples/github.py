@@ -19,9 +19,9 @@ class GitHubService(Protocol):
 
 client: NeoClient = NeoClient("https://api.github.com/")
 
-service: GitHubService = client.create(GitHubService)
+service: GitHubService = client.create(GitHubService)  # type: ignore
 
-repositories: List[Repository] = service.list_repos("octocat")  # type: ignore
+repositories: List[Repository] = service.list_repos("octocat")
 
 repository: Repository
 for repository in repositories:
