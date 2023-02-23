@@ -90,7 +90,9 @@ class Parameter(FieldInfo):
     discriminator: Optional[str] = field(default=None, compare=False)
     repr: bool = field(default=True, compare=False)
     extra: Dict[str, Any] = field(default_factory=dict, compare=False)
-    alias_priority: Optional[int] = field(init=False, repr=False, default=None, compare=False)
+    alias_priority: Optional[int] = field(
+        init=False, repr=False, default=None, compare=False
+    )
 
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         raise CompositionError(f"Parameter {type(self)!r} is not composable")

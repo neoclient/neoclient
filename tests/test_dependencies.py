@@ -1,14 +1,14 @@
 from http import HTTPStatus
 
-from httpx import Headers, Request, Response
-from pydantic import Required, BaseConfig
-from pydantic.fields import ModelField
 import pytest
+from httpx import Headers, Request, Response
+from pydantic import BaseConfig, Required
+from pydantic.fields import ModelField
 
 from neoclient import Cookie
 from neoclient.dependencies import DependencyParameter, DependencyResolver, get_fields
 from neoclient.enums import HttpMethod
-from neoclient.errors import ResolutionError, PreparationError
+from neoclient.errors import ResolutionError
 from neoclient.params import (
     BodyParameter,
     CookieParameter,
