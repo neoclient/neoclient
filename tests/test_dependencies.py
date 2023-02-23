@@ -22,10 +22,10 @@ def test_get_fields() -> None:
         ...
 
     assert get_fields(foo) == {
-        "query": (str, QueryParameter(alias="query", default=Required)),
-        "body": (dict, BodyParameter(alias="body", default=Required)),
-        "headers": (Headers, HeadersParameter(alias="headers", default=Required)),
-        "cookie": (int, CookieParameter(alias="cookie", default=Required)),
+        "query": (str, QueryParameter(alias="query")),
+        "body": (dict, BodyParameter(alias="body")),
+        "headers": (Headers, HeadersParameter(alias="headers")),
+        "cookie": (int, CookieParameter(alias="cookie")),
     }
 
 
