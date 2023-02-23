@@ -86,56 +86,6 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
     return fields
 
 
-def resolve(
-    func: Callable,
-    response: Response,
-    *,
-    cached_parameters: Optional[MutableMapping[Parameter, Any]] = None,
-    cached_dependencies: Optional[MutableMapping[Callable, Any]] = None,
-) -> Any:
-    if cached_parameters is None:
-        cached_parameters = {}
-    if cached_dependencies is None:
-        cached_dependencies = {}
-
-    fields: Mapping[str, Tuple[Any, Parameter]] = get_fields(func)
-
-    model_cls: Type[BaseModel] = api.create_model_cls(func, fields)
-
-    arguments: MutableMapping[str, Any] = {}
-
-    field_name: str
-    parameter: Parameter
-    for field_name, (_, parameter) in fields.items():
-        resolution: Any
-
-        if parameter in cached_parameters:
-            resolution = cached_parameters[parameter]
-        else:
-            if isinstance(parameter, DependencyParameter):
-                resolution = parameter.resolve(
-                    response,
-                    cached_parameters=cached_parameters,
-                    cached_dependencies=cached_dependencies,
-                )
-            else:
-                resolution = parameter.resolve(response)
-
-            cached_parameters[parameter] = resolution
-
-        arguments[field_name] = resolution
-
-    model: BaseModel = model_cls(**arguments)
-
-    validated_arguments: Mapping[str, Any] = model.dict()
-
-    args: Tuple[Any, ...]
-    kwargs: Mapping[str, Any]
-    args, kwargs = utils.unpack_arguments(func, validated_arguments)
-
-    return func(*args, **kwargs)
-
-
 @dataclass
 class DependencyResolver(Resolver[T]):
     dependency: Callable[..., T]
@@ -145,15 +95,51 @@ class DependencyResolver(Resolver[T]):
         response: Response,
         /,
         *,
-        cached_parameters: Optional[MutableMapping[Parameter, Any]] = None,
-        cached_dependencies: Optional[MutableMapping[Callable, Any]] = None,
+        cache: Optional[MutableMapping[Parameter, Any]] = None,
     ) -> T:
-        return resolve(
-            self.dependency,
-            response,
-            cached_parameters=cached_parameters,
-            cached_dependencies=cached_dependencies,
-        )
+        if cache is None:
+            cache = {}
+
+        fields: Mapping[str, Tuple[Any, Parameter]] = get_fields(self.dependency)
+
+        model_cls: Type[BaseModel] = api.create_model_cls(self.dependency, fields)
+
+        arguments: MutableMapping[str, Any] = {}
+
+        field_name: str
+        parameter: Parameter
+        for field_name, (_, parameter) in fields.items():
+            resolution: Any
+
+            if parameter in cache:
+                resolution = cache[parameter]
+            else:
+                cache_parameter: bool = True
+
+                if isinstance(parameter, DependencyParameter):
+                    resolution = parameter.resolve(
+                        response,
+                        cache=cache,
+                    )
+
+                    cache_parameter = parameter.use_cache
+                else:
+                    resolution = parameter.resolve(response)
+
+                if cache_parameter:
+                    cache[parameter] = resolution
+
+            arguments[field_name] = resolution
+
+        model: BaseModel = model_cls(**arguments)
+
+        validated_arguments: Mapping[str, Any] = model.dict()
+
+        args: Tuple[Any, ...]
+        kwargs: Mapping[str, Any]
+        args, kwargs = utils.unpack_arguments(self.dependency, validated_arguments)
+
+        return self.dependency(*args, **kwargs)
 
 
 @dataclass(unsafe_hash=True)
@@ -166,32 +152,14 @@ class DependencyParameter(Parameter):
         response: Response,
         /,
         *,
-        cached_parameters: Optional[MutableMapping[Parameter, Any]] = None,
-        cached_dependencies: Optional[MutableMapping[Callable, Any]] = None,
+        cache: Optional[MutableMapping[Parameter, Any]] = None,
     ) -> Any:
         if self.dependency is None:
             raise ResolutionError(
                 f"Cannot resolve parameter {type(self)!r} without a dependency"
             )
 
-        if cached_parameters is None:
-            cached_parameters = {}
-        if cached_dependencies is None:
-            cached_dependencies = {}
-
-        if self.use_cache and self.dependency in cached_dependencies:
-            return cached_dependencies[self.dependency]
-
-        resolved: Any = DependencyResolver(self.dependency)(
-            response,
-            cached_parameters=cached_parameters,
-            cached_dependencies=cached_dependencies,
-        )
-
-        # Cache resolved dependency
-        cached_dependencies[self.dependency] = resolved
-
-        return resolved
+        return DependencyResolver(self.dependency)(response, cache=cache)
 
     def prepare(self, field: ModelField, /) -> None:
         if self.dependency is None:
