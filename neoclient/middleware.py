@@ -4,6 +4,7 @@ from typing import Optional, Protocol, Sequence
 import mediate
 from httpx import Request, Response
 
+from .enums import HeaderName
 from .errors import ExpectedHeaderError, ExpectedStatusCodeError
 
 __all__: Sequence[str] = (
@@ -50,13 +51,27 @@ class ExpectedHeaderMiddleware:
         response: Response = call_next(request)
 
         if self.name not in response.headers:
-            raise ExpectedHeaderError(f"Response missing required header {self.name!r}")
+            raise ExpectedHeaderError(f"Response missing required header {str(self.name)!r}")
         elif self.value is not None and response.headers[self.name] != self.value:
             raise ExpectedHeaderError(
-                f"Response header {self.name!r} has incorrect value. Expected {self.value!r}, got {response.headers[self.name]!r}"
+                f"Response header {str(self.name)!r} has incorrect value. Expected {self.value!r}, got {response.headers[self.name]!r}"
             )
 
         return response
+
+
+@dataclass
+class ExpectedContentTypeMiddleware:
+    content_type: str
+
+    def __call__(self, call_next: RequestMiddleware, request: Request, /) -> Response:
+        # NOTE: In the future this should parse the content type to support
+        # lenient checking.
+        # For example, 'application/json+foo' should likely be an acceptable
+        # value when expecting a lenient form of 'application/json'
+        return ExpectedHeaderMiddleware(HeaderName.CONTENT_TYPE, self.content_type)(
+            call_next, request
+        )
 
 
 def raise_for_status(call_next: RequestMiddleware, request: Request, /) -> Response:
