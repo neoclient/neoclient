@@ -50,11 +50,13 @@ class ExpectedHeaderMiddleware:
     def __call__(self, call_next: RequestMiddleware, request: Request, /) -> Response:
         response: Response = call_next(request)
 
+        header_value: str = response.headers[self.name]
+
         if self.name not in response.headers:
-            raise ExpectedHeaderError(f"Response missing required header {str(self.name)!r}")
-        elif self.value is not None and response.headers[self.name] != self.value:
+            raise ExpectedHeaderError(name=self.name)
+        elif self.value is not None and header_value != self.value:
             raise ExpectedHeaderError(
-                f"Response header {str(self.name)!r} has incorrect value. Expected {self.value!r}, got {response.headers[self.name]!r}"
+                name=self.name, value=header_value, expected_value=self.value
             )
 
         return response
