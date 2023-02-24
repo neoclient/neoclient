@@ -12,10 +12,11 @@ r"""
 ```
 """
 
-__version__: str = "0.1.16"
+__version__: str = "0.1.17"
 
 from .client import NeoClient
 from .decorators import (
+    accept,
     content,
     cookie,
     cookies,
@@ -29,7 +30,9 @@ from .decorators import (
     path_params,
     query,
     query_params,
+    referer,
     timeout,
+    user_agent,
 )
 from .methods import delete, get, head, options, patch, post, put, request
 from .param_functions import (

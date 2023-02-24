@@ -19,6 +19,7 @@ from .consumers import (
     QueryConsumer,
     TimeoutConsumer,
 )
+from .enums import HeaderName
 from .models import OperationSpecification, RequestOptions
 from .operation import get_operation
 from .types import (
@@ -135,3 +136,15 @@ def middleware(middleware: MiddlewareCallable[Request, Response], /) -> Decorato
         return func
 
     return decorate
+
+
+def user_agent(user_agent: str, /) -> Decorator:
+    return header(HeaderName.USER_AGENT, user_agent)
+
+
+def accept(*content_types: str) -> Decorator:
+    return header(HeaderName.ACCEPT, ",".join(content_types))
+
+
+def referer(referer: str, /) -> Decorator:
+    return header(HeaderName.REFERER, referer)
