@@ -139,3 +139,17 @@ def test_resolve_caching() -> None:
         },
     }
     assert query_name_spy.resolution_counter.count == 1
+
+
+def test_resolve_default() -> None:
+    def func(foo: str = Query("foo", default="default")) -> str:
+        return foo
+
+    response: Response = Response(
+        HTTPStatus.OK,
+        request=Request(HttpMethod.GET, "https://foo.com/"),
+    )
+
+    resolved: Any = resolve(func, response)
+
+    assert resolved == "default"

@@ -129,6 +129,14 @@ class DependencyResolver(Resolver[T]):
                 if cache_parameter:
                     cache[parameter] = resolution
 
+            # If there is no resolution (e.g. missing header/query param etc.)
+            # and the parameter has a default, then we can omit the value from
+            # the arguments.
+            # This is done so that Pydantic will use the default value, rather
+            # than complaining that None was used.
+            if resolution is None and utils.has_default(parameter):
+                continue
+
             arguments[field_name] = resolution
 
         model: BaseModel = model_cls(**arguments)
