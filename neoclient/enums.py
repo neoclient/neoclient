@@ -35,12 +35,21 @@ class MethodKind(HiddenValueEnum):
 
 
 class HeaderName(HiddenValueEnum, StrEnum):
+    ACCEPT = "Accept"
+    ACCEPT_ENCODING = "Accept-Encoding"
+    ACCEPT_LANGUAGE = "Accept-Language"
+    CACHE_CONTROL = "Cache-Control"
     CONNECTION = "Connection"
     CONTENT_TYPE = "Content-Type"
+    COOKIE = "Cookie"
+    DNT = "DNT"
+    HOST = "Host"
     KEEP_ALIVE = "Keep-Alive"
     LOCATION = "Location"
+    PRAGMA = "Pragma"
     PROXY_AUTHENTICATE = "Proxy-Authenticate"
     PROXY_AUTHORIZATION = "Proxy-Authorization"
+    REFERER = "Referer"
     SERVER = "Server"
     TE = "TE"
     TRAILER = "Trailer"
