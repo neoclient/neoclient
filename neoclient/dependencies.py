@@ -129,6 +129,9 @@ class DependencyResolver(Resolver[T]):
                 if cache_parameter:
                     cache[parameter] = resolution
 
+            if resolution is None and utils.has_default(parameter):
+                continue
+
             arguments[field_name] = resolution
 
         model: BaseModel = model_cls(**arguments)
