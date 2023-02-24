@@ -12,7 +12,7 @@ r"""
 ```
 """
 
-__version__: str = "0.1.14"
+__version__: str = "0.1.15"
 
 from .client import NeoClient
 from .decorators import (

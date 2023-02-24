@@ -94,6 +94,13 @@ class Parameter(FieldInfo):
         init=False, repr=False, default=None, compare=False
     )
 
+    def __post_init__(self) -> None:
+        # Pydantic validates that the alias is a "strict" string. This means
+        # that enums (e.g. `HeaderName`) are unable to be used.
+        # To mitigate this, the alias is explicity converted to a string here.
+        if self.alias is not None:
+            self.alias = str(self.alias)
+
     def compose(self, request: RequestOptions, argument: Any, /) -> None:
         raise CompositionError(f"Parameter {type(self)!r} is not composable")
 
