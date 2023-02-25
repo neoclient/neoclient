@@ -14,7 +14,7 @@ r"""
 
 __version__: str = "0.1.18"
 
-from httpx import Request, Response
+from httpx import Response
 
 from .client import NeoClient
 from .decorators import (
@@ -37,6 +37,7 @@ from .decorators import (
     user_agent,
 )
 from .methods import delete, get, head, options, patch, post, put, request
+from .models import Request
 from .param_functions import (
     URL,
     Body,

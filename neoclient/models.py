@@ -111,6 +111,7 @@ class RequestOptions:
         json: Optional[JsonTypes] = None,
         timeout: Optional[TimeoutTypes] = None,
         path_params: Optional[PathsTypes] = None,
+        state: Optional[MutableMapping[str, Any]] = None,
     ) -> None:
         ...
         self.method = method if isinstance(method, str) else method.decode()
@@ -138,7 +139,7 @@ class RequestOptions:
             if path_params is not None
             else {}
         )
-        self.state = {}
+        self.state = state if state is not None else {}
 
     def build_request(self, client: Optional[httpx.Client]) -> httpx.Request:
         url: str = self._get_formatted_url()
