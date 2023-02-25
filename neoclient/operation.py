@@ -5,14 +5,15 @@ from json import JSONDecodeError
 from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
 
 import pydantic
-from httpx import Client, Response
+import httpx
+from httpx import Client
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
 from .composition import compose
 from .errors import NotAnOperationError
 from .middleware import Middleware
-from .models import Request, RequestOptions
+from .models import Request, RequestOptions, Response
 from .resolution import resolve
 
 __all__: Sequence[str] = (
@@ -87,7 +88,9 @@ class Operation(Generic[PS, RT]):
 
         @middleware.compose
         def send_request(request: Request, /) -> Response:
-            return client.send(request)
+            httpx_response: httpx.Response = client.send(request)
+
+            return Response.from_httpx_response(httpx_response)
 
         response: Response = send_request(request)
 

@@ -1,8 +1,6 @@
 from typing import Any, Protocol, Sequence, TypeVar
 
-from httpx import Response
-
-from .models import RequestOptions
+from .models import RequestOptions, Response
 
 __all__: Sequence[str] = (
     "Composer",

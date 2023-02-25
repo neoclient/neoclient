@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Type, TypeVar
 
 import httpx
-from httpx import URL, Cookies, Headers, QueryParams, Response, Timeout
+from httpx import URL, Cookies, Headers, QueryParams, Timeout
 from httpx._auth import Auth
 from mediate.protocols import MiddlewareCallable
 from roster import Record
@@ -27,7 +27,7 @@ from .defaults import (
 )
 from .enums import HeaderName, HttpMethod, MethodKind
 from .middleware import Middleware
-from .models import Request, RequestOptions
+from .models import Request, RequestOptions, Response
 from .operation import Operation, OperationSpecification, get_operation, has_operation
 from .types import (
     AuthTypes,

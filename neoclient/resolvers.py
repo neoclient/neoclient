@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from typing import Any, Optional, Sequence, TypeVar
 
-from httpx import Cookies, Headers, QueryParams, Response
+from httpx import Cookies, Headers, QueryParams
 
+from .models import Response
 from .typing import Resolver
 
 __all__: Sequence[str] = (

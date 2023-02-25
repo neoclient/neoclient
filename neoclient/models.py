@@ -1,6 +1,6 @@
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Dict, MutableMapping, Optional, Sequence, Set, Union
+from typing import Any, Callable, Dict, List, MutableMapping, Optional, Sequence, Set, Union
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
@@ -21,6 +21,8 @@ from .types import (
     RequestData,
     RequestExtensions,
     RequestFiles,
+    ResponseContent,
+    ResponseExtensions,
     SyncByteStream,
     TimeoutTypes,
     URLTypes,
@@ -29,6 +31,7 @@ from .types import (
 __all__: Sequence[str] = (
     "Client",
     "Request",
+    "Response",
     "RequestOptions",
     "OperationSpecification",
 )
@@ -81,6 +84,53 @@ class Request(httpx.Request):
             content=request.content,
             stream=request.stream,
             extensions=request.extensions,
+        )
+
+class Response(httpx.Response):
+    state: MutableMapping[str, Any]
+
+    def __init__(
+        self,
+        status_code: int,
+        *,
+        headers: Optional[HeaderTypes] = None,
+        content: Optional[ResponseContent] = None,
+        text: Optional[str] = None,
+        html: Optional[str] = None,
+        json: Any = None,
+        stream: Union[SyncByteStream, AsyncByteStream, None] = None,
+        request: Optional[httpx.Request] = None,
+        extensions: Optional[ResponseExtensions] = None,
+        history: Optional[List[httpx.Response]] = None,
+        default_encoding: Union[str, Callable[[bytes], str]] = "utf-8",
+        state: Optional[MutableMapping[str, Any]] = None,
+    ):
+        super().__init__(
+            status_code=status_code,
+            headers=headers,
+            content=content,
+            text=text,
+            html=html,
+            json=json,
+            stream=stream,
+            request=request,
+            extensions=extensions,
+            history=history,
+            default_encoding=default_encoding,
+        )
+
+        if state is not None:
+            self.state = state
+        else:
+            self.state = {}
+
+    @classmethod
+    def from_httpx_response(cls, response: httpx.Response, /) -> "Response":
+        return cls(
+            status_code=response.status_code,
+            headers=response.headers,
+            request=response.request,
+            content=response.content,
         )
 
 
@@ -166,7 +216,6 @@ class RequestOptions:
                 state=self.state,
             )
         else:
-            # TODO: Somehow make this return a `Request`, not a `httpx.Request`
             httpx_request: httpx.Request = client.build_request(
                 self.method,
                 url,
