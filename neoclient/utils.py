@@ -149,7 +149,3 @@ def parse_obj_as(type_: Type[T], obj: Any) -> T:
     model: BaseModel = model_cls(__root__=obj)
 
     return getattr(model, "__root__")
-
-
-def get_state(request: Request, /) -> MutableMapping[str, Any]:
-    return request.extensions.setdefault("state", {})

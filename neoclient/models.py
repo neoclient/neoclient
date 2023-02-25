@@ -19,6 +19,7 @@ from .types import (
     QueriesTypes,
     RequestContent,
     RequestData,
+    RequestExtensions,
     RequestFiles,
     SyncByteStream,
     TimeoutTypes,
@@ -49,7 +50,7 @@ class Request(httpx.Request):
         files: Optional[RequestFiles] = None,
         json: Optional[Any] = None,
         stream: Union[SyncByteStream, AsyncByteStream, None] = None,
-        extensions: Optional[dict] = None,
+        extensions: Optional[RequestExtensions] = None,
         state: Optional[MutableMapping[str, Any]] = None,
     ):
         super().__init__(
