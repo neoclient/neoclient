@@ -1,6 +1,6 @@
 import urllib.parse
 from dataclasses import dataclass, field
-from typing import Any, Callable, MutableMapping, Optional, Sequence, Set
+from typing import Any, Callable, Dict, MutableMapping, Optional, Sequence, Set
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
@@ -42,6 +42,7 @@ class RequestOptions:
     json: Optional[JsonTypes]
     timeout: Optional[Timeout]
     path_params: MutableMapping[str, str]
+    state: MutableMapping[str, Any]
 
     def __init__(
         self,
@@ -84,11 +85,19 @@ class RequestOptions:
             if path_params is not None
             else {}
         )
+        self.state = {}
 
     def build_request(self, client: Optional[httpx.Client]) -> httpx.Request:
         url: str = self._get_formatted_url()
 
+        extensions: Dict[str, Any] = {
+            "state": self.state
+        }
+
         if client is None:
+            if self.timeout is not None:
+                extensions["timeout"] = self.timeout.as_dict()
+
             return httpx.Request(
                 self.method,
                 url,
@@ -99,11 +108,7 @@ class RequestOptions:
                 data=self.data,
                 files=self.files,
                 json=self.json,
-                extensions=(
-                    dict(timeout=self.timeout.as_dict())
-                    if self.timeout is not None
-                    else {}
-                ),
+                extensions=extensions,
             )
         else:
             return client.build_request(
@@ -117,6 +122,7 @@ class RequestOptions:
                 files=self.files,
                 json=self.json,
                 timeout=self.timeout,
+                extensions=extensions,
             )
 
     def merge(self, request_options: "RequestOptions", /) -> "RequestOptions":

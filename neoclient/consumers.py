@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 
@@ -174,3 +174,12 @@ class TimeoutConsumer(RequestConsumer):
 
     def __call__(self, request: RequestOptions, /) -> None:
         request.timeout = self.timeout
+
+
+@dataclass
+class StateConsumer(RequestConsumer):
+    key: str
+    value: Any
+
+    def __call__(self, request: RequestOptions, /) -> None:
+        request.state[self.key] = self.value

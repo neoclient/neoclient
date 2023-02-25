@@ -16,6 +16,7 @@ from typing import (
     Union,
 )
 
+from httpx import Request
 from pydantic import BaseConfig, BaseModel, create_model
 from pydantic.fields import FieldInfo, Undefined
 from pydantic.typing import display_as_type
@@ -148,3 +149,7 @@ def parse_obj_as(type_: Type[T], obj: Any) -> T:
     model: BaseModel = model_cls(__root__=obj)
 
     return getattr(model, "__root__")
+
+
+def get_state(request: Request, /) -> MutableMapping[str, Any]:
+    return request.extensions.setdefault("state", {})

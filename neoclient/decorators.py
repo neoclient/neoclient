@@ -127,11 +127,13 @@ def timeout(timeout: TimeoutTypes, /) -> Decorator:
     return CompositionFacilitator(TimeoutConsumer(timeout))
 
 
-def middleware(middleware: MiddlewareCallable[Request, Response], /) -> Decorator:
+def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:
     def decorate(func: C, /) -> C:
         specification: OperationSpecification = get_operation(func).specification
 
-        specification.middleware.add(middleware)
+        middleware_callable: MiddlewareCallable[Request, Response]
+        for middleware_callable in middleware:
+            specification.middleware.add(middleware_callable)
 
         return func
 

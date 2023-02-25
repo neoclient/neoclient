@@ -15,6 +15,7 @@ from .params import (
     QueryParameter,
     RequestParameter,
     ResponseParameter,
+    StateParameter,
     StatusCodeParameter,
     URLParameter,
 )
@@ -32,8 +33,8 @@ __all__: Sequence[str] = (
     "Body",
     "Depends",
     "URL",
-    "Request",
-    "Response",
+    "Req",
+    "Resp",
     "StatusCode",
 )
 
@@ -284,13 +285,17 @@ def URL() -> URLParameter:
     return URLParameter()
 
 
-def Request() -> RequestParameter:
+def Req() -> RequestParameter:
     return RequestParameter()
 
 
-def Response() -> ResponseParameter:
+def Resp() -> ResponseParameter:
     return ResponseParameter()
 
 
 def StatusCode() -> StatusCodeParameter:
     return StatusCodeParameter()
+
+
+def State() -> StateParameter:
+    return StateParameter()
