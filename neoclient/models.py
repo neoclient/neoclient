@@ -1,6 +1,15 @@
 import urllib.parse
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, MutableMapping, Optional, Sequence, Set
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
@@ -9,8 +18,11 @@ from . import converters, utils
 from .errors import IncompatiblePathParameters
 from .middleware import Middleware
 from .types import (
+    AsyncByteStream,
     CookiesTypes,
+    CookieTypes,
     HeadersTypes,
+    HeaderTypes,
     JsonTypes,
     MethodTypes,
     PathsTypes,
@@ -18,15 +30,56 @@ from .types import (
     RequestContent,
     RequestData,
     RequestFiles,
+    SyncByteStream,
     TimeoutTypes,
     URLTypes,
 )
 
 __all__: Sequence[str] = (
     "Client",
+    "Request",
     "RequestOptions",
     "OperationSpecification",
 )
+
+
+class Request(httpx.Request):
+    state: MutableMapping[str, Any]
+
+    def __init__(
+        self,
+        method: MethodTypes,
+        url: URLTypes,
+        *,
+        params: Optional[QueriesTypes] = None,
+        headers: Optional[HeaderTypes] = None,
+        cookies: Optional[CookieTypes] = None,
+        content: Optional[RequestContent] = None,
+        data: Optional[RequestData] = None,
+        files: Optional[RequestFiles] = None,
+        json: Optional[Any] = None,
+        stream: Union[SyncByteStream, AsyncByteStream, None] = None,
+        extensions: Optional[dict] = None,
+        state: Optional[MutableMapping[str, Any]] = None,
+    ):
+        super().__init__(
+            method=method,
+            url=url,
+            params=params,
+            headers=headers,
+            cookies=cookies,
+            content=content,
+            data=data,
+            files=files,
+            json=json,
+            stream=stream,
+            extensions=extensions,
+        )
+
+        if state is not None:
+            self.state = state
+        else:
+            self.state = {}
 
 
 @dataclass(init=False)
@@ -90,15 +143,13 @@ class RequestOptions:
     def build_request(self, client: Optional[httpx.Client]) -> httpx.Request:
         url: str = self._get_formatted_url()
 
-        extensions: Dict[str, Any] = {
-            "state": self.state
-        }
+        extensions: Dict[str, Any] = {}
 
         if client is None:
             if self.timeout is not None:
                 extensions["timeout"] = self.timeout.as_dict()
 
-            return httpx.Request(
+            return Request(
                 self.method,
                 url,
                 params=self.params,
@@ -109,8 +160,10 @@ class RequestOptions:
                 files=self.files,
                 json=self.json,
                 extensions=extensions,
+                state=self.state,
             )
         else:
+            # TODO: Somehow make this return a `Request`, not a `httpx.Request`
             return client.build_request(
                 self.method,
                 url,

@@ -1,5 +1,5 @@
 from http.cookiejar import CookieJar
-from typing import Any, Mapping, MutableMapping, MutableSequence, Sequence
+from typing import Any, List, Mapping, MutableMapping, MutableSequence, Sequence, Tuple
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 from httpx._utils import primitive_value_to_str
@@ -74,8 +74,8 @@ def convert_path_param(value: PathTypes, /) -> str:
 def convert_query_params(value: QueriesTypes, /) -> QueryParams:
     if isinstance(value, QueryParams):
         return value
-    elif isinstance(value, (Mapping, Sequence)):
-        return QueryParams(dict(value))
+    elif isinstance(value, (Mapping, list, tuple)):
+        return QueryParams(value)
     else:
         raise ConversionError("query params", value)
 
