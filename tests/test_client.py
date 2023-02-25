@@ -7,8 +7,8 @@ from pydantic import BaseModel, Required
 from neoclient import Body, NeoClient, Queries, Query
 from neoclient.methods import get, post, request
 from neoclient.middleware import RequestMiddleware
-from neoclient.models import OperationSpecification, RequestOptions
-from neoclient.operation import get_operation
+from neoclient.models import RequestOptions
+from neoclient.operation import OperationSpecification, get_operation
 
 
 class Model(BaseModel):

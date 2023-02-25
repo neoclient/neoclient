@@ -1,22 +1,12 @@
 import urllib.parse
-from dataclasses import dataclass, field
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    MutableMapping,
-    Optional,
-    Sequence,
-    Set,
-    Union,
-)
+from dataclasses import dataclass
+from typing import Any, Dict, MutableMapping, Optional, Sequence, Set, Union
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
 
 from . import converters, utils
 from .errors import IncompatiblePathParameters
-from .middleware import Middleware
 from .types import (
     AsyncByteStream,
     CookiesTypes,
@@ -81,6 +71,17 @@ class Request(httpx.Request):
         else:
             self.state = {}
 
+    @classmethod
+    def from_httpx_request(cls, request: httpx.Request, /) -> "Request":
+        return cls(
+            method=request.method,
+            url=request.url,
+            headers=request.headers,
+            content=request.content,
+            stream=request.stream,
+            extensions=request.extensions,
+        )
+
 
 @dataclass(init=False)
 class RequestOptions:
@@ -141,7 +142,7 @@ class RequestOptions:
         )
         self.state = state if state is not None else {}
 
-    def build_request(self, client: Optional[httpx.Client]) -> httpx.Request:
+    def build_request(self, client: Optional[httpx.Client]) -> Request:
         url: str = self._get_formatted_url()
 
         extensions: Dict[str, Any] = {}
@@ -165,7 +166,7 @@ class RequestOptions:
             )
         else:
             # TODO: Somehow make this return a `Request`, not a `httpx.Request`
-            return client.build_request(
+            httpx_request: httpx.Request = client.build_request(
                 self.method,
                 url,
                 params=self.params,
@@ -178,6 +179,12 @@ class RequestOptions:
                 timeout=self.timeout,
                 extensions=extensions,
             )
+
+            request: Request = Request.from_httpx_request(httpx_request)
+
+            request.state = self.state
+
+            return request
 
     def merge(self, request_options: "RequestOptions", /) -> "RequestOptions":
         return self.__class__(
@@ -227,10 +234,3 @@ class RequestOptions:
             raise IncompatiblePathParameters(
                 f"Expected {tuple(expected_path_params)}, got {tuple(actual_path_params)}"
             )
-
-
-@dataclass
-class OperationSpecification:
-    request: RequestOptions
-    response: Optional[Callable[..., Any]] = None
-    middleware: Middleware = field(default_factory=Middleware)

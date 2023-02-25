@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Callable, Protocol, Sequence, TypeVar
 
-from httpx import Request, Response
+from httpx import Response
 from mediate.protocols import MiddlewareCallable
 
 from .consumers import (
@@ -20,8 +20,8 @@ from .consumers import (
     TimeoutConsumer,
 )
 from .enums import HeaderName
-from .models import OperationSpecification, RequestOptions
-from .operation import get_operation
+from .models import Request, RequestOptions
+from .operation import OperationSpecification, get_operation
 from .types import (
     CookiesTypes,
     CookieTypes,

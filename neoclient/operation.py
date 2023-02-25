@@ -5,14 +5,14 @@ from json import JSONDecodeError
 from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
 
 import pydantic
-from httpx import Client, Request, Response
+from httpx import Client, Response
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
 from .composition import compose
 from .errors import NotAnOperationError
 from .middleware import Middleware
-from .models import OperationSpecification, RequestOptions
+from .models import RequestOptions, Request
 from .resolution import resolve
 
 __all__: Sequence[str] = (
@@ -43,6 +43,13 @@ def get_operation(func: Callable, /) -> "Operation":
         raise NotAnOperationError(f"{func!r} is not an operation")
 
     return operation
+
+
+@dataclass
+class OperationSpecification:
+    request: RequestOptions
+    response: Optional[Callable[..., Any]] = None
+    middleware: Middleware = field(default_factory=Middleware)
 
 
 @dataclass
