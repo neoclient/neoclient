@@ -12,7 +12,7 @@ r"""
 ```
 """
 
-__version__: str = "0.1.17"
+__version__: str = "0.1.18"
 
 from httpx import Request, Response
 
