@@ -12,7 +12,7 @@ from typing_extensions import ParamSpec
 from .composition import compose
 from .errors import NotAnOperationError
 from .middleware import Middleware
-from .models import RequestOptions, Request
+from .models import Request, RequestOptions
 from .resolution import resolve
 
 __all__: Sequence[str] = (

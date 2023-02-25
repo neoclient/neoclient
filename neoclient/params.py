@@ -15,9 +15,9 @@ from .consumers import (
     HeadersConsumer,
     PathConsumer,
     PathsConsumer,
-    StateConsumer,
     QueriesConsumer,
     QueryConsumer,
+    StateConsumer,
 )
 from .converters import (
     convert_cookie,
