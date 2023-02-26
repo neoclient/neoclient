@@ -11,6 +11,7 @@ __all__: Sequence[str] = (
     "NotAnOperationError",
     "ExpectedStatusCodeError",
     "ExpectedHeaderError",
+    "MissingStateError",
 )
 
 
@@ -62,3 +63,11 @@ class ExpectedHeaderError(Exception):
             return f"Response missing expected header {str(self.name)!r}"
         else:
             return f"Response header {str(self.name)!r} has incorrect value. Expected {self.expected_value!r}, got {self.value!r}"
+
+
+@dataclass
+class MissingStateError(Exception):
+    key: str
+
+    def __str__(self) -> str:
+        return "State entry missing for key {self.key!r}"

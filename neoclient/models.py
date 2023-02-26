@@ -1,12 +1,22 @@
 import urllib.parse
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, MutableMapping, Optional, Sequence, Set, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
 
 from . import converters, utils
-from .errors import IncompatiblePathParameters
+from .errors import IncompatiblePathParameters, MissingStateError
 from .types import (
     AsyncByteStream,
     CookiesTypes,
@@ -37,8 +47,51 @@ __all__: Sequence[str] = (
 )
 
 
+class State:
+    _state: MutableMapping[str, Any]
+
+    def __init__(self, state: Optional[MutableMapping[str, Any]] = None):
+        if state is None:
+            state = {}
+
+        super().__setattr__("_state", state)
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self._state!r})"
+
+    def _set(self, key: str, value: Any) -> None:
+        self._state[key] = value
+
+    def _get(self, key: str) -> Any:
+        if key in self._state:
+            return self._state[key]
+        else:
+            raise MissingStateError(key=key)
+
+    def _del(self, key: str) -> None:
+        del self._state[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self._set(key, value)
+
+    def __setattr__(self, key: str, value: Any) -> None:
+        self._set(key, value)
+
+    def __getitem__(self, key: str) -> Any:
+        return self._get(key)
+
+    def __getattr__(self, key: str) -> Any:
+        return self._get(key)
+
+    def __delitem__(self, key: str) -> None:
+        self._del(key)
+
+    def __delattr__(self, key: str) -> None:
+        self._del(key)
+
+
 class Request(httpx.Request):
-    state: MutableMapping[str, Any]
+    state: State
 
     def __init__(
         self,
@@ -54,7 +107,7 @@ class Request(httpx.Request):
         json: Optional[Any] = None,
         stream: Union[SyncByteStream, AsyncByteStream, None] = None,
         extensions: Optional[RequestExtensions] = None,
-        state: Optional[MutableMapping[str, Any]] = None,
+        state: Optional[State] = None,
     ):
         super().__init__(
             method=method,
@@ -73,7 +126,7 @@ class Request(httpx.Request):
         if state is not None:
             self.state = state
         else:
-            self.state = {}
+            self.state = State()
 
     @classmethod
     def from_httpx_request(cls, request: httpx.Request, /) -> "Request":
@@ -94,8 +147,9 @@ class Request(httpx.Request):
                 stream=request.stream,
             )
 
+
 class Response(httpx.Response):
-    state: MutableMapping[str, Any]
+    state: State
 
     def __init__(
         self,
@@ -111,7 +165,7 @@ class Response(httpx.Response):
         extensions: Optional[ResponseExtensions] = None,
         history: Optional[List[httpx.Response]] = None,
         default_encoding: Union[str, Callable[[bytes], str]] = "utf-8",
-        state: Optional[MutableMapping[str, Any]] = None,
+        state: Optional[State] = None,
     ):
         super().__init__(
             status_code=status_code,
@@ -130,7 +184,7 @@ class Response(httpx.Response):
         if state is not None:
             self.state = state
         else:
-            self.state = {}
+            self.state = State()
 
     @classmethod
     def from_httpx_response(cls, response: httpx.Response, /) -> "Response":
@@ -163,7 +217,7 @@ class RequestOptions:
     json: Optional[JsonTypes]
     timeout: Optional[Timeout]
     path_params: MutableMapping[str, str]
-    state: MutableMapping[str, Any]
+    state: State
 
     def __init__(
         self,
@@ -179,7 +233,7 @@ class RequestOptions:
         json: Optional[JsonTypes] = None,
         timeout: Optional[TimeoutTypes] = None,
         path_params: Optional[PathsTypes] = None,
-        state: Optional[MutableMapping[str, Any]] = None,
+        state: Optional[State] = None,
     ) -> None:
         ...
         self.method = method if isinstance(method, str) else method.decode()
@@ -207,7 +261,7 @@ class RequestOptions:
             if path_params is not None
             else {}
         )
-        self.state = state if state is not None else {}
+        self.state = state if state is not None else State()
 
     def build_request(self, client: Optional[httpx.Client]) -> Request:
         url: str = self._get_formatted_url()
