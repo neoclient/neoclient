@@ -14,6 +14,7 @@ __all__: Sequence[str] = (
     "HeadersResolver",
     "QueryResolver",
     "QueriesResolver",
+    "StateResolver",
 )
 
 T = TypeVar("T")
@@ -65,3 +66,11 @@ class BodyResolver(Resolver[Any]):
     @staticmethod
     def __call__(response: Response, /) -> Any:
         return response.json()
+
+
+@dataclass
+class StateResolver(Resolver[Any]):
+    key: str
+
+    def __call__(self, response: Response, /) -> Any:
+        return response.state[self.key]

@@ -1,8 +1,9 @@
 from typing import Any, Protocol, Sequence, TypeVar
 
-from .models import RequestOptions, Response
+from .models import RequestOptions, Request, Response
 
 __all__: Sequence[str] = (
+    "CallNext",
     "Composer",
     "RequestConsumer",
     "Resolver",
@@ -12,6 +13,11 @@ __all__: Sequence[str] = (
 T_contra = TypeVar("T_contra", contravariant=True)
 T_co = TypeVar("T_co", covariant=True)
 R_co = TypeVar("R_co", covariant=True)
+
+
+class CallNext(Protocol):
+    def __call__(self, request: Request, /) -> Response:
+        ...
 
 
 class Supplier(Protocol[T_co]):

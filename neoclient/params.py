@@ -35,6 +35,7 @@ from .resolvers import (
     HeadersResolver,
     QueriesResolver,
     QueryResolver,
+    StateResolver,
 )
 from .types import CookiesTypes, HeadersTypes, PathsTypes, QueriesTypes
 from .typing import RequestConsumer, Resolver, Supplier
@@ -324,7 +325,9 @@ class StatusCodeParameter(Parameter):
         return response.status_code
 
 
-class StateParameter(ComposableSingletonParameter[str, Any]):
+class StateParameter(
+    ComposableSingletonParameter[str, Any], ResolvableSingletonParameter[str, Any]
+):
     def parse_key(self, key: str, /) -> str:
         return key
 
@@ -333,3 +336,6 @@ class StateParameter(ComposableSingletonParameter[str, Any]):
 
     def build_consumer(self, key: str, value: Any) -> RequestConsumer:
         return StateConsumer(key, value)
+
+    def build_resolver(self, key: str) -> Resolver[Any]:
+        return StateResolver(key)

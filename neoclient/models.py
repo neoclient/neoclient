@@ -57,7 +57,11 @@ class State:
         super().__setattr__("_state", state)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({self._state!r})"
+        context: str = ", ".join(
+            f"{key}={value!r}"
+            for key, value in self._state.items()
+        )
+        return f"{type(self).__name__}({context})"
 
     def _set(self, key: str, value: Any) -> None:
         self._state[key] = value

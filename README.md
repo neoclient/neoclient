@@ -183,9 +183,9 @@ When you declare other function parameters that are not part of the path paramet
 ```python
 from neoclient import NeoClient
 
-app = NeoClient("https://httpbin.org/")
+client = NeoClient("https://httpbin.org/")
 
-@app.get("/get")
+@client.get("/get")
 def get(message: str):
     ...
 ```

@@ -70,4 +70,4 @@ class MissingStateError(Exception):
     key: str
 
     def __str__(self) -> str:
-        return "State entry missing for key {self.key!r}"
+        return f"State entry missing for key {self.key!r}"
