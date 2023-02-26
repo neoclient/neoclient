@@ -24,7 +24,7 @@ def get(name: str = State()):
         'Host': 'httpbin.org',
         'User-Agent': 'neoclient/0.1.18'
     },
-    'origin': '78.105.29.40',
+    'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get'
 }
 ```
