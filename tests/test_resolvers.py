@@ -1,8 +1,9 @@
 from http import HTTPStatus
 
-from httpx import Cookies, Headers, QueryParams, Request, Response
+from httpx import Cookies, Headers, QueryParams
 
 from neoclient.enums import HttpMethod
+from neoclient.models import Request, Response, State
 from neoclient.resolvers import (
     BodyResolver,
     CookieResolver,
@@ -11,6 +12,7 @@ from neoclient.resolvers import (
     HeadersResolver,
     QueriesResolver,
     QueryResolver,
+    StateResolver,
 )
 
 
@@ -106,3 +108,15 @@ def test_BodyResolver() -> None:
     )
 
     assert BodyResolver()(response) == {"name": "sam"}
+
+
+def test_StateResolver() -> None:
+    message: str = "Hello, World!"
+
+    response: Response = Response(
+        HTTPStatus.OK,
+        request=Request(HttpMethod.GET, "https://foo.com/"),
+        state=State({"message": message}),
+    )
+
+    assert StateResolver("message")(response) == message

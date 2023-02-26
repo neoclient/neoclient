@@ -297,5 +297,14 @@ def StatusCode() -> StatusCodeParameter:
     return StatusCodeParameter()
 
 
-def State() -> StateParameter:
-    return StateParameter()
+def State(
+    name: Optional[str] = None,
+    *,
+    default: Any = Required,
+    default_factory: Optional[Supplier[Any]] = None,
+) -> StateParameter:
+    return StateParameter(
+        default=default,
+        default_factory=default_factory,
+        alias=name,
+    )

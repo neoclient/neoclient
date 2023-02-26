@@ -73,4 +73,4 @@ class StateResolver(Resolver[Any]):
     key: str
 
     def __call__(self, response: Response, /) -> Any:
-        return response.state[self.key]
+        return response.state.get(self.key)

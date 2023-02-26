@@ -106,6 +106,9 @@ class State:
     def __delattr__(self, key: str) -> None:
         self._del(key)
 
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._state.get(key, default)
+
 
 class Request(httpx.Request):
     state: State

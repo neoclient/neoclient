@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Any, Mapping, Optional, Union
 
-from httpx import Request, Response
 from pydantic import BaseModel
 
-from neoclient import Depends, Query
+from neoclient import Depends, Query, State, models
 from neoclient.enums import HttpMethod
+from neoclient.models import Request, Response
 from neoclient.params import QueryParameter
 from neoclient.resolution import resolve
 
@@ -153,3 +153,36 @@ def test_resolve_default() -> None:
     resolved: Any = resolve(func, response)
 
     assert resolved == "default"
+
+
+def test_resolve_state_present() -> None:
+    message: str = "Hello, World!"
+
+    def func(message: str = State("message")) -> str:
+        return message
+
+    response: Response = Response(
+        HTTPStatus.OK,
+        request=Request(HttpMethod.GET, "https://foo.com/"),
+        state=models.State({"message": message}),
+    )
+
+    resolved: Any = resolve(func, response)
+
+    assert resolved == message
+
+
+def test_resolve_state_missing() -> None:
+    default_message: str = "Hello, Default!"
+
+    def func(message: str = State("message", default=default_message)) -> str:
+        return message
+
+    response: Response = Response(
+        HTTPStatus.OK,
+        request=Request(HttpMethod.GET, "https://foo.com/"),
+    )
+
+    resolved: Any = resolve(func, response)
+
+    assert resolved == default_message

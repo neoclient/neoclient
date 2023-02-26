@@ -1,4 +1,5 @@
 from dataclasses import replace
+import dataclasses
 from io import BytesIO
 from typing import Mapping
 
@@ -19,8 +20,9 @@ from neoclient.consumers import (
     QueriesConsumer,
     QueryConsumer,
     TimeoutConsumer,
+    StateConsumer,
 )
-from neoclient.models import PreRequest
+from neoclient.models import PreRequest, State
 from neoclient.types import JsonTypes, RequestContent, RequestData, RequestFiles
 
 
@@ -181,3 +183,13 @@ def test_TimeoutConsumer(pre_request: PreRequest) -> None:
     assert pre_request == replace(ref_pre_request, timeout=timeout)
 
     assert TimeoutConsumer(5.0) == TimeoutConsumer(Timeout(5.0))
+
+
+def test_StateConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
+
+    message: str = "Hello, World!"
+
+    StateConsumer("message", message)(pre_request)
+
+    assert pre_request == replace(ref_pre_request, state=State({"message": message}))
