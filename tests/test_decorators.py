@@ -7,7 +7,7 @@ from pytest import fixture
 
 from neoclient import converters, decorators, get
 from neoclient.middleware import RequestMiddleware
-from neoclient.models import RequestOptions
+from neoclient.models import PreRequest
 from neoclient.operation import get_operation
 from neoclient.types import (
     CookiesTypes,
@@ -32,7 +32,7 @@ def func() -> Callable:
 
 
 def test_query(func: Callable) -> None:
-    original_request: RequestOptions = replace(
+    original_request: PreRequest = replace(
         get_operation(func).specification.request
     )
 
@@ -47,7 +47,7 @@ def test_query(func: Callable) -> None:
 
 
 def test_header(func: Callable) -> None:
-    original_request: RequestOptions = replace(
+    original_request: PreRequest = replace(
         get_operation(func).specification.request
     )
 
@@ -62,7 +62,7 @@ def test_header(func: Callable) -> None:
 
 
 def test_cookie(func: Callable) -> None:
-    original_request: RequestOptions = replace(
+    original_request: PreRequest = replace(
         get_operation(func).specification.request
     )
 
@@ -77,7 +77,7 @@ def test_cookie(func: Callable) -> None:
 
 
 def test_path(func: Callable) -> None:
-    original_request: RequestOptions = replace(
+    original_request: PreRequest = replace(
         get_operation(func).specification.request
     )
 
@@ -92,7 +92,7 @@ def test_path(func: Callable) -> None:
 
 
 def test_query_params(func: Callable) -> None:
-    original_request: RequestOptions = replace(
+    original_request: PreRequest = replace(
         get_operation(func).specification.request
     )
 
@@ -106,7 +106,7 @@ def test_query_params(func: Callable) -> None:
 
 
 def test_headers(func: Callable) -> None:
-    original_request: RequestOptions = replace(
+    original_request: PreRequest = replace(
         get_operation(func).specification.request
     )
 
@@ -120,7 +120,7 @@ def test_headers(func: Callable) -> None:
 
 
 def test_cookies(func: Callable) -> None:
-    original_request: RequestOptions = replace(
+    original_request: PreRequest = replace(
         get_operation(func).specification.request
     )
 
@@ -134,7 +134,7 @@ def test_cookies(func: Callable) -> None:
 
 
 def test_path_params(func: Callable) -> None:
-    original_request: RequestOptions = replace(
+    original_request: PreRequest = replace(
         get_operation(func).specification.request
     )
 
@@ -148,7 +148,7 @@ def test_path_params(func: Callable) -> None:
 
 
 def test_content(func: Callable) -> None:
-    original_request: RequestOptions = replace(
+    original_request: PreRequest = replace(
         get_operation(func).specification.request
     )
 
@@ -162,7 +162,7 @@ def test_content(func: Callable) -> None:
 
 
 def test_data(func: Callable) -> None:
-    original_request: RequestOptions = replace(
+    original_request: PreRequest = replace(
         get_operation(func).specification.request
     )
 
@@ -176,7 +176,7 @@ def test_data(func: Callable) -> None:
 
 
 def test_files(func: Callable) -> None:
-    original_request: RequestOptions = replace(
+    original_request: PreRequest = replace(
         get_operation(func).specification.request
     )
 
@@ -190,7 +190,7 @@ def test_files(func: Callable) -> None:
 
 
 def test_json(func: Callable) -> None:
-    original_request: RequestOptions = replace(
+    original_request: PreRequest = replace(
         get_operation(func).specification.request
     )
 
@@ -204,7 +204,7 @@ def test_json(func: Callable) -> None:
 
 
 def test_timeout(func: Callable) -> None:
-    original_request: RequestOptions = replace(
+    original_request: PreRequest = replace(
         get_operation(func).specification.request
     )
 

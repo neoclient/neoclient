@@ -13,7 +13,7 @@ from typing_extensions import ParamSpec
 from .composition import compose
 from .errors import NotAnOperationError
 from .middleware import Middleware
-from .models import Request, RequestOptions, Response
+from .models import Request, PreRequest, Response
 from .resolution import resolve
 
 __all__: Sequence[str] = (
@@ -48,7 +48,7 @@ def get_operation(func: Callable, /) -> "Operation":
 
 @dataclass
 class OperationSpecification:
-    request: RequestOptions
+    request: PreRequest
     response: Optional[Callable[..., Any]] = None
     middleware: Middleware = field(default_factory=Middleware)
 
@@ -61,21 +61,21 @@ class Operation(Generic[PS, RT]):
     middleware: Middleware = field(default_factory=Middleware)
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
-        request_options: RequestOptions = self.specification.request.merge(
-            RequestOptions(
+        pre_request: PreRequest = self.specification.request.merge(
+            PreRequest(
                 method=self.specification.request.method,
                 url=self.specification.request.url,
             )
         )
 
-        compose(self.func, request_options, args, kwargs)
+        compose(self.func, pre_request, args, kwargs)
 
-        request: Request = request_options.build_request(self.client)
+        request: Request = pre_request.build_request(self.client)
 
         return_annotation: Any = inspect.signature(self.func).return_annotation
 
-        if return_annotation is RequestOptions:
-            return request_options
+        if return_annotation is PreRequest:
+            return pre_request
         if return_annotation is Request:
             return request
 

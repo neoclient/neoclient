@@ -26,7 +26,7 @@ from .converters import (
     convert_query_param,
 )
 from .errors import CompositionError, ResolutionError
-from .models import RequestOptions, Response
+from .models import PreRequest, Response
 from .resolvers import (
     BodyResolver,
     CookieResolver,
@@ -104,7 +104,7 @@ class Parameter(FieldInfo):
         if self.alias is not None:
             self.alias = str(self.alias)
 
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         raise CompositionError(f"Parameter {type(self)!r} is not composable")
 
     def resolve(self, response: Response, /) -> Any:
@@ -116,7 +116,7 @@ class Parameter(FieldInfo):
 
 
 class ComposableSingletonParameter(ABC, Parameter, Generic[K, V]):
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         if self.alias is None:
             raise CompositionError(
                 f"Cannot compose parameter {type(self)!r} without an alias"
@@ -236,7 +236,7 @@ class PathParameter(ComposableSingletonStringParameter):
 
 
 class QueriesParameter(Parameter):
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         params: QueriesTypes = parse_obj_as(QueriesTypes, argument)  # type: ignore
 
         QueriesConsumer(params)(request)
@@ -246,7 +246,7 @@ class QueriesParameter(Parameter):
 
 
 class HeadersParameter(Parameter):
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         headers: HeadersTypes = parse_obj_as(HeadersTypes, argument)  # type: ignore
 
         HeadersConsumer(headers)(request)
@@ -256,7 +256,7 @@ class HeadersParameter(Parameter):
 
 
 class CookiesParameter(Parameter):
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         cookies: CookiesTypes = parse_obj_as(CookiesTypes, argument)  # type: ignore
 
         CookiesConsumer(cookies)(request)
@@ -266,7 +266,7 @@ class CookiesParameter(Parameter):
 
 
 class PathsParameter(Parameter):
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         path_params: PathsTypes = parse_obj_as(PathsTypes, argument)  # type: ignore
 
         PathsConsumer(path_params)(request)
@@ -276,7 +276,7 @@ class PathsParameter(Parameter):
 class BodyParameter(Parameter):
     embed: bool = False
 
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         # If the parameter is not required and has no value, it can be omitted
         if argument is None and self.default is not Required:
             return

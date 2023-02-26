@@ -19,7 +19,7 @@ from .consumers import (
     TimeoutConsumer,
 )
 from .enums import HeaderName
-from .models import Request, RequestOptions, Response
+from .models import Request, PreRequest, Response
 from .operation import OperationSpecification, get_operation
 from .types import (
     CookiesTypes,
@@ -67,7 +67,7 @@ class CompositionFacilitator(Decorator):
     composer: RequestConsumer
 
     def __call__(self, func: C, /) -> C:
-        request: RequestOptions = get_operation(func).specification.request
+        request: PreRequest = get_operation(func).specification.request
 
         self.composer(request)
 

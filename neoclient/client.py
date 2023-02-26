@@ -27,7 +27,7 @@ from .defaults import (
 )
 from .enums import HeaderName, HttpMethod, MethodKind
 from .middleware import Middleware
-from .models import Request, RequestOptions, Response
+from .models import Request, PreRequest, Response
 from .operation import Operation, OperationSpecification, get_operation, has_operation
 from .types import (
     AuthTypes,
@@ -195,7 +195,7 @@ class Client:
         response: Optional[Callable] = None,
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         specification: OperationSpecification = OperationSpecification(
-            request=RequestOptions(
+            request=PreRequest(
                 method=method,
                 url=endpoint,
             ),

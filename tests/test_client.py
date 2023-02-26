@@ -7,7 +7,7 @@ from pydantic import BaseModel, Required
 from neoclient import Body, NeoClient, Queries, Query
 from neoclient.methods import get, post, request
 from neoclient.middleware import RequestMiddleware
-from neoclient.models import RequestOptions
+from neoclient.models import PreRequest
 from neoclient.operation import OperationSpecification, get_operation
 
 
@@ -53,7 +53,7 @@ def test_request(client: NeoClient) -> None:
         ...
 
     assert get_operation(foo).specification == OperationSpecification(
-        request=RequestOptions(
+        request=PreRequest(
             method=method,
             url=endpoint,
         ),
@@ -65,12 +65,12 @@ def test_request(client: NeoClient) -> None:
 def test_query_not_required_omitted(client: NeoClient) -> None:
     class Service(Protocol):
         @get("get")
-        def get(self, q: Optional[str] = Query(default=None)) -> RequestOptions:
+        def get(self, q: Optional[str] = Query(default=None)) -> PreRequest:
             ...
 
     service: Service = client.create(Service)  # type: ignore
 
-    assert service.get() == RequestOptions(
+    assert service.get() == PreRequest(
         method="GET",
         url="get",
     )
@@ -79,12 +79,12 @@ def test_query_not_required_omitted(client: NeoClient) -> None:
 def test_query_required_not_omitted(client: NeoClient) -> None:
     class Service(Protocol):
         @get("get")
-        def get(self, q: Optional[str] = Query(default=Required)) -> RequestOptions:
+        def get(self, q: Optional[str] = Query(default=Required)) -> PreRequest:
             ...
 
     service: Service = client.create(Service)  # type: ignore
 
-    assert service.get("foo") == RequestOptions(
+    assert service.get("foo") == PreRequest(
         method="GET",
         url="get",
         params={"q": "foo"},
@@ -94,12 +94,12 @@ def test_query_required_not_omitted(client: NeoClient) -> None:
 def test_single_body_param(client: NeoClient) -> None:
     class Service(Protocol):
         @post("/items/")
-        def create_item(self, item: Item = Body()) -> RequestOptions:
+        def create_item(self, item: Item = Body()) -> PreRequest:
             ...
 
     service: Service = client.create(Service)  # type: ignore
 
-    assert service.create_item(Item(id=1, name="item")) == RequestOptions(
+    assert service.create_item(Item(id=1, name="item")) == PreRequest(
         method="POST",
         url="/items/",
         json={"id": 1, "name": "item"},
@@ -111,14 +111,14 @@ def test_multiple_body_params(client: NeoClient) -> None:
         @post("/items/")
         def create_item(
             self, user: User = Body(), item: Item = Body()
-        ) -> RequestOptions:
+        ) -> PreRequest:
             ...
 
     service: Service = client.create(Service)  # type: ignore
 
     assert service.create_item(
         User(id=1, name="user"), Item(id=1, name="item")
-    ) == RequestOptions(
+    ) == PreRequest(
         method="POST",
         url="/items/",
         json={
@@ -133,14 +133,14 @@ def test_multiple_body_params_embedded(client: NeoClient) -> None:
         @post("/items/")
         def create_item(
             self, user: User = Body(embed=True), item: Item = Body(embed=True)
-        ) -> RequestOptions:
+        ) -> PreRequest:
             ...
 
     service: Service = client.create(Service)  # type: ignore
 
     assert service.create_item(
         User(id=1, name="user"), Item(id=1, name="item")
-    ) == RequestOptions(
+    ) == PreRequest(
         method="POST",
         url="/items/",
         json={
@@ -153,12 +153,12 @@ def test_multiple_body_params_embedded(client: NeoClient) -> None:
 def test_single_query_param(client: NeoClient) -> None:
     class Service(Protocol):
         @get("/items/")
-        def create_item(self, sort: str = Query()) -> RequestOptions:
+        def create_item(self, sort: str = Query()) -> PreRequest:
             ...
 
     service: Service = client.create(Service)  # type: ignore
 
-    assert service.create_item("ascending") == RequestOptions(
+    assert service.create_item("ascending") == PreRequest(
         method="GET",
         url="/items/",
         params={
@@ -170,12 +170,12 @@ def test_single_query_param(client: NeoClient) -> None:
 def test_multiple_query_params(client: NeoClient) -> None:
     class Service(Protocol):
         @get("/items/")
-        def create_item(self, params: dict = Queries()) -> RequestOptions:
+        def create_item(self, params: dict = Queries()) -> PreRequest:
             ...
 
     service: Service = client.create(Service)  # type: ignore
 
-    assert service.create_item({"sort": "ascending"}) == RequestOptions(
+    assert service.create_item({"sort": "ascending"}) == PreRequest(
         method="GET",
         url="/items/",
         params={

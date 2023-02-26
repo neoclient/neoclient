@@ -42,7 +42,7 @@ __all__: Sequence[str] = (
     "Client",
     "Request",
     "Response",
-    "RequestOptions",
+    "PreRequest",
     "OperationSpecification",
 )
 
@@ -209,7 +209,7 @@ class Response(httpx.Response):
 
 
 @dataclass(init=False)
-class RequestOptions:
+class PreRequest:
     method: str
     url: URL
     params: QueryParams
@@ -310,37 +310,37 @@ class RequestOptions:
 
             return request
 
-    def merge(self, request_options: "RequestOptions", /) -> "RequestOptions":
+    def merge(self, pre_request: "PreRequest", /) -> "PreRequest":
         return self.__class__(
-            method=request_options.method,
-            url=request_options.url,
-            params=self.params.merge(request_options.params),
-            headers=httpx.Headers({**self.headers, **request_options.headers}),
-            cookies=httpx.Cookies({**self.cookies, **request_options.cookies}),
+            method=pre_request.method,
+            url=pre_request.url,
+            params=self.params.merge(pre_request.params),
+            headers=httpx.Headers({**self.headers, **pre_request.headers}),
+            cookies=httpx.Cookies({**self.cookies, **pre_request.cookies}),
             content=(
-                request_options.content
-                if request_options.content is not None
+                pre_request.content
+                if pre_request.content is not None
                 else self.content
             ),
             data=(
-                request_options.data if request_options.data is not None else self.data
+                pre_request.data if pre_request.data is not None else self.data
             ),
             files=(
-                request_options.files
-                if request_options.files is not None
+                pre_request.files
+                if pre_request.files is not None
                 else self.files
             ),
             json=(
-                request_options.json if request_options.json is not None else self.json
+                pre_request.json if pre_request.json is not None else self.json
             ),
             timeout=(
-                request_options.timeout
-                if request_options.timeout is not None
+                pre_request.timeout
+                if pre_request.timeout is not None
                 else self.timeout
             ),
             path_params={
                 **self.path_params,
-                **request_options.path_params,
+                **pre_request.path_params,
             },
         )
 
