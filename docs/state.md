@@ -73,7 +73,7 @@ from neoclient.typing import CallNext
 client = NeoClient("https://httpbin.org/")
 
 
-def add_message_headers(call_next: CallNext, request: Request) -> Response:
+def add_name_headers(call_next: CallNext, request: Request) -> Response:
     name: str = request.state.name
 
     request.headers["X-Name-Lower"] = name.lower()
@@ -83,7 +83,7 @@ def add_message_headers(call_next: CallNext, request: Request) -> Response:
     return call_next(request)
 
 
-@middleware(add_message_headers)
+@middleware(add_name_headers)
 @client.get("/headers")
 def request(name: str = State()):
     ...
