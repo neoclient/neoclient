@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from typing import Any, Optional, Sequence, TypeVar
 
-from httpx import Cookies, Headers, QueryParams, Response
+from httpx import Cookies, Headers, QueryParams
 
+from .models import Response
 from .typing import Resolver
 
 __all__: Sequence[str] = (
@@ -13,6 +14,7 @@ __all__: Sequence[str] = (
     "HeadersResolver",
     "QueryResolver",
     "QueriesResolver",
+    "StateResolver",
 )
 
 T = TypeVar("T")
@@ -64,3 +66,11 @@ class BodyResolver(Resolver[Any]):
     @staticmethod
     def __call__(response: Response, /) -> Any:
         return response.json()
+
+
+@dataclass
+class StateResolver(Resolver[Any]):
+    key: str
+
+    def __call__(self, response: Response, /) -> Any:
+        return response.state.get(self.key)

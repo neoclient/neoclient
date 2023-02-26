@@ -11,12 +11,14 @@ from typing import (
     TypeVar,
 )
 
-from httpx import URL, Cookies, Headers, QueryParams, Request, Response
+import httpx
+from httpx import URL, Cookies, Headers, QueryParams
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo, ModelField
 
 from . import api, utils
 from .errors import PreparationError, ResolutionError
+from .models import Request, Response
 from .params import (
     BodyParameter,
     CookiesParameter,
@@ -42,6 +44,8 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
     httpx_lookup: Mapping[Type[Any], Type[Parameter]] = {
         Request: RequestParameter,
         Response: ResponseParameter,
+        httpx.Request: RequestParameter,
+        httpx.Response: ResponseParameter,
         URL: URLParameter,
         QueryParams: QueriesParameter,
         Headers: HeadersParameter,

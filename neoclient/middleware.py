@@ -2,10 +2,10 @@ from dataclasses import dataclass, field
 from typing import Optional, Protocol, Sequence
 
 import mediate
-from httpx import Request, Response
 
 from .enums import HeaderName
 from .errors import ExpectedHeaderError, ExpectedStatusCodeError
+from .models import Request, Response
 
 __all__: Sequence[str] = (
     "Middleware",

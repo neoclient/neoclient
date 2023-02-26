@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, Mapping, Optional, Sequence, Set, TypeVar, Union
+from typing import Any, Dict, Generic, Mapping, Optional, Sequence, Set, TypeVar, Union
 
 import fastapi.encoders
 import httpx
@@ -17,6 +17,7 @@ from .consumers import (
     PathsConsumer,
     QueriesConsumer,
     QueryConsumer,
+    StateConsumer,
 )
 from .converters import (
     convert_cookie,
@@ -25,7 +26,7 @@ from .converters import (
     convert_query_param,
 )
 from .errors import CompositionError, ResolutionError
-from .models import RequestOptions
+from .models import PreRequest, Response
 from .resolvers import (
     BodyResolver,
     CookieResolver,
@@ -34,6 +35,7 @@ from .resolvers import (
     HeadersResolver,
     QueriesResolver,
     QueryResolver,
+    StateResolver,
 )
 from .types import CookiesTypes, HeadersTypes, PathsTypes, QueriesTypes
 from .typing import RequestConsumer, Resolver, Supplier
@@ -55,7 +57,8 @@ __all__: Sequence[str] = (
     "StatusCodeParameter",
 )
 
-T = TypeVar("T")
+K = TypeVar("K")
+V = TypeVar("V")
 
 
 @dataclass(unsafe_hash=True)
@@ -101,10 +104,10 @@ class Parameter(FieldInfo):
         if self.alias is not None:
             self.alias = str(self.alias)
 
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         raise CompositionError(f"Parameter {type(self)!r} is not composable")
 
-    def resolve(self, response: httpx.Response, /) -> Any:
+    def resolve(self, response: Response, /) -> Any:
         raise ResolutionError(f"Parameter {type(self)!r} is not resolvable")
 
     def prepare(self, model_field: ModelField, /) -> None:
@@ -112,8 +115,8 @@ class Parameter(FieldInfo):
             self.alias = model_field.name
 
 
-class ComposableSingletonParameter(ABC, Parameter):
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+class ComposableSingletonParameter(ABC, Parameter, Generic[K, V]):
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         if self.alias is None:
             raise CompositionError(
                 f"Cannot compose parameter {type(self)!r} without an alias"
@@ -129,40 +132,56 @@ class ComposableSingletonParameter(ABC, Parameter):
 
         consumer(request)
 
-    def parse_key(self, key: str, /) -> str:
-        return key
-
     @abstractmethod
-    def parse_value(self, value: Any, /) -> str:
+    def parse_key(self, key: str, /) -> K:
         ...
 
     @abstractmethod
-    def build_consumer(self, key: str, value: str) -> RequestConsumer:
+    def parse_value(self, value: Any, /) -> V:
+        ...
+
+    @abstractmethod
+    def build_consumer(self, key: K, value: V) -> RequestConsumer:
         ...
 
 
-class ResolvableSingletonParameter(ABC, Parameter):
-    def resolve(self, response: httpx.Response, /) -> Optional[str]:
+class ResolvableSingletonParameter(ABC, Parameter, Generic[K, V]):
+    def resolve(self, response: Response, /) -> V:
         if self.alias is None:
             raise ResolutionError(
                 f"Cannot resolve parameter {type(self)!r} without an alias"
             )
 
-        resolver: Resolver[Optional[str]] = self.build_resolver(
+        resolver: Resolver[V] = self.build_resolver(
             self.parse_key(self.alias),
         )
 
         return resolver(response)
 
-    def parse_key(self, key: str, /) -> str:
-        return key
+    @abstractmethod
+    def parse_key(self, key: str, /) -> K:
+        ...
 
     @abstractmethod
-    def build_resolver(self, key: str) -> Resolver[Optional[str]]:
+    def build_resolver(self, key: K) -> Resolver[V]:
         ...
 
 
-class QueryParameter(ComposableSingletonParameter, ResolvableSingletonParameter):
+class ComposableSingletonStringParameter(ComposableSingletonParameter[str, str]):
+    def parse_key(self, key: str, /) -> str:
+        return key
+
+
+class ResolvableSingletonStringParameter(
+    ResolvableSingletonParameter[str, Optional[str]]
+):
+    def parse_key(self, key: str, /) -> str:
+        return key
+
+
+class QueryParameter(
+    ComposableSingletonStringParameter, ResolvableSingletonStringParameter
+):
     def parse_value(self, value: Any, /) -> str:
         return convert_query_param(value)
 
@@ -174,7 +193,9 @@ class QueryParameter(ComposableSingletonParameter, ResolvableSingletonParameter)
 
 
 @dataclass(unsafe_hash=True)
-class HeaderParameter(ComposableSingletonParameter, ResolvableSingletonParameter):
+class HeaderParameter(
+    ComposableSingletonStringParameter, ResolvableSingletonStringParameter
+):
     convert_underscores: bool = True
 
     def parse_key(self, key: str, /) -> str:
@@ -193,7 +214,9 @@ class HeaderParameter(ComposableSingletonParameter, ResolvableSingletonParameter
         return HeaderResolver(key)
 
 
-class CookieParameter(ComposableSingletonParameter, ResolvableSingletonParameter):
+class CookieParameter(
+    ComposableSingletonStringParameter, ResolvableSingletonStringParameter
+):
     def parse_value(self, value: Any, /) -> str:
         return convert_cookie(value)
 
@@ -204,7 +227,7 @@ class CookieParameter(ComposableSingletonParameter, ResolvableSingletonParameter
         return CookieResolver(key)
 
 
-class PathParameter(ComposableSingletonParameter):
+class PathParameter(ComposableSingletonStringParameter):
     def parse_value(self, value: Any, /) -> str:
         return convert_path_param(value)
 
@@ -213,37 +236,37 @@ class PathParameter(ComposableSingletonParameter):
 
 
 class QueriesParameter(Parameter):
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         params: QueriesTypes = parse_obj_as(QueriesTypes, argument)  # type: ignore
 
         QueriesConsumer(params)(request)
 
-    def resolve(self, response: httpx.Response, /) -> QueryParams:
+    def resolve(self, response: Response, /) -> QueryParams:
         return QueriesResolver()(response)
 
 
 class HeadersParameter(Parameter):
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         headers: HeadersTypes = parse_obj_as(HeadersTypes, argument)  # type: ignore
 
         HeadersConsumer(headers)(request)
 
-    def resolve(self, response: httpx.Response, /) -> Headers:
+    def resolve(self, response: Response, /) -> Headers:
         return HeadersResolver()(response)
 
 
 class CookiesParameter(Parameter):
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         cookies: CookiesTypes = parse_obj_as(CookiesTypes, argument)  # type: ignore
 
         CookiesConsumer(cookies)(request)
 
-    def resolve(self, response: httpx.Response, /) -> Cookies:
+    def resolve(self, response: Response, /) -> Cookies:
         return CookiesResolver()(response)
 
 
 class PathsParameter(Parameter):
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         path_params: PathsTypes = parse_obj_as(PathsTypes, argument)  # type: ignore
 
         PathsConsumer(path_params)(request)
@@ -253,7 +276,7 @@ class PathsParameter(Parameter):
 class BodyParameter(Parameter):
     embed: bool = False
 
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         # If the parameter is not required and has no value, it can be omitted
         if argument is None and self.default is not Required:
             return
@@ -278,25 +301,41 @@ class BodyParameter(Parameter):
             else:
                 request.json.update(json_value)
 
-    def resolve(self, response: httpx.Response, /) -> Any:
+    def resolve(self, response: Response, /) -> Any:
         return BodyResolver()(response)
 
 
 class URLParameter(Parameter):
-    def resolve(self, response: httpx.Response, /) -> httpx.URL:
+    def resolve(self, response: Response, /) -> httpx.URL:
         return response.request.url
 
 
 class ResponseParameter(Parameter):
-    def resolve(self, response: httpx.Response, /) -> httpx.Response:
+    def resolve(self, response: Response, /) -> Response:
         return response
 
 
 class RequestParameter(Parameter):
-    def resolve(self, response: httpx.Response, /) -> httpx.Request:
+    def resolve(self, response: Response, /) -> httpx.Request:
         return response.request
 
 
 class StatusCodeParameter(Parameter):
-    def resolve(self, response: httpx.Response, /) -> int:
+    def resolve(self, response: Response, /) -> int:
         return response.status_code
+
+
+class StateParameter(
+    ComposableSingletonParameter[str, Any], ResolvableSingletonParameter[str, Any]
+):
+    def parse_key(self, key: str, /) -> str:
+        return key
+
+    def parse_value(self, value: Any, /) -> Any:
+        return value
+
+    def build_consumer(self, key: str, value: Any) -> RequestConsumer:
+        return StateConsumer(key, value)
+
+    def build_resolver(self, key: str) -> Resolver[Any]:
+        return StateResolver(key)

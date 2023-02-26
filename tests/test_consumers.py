@@ -1,4 +1,5 @@
 from dataclasses import replace
+import dataclasses
 from io import BytesIO
 from typing import Mapping
 
@@ -19,165 +20,176 @@ from neoclient.consumers import (
     QueriesConsumer,
     QueryConsumer,
     TimeoutConsumer,
+    StateConsumer,
 )
-from neoclient.models import RequestOptions
+from neoclient.models import PreRequest, State
 from neoclient.types import JsonTypes, RequestContent, RequestData, RequestFiles
 
 
 @fixture
-def request_options() -> RequestOptions:
-    return RequestOptions("GET", "/foo")
+def pre_request() -> PreRequest:
+    return PreRequest("GET", "/foo")
 
 
-def test_QueryParamConsumer(request_options: RequestOptions) -> None:
-    ref_request_options: RequestOptions = replace(request_options)
+def test_QueryParamConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
 
     key: str = "name"
     value: str = "sam"
 
-    QueryConsumer(key, value)(request_options)
+    QueryConsumer(key, value)(pre_request)
 
-    assert request_options == replace(ref_request_options, params={key: value})
+    assert pre_request == replace(ref_pre_request, params={key: value})
 
     assert QueryConsumer("age", 123) == QueryConsumer("age", "123")
 
 
-def test_HeaderConsumer(request_options: RequestOptions) -> None:
-    ref_request_options: RequestOptions = replace(request_options)
+def test_HeaderConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
 
     key: str = "name"
     value: str = "sam"
 
-    HeaderConsumer(key, value)(request_options)
+    HeaderConsumer(key, value)(pre_request)
 
-    assert request_options == replace(ref_request_options, headers={key: value})
+    assert pre_request == replace(ref_pre_request, headers={key: value})
 
     assert HeaderConsumer("age", 123) == HeaderConsumer("age", "123")
 
 
-def test_CookieConsumer(request_options: RequestOptions) -> None:
-    ref_request_options: RequestOptions = replace(request_options)
+def test_CookieConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
 
     key: str = "name"
     value: str = "sam"
 
-    CookieConsumer(key, value)(request_options)
+    CookieConsumer(key, value)(pre_request)
 
-    assert request_options == replace(ref_request_options, cookies={key: value})
+    assert pre_request == replace(ref_pre_request, cookies={key: value})
 
     assert CookieConsumer("age", 123) == CookieConsumer("age", "123")
 
 
-def test_PathParamConsumer(request_options: RequestOptions) -> None:
-    ref_request_options: RequestOptions = replace(request_options)
+def test_PathParamConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
 
     key: str = "name"
     value: str = "sam"
 
-    PathConsumer(key, value)(request_options)
+    PathConsumer(key, value)(pre_request)
 
-    assert request_options == replace(ref_request_options, path_params={key: value})
+    assert pre_request == replace(ref_pre_request, path_params={key: value})
 
     assert PathConsumer("age", 123) == PathConsumer("age", "123")
 
 
-def test_QueryParamsConsumer(request_options: RequestOptions) -> None:
-    ref_request_options: RequestOptions = replace(request_options)
+def test_QueryParamsConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
 
     params: QueryParams = QueryParams({"name": "sam"})
 
-    QueriesConsumer(params)(request_options)
+    QueriesConsumer(params)(pre_request)
 
-    assert request_options == replace(ref_request_options, params=params)
+    assert pre_request == replace(ref_pre_request, params=params)
 
     assert QueriesConsumer({"name": "sam"}) == QueriesConsumer(
         QueryParams({"name": "sam"})
     )
 
 
-def test_HeadersConsumer(request_options: RequestOptions) -> None:
-    ref_request_options: RequestOptions = replace(request_options)
+def test_HeadersConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
 
     headers: Headers = Headers({"name": "sam"})
 
-    HeadersConsumer(headers)(request_options)
+    HeadersConsumer(headers)(pre_request)
 
-    assert request_options == replace(ref_request_options, headers=headers)
+    assert pre_request == replace(ref_pre_request, headers=headers)
 
     assert HeadersConsumer({"name": "sam"}) == HeadersConsumer(Headers({"name": "sam"}))
 
 
-def test_CookiesConsumer(request_options: RequestOptions) -> None:
-    ref_request_options: RequestOptions = replace(request_options)
+def test_CookiesConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
 
     cookies: Cookies = Cookies({"name": "sam"})
 
-    CookiesConsumer(cookies)(request_options)
+    CookiesConsumer(cookies)(pre_request)
 
-    assert request_options == replace(ref_request_options, cookies=cookies)
+    assert pre_request == replace(ref_pre_request, cookies=cookies)
 
     assert CookiesConsumer({"name": "sam"}) == CookiesConsumer(Cookies({"name": "sam"}))
 
 
-def test_PathParamsConsumer(request_options: RequestOptions) -> None:
-    ref_request_options: RequestOptions = replace(request_options)
+def test_PathParamsConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
 
     path_params: Mapping[str, str] = {"name": "sam"}
 
-    PathsConsumer(path_params)(request_options)
+    PathsConsumer(path_params)(pre_request)
 
-    assert request_options == replace(ref_request_options, path_params=path_params)
+    assert pre_request == replace(ref_pre_request, path_params=path_params)
 
     assert PathsConsumer({"age": 123}) == PathsConsumer({"age": "123"})
 
 
-def test_ContentConsumer(request_options: RequestOptions) -> None:
-    ref_request_options: RequestOptions = replace(request_options)
+def test_ContentConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
 
     content: RequestContent = "content"
 
-    ContentConsumer(content)(request_options)
+    ContentConsumer(content)(pre_request)
 
-    assert request_options == replace(ref_request_options, content=content)
+    assert pre_request == replace(ref_pre_request, content=content)
 
 
-def test_DataConsumer(request_options: RequestOptions) -> None:
-    ref_request_options: RequestOptions = replace(request_options)
+def test_DataConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
 
     data: RequestData = {"name": "sam"}
 
-    DataConsumer(data)(request_options)
+    DataConsumer(data)(pre_request)
 
-    assert request_options == replace(ref_request_options, data=data)
+    assert pre_request == replace(ref_pre_request, data=data)
 
 
-def test_FilesConsumer(request_options: RequestOptions) -> None:
-    ref_request_options: RequestOptions = replace(request_options)
+def test_FilesConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
 
     files: RequestFiles = {"file.txt": BytesIO(b"content")}
 
-    FilesConsumer(files)(request_options)
+    FilesConsumer(files)(pre_request)
 
-    assert request_options == replace(ref_request_options, files=files)
+    assert pre_request == replace(ref_pre_request, files=files)
 
 
-def test_JsonConsumer(request_options: RequestOptions) -> None:
-    ref_request_options: RequestOptions = replace(request_options)
+def test_JsonConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
 
     json: JsonTypes = {"name": "sam"}
 
-    JsonConsumer(json)(request_options)
+    JsonConsumer(json)(pre_request)
 
-    assert request_options == replace(ref_request_options, json=json)
+    assert pre_request == replace(ref_pre_request, json=json)
 
 
-def test_TimeoutConsumer(request_options: RequestOptions) -> None:
-    ref_request_options: RequestOptions = replace(request_options)
+def test_TimeoutConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
 
     timeout: Timeout = Timeout(5.0)
 
-    TimeoutConsumer(timeout)(request_options)
+    TimeoutConsumer(timeout)(pre_request)
 
-    assert request_options == replace(ref_request_options, timeout=timeout)
+    assert pre_request == replace(ref_pre_request, timeout=timeout)
 
     assert TimeoutConsumer(5.0) == TimeoutConsumer(Timeout(5.0))
+
+
+def test_StateConsumer(pre_request: PreRequest) -> None:
+    ref_pre_request: PreRequest = replace(pre_request)
+
+    message: str = "Hello, World!"
+
+    StateConsumer("message", message)(pre_request)
+
+    assert pre_request == replace(ref_pre_request, state=State({"message": message}))

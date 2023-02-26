@@ -137,7 +137,7 @@ def anything(name: Name):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'neoclient/0.1.17'
+        'User-Agent': 'neoclient/0.1.18'
     },
     'json': None,
     'method': 'GET',
@@ -169,7 +169,7 @@ def do(commands: Sequence[str]):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'neoclient/0.1.17'
+        'User-Agent': 'neoclient/0.1.18'
     },
     'json': None,
     'method': 'GET',
@@ -183,9 +183,9 @@ When you declare other function parameters that are not part of the path paramet
 ```python
 from neoclient import NeoClient
 
-app = NeoClient("https://httpbin.org/")
+client = NeoClient("https://httpbin.org/")
 
-@app.get("/get")
+@client.get("/get")
 def get(message: str):
     ...
 ```
@@ -197,7 +197,7 @@ def get(message: str):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'neoclient/0.1.17'
+        'User-Agent': 'neoclient/0.1.18'
     },
     'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get?message=Hello%2C+World!'
@@ -225,7 +225,7 @@ httpbin: Httpbin = NeoClient("https://httpbin.org/").create(Httpbin)  # type: ig
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'neoclient/0.1.17'
+        'User-Agent': 'neoclient/0.1.18'
     },
     'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get?message=Hello%2C+World!'

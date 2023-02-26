@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from typing import Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 
 from . import converters
-from .models import RequestOptions
+from .models import PreRequest
 from .types import (
     CookieTypes,
     HeaderTypes,
@@ -46,7 +46,7 @@ class QueryConsumer(RequestConsumer):
         self.key = key
         self.value = converters.convert_query_param(value)
 
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         request.params = request.params.set(self.key, self.value)
 
 
@@ -59,7 +59,7 @@ class HeaderConsumer(RequestConsumer):
         self.key = key
         self.value = converters.convert_header(value)
 
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         request.headers[self.key] = self.value
 
 
@@ -72,7 +72,7 @@ class CookieConsumer(RequestConsumer):
         self.key = key
         self.value = converters.convert_cookie(value)
 
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         request.cookies[self.key] = self.value
 
 
@@ -85,7 +85,7 @@ class PathConsumer(RequestConsumer):
         self.key = key
         self.value = converters.convert_path_param(value)
 
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         request.path_params[self.key] = self.value
 
 
@@ -96,7 +96,7 @@ class QueriesConsumer(RequestConsumer):
     def __init__(self, params: QueriesTypes, /) -> None:
         self.params = converters.convert_query_params(params)
 
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         request.params = request.params.merge(self.params)
 
 
@@ -107,7 +107,7 @@ class HeadersConsumer(RequestConsumer):
     def __init__(self, headers: HeaderTypes, /) -> None:
         self.headers = converters.convert_headers(headers)
 
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         request.headers.update(self.headers)
 
 
@@ -118,7 +118,7 @@ class CookiesConsumer(RequestConsumer):
     def __init__(self, cookies: CookieTypes, /) -> None:
         self.cookies = converters.convert_cookies(cookies)
 
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         request.cookies.update(self.cookies)
 
 
@@ -129,7 +129,7 @@ class PathsConsumer(RequestConsumer):
     def __init__(self, path_params: PathsTypes, /) -> None:
         self.path_params = converters.convert_path_params(path_params)
 
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         request.path_params.update(self.path_params)
 
 
@@ -137,7 +137,7 @@ class PathsConsumer(RequestConsumer):
 class ContentConsumer(RequestConsumer):
     content: RequestContent
 
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         request.content = self.content
 
 
@@ -145,7 +145,7 @@ class ContentConsumer(RequestConsumer):
 class DataConsumer(RequestConsumer):
     data: RequestData
 
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         request.data = self.data
 
 
@@ -153,7 +153,7 @@ class DataConsumer(RequestConsumer):
 class FilesConsumer(RequestConsumer):
     files: RequestFiles
 
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         request.files = self.files
 
 
@@ -161,7 +161,7 @@ class FilesConsumer(RequestConsumer):
 class JsonConsumer(RequestConsumer):
     json: JsonTypes
 
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         request.json = self.json
 
 
@@ -172,5 +172,14 @@ class TimeoutConsumer(RequestConsumer):
     def __init__(self, timeout: TimeoutTypes, /) -> None:
         self.timeout = converters.convert_timeout(timeout)
 
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         request.timeout = self.timeout
+
+
+@dataclass
+class StateConsumer(RequestConsumer):
+    key: str
+    value: Any
+
+    def __call__(self, request: PreRequest, /) -> None:
+        request.state[self.key] = self.value

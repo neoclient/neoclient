@@ -9,7 +9,10 @@ from httpx._types import (
     ProxiesTypes,
     RequestContent,
     RequestData,
+    RequestExtensions,
     RequestFiles,
+    ResponseContent,
+    ResponseExtensions,
     SyncByteStream,
     TimeoutTypes,
     URLTypes,
@@ -23,7 +26,10 @@ __all__: Sequence[str] = (
     "ProxiesTypes",
     "RequestContent",
     "RequestData",
+    "RequestExtensions",
     "RequestFiles",
+    "ResponseContent",
+    "ResponseExtensions",
     "TimeoutTypes",
     "URLTypes",
     "VerifyTypes",
@@ -60,7 +66,10 @@ PathTypes: TypeAlias = Union[Primitive, Sequence[Primitive]]
 QueriesTypes: TypeAlias = Union[
     QueryParams,
     Mapping[str, Union[Primitive, Sequence[Primitive]]],
-    Sequence[Tuple[str, Primitive]],
+    List[Tuple[str, Primitive]],
+    Tuple[Tuple[str, Primitive], ...],
+    str,
+    bytes,
 ]
 HeadersTypes: TypeAlias = Union[
     Headers,

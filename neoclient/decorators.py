@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Callable, Protocol, Sequence, TypeVar
 
-from httpx import Request, Response
 from mediate.protocols import MiddlewareCallable
 
 from .consumers import (
@@ -20,8 +19,8 @@ from .consumers import (
     TimeoutConsumer,
 )
 from .enums import HeaderName
-from .models import OperationSpecification, RequestOptions
-from .operation import get_operation
+from .models import PreRequest, Request, Response
+from .operation import OperationSpecification, get_operation
 from .types import (
     CookiesTypes,
     CookieTypes,
@@ -68,7 +67,7 @@ class CompositionFacilitator(Decorator):
     composer: RequestConsumer
 
     def __call__(self, func: C, /) -> C:
-        request: RequestOptions = get_operation(func).specification.request
+        request: PreRequest = get_operation(func).specification.request
 
         self.composer(request)
 
@@ -127,11 +126,13 @@ def timeout(timeout: TimeoutTypes, /) -> Decorator:
     return CompositionFacilitator(TimeoutConsumer(timeout))
 
 
-def middleware(middleware: MiddlewareCallable[Request, Response], /) -> Decorator:
+def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:
     def decorate(func: C, /) -> C:
         specification: OperationSpecification = get_operation(func).specification
 
-        specification.middleware.add(middleware)
+        middleware_callable: MiddlewareCallable[Request, Response]
+        for middleware_callable in middleware:
+            specification.middleware.add(middleware_callable)
 
         return func
 

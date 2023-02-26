@@ -1,10 +1,9 @@
 from typing import Any, Protocol, Sequence, TypeVar
 
-from httpx import Response
-
-from .models import RequestOptions
+from .models import PreRequest, Request, Response
 
 __all__: Sequence[str] = (
+    "CallNext",
     "Composer",
     "RequestConsumer",
     "Resolver",
@@ -14,6 +13,11 @@ __all__: Sequence[str] = (
 T_contra = TypeVar("T_contra", contravariant=True)
 T_co = TypeVar("T_co", covariant=True)
 R_co = TypeVar("R_co", covariant=True)
+
+
+class CallNext(Protocol):
+    def __call__(self, request: Request, /) -> Response:
+        ...
 
 
 class Supplier(Protocol[T_co]):
@@ -27,10 +31,10 @@ class Resolver(Protocol[T_co]):
 
 
 class Composer(Protocol):
-    def compose(self, request: RequestOptions, argument: Any, /) -> None:
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
         ...
 
 
 class RequestConsumer(Protocol):
-    def __call__(self, request: RequestOptions, /) -> None:
+    def __call__(self, request: PreRequest, /) -> None:
         ...

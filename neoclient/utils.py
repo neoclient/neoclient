@@ -16,6 +16,7 @@ from typing import (
     Union,
 )
 
+from httpx import Request
 from pydantic import BaseConfig, BaseModel, create_model
 from pydantic.fields import FieldInfo, Undefined
 from pydantic.typing import display_as_type
