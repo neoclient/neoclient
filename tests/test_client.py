@@ -1,13 +1,13 @@
 from typing import Callable, Optional, Protocol
 
 import pytest
-from httpx import Headers, Request, Response
+from httpx import Headers
 from pydantic import BaseModel, Required
 
 from neoclient import Body, NeoClient, Queries, Query
 from neoclient.methods import get, post, request
 from neoclient.middleware import RequestMiddleware
-from neoclient.models import PreRequest
+from neoclient.models import PreRequest, Request, Response
 from neoclient.operation import OperationSpecification, get_operation
 
 
@@ -32,7 +32,9 @@ def client() -> NeoClient:
 def test_bind(client: NeoClient) -> None:
     method: str = "METHOD"
     endpoint: str = "/endpoint"
-    response: Callable = lambda: None
+
+    def response() -> None:
+        return None
 
     @request(method, endpoint, response=response)
     def foo():
@@ -46,7 +48,9 @@ def test_bind(client: NeoClient) -> None:
 def test_request(client: NeoClient) -> None:
     method: str = "METHOD"
     endpoint: str = "/endpoint"
-    response: Callable = lambda: None
+
+    def response() -> None:
+        return None
 
     @client.request(method, endpoint, response=response)
     def foo():
@@ -109,9 +113,7 @@ def test_single_body_param(client: NeoClient) -> None:
 def test_multiple_body_params(client: NeoClient) -> None:
     class Service(Protocol):
         @post("/items/")
-        def create_item(
-            self, user: User = Body(), item: Item = Body()
-        ) -> PreRequest:
+        def create_item(self, user: User = Body(), item: Item = Body()) -> PreRequest:
             ...
 
     service: Service = client.create(Service)  # type: ignore

@@ -19,7 +19,7 @@ from .consumers import (
     TimeoutConsumer,
 )
 from .enums import HeaderName
-from .models import Request, PreRequest, Response
+from .models import PreRequest, Request, Response
 from .operation import OperationSpecification, get_operation
 from .types import (
     CookiesTypes,

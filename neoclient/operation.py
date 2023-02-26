@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from json import JSONDecodeError
 from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
 
-import pydantic
 import httpx
+import pydantic
 from httpx import Client
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
@@ -13,7 +13,7 @@ from typing_extensions import ParamSpec
 from .composition import compose
 from .errors import NotAnOperationError
 from .middleware import Middleware
-from .models import Request, PreRequest, Response
+from .models import PreRequest, Request, Response
 from .resolution import resolve
 
 __all__: Sequence[str] = (

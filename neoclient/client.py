@@ -27,7 +27,7 @@ from .defaults import (
 )
 from .enums import HeaderName, HttpMethod, MethodKind
 from .middleware import Middleware
-from .models import Request, PreRequest, Response
+from .models import PreRequest, Request, Response
 from .operation import Operation, OperationSpecification, get_operation, has_operation
 from .types import (
     AuthTypes,

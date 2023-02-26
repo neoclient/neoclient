@@ -58,10 +58,15 @@ class State:
 
     def __repr__(self) -> str:
         context: str = ", ".join(
-            f"{key}={value!r}"
-            for key, value in self._state.items()
+            f"{key}={value!r}" for key, value in self._state.items()
         )
         return f"{type(self).__name__}({context})"
+
+    def __eq__(self, value: object) -> bool:
+        if isinstance(value, type(self)):
+            return self._state == value._state
+        else:
+            return False
 
     def _set(self, key: str, value: Any) -> None:
         self._state[key] = value
@@ -82,10 +87,18 @@ class State:
         self._set(key, value)
 
     def __getitem__(self, key: str) -> Any:
-        return self._get(key)
+        try:
+            return self._get(key)
+        except MissingStateError as missing_state_error:
+            raise KeyError(key) from missing_state_error
 
     def __getattr__(self, key: str) -> Any:
-        return self._get(key)
+        try:
+            return self._get(key)
+        except MissingStateError as missing_state_error:
+            raise AttributeError(
+                f"{type(self).__name__!r} object has no attribute {key!r}"
+            ) from missing_state_error
 
     def __delitem__(self, key: str) -> None:
         self._del(key)
@@ -318,25 +331,13 @@ class PreRequest:
             headers=httpx.Headers({**self.headers, **pre_request.headers}),
             cookies=httpx.Cookies({**self.cookies, **pre_request.cookies}),
             content=(
-                pre_request.content
-                if pre_request.content is not None
-                else self.content
+                pre_request.content if pre_request.content is not None else self.content
             ),
-            data=(
-                pre_request.data if pre_request.data is not None else self.data
-            ),
-            files=(
-                pre_request.files
-                if pre_request.files is not None
-                else self.files
-            ),
-            json=(
-                pre_request.json if pre_request.json is not None else self.json
-            ),
+            data=(pre_request.data if pre_request.data is not None else self.data),
+            files=(pre_request.files if pre_request.files is not None else self.files),
+            json=(pre_request.json if pre_request.json is not None else self.json),
             timeout=(
-                pre_request.timeout
-                if pre_request.timeout is not None
-                else self.timeout
+                pre_request.timeout if pre_request.timeout is not None else self.timeout
             ),
             path_params={
                 **self.path_params,
