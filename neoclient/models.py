@@ -77,14 +77,22 @@ class Request(httpx.Request):
 
     @classmethod
     def from_httpx_request(cls, request: httpx.Request, /) -> "Request":
-        return cls(
-            method=request.method,
-            url=request.url,
-            headers=request.headers,
-            content=request.content,
-            stream=request.stream,
-            extensions=request.extensions,
-        )
+        if hasattr(request, "_content"):
+            return cls(
+                method=request.method,
+                url=request.url,
+                headers=request.headers,
+                extensions=request.extensions,
+                content=request.content,
+            )
+        else:
+            return cls(
+                method=request.method,
+                url=request.url,
+                headers=request.headers,
+                extensions=request.extensions,
+                stream=request.stream,
+            )
 
 class Response(httpx.Response):
     state: MutableMapping[str, Any]
@@ -126,12 +134,20 @@ class Response(httpx.Response):
 
     @classmethod
     def from_httpx_response(cls, response: httpx.Response, /) -> "Response":
-        return cls(
-            status_code=response.status_code,
-            headers=response.headers,
-            request=response.request,
-            content=response.content,
-        )
+        if hasattr(response, "_content"):
+            return cls(
+                status_code=response.status_code,
+                headers=response.headers,
+                request=response.request,
+                content=response.content,
+            )
+        else:
+            return cls(
+                status_code=response.status_code,
+                headers=response.headers,
+                request=response.request,
+                stream=response.stream,
+            )
 
 
 @dataclass(init=False)
