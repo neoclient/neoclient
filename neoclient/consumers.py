@@ -44,7 +44,9 @@ class Consumer:
         elif isinstance(target, ClientOptions):
             self.consume_client(target)
         else:
-            raise CompositionError(f"Consumer {type(self).__name__!r} does not support consumption of type {type(target)}")
+            raise CompositionError(
+                f"Consumer {type(self).__name__!r} does not support consumption of type {type(target)}"
+            )
 
     def consume_request(self, _: PreRequest, /) -> None:
         raise CompositionError(
@@ -85,6 +87,9 @@ class HeaderConsumer(Consumer):
     def consume_request(self, request: PreRequest, /) -> None:
         request.headers[self.key] = self.value
 
+    def consume_client(self, client: ClientOptions, /) -> None:
+        client.headers[self.key] = self.value
+
 
 @dataclass(init=False)
 class CookieConsumer(Consumer):
@@ -97,6 +102,9 @@ class CookieConsumer(Consumer):
 
     def consume_request(self, request: PreRequest, /) -> None:
         request.cookies[self.key] = self.value
+
+    def consume_client(self, client: ClientOptions, /) -> None:
+        client.cookies[self.key] = self.value
 
 
 @dataclass(init=False)
@@ -122,6 +130,9 @@ class QueriesConsumer(Consumer):
     def consume_request(self, request: PreRequest, /) -> None:
         request.params = request.params.merge(self.params)
 
+    def consume_client(self, client: ClientOptions, /) -> None:
+        client.params = client.params.merge(self.params)
+
 
 @dataclass(init=False)
 class HeadersConsumer(Consumer):
@@ -133,6 +144,9 @@ class HeadersConsumer(Consumer):
     def consume_request(self, request: PreRequest, /) -> None:
         request.headers.update(self.headers)
 
+    def consume_client(self, client: ClientOptions, /) -> None:
+        client.headers.update(self.headers)
+
 
 @dataclass(init=False)
 class CookiesConsumer(Consumer):
@@ -143,6 +157,9 @@ class CookiesConsumer(Consumer):
 
     def consume_request(self, request: PreRequest, /) -> None:
         request.cookies.update(self.cookies)
+
+    def consume_client(self, client: ClientOptions, /) -> None:
+        client.cookies.update(self.cookies)
 
 
 @dataclass(init=False)
@@ -197,6 +214,9 @@ class TimeoutConsumer(Consumer):
 
     def consume_request(self, request: PreRequest, /) -> None:
         request.timeout = self.timeout
+
+    def consume_client(self, client: ClientOptions, /) -> None:
+        client.timeout = self.timeout
 
 
 @dataclass
