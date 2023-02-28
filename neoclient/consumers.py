@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, Sequence, Union
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 
 from . import converters
+from .errors import CompositionError
 from .models import ClientOptions, PreRequest
 from .types import (
     CookieTypes,
@@ -18,7 +19,6 @@ from .types import (
     RequestFiles,
     TimeoutTypes,
 )
-from .typing import RequestConsumer
 
 __all__: Sequence[str] = (
     "QueryConsumer",
@@ -38,11 +38,23 @@ __all__: Sequence[str] = (
 
 
 class Consumer:
-    def consume_request(self, request: PreRequest, /) -> None:
-        pass
+    def consume(self, target: Union[PreRequest, ClientOptions], /) -> None:
+        if isinstance(target, PreRequest):
+            self.consume_request(target)
+        elif isinstance(target, ClientOptions):
+            self.consume_client(target)
+        else:
+            raise CompositionError(f"Consumer {type(self).__name__!r} does not support consumption of type {type(target)}")
 
-    def consume_client(self, client: ClientOptions, /) -> None:
-        pass
+    def consume_request(self, _: PreRequest, /) -> None:
+        raise CompositionError(
+            f"Consumer {type(self).__name__!r} does not support consumption of type {PreRequest}"
+        )
+
+    def consume_client(self, _: ClientOptions, /) -> None:
+        raise CompositionError(
+            f"Consumer {type(self).__name__!r} does not support consumption of type {ClientOptions}"
+        )
 
 
 @dataclass(init=False)
@@ -62,7 +74,7 @@ class QueryConsumer(Consumer):
 
 
 @dataclass(init=False)
-class HeaderConsumer(RequestConsumer):
+class HeaderConsumer(Consumer):
     key: str
     value: str
 
@@ -70,12 +82,12 @@ class HeaderConsumer(RequestConsumer):
         self.key = key
         self.value = converters.convert_header(value)
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.headers[self.key] = self.value
 
 
 @dataclass(init=False)
-class CookieConsumer(RequestConsumer):
+class CookieConsumer(Consumer):
     key: str
     value: str
 
@@ -83,12 +95,12 @@ class CookieConsumer(RequestConsumer):
         self.key = key
         self.value = converters.convert_cookie(value)
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.cookies[self.key] = self.value
 
 
 @dataclass(init=False)
-class PathConsumer(RequestConsumer):
+class PathConsumer(Consumer):
     key: str
     value: str
 
@@ -96,101 +108,101 @@ class PathConsumer(RequestConsumer):
         self.key = key
         self.value = converters.convert_path_param(value)
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.path_params[self.key] = self.value
 
 
 @dataclass(init=False)
-class QueriesConsumer(RequestConsumer):
+class QueriesConsumer(Consumer):
     params: QueryParams
 
     def __init__(self, params: QueriesTypes, /) -> None:
         self.params = converters.convert_query_params(params)
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.params = request.params.merge(self.params)
 
 
 @dataclass(init=False)
-class HeadersConsumer(RequestConsumer):
+class HeadersConsumer(Consumer):
     headers: Headers
 
     def __init__(self, headers: HeaderTypes, /) -> None:
         self.headers = converters.convert_headers(headers)
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.headers.update(self.headers)
 
 
 @dataclass(init=False)
-class CookiesConsumer(RequestConsumer):
+class CookiesConsumer(Consumer):
     cookies: Cookies
 
     def __init__(self, cookies: CookieTypes, /) -> None:
         self.cookies = converters.convert_cookies(cookies)
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.cookies.update(self.cookies)
 
 
 @dataclass(init=False)
-class PathsConsumer(RequestConsumer):
+class PathsConsumer(Consumer):
     path_params: Mapping[str, str]
 
     def __init__(self, path_params: PathsTypes, /) -> None:
         self.path_params = converters.convert_path_params(path_params)
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.path_params.update(self.path_params)
 
 
 @dataclass
-class ContentConsumer(RequestConsumer):
+class ContentConsumer(Consumer):
     content: RequestContent
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.content = self.content
 
 
 @dataclass
-class DataConsumer(RequestConsumer):
+class DataConsumer(Consumer):
     data: RequestData
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.data = self.data
 
 
 @dataclass
-class FilesConsumer(RequestConsumer):
+class FilesConsumer(Consumer):
     files: RequestFiles
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.files = self.files
 
 
 @dataclass
-class JsonConsumer(RequestConsumer):
+class JsonConsumer(Consumer):
     json: JsonTypes
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.json = self.json
 
 
 @dataclass(init=False)
-class TimeoutConsumer(RequestConsumer):
+class TimeoutConsumer(Consumer):
     timeout: Timeout
 
     def __init__(self, timeout: TimeoutTypes, /) -> None:
         self.timeout = converters.convert_timeout(timeout)
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.timeout = self.timeout
 
 
 @dataclass
-class StateConsumer(RequestConsumer):
+class StateConsumer(Consumer):
     key: str
     value: Any
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.state[self.key] = self.value
