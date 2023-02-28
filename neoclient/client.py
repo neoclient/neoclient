@@ -1,7 +1,6 @@
 import dataclasses
-import inspect
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar
+from typing import Callable, Dict, List, Optional, Sequence, TypeVar
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout

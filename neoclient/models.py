@@ -229,20 +229,6 @@ class Response(httpx.Response):
             )
 
 
-# @dataclass(init=False)
-# class Client(httpx.Client):
-#     auth: Optional[Auth]
-#     params: QueryParams
-#     headers: Headers
-#     cookies: Cookies
-#     timeout: Timeout
-#     follow_redirects: bool
-#     max_redirects: int
-#     event_hooks: Dict[str, List[Callable]]
-#     base_url: URL
-#     trust_env: bool
-
-
 DEFAULT_TRUST_ENV: bool = True
 DEFAULT_ENCODING: str = "utf-8"
 DEFAULT_FOLLOW_REDIRECTS: bool = False
@@ -303,6 +289,9 @@ class ClientOptions:
         self.default_encoding = default_encoding
 
     def build(self) -> httpx.Client:
+        # NOTE: This should ideally return an instance of `client.Session` so
+        # that the User-Agent headers gets set!
+
         return httpx.Client(
             auth=self.auth,
             params=self.params,

@@ -1,7 +1,7 @@
 import inspect
 from typing import Any, Callable, Dict, Tuple, Type
 
-from .client import Client, NeoClient
+from .client import Client
 from .models import ClientOptions
 from .operation import Operation, get_operation, has_operation
 
@@ -11,9 +11,9 @@ class ServiceMeta(type):
         cls: Type["ServiceMeta"], name: str, bases: Tuple[type], attrs: Dict[str, Any]
     ) -> type:
         def __init__(self) -> None:
-            self._client = NeoClient()
+            self._client = Client(client=self._opts.build())
 
-            # Note: get members from the instance rather than the class?
+            # NOTE: get members from the instance rather than the class?
             member_name: str
             member: Any
             for member_name, member in inspect.getmembers(typ):
