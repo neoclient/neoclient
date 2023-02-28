@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from typing import Callable, Protocol, Sequence, TypeVar
+from typing import Callable, Protocol, Sequence, Type, TypeVar
 
 from mediate.protocols import MiddlewareCallable
 
 from .consumers import (
+    Consumer,
     ContentConsumer,
     CookieConsumer,
     CookiesConsumer,
@@ -19,8 +20,9 @@ from .consumers import (
     TimeoutConsumer,
 )
 from .enums import HeaderName
-from .models import PreRequest, Request, Response
+from .models import ClientOptions, PreRequest, Request, Response
 from .operation import OperationSpecification, get_operation
+from .service import Service
 from .types import (
     CookiesTypes,
     CookieTypes,
@@ -55,6 +57,8 @@ __all__: Sequence[str] = (
 )
 
 C = TypeVar("C", bound=Callable)
+# S = TypeVar("S", bound=Type[Service])
+T = TypeVar("T", Callable, Type[Service])
 
 
 class Decorator(Protocol):
@@ -74,8 +78,27 @@ class CompositionFacilitator(Decorator):
         return func
 
 
-def query(key: str, value: QueryTypes) -> Decorator:
-    return CompositionFacilitator(QueryConsumer(key, value))
+def query(key: str, value: QueryTypes):
+    consumer: Consumer = QueryConsumer(key, value)
+
+    def decorate(target: T, /) -> T:
+        if isinstance(target, type):
+            if not issubclass(target, Service):
+                raise Exception("cls must be a service")
+
+            client: ClientOptions = target._opts
+
+            consumer.consume_client(client)
+        elif callable(target):
+            request: PreRequest = get_operation(target).specification.request
+
+            consumer.consume_request(request)
+        else:
+            raise Exception("Expected target to be either Type[Service] or Callable")
+
+        return target
+            
+    return decorate
 
 
 def header(key: str, value: HeaderTypes) -> Decorator:

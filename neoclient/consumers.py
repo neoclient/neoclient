@@ -4,7 +4,7 @@ from typing import Any, Mapping, Sequence
 from httpx import Cookies, Headers, QueryParams, Timeout
 
 from . import converters
-from .models import PreRequest
+from .models import ClientOptions, PreRequest
 from .types import (
     CookieTypes,
     HeaderTypes,
@@ -37,8 +37,16 @@ __all__: Sequence[str] = (
 )
 
 
+class Consumer:
+    def consume_request(self, request: PreRequest, /) -> None:
+        pass
+
+    def consume_client(self, client: ClientOptions, /) -> None:
+        pass
+
+
 @dataclass(init=False)
-class QueryConsumer(RequestConsumer):
+class QueryConsumer(Consumer):
     key: str
     value: str
 
@@ -46,8 +54,11 @@ class QueryConsumer(RequestConsumer):
         self.key = key
         self.value = converters.convert_query_param(value)
 
-    def __call__(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: PreRequest, /) -> None:
         request.params = request.params.set(self.key, self.value)
+
+    def consume_client(self, client: ClientOptions, /) -> None:
+        client.params = client.params.set(self.key, self.value)
 
 
 @dataclass(init=False)

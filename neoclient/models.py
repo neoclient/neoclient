@@ -14,13 +14,18 @@ from typing import (
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
+from httpx._auth import Auth
+from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 
 from . import converters, utils
 from .errors import IncompatiblePathParameters, MissingStateError
 from .types import (
     AsyncByteStream,
+    AuthTypes,
     CookiesTypes,
     CookieTypes,
+    DefaultEncodingTypes,
+    EventHooks,
     HeadersTypes,
     HeaderTypes,
     JsonTypes,
@@ -222,6 +227,128 @@ class Response(httpx.Response):
                 request=response.request,
                 stream=response.stream,
             )
+
+
+# @dataclass(init=False)
+# class Client(httpx.Client):
+#     auth: Optional[Auth]
+#     params: QueryParams
+#     headers: Headers
+#     cookies: Cookies
+#     timeout: Timeout
+#     follow_redirects: bool
+#     max_redirects: int
+#     event_hooks: Dict[str, List[Callable]]
+#     base_url: URL
+#     trust_env: bool
+
+
+DEFAULT_TRUST_ENV: bool = True
+DEFAULT_ENCODING: str = "utf-8"
+DEFAULT_FOLLOW_REDIRECTS: bool = False
+DEFAULT_BASE_URL: URLTypes = ""
+DEFAULT_EVENT_HOOKS: EventHooks = {"request": [], "response": []}
+
+
+@dataclass(init=False)
+class ClientOptions:
+    auth: Optional[AuthTypes]
+    params: QueryParams
+    headers: Headers
+    cookies: Cookies
+    timeout: Timeout
+    follow_redirects: bool
+    max_redirects: int
+    event_hooks: EventHooks
+    base_url: URL
+    trust_env: bool
+    default_encoding: DefaultEncodingTypes
+
+    def __init__(
+        self,
+        auth: Optional[AuthTypes] = None,
+        params: Optional[QueriesTypes] = None,
+        headers: Optional[HeadersTypes] = None,
+        cookies: Optional[CookiesTypes] = None,
+        timeout: TimeoutTypes = DEFAULT_TIMEOUT_CONFIG,
+        follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
+        max_redirects: int = DEFAULT_MAX_REDIRECTS,
+        event_hooks: Optional[EventHooks] = None,
+        base_url: URLTypes = DEFAULT_BASE_URL,
+        trust_env: bool = DEFAULT_TRUST_ENV,
+        default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
+    ) -> None:
+        self.auth = auth
+        self.params = (
+            converters.convert_query_params(params)
+            if params is not None
+            else QueryParams()
+        )
+        self.headers = (
+            converters.convert_headers(headers) if headers is not None else Headers()
+        )
+        self.cookies = (
+            converters.convert_cookies(cookies) if cookies is not None else Cookies()
+        )
+        self.timeout = (
+            converters.convert_timeout(timeout) if timeout is not None else Timeout()
+        )
+        self.follow_redirects = follow_redirects
+        self.max_redirects = max_redirects
+        self.event_hooks = (
+            event_hooks if event_hooks is not None else DEFAULT_EVENT_HOOKS
+        )
+        self.base_url = URL(base_url)
+        self.trust_env = trust_env
+        self.default_encoding = default_encoding
+
+    def build(self) -> httpx.Client:
+        return httpx.Client(
+            auth=self.auth,
+            params=self.params,
+            headers=self.headers,
+            cookies=self.cookies,
+            timeout=self.timeout,
+            follow_redirects=self.follow_redirects,
+            max_redirects=self.max_redirects,
+            event_hooks=self.event_hooks,
+            base_url=self.base_url,
+            trust_env=self.trust_env,
+            default_encoding=self.default_encoding,
+        )
+
+    def is_default(self) -> bool:
+        return all(
+            (
+                self.auth == None,
+                self.params == QueryParams(),
+                self.headers == Headers(),
+                self.cookies == Cookies(),
+                self.timeout == DEFAULT_TIMEOUT_CONFIG,
+                self.follow_redirects == DEFAULT_FOLLOW_REDIRECTS,
+                self.max_redirects == DEFAULT_MAX_REDIRECTS,
+                self.event_hooks == DEFAULT_EVENT_HOOKS,
+                self.base_url == DEFAULT_BASE_URL,
+                self.trust_env == DEFAULT_TRUST_ENV,
+                self.default_encoding == DEFAULT_ENCODING,
+            )
+        )
+
+    @classmethod
+    def from_client(cls, client: httpx.Client, /) -> "ClientOptions":
+        return cls(
+            auth=client.auth,
+            params=client.params,
+            headers=client.headers,
+            cookies=client.cookies,
+            timeout=client.timeout,
+            follow_redirects=client.follow_redirects,
+            max_redirects=client.max_redirects,
+            event_hooks=client.event_hooks,
+            base_url=client.base_url,
+            trust_env=client.trust_env,
+            default_encoding=client._default_encoding,
+        )
 
 
 @dataclass(init=False)
