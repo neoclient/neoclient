@@ -4,6 +4,7 @@ from typing import Callable, Protocol, Sequence, Type, TypeVar
 from mediate.protocols import MiddlewareCallable
 
 from .consumers import (
+    BaseURLConsumer,
     Consumer,
     ContentConsumer,
     CookieConsumer,
@@ -141,6 +142,10 @@ def timeout(timeout: TimeoutTypes, /) -> Decorator:
 
 def mount(path: str, /) -> Decorator:
     return CompositionDecorator(MountConsumer(path))
+
+
+def base_url(base_url: str, /) -> Decorator:
+    return CompositionDecorator(BaseURLConsumer(base_url))
 
 
 def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:

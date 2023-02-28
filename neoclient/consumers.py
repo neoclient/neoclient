@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence, Union
 
-from httpx import Cookies, Headers, QueryParams, Timeout
+from httpx import Cookies, Headers, QueryParams, Timeout, URL
 
 from . import converters
 from .errors import CompositionError
@@ -35,6 +35,7 @@ __all__: Sequence[str] = (
     "JsonConsumer",
     "TimeoutConsumer",
     "MountConsumer",
+    "BaseURLConsumer",
 )
 
 
@@ -235,3 +236,11 @@ class MountConsumer(Consumer):
 
     def consume_request(self, request: PreRequest, /) -> None:
         request.url = request.url.copy_with(path=self.path + request.url.path)
+
+
+@dataclass
+class BaseURLConsumer(Consumer):
+    base_url: str
+
+    def consume_client(self, client: ClientOptions, /) -> None:
+        client.base_url = URL(self.base_url)
