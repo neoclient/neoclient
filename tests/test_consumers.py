@@ -1,4 +1,3 @@
-import dataclasses
 from dataclasses import replace
 from io import BytesIO
 from typing import Mapping

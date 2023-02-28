@@ -13,6 +13,7 @@ from .consumers import (
     HeaderConsumer,
     HeadersConsumer,
     JsonConsumer,
+    MountConsumer,
     PathConsumer,
     PathsConsumer,
     QueriesConsumer,
@@ -136,6 +137,10 @@ def json(json: JsonTypes, /) -> Decorator:
 
 def timeout(timeout: TimeoutTypes, /) -> Decorator:
     return CompositionDecorator(TimeoutConsumer(timeout))
+
+
+def mount(path: str, /) -> Decorator:
+    return CompositionDecorator(MountConsumer(path))
 
 
 def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:

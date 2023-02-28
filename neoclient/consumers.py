@@ -34,6 +34,7 @@ __all__: Sequence[str] = (
     "FilesConsumer",
     "JsonConsumer",
     "TimeoutConsumer",
+    "MountConsumer",
 )
 
 
@@ -226,3 +227,11 @@ class StateConsumer(Consumer):
 
     def consume_request(self, request: PreRequest, /) -> None:
         request.state[self.key] = self.value
+
+
+@dataclass
+class MountConsumer(Consumer):
+    path: str
+
+    def consume_request(self, request: PreRequest, /) -> None:
+        request.url = request.url.copy_with(path=self.path + request.url.path)

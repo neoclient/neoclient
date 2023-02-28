@@ -26,6 +26,7 @@ from .decorators import (
     headers,
     json,
     middleware,
+    mount,
     path,
     path_params,
     query,
