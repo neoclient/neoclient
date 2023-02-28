@@ -1,9 +1,8 @@
-from enum import Enum, auto
+from enum import Enum
 from typing import Sequence
 
 __all__: Sequence[str] = (
     "HttpMethod",
-    "MethodKind",
     "HeaderName",
 )
 
@@ -26,12 +25,6 @@ class HttpMethod(HiddenValueEnum, StrEnum):
     PATCH = "PATCH"
     DELETE = "DELETE"
     OPTIONS = "OPTIONS"
-
-
-class MethodKind(HiddenValueEnum):
-    METHOD = auto()
-    CLASS_METHOD = auto()
-    STATIC_METHOD = auto()
 
 
 class HeaderName(HiddenValueEnum, StrEnum):

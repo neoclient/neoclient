@@ -5,7 +5,6 @@ from httpx import QueryParams
 from pydantic.fields import FieldInfo, Undefined
 
 from neoclient import utils
-from neoclient.enums import MethodKind
 
 
 def test_parse_format_string() -> None:
@@ -136,30 +135,6 @@ def test_has_default() -> None:
     assert utils.has_default(FieldInfo(default_factory=dict))
     assert utils.has_default(FieldInfo(default="abc"))
     assert not utils.has_default(FieldInfo())
-
-
-def test_get_method_kind() -> None:
-    class Foo:
-        def instance_method(self):
-            ...
-
-        @classmethod
-        def class_method(cls):
-            ...
-
-        @staticmethod
-        def static_method():
-            ...
-
-    assert utils.get_method_kind(Foo.instance_method) is MethodKind.STATIC_METHOD
-    assert utils.get_method_kind(Foo.class_method) is MethodKind.CLASS_METHOD
-    assert utils.get_method_kind(Foo.static_method) is MethodKind.STATIC_METHOD
-
-    foo: Foo = Foo()
-
-    assert utils.get_method_kind(foo.instance_method) is MethodKind.METHOD
-    assert utils.get_method_kind(foo.class_method) is MethodKind.CLASS_METHOD
-    assert utils.get_method_kind(foo.static_method) is MethodKind.STATIC_METHOD
 
 
 def test_parse_obj_as() -> None:

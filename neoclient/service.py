@@ -12,6 +12,7 @@ class ServiceMeta(type):
         def __init__(self) -> None:
             client: NeoClient = NeoClient()
 
+            # Note: get members from the instance rather than the class?
             member_name: str
             member: Any
             for member_name, member in inspect.getmembers(typ):

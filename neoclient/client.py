@@ -1,7 +1,7 @@
 import dataclasses
 import inspect
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Type, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
@@ -25,10 +25,10 @@ from .defaults import (
     DEFAULT_TIMEOUT,
     DEFAULT_TRUST_ENV,
 )
-from .enums import HeaderName, HttpMethod, MethodKind
+from .enums import HeaderName, HttpMethod
 from .middleware import Middleware
 from .models import PreRequest, Request, Response
-from .operation import Operation, OperationSpecification, get_operation, has_operation
+from .operation import Operation, OperationSpecification, get_operation
 from .types import (
     AuthTypes,
     CookiesTypes,
@@ -39,7 +39,6 @@ from .types import (
     TimeoutTypes,
     URLTypes,
 )
-from .utils import get_method_kind
 
 __all__: Sequence[str] = (
     "Session",
@@ -134,48 +133,6 @@ class Client:
     ) -> None:
         self.client = client
         self.middleware = middleware if middleware is not None else Middleware()
-
-    def create(self, protocol: Type[T], /) -> T:
-        operations: Mapping[str, Callable] = {
-            member_name: member
-            for member_name, member in inspect.getmembers(protocol)
-            if has_operation(member)
-        }
-
-        attributes: dict = {"__module__": protocol.__module__}
-
-        func: Callable
-        for func in operations.values():
-            static_attr = inspect.getattr_static(protocol, func.__name__)
-
-            attributes[func.__name__] = static_attr
-
-        typ: Type[BaseService] = type(protocol.__name__, (BaseService,), attributes)
-
-        obj: T = typ()  # type: ignore
-
-        member_name: str
-        member: Any
-        for member_name, member in inspect.getmembers(obj):
-            if not has_operation(member):
-                continue
-
-            bound_member: Callable = self.bind(member)
-
-            method_kind: MethodKind = get_method_kind(member)
-
-            if method_kind is MethodKind.METHOD:
-                bound_member = bound_member.__get__(obj)
-            elif method_kind is MethodKind.CLASS_METHOD:
-                bound_member = bound_member.__get__(typ)
-
-            operation: Operation = get_operation(bound_member)
-
-            operation.func = bound_member
-
-            setattr(obj, member_name, bound_member)
-
-        return obj
 
     def bind(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
         operation: Operation = get_operation(func)
