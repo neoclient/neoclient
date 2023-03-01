@@ -149,10 +149,8 @@ def base_url(base_url: str, /) -> Decorator:
 
 
 def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:
-    # TODO: Create a `Consumer.consume_operation` method?
-
     def decorate(target: T, /) -> T:
-        if isinstance(target, type):
+        if isinstance(target, type) and issubclass(target, Service):
             raise CompositionError(
                 "Middleware decorator currently unsupported for service classes"
             )

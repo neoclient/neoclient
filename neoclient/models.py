@@ -289,9 +289,6 @@ class ClientOptions:
         self.default_encoding = default_encoding
 
     def build(self) -> httpx.Client:
-        # NOTE: This should ideally return an instance of `client.Session` so
-        # that the User-Agent headers gets set!
-
         return httpx.Client(
             auth=self.auth,
             params=self.params,

@@ -13,10 +13,9 @@ class ServiceMeta(type):
         def __init__(self) -> None:
             self._client = Client(client=self._opts.build())
 
-            # NOTE: get members from the instance rather than the class?
             member_name: str
             member: Any
-            for member_name, member in inspect.getmembers(typ):
+            for member_name, member in inspect.getmembers(self):
                 if not has_operation(member):
                     continue
 
@@ -35,11 +34,6 @@ class ServiceMeta(type):
         typ: type = super().__new__(cls, name, bases, attrs)
 
         return typ
-
-    # def __init__(
-    #     cls: type, name: str, bases: Tuple[type], attrs: Dict[str, Any]
-    # ) -> None:
-    #     print("ServiceMeta.__init__:", dict(cls=cls, name=name, bases=bases, attrs=attrs))
 
 
 class Service(metaclass=ServiceMeta):
