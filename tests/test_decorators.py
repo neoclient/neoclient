@@ -2,12 +2,12 @@ from dataclasses import replace
 from io import BytesIO
 from typing import Callable, Type
 
-from httpx import Cookies, Headers, QueryParams, Request, Response, Timeout
+from httpx import Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
 
 from neoclient import converters, decorators, get
 from neoclient.middleware import RequestMiddleware
-from neoclient.models import ClientOptions, PreRequest
+from neoclient.models import ClientOptions, PreRequest, Request, Response
 from neoclient.operation import get_operation
 from neoclient.service import Service
 from neoclient.types import (
@@ -36,7 +36,7 @@ def func() -> Callable:
 def service() -> Type[Service]:
     class SomeService(Service):
         @get("/foo")
-        def foo():
+        def foo(self):
             ...
 
     return SomeService

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence, Union
 
-from httpx import Cookies, Headers, QueryParams, Timeout, URL
+from httpx import URL, Cookies, Headers, QueryParams, Timeout
 
 from . import converters
 from .errors import CompositionError

@@ -106,9 +106,7 @@ def test_multiple_body_params(client: NeoClient) -> None:
     def create_item(user: User = Body(), item: Item = Body()) -> PreRequest:
         ...
 
-    assert create_item(
-        User(id=1, name="user"), Item(id=1, name="item")
-    ) == PreRequest(
+    assert create_item(User(id=1, name="user"), Item(id=1, name="item")) == PreRequest(
         method="POST",
         url="/items/",
         json={
@@ -125,9 +123,7 @@ def test_multiple_body_params_embedded(client: NeoClient) -> None:
     ) -> PreRequest:
         ...
 
-    assert create_item(
-        User(id=1, name="user"), Item(id=1, name="item")
-    ) == PreRequest(
+    assert create_item(User(id=1, name="user"), Item(id=1, name="item")) == PreRequest(
         method="POST",
         url="/items/",
         json={
