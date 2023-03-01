@@ -66,124 +66,103 @@ def test_request(client: NeoClient) -> None:
     assert get_operation(foo).client == client.client
 
 
-# def test_query_not_required_omitted(client: NeoClient) -> None:
-#     class Service(Protocol):
-#         @get("get")
-#         def get(self, q: Optional[str] = Query(default=None)) -> PreRequest:
-#             ...
+def test_query_not_required_omitted(client: NeoClient) -> None:
+    @client.get("get")
+    def get(q: Optional[str] = Query(default=None)) -> PreRequest:
+        ...
 
-#     service: Service = client.create(Service)  # type: ignore
-
-#     assert service.get() == PreRequest(
-#         method="GET",
-#         url="get",
-#     )
+    assert get() == PreRequest(
+        method="GET",
+        url="get",
+    )
 
 
-# def test_query_required_not_omitted(client: NeoClient) -> None:
-#     class Service(Protocol):
-#         @get("get")
-#         def get(self, q: Optional[str] = Query(default=Required)) -> PreRequest:
-#             ...
+def test_query_required_not_omitted(client: NeoClient) -> None:
+    @client.get("get")
+    def get(q: Optional[str] = Query(default=Required)) -> PreRequest:
+        ...
 
-#     service: Service = client.create(Service)  # type: ignore
-
-#     assert service.get("foo") == PreRequest(
-#         method="GET",
-#         url="get",
-#         params={"q": "foo"},
-#     )
+    assert get("foo") == PreRequest(
+        method="GET",
+        url="get",
+        params={"q": "foo"},
+    )
 
 
-# def test_single_body_param(client: NeoClient) -> None:
-#     class Service(Protocol):
-#         @post("/items/")
-#         def create_item(self, item: Item = Body()) -> PreRequest:
-#             ...
+def test_single_body_param(client: NeoClient) -> None:
+    @client.post("/items/")
+    def create_item(item: Item = Body()) -> PreRequest:
+        ...
 
-#     service: Service = client.create(Service)  # type: ignore
-
-#     assert service.create_item(Item(id=1, name="item")) == PreRequest(
-#         method="POST",
-#         url="/items/",
-#         json={"id": 1, "name": "item"},
-#     )
+    assert create_item(Item(id=1, name="item")) == PreRequest(
+        method="POST",
+        url="/items/",
+        json={"id": 1, "name": "item"},
+    )
 
 
-# def test_multiple_body_params(client: NeoClient) -> None:
-#     class Service(Protocol):
-#         @post("/items/")
-#         def create_item(self, user: User = Body(), item: Item = Body()) -> PreRequest:
-#             ...
+def test_multiple_body_params(client: NeoClient) -> None:
+    @client.post("/items/")
+    def create_item(user: User = Body(), item: Item = Body()) -> PreRequest:
+        ...
 
-#     service: Service = client.create(Service)  # type: ignore
-
-#     assert service.create_item(
-#         User(id=1, name="user"), Item(id=1, name="item")
-#     ) == PreRequest(
-#         method="POST",
-#         url="/items/",
-#         json={
-#             "user": {"id": 1, "name": "user"},
-#             "item": {"id": 1, "name": "item"},
-#         },
-#     )
+    assert create_item(
+        User(id=1, name="user"), Item(id=1, name="item")
+    ) == PreRequest(
+        method="POST",
+        url="/items/",
+        json={
+            "user": {"id": 1, "name": "user"},
+            "item": {"id": 1, "name": "item"},
+        },
+    )
 
 
-# def test_multiple_body_params_embedded(client: NeoClient) -> None:
-#     class Service(Protocol):
-#         @post("/items/")
-#         def create_item(
-#             self, user: User = Body(embed=True), item: Item = Body(embed=True)
-#         ) -> PreRequest:
-#             ...
+def test_multiple_body_params_embedded(client: NeoClient) -> None:
+    @client.post("/items/")
+    def create_item(
+        user: User = Body(embed=True), item: Item = Body(embed=True)
+    ) -> PreRequest:
+        ...
 
-#     service: Service = client.create(Service)  # type: ignore
-
-#     assert service.create_item(
-#         User(id=1, name="user"), Item(id=1, name="item")
-#     ) == PreRequest(
-#         method="POST",
-#         url="/items/",
-#         json={
-#             "user": {"id": 1, "name": "user"},
-#             "item": {"id": 1, "name": "item"},
-#         },
-#     )
+    assert create_item(
+        User(id=1, name="user"), Item(id=1, name="item")
+    ) == PreRequest(
+        method="POST",
+        url="/items/",
+        json={
+            "user": {"id": 1, "name": "user"},
+            "item": {"id": 1, "name": "item"},
+        },
+    )
 
 
-# def test_single_query_param(client: NeoClient) -> None:
-#     class Service(Protocol):
-#         @get("/items/")
-#         def create_item(self, sort: str = Query()) -> PreRequest:
-#             ...
+def test_single_query_param(client: NeoClient) -> None:
+    @client.get("/items/")
+    def create_item(sort: str = Query()) -> PreRequest:
+        ...
 
-#     service: Service = client.create(Service)  # type: ignore
-
-#     assert service.create_item("ascending") == PreRequest(
-#         method="GET",
-#         url="/items/",
-#         params={
-#             "sort": "ascending",
-#         },
-#     )
+    assert create_item("ascending") == PreRequest(
+        method="GET",
+        url="/items/",
+        params={
+            "sort": "ascending",
+        },
+    )
 
 
-# def test_multiple_query_params(client: NeoClient) -> None:
-#     class Service(Protocol):
-#         @get("/items/")
-#         def create_item(self, params: dict = Queries()) -> PreRequest:
-#             ...
+def test_multiple_query_params(client: NeoClient) -> None:
+    @client.get("/items/")
+    def create_item(params: dict = Queries()) -> PreRequest:
+        ...
 
-#     service: Service = client.create(Service)  # type: ignore
-
-#     assert service.create_item({"sort": "ascending"}) == PreRequest(
-#         method="GET",
-#         url="/items/",
-#         params={
-#             "sort": "ascending",
-#         },
-#     )
+    assert create_item({"sort": "ascending"}) == PreRequest(
+        method="GET",
+        url="/items/",
+        params={
+            "sort": "ascending",
+        },
+    )
 
 
 def test_client_middleware(client: NeoClient) -> None:
