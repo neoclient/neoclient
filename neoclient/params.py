@@ -186,7 +186,7 @@ class QueryParameter(
         return convert_query_param(value)
 
     def build_consumer(self, key: str, value: str) -> RequestConsumer:
-        return QueryConsumer(key, value)
+        return QueryConsumer(key, value).consume_request
 
     def build_resolver(self, key: str) -> Resolver[Optional[str]]:
         return QueryResolver(key)
@@ -208,7 +208,7 @@ class HeaderParameter(
         return convert_header(value)
 
     def build_consumer(self, key: str, value: str) -> RequestConsumer:
-        return HeaderConsumer(key, value)
+        return HeaderConsumer(key, value).consume_request
 
     def build_resolver(self, key: str) -> Resolver[Optional[str]]:
         return HeaderResolver(key)
@@ -221,7 +221,7 @@ class CookieParameter(
         return convert_cookie(value)
 
     def build_consumer(self, key: str, value: str) -> RequestConsumer:
-        return CookieConsumer(key, value)
+        return CookieConsumer(key, value).consume_request
 
     def build_resolver(self, key: str) -> Resolver[Optional[str]]:
         return CookieResolver(key)
@@ -232,14 +232,14 @@ class PathParameter(ComposableSingletonStringParameter):
         return convert_path_param(value)
 
     def build_consumer(self, key: str, value: str) -> RequestConsumer:
-        return PathConsumer(key, value)
+        return PathConsumer(key, value).consume_request
 
 
 class QueriesParameter(Parameter):
     def compose(self, request: PreRequest, argument: Any, /) -> None:
         params: QueriesTypes = parse_obj_as(QueriesTypes, argument)  # type: ignore
 
-        QueriesConsumer(params)(request)
+        QueriesConsumer(params).consume_request(request)
 
     def resolve(self, response: Response, /) -> QueryParams:
         return QueriesResolver()(response)
@@ -249,7 +249,7 @@ class HeadersParameter(Parameter):
     def compose(self, request: PreRequest, argument: Any, /) -> None:
         headers: HeadersTypes = parse_obj_as(HeadersTypes, argument)  # type: ignore
 
-        HeadersConsumer(headers)(request)
+        HeadersConsumer(headers).consume_request(request)
 
     def resolve(self, response: Response, /) -> Headers:
         return HeadersResolver()(response)
@@ -259,7 +259,7 @@ class CookiesParameter(Parameter):
     def compose(self, request: PreRequest, argument: Any, /) -> None:
         cookies: CookiesTypes = parse_obj_as(CookiesTypes, argument)  # type: ignore
 
-        CookiesConsumer(cookies)(request)
+        CookiesConsumer(cookies).consume_request(request)
 
     def resolve(self, response: Response, /) -> Cookies:
         return CookiesResolver()(response)
@@ -269,7 +269,7 @@ class PathsParameter(Parameter):
     def compose(self, request: PreRequest, argument: Any, /) -> None:
         path_params: PathsTypes = parse_obj_as(PathsTypes, argument)  # type: ignore
 
-        PathsConsumer(path_params)(request)
+        PathsConsumer(path_params).consume_request(request)
 
 
 @dataclass(unsafe_hash=True)
@@ -335,7 +335,7 @@ class StateParameter(
         return value
 
     def build_consumer(self, key: str, value: Any) -> RequestConsumer:
-        return StateConsumer(key, value)
+        return StateConsumer(key, value).consume_request
 
     def build_resolver(self, key: str) -> Resolver[Any]:
         return StateResolver(key)
