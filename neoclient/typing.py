@@ -1,9 +1,10 @@
 from typing import Any, Protocol, Sequence, TypeVar
 
-from .models import PreRequest, Request, Response
+from .models import ClientOptions, PreRequest, Request, Response
 
 __all__: Sequence[str] = (
     "CallNext",
+    "ClientConsumer",
     "Composer",
     "RequestConsumer",
     "Resolver",
@@ -37,4 +38,9 @@ class Composer(Protocol):
 
 class RequestConsumer(Protocol):
     def __call__(self, request: PreRequest, /) -> None:
+        ...
+
+
+class ClientConsumer(Protocol):
+    def __call__(self, client: ClientOptions, /) -> None:
         ...

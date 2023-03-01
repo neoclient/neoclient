@@ -1,9 +1,11 @@
 from dataclasses import dataclass
-from typing import Callable, Protocol, Sequence, TypeVar
+from typing import Callable, Protocol, Sequence, Type, TypeVar
 
 from mediate.protocols import MiddlewareCallable
 
 from .consumers import (
+    BaseURLConsumer,
+    Consumer,
     ContentConsumer,
     CookieConsumer,
     CookiesConsumer,
@@ -12,6 +14,7 @@ from .consumers import (
     HeaderConsumer,
     HeadersConsumer,
     JsonConsumer,
+    MountConsumer,
     PathConsumer,
     PathsConsumer,
     QueriesConsumer,
@@ -19,8 +22,10 @@ from .consumers import (
     TimeoutConsumer,
 )
 from .enums import HeaderName
-from .models import PreRequest, Request, Response
+from .errors import CompositionError
+from .models import ClientOptions, PreRequest, Request, Response
 from .operation import OperationSpecification, get_operation
+from .service import Service
 from .types import (
     CookiesTypes,
     CookieTypes,
@@ -36,7 +41,6 @@ from .types import (
     RequestFiles,
     TimeoutTypes,
 )
-from .typing import RequestConsumer
 
 __all__: Sequence[str] = (
     "query",
@@ -54,87 +58,110 @@ __all__: Sequence[str] = (
     "timeout",
 )
 
-C = TypeVar("C", bound=Callable)
+T = TypeVar("T", Callable, Type[Service])
 
 
 class Decorator(Protocol):
-    def __call__(self, func: C, /) -> C:
+    def __call__(self, target: T, /) -> T:
         ...
 
 
 @dataclass
-class CompositionFacilitator(Decorator):
-    composer: RequestConsumer
+class CompositionDecorator(Decorator):
+    consumer: Consumer
 
-    def __call__(self, func: C, /) -> C:
-        request: PreRequest = get_operation(func).specification.request
+    def __call__(self, target: T, /) -> T:
+        if isinstance(target, type):
+            if not issubclass(target, Service):
+                raise CompositionError(f"Target class is not a subclass of {Service}")
 
-        self.composer(request)
+            client: ClientOptions = target._opts
 
-        return func
+            self.consumer.consume_client(client)
+        elif callable(target):
+            request: PreRequest = get_operation(target).specification.request
+
+            self.consumer.consume_request(request)
+        else:
+            raise CompositionError(f"Target of unsupported type {type(target)}")
+
+        return target
 
 
 def query(key: str, value: QueryTypes) -> Decorator:
-    return CompositionFacilitator(QueryConsumer(key, value))
+    return CompositionDecorator(QueryConsumer(key, value))
 
 
 def header(key: str, value: HeaderTypes) -> Decorator:
-    return CompositionFacilitator(HeaderConsumer(key, value))
+    return CompositionDecorator(HeaderConsumer(key, value))
 
 
 def cookie(key: str, value: CookieTypes) -> Decorator:
-    return CompositionFacilitator(CookieConsumer(key, value))
+    return CompositionDecorator(CookieConsumer(key, value))
 
 
 def path(key: str, value: PathTypes) -> Decorator:
-    return CompositionFacilitator(PathConsumer(key, value))
+    return CompositionDecorator(PathConsumer(key, value))
 
 
 def query_params(params: QueriesTypes, /) -> Decorator:
-    return CompositionFacilitator(QueriesConsumer(params))
+    return CompositionDecorator(QueriesConsumer(params))
 
 
 def headers(headers: HeadersTypes, /) -> Decorator:
-    return CompositionFacilitator(HeadersConsumer(headers))
+    return CompositionDecorator(HeadersConsumer(headers))
 
 
 def cookies(cookies: CookiesTypes, /) -> Decorator:
-    return CompositionFacilitator(CookiesConsumer(cookies))
+    return CompositionDecorator(CookiesConsumer(cookies))
 
 
 def path_params(path_params: PathsTypes, /) -> Decorator:
-    return CompositionFacilitator(PathsConsumer(path_params))
+    return CompositionDecorator(PathsConsumer(path_params))
 
 
 def content(content: RequestContent, /) -> Decorator:
-    return CompositionFacilitator(ContentConsumer(content))
+    return CompositionDecorator(ContentConsumer(content))
 
 
 def data(data: RequestData, /) -> Decorator:
-    return CompositionFacilitator(DataConsumer(data))
+    return CompositionDecorator(DataConsumer(data))
 
 
 def files(files: RequestFiles, /) -> Decorator:
-    return CompositionFacilitator(FilesConsumer(files))
+    return CompositionDecorator(FilesConsumer(files))
 
 
 def json(json: JsonTypes, /) -> Decorator:
-    return CompositionFacilitator(JsonConsumer(json))
+    return CompositionDecorator(JsonConsumer(json))
 
 
 def timeout(timeout: TimeoutTypes, /) -> Decorator:
-    return CompositionFacilitator(TimeoutConsumer(timeout))
+    return CompositionDecorator(TimeoutConsumer(timeout))
+
+
+def mount(path: str, /) -> Decorator:
+    return CompositionDecorator(MountConsumer(path))
+
+
+def base_url(base_url: str, /) -> Decorator:
+    return CompositionDecorator(BaseURLConsumer(base_url))
 
 
 def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:
-    def decorate(func: C, /) -> C:
-        specification: OperationSpecification = get_operation(func).specification
+    def decorate(target: T, /) -> T:
+        if isinstance(target, type) and issubclass(target, Service):
+            raise CompositionError(
+                "Middleware decorator currently unsupported for service classes"
+            )
+
+        specification: OperationSpecification = get_operation(target).specification
 
         middleware_callable: MiddlewareCallable[Request, Response]
         for middleware_callable in middleware:
             specification.middleware.add(middleware_callable)
 
-        return func
+        return target
 
     return decorate
 

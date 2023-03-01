@@ -1,5 +1,4 @@
 from dataclasses import replace
-import dataclasses
 from io import BytesIO
 from typing import Mapping
 
@@ -19,8 +18,8 @@ from neoclient.consumers import (
     PathsConsumer,
     QueriesConsumer,
     QueryConsumer,
-    TimeoutConsumer,
     StateConsumer,
+    TimeoutConsumer,
 )
 from neoclient.models import PreRequest, State
 from neoclient.types import JsonTypes, RequestContent, RequestData, RequestFiles
@@ -37,7 +36,7 @@ def test_QueryParamConsumer(pre_request: PreRequest) -> None:
     key: str = "name"
     value: str = "sam"
 
-    QueryConsumer(key, value)(pre_request)
+    QueryConsumer(key, value).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, params={key: value})
 
@@ -50,7 +49,7 @@ def test_HeaderConsumer(pre_request: PreRequest) -> None:
     key: str = "name"
     value: str = "sam"
 
-    HeaderConsumer(key, value)(pre_request)
+    HeaderConsumer(key, value).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, headers={key: value})
 
@@ -63,7 +62,7 @@ def test_CookieConsumer(pre_request: PreRequest) -> None:
     key: str = "name"
     value: str = "sam"
 
-    CookieConsumer(key, value)(pre_request)
+    CookieConsumer(key, value).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, cookies={key: value})
 
@@ -76,7 +75,7 @@ def test_PathParamConsumer(pre_request: PreRequest) -> None:
     key: str = "name"
     value: str = "sam"
 
-    PathConsumer(key, value)(pre_request)
+    PathConsumer(key, value).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, path_params={key: value})
 
@@ -88,7 +87,7 @@ def test_QueryParamsConsumer(pre_request: PreRequest) -> None:
 
     params: QueryParams = QueryParams({"name": "sam"})
 
-    QueriesConsumer(params)(pre_request)
+    QueriesConsumer(params).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, params=params)
 
@@ -102,7 +101,7 @@ def test_HeadersConsumer(pre_request: PreRequest) -> None:
 
     headers: Headers = Headers({"name": "sam"})
 
-    HeadersConsumer(headers)(pre_request)
+    HeadersConsumer(headers).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, headers=headers)
 
@@ -114,7 +113,7 @@ def test_CookiesConsumer(pre_request: PreRequest) -> None:
 
     cookies: Cookies = Cookies({"name": "sam"})
 
-    CookiesConsumer(cookies)(pre_request)
+    CookiesConsumer(cookies).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, cookies=cookies)
 
@@ -126,7 +125,7 @@ def test_PathParamsConsumer(pre_request: PreRequest) -> None:
 
     path_params: Mapping[str, str] = {"name": "sam"}
 
-    PathsConsumer(path_params)(pre_request)
+    PathsConsumer(path_params).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, path_params=path_params)
 
@@ -138,7 +137,7 @@ def test_ContentConsumer(pre_request: PreRequest) -> None:
 
     content: RequestContent = "content"
 
-    ContentConsumer(content)(pre_request)
+    ContentConsumer(content).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, content=content)
 
@@ -148,7 +147,7 @@ def test_DataConsumer(pre_request: PreRequest) -> None:
 
     data: RequestData = {"name": "sam"}
 
-    DataConsumer(data)(pre_request)
+    DataConsumer(data).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, data=data)
 
@@ -158,7 +157,7 @@ def test_FilesConsumer(pre_request: PreRequest) -> None:
 
     files: RequestFiles = {"file.txt": BytesIO(b"content")}
 
-    FilesConsumer(files)(pre_request)
+    FilesConsumer(files).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, files=files)
 
@@ -168,7 +167,7 @@ def test_JsonConsumer(pre_request: PreRequest) -> None:
 
     json: JsonTypes = {"name": "sam"}
 
-    JsonConsumer(json)(pre_request)
+    JsonConsumer(json).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, json=json)
 
@@ -178,7 +177,7 @@ def test_TimeoutConsumer(pre_request: PreRequest) -> None:
 
     timeout: Timeout = Timeout(5.0)
 
-    TimeoutConsumer(timeout)(pre_request)
+    TimeoutConsumer(timeout).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, timeout=timeout)
 
@@ -190,6 +189,6 @@ def test_StateConsumer(pre_request: PreRequest) -> None:
 
     message: str = "Hello, World!"
 
-    StateConsumer("message", message)(pre_request)
+    StateConsumer("message", message).consume_request(pre_request)
 
     assert pre_request == replace(ref_pre_request, state=State({"message": message}))

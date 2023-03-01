@@ -1,14 +1,15 @@
 from dataclasses import replace
 from io import BytesIO
-from typing import Callable
+from typing import Callable, Type
 
-from httpx import Cookies, Headers, QueryParams, Request, Response, Timeout
+from httpx import Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
 
 from neoclient import converters, decorators, get
 from neoclient.middleware import RequestMiddleware
-from neoclient.models import PreRequest
+from neoclient.models import ClientOptions, PreRequest, Request, Response
 from neoclient.operation import get_operation
+from neoclient.service import Service
 from neoclient.types import (
     CookiesTypes,
     HeadersTypes,
@@ -24,11 +25,21 @@ from neoclient.types import (
 
 @fixture
 def func() -> Callable:
-    @get("/")
+    @get("/foo")
     def foo():
         ...
 
     return foo
+
+
+@fixture
+def service() -> Type[Service]:
+    class SomeService(Service):
+        @get("/foo")
+        def foo(self):
+            ...
+
+    return SomeService
 
 
 def test_query(func: Callable) -> None:
@@ -191,6 +202,30 @@ def test_timeout(func: Callable) -> None:
     )
 
 
+def test_mount(func: Callable) -> None:
+    original_request: PreRequest = replace(get_operation(func).specification.request)
+
+    mount: str = "/mount"
+
+    decorators.mount(mount)(func)
+
+    assert get_operation(func).specification.request == replace(
+        original_request, url="/mount/foo"
+    )
+
+
+def test_base_url(service: Type[Service]) -> None:
+    original_client_options: ClientOptions = replace(service._opts)
+
+    base_url: str = "https://foo.bar/"
+
+    decorators.base_url(base_url)(service)
+
+    assert service._opts == replace(
+        original_client_options, base_url="https://foo.bar/"
+    )
+
+
 def test_middleware(func: Callable) -> None:
     def middleware_foo(call_next: RequestMiddleware, request: Request) -> Response:
         return call_next(request)
@@ -205,3 +240,39 @@ def test_middleware(func: Callable) -> None:
         middleware_foo,
         middleware_bar,
     ]
+
+
+def test_user_agent(func: Callable) -> None:
+    original_request: PreRequest = replace(get_operation(func).specification.request)
+
+    user_agent: str = "foo/1.0"
+
+    decorators.user_agent(user_agent)(func)
+
+    assert get_operation(func).specification.request == replace(
+        original_request, headers=Headers({"User-Agent": user_agent})
+    )
+
+
+def test_accept(func: Callable) -> None:
+    original_request: PreRequest = replace(get_operation(func).specification.request)
+
+    accept: str = "en-GB"
+
+    decorators.accept(accept)(func)
+
+    assert get_operation(func).specification.request == replace(
+        original_request, headers=Headers({"Accept": accept})
+    )
+
+
+def test_referer(func: Callable) -> None:
+    original_request: PreRequest = replace(get_operation(func).specification.request)
+
+    referer: str = "https://foo.bar/"
+
+    decorators.referer(referer)(func)
+
+    assert get_operation(func).specification.request == replace(
+        original_request, headers=Headers({"Referer": referer})
+    )

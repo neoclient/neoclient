@@ -12,11 +12,12 @@ r"""
 ```
 """
 
-__version__: str = "0.1.18"
+__version__: str = "0.1.19"
 
 from .client import NeoClient
 from .decorators import (
     accept,
+    base_url,
     content,
     cookie,
     cookies,
@@ -26,6 +27,7 @@ from .decorators import (
     headers,
     json,
     middleware,
+    mount,
     path,
     path_params,
     query,
@@ -53,3 +55,4 @@ from .param_functions import (
     State,
     StatusCode,
 )
+from .service import Service
