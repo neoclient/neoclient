@@ -22,9 +22,9 @@ class ServiceMeta(type):
                 bound_operation_func: Callable = self._client.bind(member)
                 bound_operation_method: Callable = bound_operation_func.__get__(self)
 
-                operation: Operation = get_operation(bound_operation_method)
+                bound_operation: Operation = get_operation(bound_operation_method)
 
-                operation.func = bound_operation_method
+                bound_operation.func = bound_operation_method
 
                 setattr(self, member_name, bound_operation_method)
 
