@@ -62,6 +62,7 @@ In = TypeVar("In")
 Out = TypeVar("Out")
 
 
+# TODO: Move me to `mediate`
 class MiddlewareMethod(Protocol[In, Out]):
     def __call__(self, obj: Any, call_next: Callable[[In], Out], in_: In, /) -> Out:
         ...
