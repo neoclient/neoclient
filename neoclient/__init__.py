@@ -33,6 +33,7 @@ from .decorators import (
     query,
     query_params,
     referer,
+    service_middleware,
     timeout,
     user_agent,
 )

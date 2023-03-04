@@ -16,17 +16,18 @@ class ServiceMeta(type):
             member_name: str
             member: Any
             for member_name, member in inspect.getmembers(self):
-                if not has_operation(member):
-                    continue
+                if getattr(member, "_is_service_middleware", False):
+                    self._client.middleware.add(member)
+                elif has_operation(member):
+                    bound_operation_func: Callable = self._client.bind(member)
+                    bound_operation_method: Callable = bound_operation_func.__get__(self)
 
-                bound_operation_func: Callable = self._client.bind(member)
-                bound_operation_method: Callable = bound_operation_func.__get__(self)
+                    bound_operation: Operation = get_operation(bound_operation_method)
 
-                bound_operation: Operation = get_operation(bound_operation_method)
+                    bound_operation.func = bound_operation_method
+                    bound_operation.middleware = self._client.middleware
 
-                bound_operation.func = bound_operation_method
-
-                setattr(self, member_name, bound_operation_method)
+                    setattr(self, member_name, bound_operation_method)
 
         attrs["_opts"] = ClientOptions()
         attrs["__init__"] = __init__

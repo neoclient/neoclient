@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Protocol, Sequence, Type, TypeVar
+from typing import Any, Callable, Protocol, Sequence, Type, TypeVar
 
 from mediate.protocols import MiddlewareCallable
 
@@ -58,7 +58,19 @@ __all__: Sequence[str] = (
     "timeout",
 )
 
+In = TypeVar("In")
+Out = TypeVar("Out")
+
+
+class MiddlewareMethod(Protocol[In, Out]):
+    def __call__(self, obj: Any, call_next: Callable[[In], Out], in_: In, /) -> Out:
+        ...
+
+
 T = TypeVar("T", Callable, Type[Service])
+M = TypeVar(
+    "M", MiddlewareCallable[Request, Response], MiddlewareMethod[Request, Response]
+)
 
 
 class Decorator(Protocol):
@@ -152,7 +164,7 @@ def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:
     def decorate(target: T, /) -> T:
         if isinstance(target, type) and issubclass(target, Service):
             raise CompositionError(
-                "Middleware decorator currently unsupported for service classes"
+                "Middleware decorator unsupported for service classes"
             )
 
         specification: OperationSpecification = get_operation(target).specification
@@ -176,3 +188,9 @@ def accept(*content_types: str) -> Decorator:
 
 def referer(referer: str, /) -> Decorator:
     return header(HeaderName.REFERER, referer)
+
+
+def service_middleware(middleware: M, /) -> M:
+    setattr(middleware, "_is_service_middleware", True)
+
+    return middleware
