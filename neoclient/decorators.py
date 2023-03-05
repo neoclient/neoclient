@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from typing import Callable, Protocol, Sequence, Type, TypeVar, Union
+from typing import Callable, Protocol, Sequence, Type, TypeVar
 
-from annotate import Annotation
-from mediate.protocols import MiddlewareCallable, MiddlewareMethod
+from mediate.protocols import MiddlewareCallable
 
 from .consumers import (
     BaseURLConsumer,
@@ -22,7 +21,7 @@ from .consumers import (
     QueryConsumer,
     TimeoutConsumer,
 )
-from .enums import HeaderName, Sentinel
+from .enums import HeaderName
 from .errors import CompositionError
 from .models import ClientOptions, PreRequest, Request, Response
 from .operation import OperationSpecification, get_operation
@@ -57,7 +56,6 @@ __all__: Sequence[str] = (
     "files",
     "json",
     "timeout",
-    "service_middleware",
 )
 
 T = TypeVar("T", Callable, Type[Service])
@@ -178,8 +176,3 @@ def accept(*content_types: str) -> Decorator:
 
 def referer(referer: str, /) -> Decorator:
     return header(HeaderName.REFERER, referer)
-
-
-service_middleware: Annotation[
-    Union[MiddlewareCallable[Request, Response], MiddlewareMethod[Request, Response]]
-] = Annotation(Sentinel.MIDDLEWARE)

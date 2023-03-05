@@ -14,6 +14,7 @@ r"""
 
 __version__: str = "0.1.19"
 
+from .annotations import service_middleware
 from .client import NeoClient
 from .decorators import (
     accept,
@@ -33,7 +34,6 @@ from .decorators import (
     query,
     query_params,
     referer,
-    service_middleware,
     timeout,
     user_agent,
 )
