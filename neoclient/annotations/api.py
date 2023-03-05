@@ -1,21 +1,14 @@
-from typing import Any, Final, Sequence, Set
+from typing import Any, Sequence
 
+from .constants import ATTRIBUTE_ANNOTATIONS
+from .datastructures import Annotations
 from .enums import Annotation
+from .exceptions import AnnotationException
 
 __all__: Sequence[str] = (
     "has_annotation",
     "add_annotation",
 )
-
-ATTRIBUTE_ANNOTATIONS: Final[str] = "_annotations_"
-
-
-class AnnotationException(Exception):
-    pass
-
-
-class Annotations(Set[Annotation]):
-    pass
 
 
 def _has_annotations(obj: Any, /) -> bool:

@@ -22,7 +22,9 @@ class ServiceMeta(type):
                     self._client.middleware.add(member)
                 elif has_operation(member):
                     bound_operation_func: Callable = self._client.bind(member)
-                    bound_operation_method: Callable = bound_operation_func.__get__(self)
+                    bound_operation_method: Callable = bound_operation_func.__get__(
+                        self
+                    )
 
                     bound_operation: Operation = get_operation(bound_operation_method)
 
