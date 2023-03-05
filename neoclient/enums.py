@@ -17,6 +17,10 @@ class StrEnum(str, Enum):
         return self.value
 
 
+class Sentinel(HiddenValueEnum):
+    MIDDLEWARE = None
+
+
 class HttpMethod(HiddenValueEnum, StrEnum):
     PUT = "PUT"
     GET = "GET"

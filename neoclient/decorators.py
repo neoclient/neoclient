@@ -22,11 +22,10 @@ from .consumers import (
     QueryConsumer,
     TimeoutConsumer,
 )
-from .enums import HeaderName
+from .enums import HeaderName, Sentinel
 from .errors import CompositionError
 from .models import ClientOptions, PreRequest, Request, Response
 from .operation import OperationSpecification, get_operation
-from .sentinels import Middleware
 from .service import Service
 from .types import (
     CookiesTypes,
@@ -183,4 +182,4 @@ def referer(referer: str, /) -> Decorator:
 
 service_middleware: Annotation[
     Union[MiddlewareCallable[Request, Response], MiddlewareMethod[Request, Response]]
-] = Annotation(Middleware)
+] = Annotation(Sentinel.MIDDLEWARE)

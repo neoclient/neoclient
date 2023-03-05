@@ -4,9 +4,9 @@ from typing import Any, Callable, Dict, Tuple, Type
 from annotate.utils import has_annotation
 
 from .client import Client
+from .enums import Sentinel
 from .models import ClientOptions
 from .operation import Operation, get_operation, has_operation
-from .sentinels import Middleware
 
 
 class ServiceMeta(type):
@@ -19,7 +19,7 @@ class ServiceMeta(type):
             member_name: str
             member: Any
             for member_name, member in inspect.getmembers(self):
-                if has_annotation(member, Middleware):
+                if has_annotation(member, Sentinel.MIDDLEWARE):
                     self._client.middleware.add(member)
                 elif has_operation(member):
                     bound_operation_func: Callable = self._client.bind(member)
