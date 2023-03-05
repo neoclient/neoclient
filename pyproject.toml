@@ -13,7 +13,7 @@ keywords = ["python", "api", "http", "client", "json", "framework", "web", "rest
 python = "^3.8"
 typing-extensions = "^4.3.0"
 httpx = "^0.23.3"
-mediate = "^0.1.7"
+mediate = "^0.1.8"
 pydantic = "^1.10.0"
 
 [tool.poetry.group.dev.dependencies]

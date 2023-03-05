@@ -197,7 +197,7 @@ requirements-deprecated-finder = ["pip-api", "pipreqs"]
 
 [[package]]
 name = "mediate"
-version = "0.1.7"
+version = "0.1.8"
 description = "Middleware for every occasion"
 category = "main"
 optional = false
@@ -414,7 +414,7 @@ standard = ["colorama (>=0.4)", "httptools (>=0.5.0)", "python-dotenv (>=0.13)",
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "b3d66a24b9178dca331f54831d3a5f004f668356800bc81ea0d225feb7654d00"
+content-hash = "69a471ccfeea43e16ca614b8d583ae069f7f843101cc856cfe88bcabddffa9bc"
 
 [metadata.files]
 anyio = [
@@ -488,8 +488,8 @@ isort = [
     {file = "isort-5.12.0.tar.gz", hash = "sha256:8bef7dde241278824a6d83f44a544709b065191b95b6e50894bdc722fcba0504"},
 ]
 mediate = [
-    {file = "mediate-0.1.7-py3-none-any.whl", hash = "sha256:832d37b7554d83457dc8804792050d39dbbc74ff2ef328bfcdade95ca3edd04d"},
-    {file = "mediate-0.1.7.tar.gz", hash = "sha256:2200dc398e6bcd7ab252952cac5247e43f221493beea60a9cf366ff2cb520517"},
+    {file = "mediate-0.1.8-py3-none-any.whl", hash = "sha256:9863947fc0e98774bf57b10b6218f482cad8f1abc84618d7ca9e9760fcd31fab"},
+    {file = "mediate-0.1.8.tar.gz", hash = "sha256:b92f618a89226281dea1e7115e5341fa3ecb9db6dd00772805fcb9d0ba214171"},
 ]
 mypy = [
     {file = "mypy-1.0.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:71a808334d3f41ef011faa5a5cd8153606df5fc0b56de5b2e89566c8093a0c9a"},

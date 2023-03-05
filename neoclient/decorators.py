@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Protocol, Sequence, Type, TypeVar
+from typing import Callable, Protocol, Sequence, Type, TypeVar, Union
 
-from mediate.protocols import MiddlewareCallable
+from annotate import Annotation
+from mediate.protocols import MiddlewareCallable, MiddlewareMethod
 
 from .consumers import (
     BaseURLConsumer,
@@ -25,6 +26,7 @@ from .enums import HeaderName
 from .errors import CompositionError
 from .models import ClientOptions, PreRequest, Request, Response
 from .operation import OperationSpecification, get_operation
+from .sentinels import Middleware
 from .service import Service
 from .types import (
     CookiesTypes,
@@ -56,22 +58,10 @@ __all__: Sequence[str] = (
     "files",
     "json",
     "timeout",
+    "service_middleware",
 )
-
-In = TypeVar("In")
-Out = TypeVar("Out")
-
-
-# TODO: Move me to `mediate`
-class MiddlewareMethod(Protocol[In, Out]):
-    def __call__(self, obj: Any, call_next: Callable[[In], Out], in_: In, /) -> Out:
-        ...
-
 
 T = TypeVar("T", Callable, Type[Service])
-M = TypeVar(
-    "M", MiddlewareCallable[Request, Response], MiddlewareMethod[Request, Response]
-)
 
 
 class Decorator(Protocol):
@@ -191,7 +181,6 @@ def referer(referer: str, /) -> Decorator:
     return header(HeaderName.REFERER, referer)
 
 
-def service_middleware(middleware: M, /) -> M:
-    setattr(middleware, "_is_service_middleware", True)
-
-    return middleware
+service_middleware: Annotation[
+    Union[MiddlewareCallable[Request, Response], MiddlewareMethod[Request, Response]]
+] = Annotation(Middleware)
