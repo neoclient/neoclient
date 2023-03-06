@@ -16,7 +16,7 @@ from neoclient.resolvers import (
 )
 
 
-def test_QueryResolver() -> None:
+def test_resolver_query() -> None:
     response_with_param: Response = Response(
         HTTPStatus.OK,
         request=Request(
@@ -37,7 +37,7 @@ def test_QueryResolver() -> None:
     assert QueryResolver("name")(response_without_param) is None
 
 
-def test_HeaderResolver() -> None:
+def test_resolver_header() -> None:
     response_with_header: Response = Response(
         HTTPStatus.OK,
         request=Request(HttpMethod.GET, "https://foo.com/"),
@@ -52,7 +52,7 @@ def test_HeaderResolver() -> None:
     assert HeaderResolver("name")(response_without_header) is None
 
 
-def test_CookieResolver() -> None:
+def test_resolver_cookie() -> None:
     response_with_cookie: Response = Response(
         HTTPStatus.OK,
         request=Request(HttpMethod.GET, "https://foo.com/"),
@@ -67,7 +67,7 @@ def test_CookieResolver() -> None:
     assert CookieResolver("name")(response_without_cookie) is None
 
 
-def test_QueriesResolver() -> None:
+def test_resolver_queries() -> None:
     response: Response = Response(
         HTTPStatus.OK,
         request=Request(
@@ -80,7 +80,7 @@ def test_QueriesResolver() -> None:
     assert QueriesResolver()(response) == QueryParams({"name": "sam"})
 
 
-def test_HeadersResolver() -> None:
+def test_resolver_headers() -> None:
     response: Response = Response(
         HTTPStatus.OK,
         request=Request(HttpMethod.GET, "https://foo.com/"),
@@ -90,7 +90,7 @@ def test_HeadersResolver() -> None:
     assert HeadersResolver()(response) == Headers({"name": "sam"})
 
 
-def test_CookiesResolver() -> None:
+def test_resolver_cookies() -> None:
     response: Response = Response(
         HTTPStatus.OK,
         request=Request(HttpMethod.GET, "https://foo.com/"),
@@ -100,7 +100,7 @@ def test_CookiesResolver() -> None:
     assert CookiesResolver()(response) == Cookies({"name": "sam"})
 
 
-def test_BodyResolver() -> None:
+def test_resolver_body() -> None:
     response: Response = Response(
         HTTPStatus.OK,
         request=Request(HttpMethod.GET, "https://foo.com/"),
@@ -110,7 +110,7 @@ def test_BodyResolver() -> None:
     assert BodyResolver()(response) == {"name": "sam"}
 
 
-def test_StateResolver() -> None:
+def test_resolver_state() -> None:
     message: str = "Hello, World!"
 
     response: Response = Response(
