@@ -6,21 +6,24 @@ from .enums import Annotation
 from .exceptions import AnnotationException
 
 __all__: Sequence[str] = (
+    "has_annotations",
+    "set_annotations",
+    "get_annotations",
     "has_annotation",
     "add_annotation",
 )
 
 
-def _has_annotations(obj: Any, /) -> bool:
+def has_annotations(obj: Any, /) -> bool:
     return hasattr(obj, ATTRIBUTE_ANNOTATIONS)
 
 
-def _set_annotations(obj: Any, annotations: Annotations, /) -> None:
+def set_annotations(obj: Any, annotations: Annotations, /) -> None:
     setattr(obj, ATTRIBUTE_ANNOTATIONS, annotations)
 
 
-def _get_annotations(obj: Any, /) -> Annotations:
-    if not _has_annotations(obj):
+def get_annotations(obj: Any, /) -> Annotations:
+    if not has_annotations(obj):
         raise AnnotationException(f"obj {obj!r} has no annotations")
 
     annotations: Any = getattr(obj, ATTRIBUTE_ANNOTATIONS)
@@ -34,13 +37,13 @@ def _get_annotations(obj: Any, /) -> Annotations:
 
 
 def has_annotation(obj: Any, annotation: Annotation, /) -> bool:
-    return _has_annotations(obj) and annotation in _get_annotations(obj)
+    return has_annotations(obj) and annotation in get_annotations(obj)
 
 
 def add_annotation(obj: Any, annotation: Annotation, /) -> None:
-    if not _has_annotations(obj):
-        _set_annotations(obj, Annotations())
+    if not has_annotations(obj):
+        set_annotations(obj, Annotations())
 
-    annotations: Annotations = _get_annotations(obj)
+    annotations: Annotations = get_annotations(obj)
 
     annotations.add(annotation)
