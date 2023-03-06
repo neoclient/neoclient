@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 import pytest
-from httpx import Headers, Request, Response
+from httpx import Headers
 from pydantic import BaseConfig
 from pydantic.fields import ModelField
 
@@ -9,6 +9,7 @@ from neoclient import Cookie
 from neoclient.dependencies import DependencyParameter, DependencyResolver, get_fields
 from neoclient.enums import HttpMethod
 from neoclient.errors import ResolutionError
+from neoclient.models import Request, Response
 from neoclient.params import (
     BodyParameter,
     CookieParameter,

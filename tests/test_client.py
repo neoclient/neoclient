@@ -1,11 +1,11 @@
-from typing import Callable, Optional, Protocol
+from typing import Callable, Optional
 
 import pytest
 from httpx import Headers
 from pydantic import BaseModel, Required
 
 from neoclient import Body, NeoClient, Queries, Query
-from neoclient.methods import get, post, request
+from neoclient.methods import request
 from neoclient.middleware import RequestMiddleware
 from neoclient.models import PreRequest, Request, Response
 from neoclient.operation import OperationSpecification, get_operation

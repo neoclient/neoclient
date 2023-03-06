@@ -1,5 +1,4 @@
 from neoclient.annotations import api
-from neoclient.annotations.constants import ATTRIBUTE_ANNOTATIONS
 from neoclient.annotations.datastructures import Annotations
 from neoclient.annotations.enums import Annotation
 

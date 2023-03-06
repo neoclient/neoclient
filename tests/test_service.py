@@ -1,7 +1,6 @@
 from types import MethodType
 
 import pytest
-from mediate import Middleware
 
 from neoclient import get, service_middleware
 from neoclient.client import Client
