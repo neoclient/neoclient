@@ -13,3 +13,6 @@ typecheck:
 format:
 	@poetry run python -m isort ${ROOT_DIR}
 	@poetry run python -m black ${ROOT_DIR}
+
+lint:
+	@poetry run python -m pylint ${PROJECT} tests examples

@@ -163,7 +163,7 @@ class Request(httpx.Request):
                 extensions=request.extensions,
                 content=request.content,
             )
-        
+
         return cls(
             method=request.method,
             url=request.url,
