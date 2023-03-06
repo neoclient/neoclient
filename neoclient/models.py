@@ -70,8 +70,8 @@ class State:
     def __eq__(self, value: object) -> bool:
         if isinstance(value, type(self)):
             return self._state == value._state
-        else:
-            return False
+
+        return False
 
     def _set(self, key: str, value: Any) -> None:
         self._state[key] = value
@@ -79,8 +79,8 @@ class State:
     def _get(self, key: str) -> Any:
         if key in self._state:
             return self._state[key]
-        else:
-            raise MissingStateError(key=key)
+
+        raise MissingStateError(key=key)
 
     def _del(self, key: str) -> None:
         del self._state[key]
@@ -163,14 +163,14 @@ class Request(httpx.Request):
                 extensions=request.extensions,
                 content=request.content,
             )
-        else:
-            return cls(
-                method=request.method,
-                url=request.url,
-                headers=request.headers,
-                extensions=request.extensions,
-                stream=request.stream,
-            )
+        
+        return cls(
+            method=request.method,
+            url=request.url,
+            headers=request.headers,
+            extensions=request.extensions,
+            stream=request.stream,
+        )
 
 
 class Response(httpx.Response):

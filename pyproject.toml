@@ -21,6 +21,7 @@ pytest = "^7.1.2"
 mypy = "^1.0.1"
 black = "^22.6.0"
 isort = "^5.10.1"
+pylint = "^2.16.4"
 
 [tool.poetry.group.examples.dependencies]
 fastapi = "^0.86.0"

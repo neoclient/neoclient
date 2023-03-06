@@ -1,5 +1,4 @@
 from types import MethodType
-from typing import Type
 
 import pytest
 from pytest import fixture
