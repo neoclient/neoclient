@@ -17,7 +17,7 @@ def get(message: str):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'neoclient/0.1.19'
+        'User-Agent': 'neoclient/0.1.20'
     },
     'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get?message=Hello%2C+World!'

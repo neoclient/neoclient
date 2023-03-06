@@ -99,7 +99,7 @@ def anything(name: Name):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'neoclient/0.1.19'
+        'User-Agent': 'neoclient/0.1.20'
     },
     'json': None,
     'method': 'GET',
@@ -131,7 +131,7 @@ def do(commands: Sequence[str]):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'neoclient/0.1.19'
+        'User-Agent': 'neoclient/0.1.20'
     },
     'json': None,
     'method': 'GET',

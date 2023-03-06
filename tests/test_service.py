@@ -1,10 +1,9 @@
 from types import MethodType
-from typing import Type
 
 import pytest
-from pytest import fixture
+from mediate import Middleware
 
-from neoclient import get
+from neoclient import get, service_middleware
 from neoclient.client import Client
 from neoclient.models import ClientOptions
 from neoclient.operation import Operation, get_operation
@@ -15,6 +14,10 @@ class SomeService(Service):
     @get("/foo")
     def foo(self):
         ...
+
+    @service_middleware
+    def some_middleware(self, call_next, request):
+        return call_next(request)
 
 
 def test_default_opts() -> None:
@@ -42,3 +45,10 @@ def test_method_bound_to_client() -> None:
 
     assert operation.func == service.foo
     assert operation.client == service._client.client
+
+
+def test_service_middleware() -> None:
+    service: SomeService = SomeService()
+
+    assert service._client.middleware.record == [service.some_middleware]
+    assert get_operation(service.foo).middleware == service._client.middleware

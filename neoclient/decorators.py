@@ -152,7 +152,7 @@ def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:
     def decorate(target: T, /) -> T:
         if isinstance(target, type) and issubclass(target, Service):
             raise CompositionError(
-                "Middleware decorator currently unsupported for service classes"
+                "Middleware decorator unsupported for service classes"
             )
 
         specification: OperationSpecification = get_operation(target).specification
