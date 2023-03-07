@@ -46,11 +46,16 @@ exclude = ["examples"]
 testpaths = "tests"
 
 [tool.pylint]
+extension-pkg-whitelist = "pydantic"
 disable = [
     "missing-module-docstring",
     "missing-function-docstring",
     "missing-class-docstring",
     "unused-argument",
+    "too-few-public-methods",
+    "too-many-ancestors",
+    "redefined-outer-name",
+    "disallowed-name",
 ]
 
 [tool.isort]

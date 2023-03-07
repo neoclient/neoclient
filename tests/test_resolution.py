@@ -1,14 +1,14 @@
 from dataclasses import dataclass
-from http import HTTPStatus
 from typing import Any, Mapping, Optional, Union
 
 from pydantic import BaseModel
 
 from neoclient import Depends, Query, State, models
-from neoclient.enums import HttpMethod
-from neoclient.models import Request, Response
+from neoclient.models import Response
 from neoclient.params import QueryParameter
 from neoclient.resolution import resolve
+
+from . import utils
 
 
 def test_resolve_infer_query() -> None:
@@ -19,17 +19,14 @@ def test_resolve_infer_query() -> None:
             "is_cool": is_cool,
         }
 
-    response: Response = Response(
-        HTTPStatus.OK,
-        request=Request(
-            HttpMethod.GET,
-            "https://foo.com/",
+    response: Response = utils.build_response(
+        request=utils.build_request(
             params={
                 "name": "sam",
                 "age": "43",
                 "is_cool": "true",
-            },
-        ),
+            }
+        )
     )
 
     resolved: Any = resolve(func, response)
@@ -56,9 +53,7 @@ def test_resolve_infer_body() -> None:
             "body_dataclass": body_dataclass,
         }
 
-    response: Response = Response(
-        HTTPStatus.OK,
-        request=Request(HttpMethod.GET, "https://foo.com/"),
+    response: Response = utils.build_response(
         json={
             "name": "sam",
             "age": 43,
@@ -119,15 +114,8 @@ def test_resolve_caching() -> None:
             "dependency": dependency,
         }
 
-    response: Response = Response(
-        HTTPStatus.OK,
-        request=Request(
-            HttpMethod.GET,
-            "https://foo.com/",
-            params={
-                "name": "sam",
-            },
-        ),
+    response: Response = utils.build_response(
+        request=utils.build_request(params={"name": "sam"})
     )
 
     assert resolve(func, response) == {
@@ -141,14 +129,9 @@ def test_resolve_caching() -> None:
     assert query_name_spy.resolution_counter.count == 1
 
 
-def test_resolve_default() -> None:
-    def func(foo: str = Query("foo", default="default")) -> str:
-        return foo
-
-    response: Response = Response(
-        HTTPStatus.OK,
-        request=Request(HttpMethod.GET, "https://foo.com/"),
-    )
+def test_resolve_default(response: Response) -> None:
+    def func(query: str = Query("query", default="default")) -> str:
+        return query
 
     resolved: Any = resolve(func, response)
 
@@ -161,9 +144,7 @@ def test_resolve_state_present() -> None:
     def func(message: str = State("message")) -> str:
         return message
 
-    response: Response = Response(
-        HTTPStatus.OK,
-        request=Request(HttpMethod.GET, "https://foo.com/"),
+    response: Response = utils.build_response(
         state=models.State({"message": message}),
     )
 
@@ -172,16 +153,11 @@ def test_resolve_state_present() -> None:
     assert resolved == message
 
 
-def test_resolve_state_missing() -> None:
+def test_resolve_state_missing(response: Response) -> None:
     default_message: str = "Hello, Default!"
 
     def func(message: str = State("message", default=default_message)) -> str:
         return message
-
-    response: Response = Response(
-        HTTPStatus.OK,
-        request=Request(HttpMethod.GET, "https://foo.com/"),
-    )
 
     resolved: Any = resolve(func, response)
 

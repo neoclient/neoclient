@@ -30,7 +30,7 @@ def pre_request() -> PreRequest:
     return PreRequest("GET", "/foo")
 
 
-def test_QueryParamConsumer(pre_request: PreRequest) -> None:
+def test_consumer_query_param(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     key: str = "name"
@@ -43,7 +43,7 @@ def test_QueryParamConsumer(pre_request: PreRequest) -> None:
     assert QueryConsumer("age", 123) == QueryConsumer("age", "123")
 
 
-def test_HeaderConsumer(pre_request: PreRequest) -> None:
+def test_consumer_header(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     key: str = "name"
@@ -56,7 +56,7 @@ def test_HeaderConsumer(pre_request: PreRequest) -> None:
     assert HeaderConsumer("age", 123) == HeaderConsumer("age", "123")
 
 
-def test_CookieConsumer(pre_request: PreRequest) -> None:
+def test_consumer_cookie(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     key: str = "name"
@@ -69,7 +69,7 @@ def test_CookieConsumer(pre_request: PreRequest) -> None:
     assert CookieConsumer("age", 123) == CookieConsumer("age", "123")
 
 
-def test_PathParamConsumer(pre_request: PreRequest) -> None:
+def test_consumer_path_param(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     key: str = "name"
@@ -82,7 +82,7 @@ def test_PathParamConsumer(pre_request: PreRequest) -> None:
     assert PathConsumer("age", 123) == PathConsumer("age", "123")
 
 
-def test_QueryParamsConsumer(pre_request: PreRequest) -> None:
+def test_consumer_query_params(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     params: QueryParams = QueryParams({"name": "sam"})
@@ -96,7 +96,7 @@ def test_QueryParamsConsumer(pre_request: PreRequest) -> None:
     )
 
 
-def test_HeadersConsumer(pre_request: PreRequest) -> None:
+def test_consumer_headers(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     headers: Headers = Headers({"name": "sam"})
@@ -108,7 +108,7 @@ def test_HeadersConsumer(pre_request: PreRequest) -> None:
     assert HeadersConsumer({"name": "sam"}) == HeadersConsumer(Headers({"name": "sam"}))
 
 
-def test_CookiesConsumer(pre_request: PreRequest) -> None:
+def test_consumer_cookies(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     cookies: Cookies = Cookies({"name": "sam"})
@@ -120,7 +120,7 @@ def test_CookiesConsumer(pre_request: PreRequest) -> None:
     assert CookiesConsumer({"name": "sam"}) == CookiesConsumer(Cookies({"name": "sam"}))
 
 
-def test_PathParamsConsumer(pre_request: PreRequest) -> None:
+def test_consumer_path_params(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     path_params: Mapping[str, str] = {"name": "sam"}
@@ -132,7 +132,7 @@ def test_PathParamsConsumer(pre_request: PreRequest) -> None:
     assert PathsConsumer({"age": 123}) == PathsConsumer({"age": "123"})
 
 
-def test_ContentConsumer(pre_request: PreRequest) -> None:
+def test_consumer_content(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     content: RequestContent = "content"
@@ -142,7 +142,7 @@ def test_ContentConsumer(pre_request: PreRequest) -> None:
     assert pre_request == replace(ref_pre_request, content=content)
 
 
-def test_DataConsumer(pre_request: PreRequest) -> None:
+def test_consumer_data(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     data: RequestData = {"name": "sam"}
@@ -152,7 +152,7 @@ def test_DataConsumer(pre_request: PreRequest) -> None:
     assert pre_request == replace(ref_pre_request, data=data)
 
 
-def test_FilesConsumer(pre_request: PreRequest) -> None:
+def test_consumer_files(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     files: RequestFiles = {"file.txt": BytesIO(b"content")}
@@ -162,7 +162,7 @@ def test_FilesConsumer(pre_request: PreRequest) -> None:
     assert pre_request == replace(ref_pre_request, files=files)
 
 
-def test_JsonConsumer(pre_request: PreRequest) -> None:
+def test_consumer_json(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     json: JsonTypes = {"name": "sam"}
@@ -172,7 +172,7 @@ def test_JsonConsumer(pre_request: PreRequest) -> None:
     assert pre_request == replace(ref_pre_request, json=json)
 
 
-def test_TimeoutConsumer(pre_request: PreRequest) -> None:
+def test_consumer_timeout(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     timeout: Timeout = Timeout(5.0)
@@ -184,7 +184,7 @@ def test_TimeoutConsumer(pre_request: PreRequest) -> None:
     assert TimeoutConsumer(5.0) == TimeoutConsumer(Timeout(5.0))
 
 
-def test_StateConsumer(pre_request: PreRequest) -> None:
+def test_consumer_state(pre_request: PreRequest) -> None:
     ref_pre_request: PreRequest = replace(pre_request)
 
     message: str = "Hello, World!"

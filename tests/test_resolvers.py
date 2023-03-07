@@ -1,9 +1,6 @@
-from http import HTTPStatus
-
 from httpx import Cookies, Headers, QueryParams
 
-from neoclient.enums import HttpMethod
-from neoclient.models import Request, Response, State
+from neoclient.models import Response, State
 from neoclient.resolvers import (
     BodyResolver,
     CookieResolver,
@@ -15,64 +12,44 @@ from neoclient.resolvers import (
     StateResolver,
 )
 
+from . import utils
+
 
 def test_resolver_query() -> None:
-    response_with_param: Response = Response(
-        HTTPStatus.OK,
-        request=Request(
-            HttpMethod.GET,
-            "https://foo.com/?name=sam",
+    response_with_param: Response = utils.build_response(
+        request=utils.build_request(
             params={"name": "sam"},
-        ),
+        )
     )
-    response_without_param: Response = Response(
-        HTTPStatus.OK,
-        request=Request(
-            HttpMethod.GET,
-            "https://foo.com/",
-        ),
-    )
+    response_without_param: Response = utils.build_response()
 
     assert QueryResolver("name")(response_with_param) == "sam"
     assert QueryResolver("name")(response_without_param) is None
 
 
 def test_resolver_header() -> None:
-    response_with_header: Response = Response(
-        HTTPStatus.OK,
-        request=Request(HttpMethod.GET, "https://foo.com/"),
+    response_with_header: Response = utils.build_response(
         headers={"name": "sam"},
     )
-    response_without_header: Response = Response(
-        HTTPStatus.OK,
-        request=Request(HttpMethod.GET, "https://foo.com/"),
-    )
+    response_without_header: Response = utils.build_response()
 
     assert HeaderResolver("name")(response_with_header) == "sam"
     assert HeaderResolver("name")(response_without_header) is None
 
 
 def test_resolver_cookie() -> None:
-    response_with_cookie: Response = Response(
-        HTTPStatus.OK,
-        request=Request(HttpMethod.GET, "https://foo.com/"),
+    response_with_cookie: Response = utils.build_response(
         headers={"Set-Cookie": "name=sam; Path=/"},
     )
-    response_without_cookie: Response = Response(
-        HTTPStatus.OK,
-        request=Request(HttpMethod.GET, "https://foo.com/"),
-    )
+    response_without_cookie: Response = utils.build_response()
 
     assert CookieResolver("name")(response_with_cookie) == "sam"
     assert CookieResolver("name")(response_without_cookie) is None
 
 
 def test_resolver_queries() -> None:
-    response: Response = Response(
-        HTTPStatus.OK,
-        request=Request(
-            HttpMethod.GET,
-            "https://foo.com/",
+    response: Response = utils.build_response(
+        request=utils.build_request(
             params={"name": "sam"},
         ),
     )
@@ -81,9 +58,7 @@ def test_resolver_queries() -> None:
 
 
 def test_resolver_headers() -> None:
-    response: Response = Response(
-        HTTPStatus.OK,
-        request=Request(HttpMethod.GET, "https://foo.com/"),
+    response: Response = utils.build_response(
         headers={"name": "sam"},
     )
 
@@ -91,9 +66,7 @@ def test_resolver_headers() -> None:
 
 
 def test_resolver_cookies() -> None:
-    response: Response = Response(
-        HTTPStatus.OK,
-        request=Request(HttpMethod.GET, "https://foo.com/"),
+    response: Response = utils.build_response(
         headers={"Set-Cookie": "name=sam; Path=/"},
     )
 
@@ -101,9 +74,7 @@ def test_resolver_cookies() -> None:
 
 
 def test_resolver_body() -> None:
-    response: Response = Response(
-        HTTPStatus.OK,
-        request=Request(HttpMethod.GET, "https://foo.com/"),
+    response: Response = utils.build_response(
         json={"name": "sam"},
     )
 
@@ -113,9 +84,7 @@ def test_resolver_body() -> None:
 def test_resolver_state() -> None:
     message: str = "Hello, World!"
 
-    response: Response = Response(
-        HTTPStatus.OK,
-        request=Request(HttpMethod.GET, "https://foo.com/"),
+    response: Response = utils.build_response(
         state=State({"message": message}),
     )
 

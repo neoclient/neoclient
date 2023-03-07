@@ -7,7 +7,7 @@ from pydantic.fields import ModelField
 
 from neoclient import Cookie
 from neoclient.dependencies import DependencyParameter, DependencyResolver, get_fields
-from neoclient.enums import HttpMethod
+from neoclient.enums import HTTPMethod
 from neoclient.errors import ResolutionError
 from neoclient.models import Request, Response
 from neoclient.params import (
@@ -30,23 +30,23 @@ def test_get_fields() -> None:
     }
 
 
-def test_DependencyResolver() -> None:
+def test_dependency_resolver_() -> None:
     def dependency(response: Response, /) -> Response:
         return response
 
     response: Response = Response(
-        HTTPStatus.OK, request=Request(HttpMethod.GET, "https://foo.com/")
+        HTTPStatus.OK, request=Request(HTTPMethod.GET, "https://foo.com/")
     )
 
     assert DependencyResolver(dependency)(response) == response
 
 
-def test_DependencyParameter_resolve() -> None:
+def test_dependency_parameter_resolve() -> None:
     def dependency(response: Response, /) -> Response:
         return response
 
     response: Response = Response(
-        HTTPStatus.OK, request=Request(HttpMethod.GET, "https://foo.com/")
+        HTTPStatus.OK, request=Request(HTTPMethod.GET, "https://foo.com/")
     )
 
     dependency_parameter_with_dependency: DependencyParameter = DependencyParameter(
@@ -62,7 +62,7 @@ def test_DependencyParameter_resolve() -> None:
         dependency_parameter_without_dependency.resolve(response)
 
 
-def test_DependencyParameter_prepare() -> None:
+def test_dependency_parameter_prepare() -> None:
     def some_dependency(response: Response, /) -> Response:
         return response
 
@@ -91,7 +91,7 @@ def test_DependencyParameter_prepare() -> None:
 
     dependency_parameter_with_dependency.prepare(model_field)
 
-    assert dependency_parameter_with_dependency.dependency == some_dependency
+    assert dependency_parameter_with_dependency.dependency is some_dependency
 
     dependency_parameter_without_dependency.prepare(model_field)
 

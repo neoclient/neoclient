@@ -26,33 +26,43 @@ def test_parse_format_string() -> None:
 
 
 def test_bind_arguments() -> None:
-    def foo(x: str, /, y: str = "def_y", *, z: str = "def_z"):
+    def foo(
+        param_1: str,
+        /,
+        param_2: str = "param_2_default",
+        *,
+        param_3: str = "param_3_default",
+    ):
         ...
 
-    assert utils.bind_arguments(foo, ("x",), {}) == {
-        "x": "x",
-        "y": "def_y",
-        "z": "def_z",
+    assert utils.bind_arguments(foo, ("param_1",), {}) == {
+        "param_1": "param_1",
+        "param_2": "param_2_default",
+        "param_3": "param_3_default",
     }
-    assert utils.bind_arguments(foo, ("x", "y"), {}) == {
-        "x": "x",
-        "y": "y",
-        "z": "def_z",
+    assert utils.bind_arguments(foo, ("param_1", "param_2"), {}) == {
+        "param_1": "param_1",
+        "param_2": "param_2",
+        "param_3": "param_3_default",
     }
-    assert utils.bind_arguments(foo, ("x",), {"y": "y"}) == {
-        "x": "x",
-        "y": "y",
-        "z": "def_z",
+    assert utils.bind_arguments(foo, ("param_1",), {"param_2": "param_2"}) == {
+        "param_1": "param_1",
+        "param_2": "param_2",
+        "param_3": "param_3_default",
     }
-    assert utils.bind_arguments(foo, ("x", "y"), {"z": "z"}) == {
-        "x": "x",
-        "y": "y",
-        "z": "z",
+    assert utils.bind_arguments(
+        foo, ("param_1", "param_2"), {"param_3": "param_3"}
+    ) == {
+        "param_1": "param_1",
+        "param_2": "param_2",
+        "param_3": "param_3",
     }
-    assert utils.bind_arguments(foo, ("x",), {"y": "y", "z": "z"}) == {
-        "x": "x",
-        "y": "y",
-        "z": "z",
+    assert utils.bind_arguments(
+        foo, ("param_1",), {"param_2": "param_2", "param_3": "param_3"}
+    ) == {
+        "param_1": "param_1",
+        "param_2": "param_2",
+        "param_3": "param_3",
     }
 
 
@@ -86,7 +96,14 @@ def test_unpack_arguments() -> None:
     def var_keyword(**kwargs: str):
         ...
 
-    def kitchen_sink(a: str, /, b: str, *args: str, c: str, **kwargs: str):
+    def kitchen_sink(
+        param_positional_only: str,
+        /,
+        param_positional_or_keyword: str,
+        *param_var_positional: str,
+        param_keyword_only: str,
+        **param_var_keyword: str,
+    ):
         ...
 
     assert utils.unpack_arguments(positional_only, {"arg": "foo"}) == (("foo",), {})
@@ -105,17 +122,17 @@ def test_unpack_arguments() -> None:
     assert utils.unpack_arguments(
         kitchen_sink,
         {
-            "a": "a",
-            "b": "b",
-            "args": ("arg1", "arg2"),
-            "c": "c",
-            "kwargs": {"key1": "val1", "key2": "val2"},
+            "param_positional_only": "param_positional_only",
+            "param_positional_or_keyword": "param_positional_or_keyword",
+            "param_var_positional": ("arg1", "arg2"),
+            "param_keyword_only": "param_keyword_only",
+            "param_var_keyword": {"key1": "val1", "key2": "val2"},
         },
     ) == (
-        ("a", "arg1", "arg2"),
+        ("param_positional_only", "arg1", "arg2"),
         {
-            "b": "b",
-            "c": "c",
+            "param_positional_or_keyword": "param_positional_or_keyword",
+            "param_keyword_only": "param_keyword_only",
             "key1": "val1",
             "key2": "val2",
         },
@@ -141,4 +158,6 @@ def test_parse_obj_as() -> None:
     assert utils.parse_obj_as(str, "123") == "123"
     assert utils.parse_obj_as(str, 123) == "123"
     assert utils.parse_obj_as(Union[str, int], "abc") == "abc"  # type: ignore
-    assert utils.parse_obj_as(Mapping[str, str], QueryParams({"name": "sam", "age": "43"})) == QueryParams({"name": "sam", "age": "43"})  # type: ignore
+    assert utils.parse_obj_as(
+        Mapping[str, str], QueryParams({"name": "sam", "age": "43"})  # type: ignore
+    ) == QueryParams({"name": "sam", "age": "43"})
