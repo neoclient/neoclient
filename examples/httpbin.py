@@ -1,28 +1,25 @@
-from typing import Protocol
+from dataclasses import dataclass
 
-from pydantic import BaseModel
-from rich.pretty import pprint
-
-from neoclient import NeoClient, get
+from neoclient import Service, base_url, get
 
 
-class Response(BaseModel):
+@dataclass
+class Response:
     args: dict
     headers: dict
     origin: str
     url: str
 
 
-class Httpbin(Protocol):
+@base_url("https://httpbin.org/")
+class Httpbin(Service):
     @get("/get")
     def get(self, message: str) -> Response:
         ...
 
 
-client: NeoClient = NeoClient("https://httpbin.org/")
-
-httpbin: Httpbin = client.create(Httpbin)  # type: ignore
+httpbin: Httpbin = Httpbin()
 
 response: Response = httpbin.get("Hello, World!")
 
-pprint(response)
+print(response)

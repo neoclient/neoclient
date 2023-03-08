@@ -1,30 +1,40 @@
-from typing import Optional, Protocol
+from typing import Any, List, Mapping, Optional, NamedTuple
 
-from rich.pretty import pprint
-
-from neoclient import NeoClient, Query, get, query_params
+from neoclient import Query, Service, base_url, get, query_params
 
 
-class SuggestQueries(Protocol):
+class Suggestion(NamedTuple):
+    suggestion: str
+    location: int
+    confidence: List[int]
+
+
+class Response(NamedTuple):
+    query: str
+    suggestions: List[Suggestion]
+    parameters: Mapping[str, Any]
+
+
+@base_url("https://suggestqueries.google.com/")
+class SuggestQueries(Service):
     @query_params({"xhr": "t", "hjson": "t"})
     @get("/complete/search")
     def complete_search(
         self,
-        query: str = Query(alias="q"),
+        query: str = Query("q"),
         /,
         *,
         client: str,
         datasource: Optional[str] = None,
-    ) -> list:
+    ) -> Response:
         ...
 
 
-client: NeoClient = NeoClient("https://suggestqueries.google.com/")
+suggest_queries: SuggestQueries = SuggestQueries()
 
-suggest_queries: SuggestQueries = client.create(SuggestQueries)  # type: ignore
-
-results: list = suggest_queries.complete_search(
+response: Response = suggest_queries.complete_search(
     "foo", client="youtube", datasource="yt"
 )
 
-pprint(results)
+for suggestion in response.suggestions:
+    print(suggestion.suggestion)

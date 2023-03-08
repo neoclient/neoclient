@@ -154,22 +154,26 @@ class Request(httpx.Request):
             self.state = State()
 
     @classmethod
-    def from_httpx_request(cls, request: httpx.Request, /) -> "Request":
-        if hasattr(request, "_content"):
-            return cls(
-                method=request.method,
-                url=request.url,
-                headers=request.headers,
-                extensions=request.extensions,
-                content=request.content,
+    def from_httpx_request(cls, httpx_request: httpx.Request, /) -> "Request":
+        if hasattr(httpx_request, "_content"):
+            request: Request = cls(
+                method=httpx_request.method,
+                url=httpx_request.url,
+                headers=httpx_request.headers,
+                extensions=httpx_request.extensions,
+                stream=httpx_request.stream,
             )
 
+            request._content = httpx_request.content
+
+            return request
+
         return cls(
-            method=request.method,
-            url=request.url,
-            headers=request.headers,
-            extensions=request.extensions,
-            stream=request.stream,
+            method=httpx_request.method,
+            url=httpx_request.url,
+            headers=httpx_request.headers,
+            extensions=httpx_request.extensions,
+            stream=httpx_request.stream,
         )
 
 
@@ -212,21 +216,25 @@ class Response(httpx.Response):
             self.state = State()
 
     @classmethod
-    def from_httpx_response(cls, response: httpx.Response, /) -> "Response":
-        if hasattr(response, "_content"):
-            return cls(
-                status_code=response.status_code,
-                headers=response.headers,
-                request=response.request,
-                content=response.content,
+    def from_httpx_response(cls, httpx_response: httpx.Response, /) -> "Response":
+        if hasattr(httpx_response, "_content"):
+            response: Response =  cls(
+                status_code=httpx_response.status_code,
+                headers=httpx_response.headers,
+                request=httpx_response.request,
+                stream=httpx_response.stream,
             )
-        else:
-            return cls(
-                status_code=response.status_code,
-                headers=response.headers,
-                request=response.request,
-                stream=response.stream,
-            )
+
+            response._content = httpx_response.content
+
+            return response
+
+        return cls(
+            status_code=httpx_response.status_code,
+            headers=httpx_response.headers,
+            request=httpx_response.request,
+            stream=httpx_response.stream,
+        )
 
 
 DEFAULT_TRUST_ENV: bool = True

@@ -1,18 +1,26 @@
-from neoclient import NeoClient
+from typing import Mapping
+from neoclient import NeoClient, Request, Response
+from neoclient.typing import CallNext
 
-client = NeoClient("https://httpbin.org/")
+client: NeoClient = NeoClient("https://httpbin.org/")
 
 
 @client.middleware
-def log_request(call_next, request):
-    print("Sending request:", request)
+def log_request(call_next: CallNext, request: Request) -> Response:
+    print("Request:", request)
 
-    return call_next(request)
+    response: Response = call_next(request)
+
+    print("Response:", response)
+
+    return response
 
 
 @client.get("/ip")
-def get_ip():
+def get_ip() -> Mapping[str, str]:
     ...
 
 
-ip = get_ip()
+ip: Mapping[str, str] = get_ip()
+
+print(ip)

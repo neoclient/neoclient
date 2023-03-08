@@ -2,7 +2,7 @@ from typing import Mapping
 
 from neoclient import NeoClient, Queries
 
-client: NeoClient = NeoClient(base_url="http://127.0.0.1:8000/")
+client: NeoClient = NeoClient("http://127.0.0.1:8000/")
 
 
 @client.get("/echo")

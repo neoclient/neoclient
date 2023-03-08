@@ -8,7 +8,7 @@ class Person:
     name: str
 
 
-client: NeoClient = NeoClient(base_url="http://127.0.0.1:8000/")
+client: NeoClient = NeoClient("http://127.0.0.1:8000/")
 
 
 @client.post("/greet")
