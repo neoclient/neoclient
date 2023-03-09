@@ -217,7 +217,7 @@ class Response(httpx.Response):
     @classmethod
     def from_httpx_response(cls, httpx_response: httpx.Response, /) -> "Response":
         if hasattr(httpx_response, "_content"):
-            response: Response =  cls(
+            response: Response = cls(
                 status_code=httpx_response.status_code,
                 headers=httpx_response.headers,
                 request=httpx_response.request,
