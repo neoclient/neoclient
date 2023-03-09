@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Protocol, Sequence, Type, TypeVar
+from typing import Any, Callable, Optional, Protocol, Sequence, Type, TypeVar
 
 from mediate.protocols import MiddlewareCallable
 
@@ -56,8 +56,10 @@ __all__: Sequence[str] = (
     "files",
     "json",
     "timeout",
+    "service",
 )
 
+S = TypeVar("S", bound=Type[Service])
 T = TypeVar("T", Callable, Type[Service])
 
 
@@ -152,7 +154,7 @@ def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:
     def decorate(target: T, /) -> T:
         if isinstance(target, type) and issubclass(target, Service):
             raise CompositionError(
-                "Middleware decorator unsupported for service classes"
+                "Middleware decorator currently unsupported for service classes"
             )
 
         specification: OperationSpecification = get_operation(target).specification
@@ -176,3 +178,24 @@ def accept(*content_types: str) -> Decorator:
 
 def referer(referer: str, /) -> Decorator:
     return header(HeaderName.REFERER, referer)
+
+
+def service(
+    base_url: Optional[str] = None,
+    *,
+    middleware: Optional[Sequence[MiddlewareCallable[Request, Response]]] = None,
+    response: Optional[Callable[..., Any]] = None,
+):
+    print(
+        "@service:",
+        {
+            "base_url": base_url,
+            "middleware": middleware,
+            "response": response,
+        },
+    )
+
+    def decorate(target: S, /) -> S:
+        return target
+
+    return decorate
