@@ -25,7 +25,6 @@ __all__: Sequence[str] = (
     "unpack_arguments",
     "get_default",
     "has_default",
-    "get_method_kind",
     "parse_obj_as",
 )
 
@@ -107,8 +106,8 @@ def unpack_arguments(
 def get_default(field_info: FieldInfo, /) -> Any:
     if field_info.default_factory is not None:
         return field_info.default_factory()
-    else:
-        return field_info.default
+
+    return field_info.default
 
 
 def has_default(field_info: FieldInfo, /) -> bool:

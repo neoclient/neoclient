@@ -128,7 +128,7 @@ def compose(
 
     model: BaseModel = api.create_model(func, fields, arguments)
 
-    # By this stage the arguments have been validated (coerced, defaults used, exception thrown if missing)
+    # By this stage the arguments have been validated
     validated_arguments: Mapping[str, Any] = model.dict()
 
     field_name: str

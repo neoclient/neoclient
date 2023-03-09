@@ -67,8 +67,8 @@ def validate(
 
     if func:
         return decorate(func)
-    else:
-        return decorate
+
+    return decorate
 
 
 def create_func_model(

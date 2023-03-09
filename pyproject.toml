@@ -54,6 +54,9 @@ disable = [
     "too-few-public-methods",
     "too-many-ancestors",
     "unused-argument",
+    "too-many-instance-attributes",
+    "too-many-arguments",
+    "too-many-locals",
 ]
 
 [tool.isort]

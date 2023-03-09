@@ -47,17 +47,20 @@ class Consumer:
             self.consume_client(target)
         else:
             raise CompositionError(
-                f"Consumer {type(self).__name__!r} does not support consumption of type {type(target)}"
+                f"Consumer {type(self).__name__!r} does not support consumption"
+                f" of type {type(target)}"
             )
 
     def consume_request(self, _: PreRequest, /) -> None:
         raise CompositionError(
-            f"Consumer {type(self).__name__!r} does not support consumption of type {PreRequest}"
+            f"Consumer {type(self).__name__!r} does not support consumption"
+            f" of type {PreRequest}"
         )
 
     def consume_client(self, _: ClientOptions, /) -> None:
         raise CompositionError(
-            f"Consumer {type(self).__name__!r} does not support consumption of type {ClientOptions}"
+            f"Consumer {type(self).__name__!r} does not support consumption"
+            f" of type {ClientOptions}"
         )
 
 
