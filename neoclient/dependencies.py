@@ -1,3 +1,4 @@
+import collections.abc
 import dataclasses
 from dataclasses import dataclass
 from typing import (
@@ -10,6 +11,7 @@ from typing import (
     Type,
     TypeVar,
 )
+import typing
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams
@@ -66,9 +68,15 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
             if model_field.annotation in httpx_lookup:
                 parameter = httpx_lookup[model_field.annotation]()
             elif (
-                isinstance(model_field.annotation, type)
-                and issubclass(model_field.annotation, (BaseModel, dict))
+                (
+                    isinstance(model_field.annotation, type)
+                    and issubclass(model_field.annotation, (BaseModel, dict))
+                )
                 or dataclasses.is_dataclass(model_field.annotation)
+                or (
+                    isinstance(model_field.annotation, typing._GenericAlias)
+                    and model_field.annotation.__origin__ in (collections.abc.Mapping,)
+                )
             ):
                 parameter = BodyParameter(
                     default=utils.get_default(field_info),
