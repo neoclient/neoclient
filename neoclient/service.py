@@ -10,7 +10,7 @@ from .operation import Operation, get_operation, has_operation
 
 class ServiceMeta(type):
     def __new__(
-        cls: Type["ServiceMeta"], name: str, bases: Tuple[type], attrs: Dict[str, Any]
+        mcs: Type["ServiceMeta"], name: str, bases: Tuple[type], attrs: Dict[str, Any]
     ) -> type:
         def __init__(self) -> None:
             self._client = Client(client=self._opts.build())
@@ -36,7 +36,7 @@ class ServiceMeta(type):
         attrs["_opts"] = ClientOptions()
         attrs["__init__"] = __init__
 
-        typ: type = super().__new__(cls, name, bases, attrs)
+        typ: type = super().__new__(mcs, name, bases, attrs)
 
         return typ
 

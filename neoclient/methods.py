@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional, Protocol, Sequence, TypeVar
 from typing_extensions import ParamSpec
 
 from .client import NeoClient
-from .enums import HttpMethod
+from .enums import HTTPMethod
 
 __all__: Sequence[str] = (
     "request",
@@ -44,10 +44,10 @@ def request(
     return MethodOperationDecorator(method)(endpoint, response=response)
 
 
-put: OperationDecorator = MethodOperationDecorator(HttpMethod.PUT)
-get: OperationDecorator = MethodOperationDecorator(HttpMethod.GET)
-post: OperationDecorator = MethodOperationDecorator(HttpMethod.POST)
-head: OperationDecorator = MethodOperationDecorator(HttpMethod.HEAD)
-patch: OperationDecorator = MethodOperationDecorator(HttpMethod.PATCH)
-delete: OperationDecorator = MethodOperationDecorator(HttpMethod.DELETE)
-options: OperationDecorator = MethodOperationDecorator(HttpMethod.OPTIONS)
+put: OperationDecorator = MethodOperationDecorator(HTTPMethod.PUT)
+get: OperationDecorator = MethodOperationDecorator(HTTPMethod.GET)
+post: OperationDecorator = MethodOperationDecorator(HTTPMethod.POST)
+head: OperationDecorator = MethodOperationDecorator(HTTPMethod.HEAD)
+patch: OperationDecorator = MethodOperationDecorator(HTTPMethod.PATCH)
+delete: OperationDecorator = MethodOperationDecorator(HTTPMethod.DELETE)
+options: OperationDecorator = MethodOperationDecorator(HTTPMethod.OPTIONS)

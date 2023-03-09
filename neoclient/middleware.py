@@ -54,7 +54,8 @@ class ExpectedHeaderMiddleware:
 
         if self.name not in response.headers:
             raise ExpectedHeaderError(name=self.name)
-        elif self.value is not None and header_value != self.value:
+
+        if self.value is not None and header_value != self.value:
             raise ExpectedHeaderError(
                 name=self.name, value=header_value, expected_value=self.value
             )

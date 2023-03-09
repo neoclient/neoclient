@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Sequence
 
 __all__: Sequence[str] = (
-    "HttpMethod",
+    "HTTPMethod",
     "HeaderName",
 )
 
@@ -17,7 +17,7 @@ class StrEnum(str, Enum):
         return self.value
 
 
-class HttpMethod(HiddenValueEnum, StrEnum):
+class HTTPMethod(HiddenValueEnum, StrEnum):
     PUT = "PUT"
     GET = "GET"
     POST = "POST"

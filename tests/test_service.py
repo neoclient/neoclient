@@ -1,7 +1,6 @@
 from types import MethodType
 
 import pytest
-from mediate import Middleware
 
 from neoclient import get, service_middleware
 from neoclient.client import Client
@@ -43,7 +42,7 @@ def test_method_bound_to_client() -> None:
 
     operation: Operation = get_operation(service.foo)
 
-    assert operation.func == service.foo
+    assert operation.func is service.foo
     assert operation.client == service._client.client
 
 

@@ -24,7 +24,7 @@ __all__: Sequence[str] = (
 )
 
 PS = ParamSpec("PS")
-RT = TypeVar("RT", covariant=True)
+RT_co = TypeVar("RT_co", covariant=True)
 
 ATTRIBUTE_OPERATION: str = "operation"
 
@@ -54,8 +54,8 @@ class OperationSpecification:
 
 
 @dataclass
-class Operation(Generic[PS, RT]):
-    func: Callable[PS, RT]
+class Operation(Generic[PS, RT_co]):
+    func: Callable[PS, RT_co]
     specification: OperationSpecification
     client: Optional[Client]
     middleware: Middleware = field(default_factory=Middleware)
@@ -114,9 +114,9 @@ class Operation(Generic[PS, RT]):
         return pydantic.parse_raw_as(return_annotation, response.text)
 
     @property
-    def wrapper(self) -> Callable[PS, RT]:
+    def wrapper(self) -> Callable[PS, RT_co]:
         @functools.wraps(self.func)
-        def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> RT:
+        def wrapper(*args: PS.args, **kwargs: PS.kwargs) -> RT_co:
             if inspect.ismethod(self.func):
                 # Read off `self` or `cls`
                 _, *args = args  # type: ignore

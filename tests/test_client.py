@@ -1,11 +1,11 @@
-from typing import Callable, Optional, Protocol
+from typing import Callable, Optional
 
 import pytest
 from httpx import Headers
 from pydantic import BaseModel, Required
 
 from neoclient import Body, NeoClient, Queries, Query
-from neoclient.methods import get, post, request
+from neoclient.methods import request
 from neoclient.middleware import RequestMiddleware
 from neoclient.models import PreRequest, Request, Response
 from neoclient.operation import OperationSpecification, get_operation
@@ -68,7 +68,7 @@ def test_request(client: NeoClient) -> None:
 
 def test_query_not_required_omitted(client: NeoClient) -> None:
     @client.get("get")
-    def get(q: Optional[str] = Query(default=None)) -> PreRequest:
+    def get(query: Optional[str] = Query(default=None)) -> PreRequest:
         ...
 
     assert get() == PreRequest(
@@ -79,13 +79,13 @@ def test_query_not_required_omitted(client: NeoClient) -> None:
 
 def test_query_required_not_omitted(client: NeoClient) -> None:
     @client.get("get")
-    def get(q: Optional[str] = Query(default=Required)) -> PreRequest:
+    def get(query: Optional[str] = Query(default=Required)) -> PreRequest:
         ...
 
     assert get("foo") == PreRequest(
         method="GET",
         url="get",
-        params={"q": "foo"},
+        params={"query": "foo"},
     )
 
 

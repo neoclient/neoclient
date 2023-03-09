@@ -201,8 +201,8 @@ class HeaderParameter(
     def parse_key(self, key: str, /) -> str:
         if self.convert_underscores:
             return key.replace("_", "-")
-        else:
-            return key
+
+        return key
 
     def parse_value(self, value: Any, /) -> str:
         return convert_header(value)

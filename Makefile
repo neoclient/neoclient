@@ -15,4 +15,4 @@ format:
 	@poetry run python -m black ${ROOT_DIR}
 
 lint:
-	@poetry run python -m pylint ${PROJECT} tests examples
+	@poetry run python -m pylint ${PROJECT} tests

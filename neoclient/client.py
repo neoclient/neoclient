@@ -24,7 +24,7 @@ from .defaults import (
     DEFAULT_TIMEOUT,
     DEFAULT_TRUST_ENV,
 )
-from .enums import HeaderName, HttpMethod
+from .enums import HeaderName, HTTPMethod
 from .middleware import Middleware
 from .models import PreRequest, Request, Response
 from .operation import Operation, OperationSpecification, get_operation
@@ -176,37 +176,37 @@ class Client:
     def put(
         self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-        return self.request(HttpMethod.PUT.name, endpoint, response=response)
+        return self.request(HTTPMethod.PUT.name, endpoint, response=response)
 
     def get(
         self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-        return self.request(HttpMethod.GET.name, endpoint, response=response)
+        return self.request(HTTPMethod.GET.name, endpoint, response=response)
 
     def post(
         self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-        return self.request(HttpMethod.POST.name, endpoint, response=response)
+        return self.request(HTTPMethod.POST.name, endpoint, response=response)
 
     def head(
         self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-        return self.request(HttpMethod.HEAD.name, endpoint, response=response)
+        return self.request(HTTPMethod.HEAD.name, endpoint, response=response)
 
     def patch(
         self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-        return self.request(HttpMethod.PATCH.name, endpoint, response=response)
+        return self.request(HTTPMethod.PATCH.name, endpoint, response=response)
 
     def delete(
         self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-        return self.request(HttpMethod.DELETE.name, endpoint, response=response)
+        return self.request(HTTPMethod.DELETE.name, endpoint, response=response)
 
     def options(
         self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-        return self.request(HttpMethod.OPTIONS.name, endpoint, response=response)
+        return self.request(HTTPMethod.OPTIONS.name, endpoint, response=response)
 
 
 class NeoClient(Client):

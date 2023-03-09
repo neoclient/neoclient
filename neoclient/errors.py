@@ -61,8 +61,11 @@ class ExpectedHeaderError(Exception):
     def __str__(self) -> str:
         if self.value is None:
             return f"Response missing expected header {str(self.name)!r}"
-        else:
-            return f"Response header {str(self.name)!r} has incorrect value. Expected {self.expected_value!r}, got {self.value!r}"
+
+        return (
+            f"Response header {str(self.name)!r} has incorrect value."
+            f" Expected {self.expected_value!r}, got {self.value!r}"
+        )
 
 
 @dataclass
