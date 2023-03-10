@@ -1,6 +1,6 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Optional, Sequence, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar
 
 import httpx
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
@@ -124,14 +124,17 @@ class Session(httpx.Client):
 class Client:
     client: Optional[httpx.Client]
     middleware: Middleware
+    default_response: Optional[Callable[..., Any]] = None
 
     def __init__(
         self,
         client: Optional[httpx.Client] = None,
         middleware: Optional[Middleware] = None,
+        default_response: Optional[Callable[..., Any]] = None,
     ) -> None:
         self.client = client
         self.middleware = middleware if middleware is not None else Middleware()
+        self.default_response = default_response
 
     def bind(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
         operation: Operation = get_operation(func)
@@ -150,6 +153,9 @@ class Client:
         *,
         response: Optional[Callable] = None,
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
+        if response is None:
+            response = self.default_response
+
         specification: OperationSpecification = OperationSpecification(
             request=PreRequest(
                 method=method,

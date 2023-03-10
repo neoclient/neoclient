@@ -1,19 +1,33 @@
+from dataclasses import dataclass, field
 import inspect
-from typing import Any, Callable, Dict, Tuple, Type
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 from .annotations.api import has_annotation
 from .annotations.enums import Annotation
 from .client import Client
+from .middleware import Middleware
 from .models import ClientOptions
 from .operation import Operation, get_operation, has_operation
 
 
+@dataclass
+class ClientSpecification:
+    options: ClientOptions = field(default_factory=ClientOptions)
+    middleware: Middleware = field(default_factory=Middleware)
+    default_response: Optional[Callable[..., Any]] = None
+
+
 class ServiceMeta(type):
+    _spec: ClientSpecification
+
     def __new__(
         mcs: Type["ServiceMeta"], name: str, bases: Tuple[type], attrs: Dict[str, Any]
     ) -> type:
         def __init__(self) -> None:
-            self._client = Client(client=self._opts.build())
+            self._client = Client(
+                client=self._spec.options.build(),
+                middleware=self._spec.middleware,
+            )
 
             member_name: str
             member: Any
@@ -33,7 +47,7 @@ class ServiceMeta(type):
 
                     setattr(self, member_name, bound_operation_method)
 
-        attrs["_opts"] = ClientOptions()
+        attrs["_spec"] = ClientSpecification()
         attrs["__init__"] = __init__
 
         typ: type = super().__new__(mcs, name, bases, attrs)
@@ -42,7 +56,6 @@ class ServiceMeta(type):
 
 
 class Service(metaclass=ServiceMeta):
-    _opts: ClientOptions
     _client: Client
 
     def __repr__(self) -> str:

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Optional, Protocol, Sequence, Type, TypeVar
 
+from httpx import URL
 from mediate.protocols import MiddlewareCallable
 
 from .consumers import (
@@ -77,7 +78,7 @@ class CompositionDecorator(Decorator):
             if not issubclass(target, Service):
                 raise CompositionError(f"Target class is not a subclass of {Service}")
 
-            client: ClientOptions = target._opts
+            client: ClientOptions = target._spec.options
 
             self.consumer.consume_client(client)
         elif callable(target):
@@ -159,9 +160,7 @@ def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:
 
         specification: OperationSpecification = get_operation(target).specification
 
-        middleware_callable: MiddlewareCallable[Request, Response]
-        for middleware_callable in middleware:
-            specification.middleware.add(middleware_callable)
+        specification.middleware.add_all(middleware)
 
         return target
 
@@ -184,18 +183,16 @@ def service(
     base_url: Optional[str] = None,
     *,
     middleware: Optional[Sequence[MiddlewareCallable[Request, Response]]] = None,
-    response: Optional[Callable[..., Any]] = None,
+    default_response: Optional[Callable[..., Any]] = None,
 ):
-    print(
-        "@service:",
-        {
-            "base_url": base_url,
-            "middleware": middleware,
-            "response": response,
-        },
-    )
-
     def decorate(target: S, /) -> S:
+        if base_url is not None:
+            target._spec.options.base_url = URL(base_url)
+        if middleware is not None:
+            target._spec.middleware.add_all(middleware)
+        if default_response is not None:
+            target._spec.default_response = default_response
+
         return target
 
     return decorate
