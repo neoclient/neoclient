@@ -1,6 +1,6 @@
 from typing import Optional, Sequence
 
-from httpx import URL, Timeout
+from httpx import URL, Timeout, Limits
 
 from .types import (
     AuthTypes,
@@ -25,6 +25,7 @@ __all__: Sequence[str] = (
     "DEFAULT_EVENT_HOOKS",
     "DEFAULT_TRUST_ENV",
     "DEFAULT_ENCODING",
+    "DEFAULT_LIMITS",
 )
 
 DEFAULT_BASE_URL: URLTypes = URL()
@@ -32,9 +33,10 @@ DEFAULT_AUTH: Optional[AuthTypes] = None
 DEFAULT_PARAMS: Optional[QueriesTypes] = None
 DEFAULT_HEADERS: Optional[HeadersTypes] = None
 DEFAULT_COOKIES: Optional[CookiesTypes] = None
-DEFAULT_TIMEOUT: TimeoutTypes = Timeout(5.0)
+DEFAULT_TIMEOUT: TimeoutTypes = Timeout(timeout=5.0)
 DEFAULT_FOLLOW_REDIRECTS: bool = False
 DEFAULT_MAX_REDIRECTS: int = 20
-DEFAULT_EVENT_HOOKS: Optional[EventHooks] = None
 DEFAULT_TRUST_ENV: bool = True
 DEFAULT_ENCODING: DefaultEncodingTypes = "utf-8"
+DEFAULT_LIMITS = Limits(max_connections=100, max_keepalive_connections=20)
+DEFAULT_EVENT_HOOKS: EventHooks = {"request": [], "response": []}

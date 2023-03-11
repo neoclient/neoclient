@@ -21,6 +21,7 @@ from .consumers import (
     QueriesConsumer,
     QueryConsumer,
     TimeoutConsumer,
+    VerifyConsumer,
 )
 from .enums import HeaderName
 from .errors import CompositionError
@@ -41,6 +42,7 @@ from .types import (
     RequestData,
     RequestFiles,
     TimeoutTypes,
+    VerifyTypes,
 )
 
 __all__: Sequence[str] = (
@@ -57,6 +59,13 @@ __all__: Sequence[str] = (
     "files",
     "json",
     "timeout",
+    "mount",
+    "base_url",
+    "verify",
+    "middleware",
+    "user_agent",
+    "accept",
+    "referer",
     "service",
 )
 
@@ -149,6 +158,10 @@ def mount(path: str, /) -> Decorator:
 
 def base_url(base_url: str, /) -> Decorator:
     return CompositionDecorator(BaseURLConsumer(base_url))
+
+
+def verify(verify: VerifyTypes, /) -> Decorator:
+    return CompositionDecorator(VerifyConsumer(verify))
 
 
 def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:

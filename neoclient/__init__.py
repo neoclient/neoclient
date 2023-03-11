@@ -37,6 +37,7 @@ from .decorators import (
     service,
     timeout,
     user_agent,
+    verify,
 )
 from .methods import delete, get, head, options, patch, post, put, request
 from .models import Request, Response
