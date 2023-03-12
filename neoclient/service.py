@@ -27,6 +27,7 @@ class ServiceMeta(type):
             self._client = Client(
                 client=self._spec.options.build(),
                 middleware=self._spec.middleware,
+                default_response=self._spec.default_response,
             )
 
             member_name: str
@@ -43,7 +44,9 @@ class ServiceMeta(type):
                     bound_operation: Operation = get_operation(bound_operation_method)
 
                     bound_operation.func = bound_operation_method
-                    bound_operation.middleware = self._client.middleware
+                    bound_operation.middleware = Middleware()
+
+                    bound_operation.middleware.add_all(self._client.middleware.record)
 
                     setattr(self, member_name, bound_operation_method)
 

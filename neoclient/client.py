@@ -140,8 +140,12 @@ class Client:
         operation: Operation = get_operation(func)
 
         bound_operation: Operation[PS, RT] = dataclasses.replace(
-            operation, client=self.client
+            operation,
+            client=self.client,
+            default_response=self.default_response,
         )
+
+        # NOTE: Add the client's middleware here?
 
         return bound_operation.wrapper
 

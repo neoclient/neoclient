@@ -59,6 +59,7 @@ class Operation(Generic[PS, RT_co]):
     specification: OperationSpecification
     client: Optional[Client]
     middleware: Middleware = field(default_factory=Middleware)
+    default_response: Optional[Callable[..., Any]] = None
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
         pre_request: PreRequest = self.specification.request.merge(
@@ -96,6 +97,8 @@ class Operation(Generic[PS, RT_co]):
 
         if self.specification.response is not None:
             return resolve(self.specification.response, response)
+        if self.default_response is not None:
+            return resolve(self.default_response, response)
 
         if return_annotation is inspect.Parameter.empty:
             try:
