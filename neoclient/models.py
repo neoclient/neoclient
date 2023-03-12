@@ -19,7 +19,14 @@ from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 
 from . import converters, utils
 from .errors import IncompatiblePathParameters, MissingStateError
-from .defaults import DEFAULT_BASE_URL, DEFAULT_ENCODING, DEFAULT_EVENT_HOOKS, DEFAULT_FOLLOW_REDIRECTS, DEFAULT_LIMITS, DEFAULT_TRUST_ENV
+from .defaults import (
+    DEFAULT_BASE_URL,
+    DEFAULT_ENCODING,
+    DEFAULT_EVENT_HOOKS,
+    DEFAULT_FOLLOW_REDIRECTS,
+    DEFAULT_LIMITS,
+    DEFAULT_TRUST_ENV,
+)
 from .types import (
     AsyncByteStream,
     AuthTypes,
@@ -304,7 +311,7 @@ class ClientOptions:
         self.http1 = http1
         self.http2 = http2
         self.proxies = proxies
-        self.mounts = (mounts if mounts is not None else {})
+        self.mounts = mounts if mounts is not None else {}
         self.timeout = (
             converters.convert_timeout(timeout) if timeout is not None else Timeout()
         )
