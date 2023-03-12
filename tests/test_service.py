@@ -20,7 +20,7 @@ class SomeService(Service):
 
 
 def test_default_opts() -> None:
-    assert SomeService._opts == ClientOptions()
+    assert SomeService._spec.options == ClientOptions()
 
 
 @pytest.mark.skip(

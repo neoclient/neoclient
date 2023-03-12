@@ -12,6 +12,7 @@ from ..consumers import (
     QueryConsumer,
     TimeoutConsumer,
 )
+from ..enums import HeaderName
 from ..errors import CompositionError
 from ..models import Request, Response
 from ..operation import OperationSpecification, get_operation
@@ -28,6 +29,7 @@ from ..types import (
 from .api import ConsumerDecorator, Decorator, T
 
 __all__: Sequence[str] = (
+    "accept",
     "cookie",
     "cookies",
     "header",
@@ -35,10 +37,21 @@ __all__: Sequence[str] = (
     "middleware",
     "query",
     "query_params",
+    "referer",
     "timeout",
+    "user_agent",
 )
 
 CommonDecorator: TypeAlias = Decorator[Union[Callable, Type[Service]]]
+
+
+def accept(*content_types: str) -> CommonDecorator:
+    return ConsumerDecorator(
+        HeaderConsumer(
+            HeaderName.ACCEPT,
+            ",".join(content_types),
+        )
+    )
 
 
 def cookie(key: str, value: CookieTypes) -> CommonDecorator:
@@ -88,5 +101,23 @@ def query_params(params: QueriesTypes, /) -> CommonDecorator:
     return ConsumerDecorator(QueriesConsumer(params))
 
 
+def referer(referer: str, /) -> CommonDecorator:
+    return ConsumerDecorator(
+        HeaderConsumer(
+            HeaderName.REFERER,
+            referer,
+        )
+    )
+
+
 def timeout(timeout: TimeoutTypes, /) -> CommonDecorator:
     return ConsumerDecorator(TimeoutConsumer(timeout))
+
+
+def user_agent(user_agent: str, /) -> CommonDecorator:
+    return ConsumerDecorator(
+        HeaderConsumer(
+            HeaderName.USER_AGENT,
+            user_agent,
+        )
+    )
