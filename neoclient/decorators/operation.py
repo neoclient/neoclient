@@ -1,4 +1,6 @@
-from typing import Sequence
+from types import FunctionType
+from typing import Callable, Sequence
+from typing_extensions import TypeAlias
 
 from ..consumers import (
     ContentConsumer,
@@ -17,7 +19,8 @@ from ..types import (
     RequestData,
     RequestFiles,
 )
-from .api import CompositionDecorator, Decorator
+from ..typing import Decorator
+from .api import ConsumerDecorator
 
 __all__: Sequence[str] = (
     "content",
@@ -29,30 +32,32 @@ __all__: Sequence[str] = (
     "path_params",
 )
 
-
-def content(content: RequestContent, /) -> Decorator:
-    return CompositionDecorator(ContentConsumer(content))
+OperationDecorator: TypeAlias = Decorator[Callable]
 
 
-def data(data: RequestData, /) -> Decorator:
-    return CompositionDecorator(DataConsumer(data))
+def content(content: RequestContent, /) -> OperationDecorator:
+    return ConsumerDecorator(ContentConsumer(content))
 
 
-def files(files: RequestFiles, /) -> Decorator:
-    return CompositionDecorator(FilesConsumer(files))
+def data(data: RequestData, /) -> OperationDecorator:
+    return ConsumerDecorator(DataConsumer(data))
 
 
-def json(json: JsonTypes, /) -> Decorator:
-    return CompositionDecorator(JsonConsumer(json))
+def files(files: RequestFiles, /) -> OperationDecorator:
+    return ConsumerDecorator(FilesConsumer(files))
 
 
-def mount(path: str, /) -> Decorator:
-    return CompositionDecorator(MountConsumer(path))
+def json(json: JsonTypes, /) -> OperationDecorator:
+    return ConsumerDecorator(JsonConsumer(json))
 
 
-def path(key: str, value: PathTypes) -> Decorator:
-    return CompositionDecorator(PathConsumer(key, value))
+def mount(path: str, /) -> OperationDecorator:
+    return ConsumerDecorator(MountConsumer(path))
 
 
-def path_params(path_params: PathsTypes, /) -> Decorator:
-    return CompositionDecorator(PathsConsumer(path_params))
+def path(key: str, value: PathTypes) -> OperationDecorator:
+    return ConsumerDecorator(PathConsumer(key, value))
+
+
+def path_params(path_params: PathsTypes, /) -> OperationDecorator:
+    return ConsumerDecorator(PathsConsumer(path_params))

@@ -5,19 +5,19 @@ from mediate.protocols import MiddlewareCallable
 
 from ..models import Request, Response
 from ..service import Service
+from ..typing import Decorator
 
 __all__: Sequence[str] = ("service",)
 
 S = TypeVar("S", bound=Type[Service])
 
 
-# TODO: Type the return value for this
 def service(
     base_url: Optional[str] = None,
     *,
     middleware: Optional[Sequence[MiddlewareCallable[Request, Response]]] = None,
     default_response: Optional[Callable[..., Any]] = None,
-):
+) -> Decorator[Type[Service]]:
     def decorate(target: S, /) -> S:
         if base_url is not None:
             target._spec.options.base_url = URL(base_url)

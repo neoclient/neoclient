@@ -1,4 +1,5 @@
-from typing import Sequence
+from typing import Callable, Sequence, Type, Union
+from typing_extensions import TypeAlias
 
 from mediate.protocols import MiddlewareCallable
 
@@ -24,7 +25,7 @@ from ..types import (
     QueryTypes,
     TimeoutTypes,
 )
-from .api import CompositionDecorator, Decorator, T
+from .api import ConsumerDecorator, Decorator, T
 
 __all__: Sequence[str] = (
     "cookie",
@@ -37,24 +38,26 @@ __all__: Sequence[str] = (
     "timeout",
 )
 
-
-def cookie(key: str, value: CookieTypes) -> Decorator:
-    return CompositionDecorator(CookieConsumer(key, value))
+CommonDecorator: TypeAlias = Decorator[Union[Callable, Type[Service]]]
 
 
-def cookies(cookies: CookiesTypes, /) -> Decorator:
-    return CompositionDecorator(CookiesConsumer(cookies))
+def cookie(key: str, value: CookieTypes) -> CommonDecorator:
+    return ConsumerDecorator(CookieConsumer(key, value))
 
 
-def header(key: str, value: HeaderTypes) -> Decorator:
-    return CompositionDecorator(HeaderConsumer(key, value))
+def cookies(cookies: CookiesTypes, /) -> CommonDecorator:
+    return ConsumerDecorator(CookiesConsumer(cookies))
 
 
-def headers(headers: HeadersTypes, /) -> Decorator:
-    return CompositionDecorator(HeadersConsumer(headers))
+def header(key: str, value: HeaderTypes) -> CommonDecorator:
+    return ConsumerDecorator(HeaderConsumer(key, value))
 
 
-def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:
+def headers(headers: HeadersTypes, /) -> CommonDecorator:
+    return ConsumerDecorator(HeadersConsumer(headers))
+
+
+def middleware(*middleware: MiddlewareCallable[Request, Response]) -> CommonDecorator:
     def decorate(target: T, /) -> T:
         if isinstance(target, type):
             if not issubclass(target, Service):
@@ -77,13 +80,13 @@ def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:
     return decorate
 
 
-def query(key: str, value: QueryTypes) -> Decorator:
-    return CompositionDecorator(QueryConsumer(key, value))
+def query(key: str, value: QueryTypes) -> CommonDecorator:
+    return ConsumerDecorator(QueryConsumer(key, value))
 
 
-def query_params(params: QueriesTypes, /) -> Decorator:
-    return CompositionDecorator(QueriesConsumer(params))
+def query_params(params: QueriesTypes, /) -> CommonDecorator:
+    return ConsumerDecorator(QueriesConsumer(params))
 
 
-def timeout(timeout: TimeoutTypes, /) -> Decorator:
-    return CompositionDecorator(TimeoutConsumer(timeout))
+def timeout(timeout: TimeoutTypes, /) -> CommonDecorator:
+    return ConsumerDecorator(TimeoutConsumer(timeout))

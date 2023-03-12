@@ -4,6 +4,7 @@ from .models import ClientOptions, PreRequest, Request, Response
 
 __all__: Sequence[str] = (
     "CallNext",
+    "Decorator",
     "ClientConsumer",
     "Composer",
     "RequestConsumer",
@@ -11,6 +12,7 @@ __all__: Sequence[str] = (
     "Supplier",
 )
 
+T = TypeVar("T")
 T_contra = TypeVar("T_contra", contravariant=True)
 T_co = TypeVar("T_co", covariant=True)
 R_co = TypeVar("R_co", covariant=True)
@@ -18,6 +20,11 @@ R_co = TypeVar("R_co", covariant=True)
 
 class CallNext(Protocol):
     def __call__(self, request: Request, /) -> Response:
+        ...
+
+
+class Decorator(Protocol[T]):
+    def __call__(self, target: T, /) -> T:
         ...
 
 

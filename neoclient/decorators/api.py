@@ -1,22 +1,23 @@
 from dataclasses import dataclass
-from typing import Callable, Protocol, Type, TypeVar
+from typing import Callable, Sequence, Type, TypeVar
 
 from ..consumers import Consumer
 from ..errors import CompositionError
 from ..models import ClientOptions, PreRequest
 from ..operation import get_operation
 from ..service import Service
+from ..typing import Decorator
+
+__all__: Sequence[str] = (
+    "ConsumerDecorator",
+    "CompositionDecorator",
+)
 
 T = TypeVar("T", Callable, Type[Service])
 
 
-class Decorator(Protocol):
-    def __call__(self, target: T, /) -> T:
-        ...
-
-
 @dataclass
-class CompositionDecorator(Decorator):
+class ConsumerDecorator(Decorator[T]):
     consumer: Consumer
 
     def __call__(self, target: T, /) -> T:

@@ -1,8 +1,10 @@
-from typing import Sequence
+from typing import Callable, Sequence, Type, Union
+from typing_extensions import TypeAlias
 
 from ..consumers import HeaderConsumer
 from ..enums import HeaderName
-from .api import CompositionDecorator, Decorator
+from ..service import Service
+from .api import ConsumerDecorator, Decorator
 
 __all__: Sequence[str] = (
     "accept",
@@ -10,9 +12,11 @@ __all__: Sequence[str] = (
     "user_agent",
 )
 
+CommonDecorator: TypeAlias = Decorator[Union[Callable, Type[Service]]]
 
-def accept(*content_types: str) -> Decorator:
-    return CompositionDecorator(
+
+def accept(*content_types: str) -> CommonDecorator:
+    return ConsumerDecorator(
         HeaderConsumer(
             HeaderName.ACCEPT,
             ",".join(content_types),
@@ -20,8 +24,8 @@ def accept(*content_types: str) -> Decorator:
     )
 
 
-def referer(referer: str, /) -> Decorator:
-    return CompositionDecorator(
+def referer(referer: str, /) -> CommonDecorator:
+    return ConsumerDecorator(
         HeaderConsumer(
             HeaderName.REFERER,
             referer,
@@ -29,8 +33,8 @@ def referer(referer: str, /) -> Decorator:
     )
 
 
-def user_agent(user_agent: str, /) -> Decorator:
-    return CompositionDecorator(
+def user_agent(user_agent: str, /) -> CommonDecorator:
+    return ConsumerDecorator(
         HeaderConsumer(
             HeaderName.USER_AGENT,
             user_agent,
