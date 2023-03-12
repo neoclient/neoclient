@@ -1,4 +1,3 @@
-from types import FunctionType
 from typing import Callable, Sequence
 from typing_extensions import TypeAlias
 

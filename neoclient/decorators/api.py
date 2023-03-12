@@ -10,7 +10,6 @@ from ..typing import Decorator
 
 __all__: Sequence[str] = (
     "ConsumerDecorator",
-    "CompositionDecorator",
 )
 
 T = TypeVar("T", Callable, Type[Service])

@@ -21,7 +21,6 @@ from . import converters, utils
 from .defaults import (
     DEFAULT_BASE_URL,
     DEFAULT_ENCODING,
-    DEFAULT_EVENT_HOOKS,
     DEFAULT_FOLLOW_REDIRECTS,
     DEFAULT_LIMITS,
     DEFAULT_TRUST_ENV,
@@ -319,7 +318,7 @@ class ClientOptions:
         self.limits = limits
         self.max_redirects = max_redirects
         self.event_hooks = (
-            event_hooks if event_hooks is not None else DEFAULT_EVENT_HOOKS
+            event_hooks if event_hooks is not None else {"request": [], "response": []}
         )
         self.base_url = URL(base_url)
         self.transport = transport

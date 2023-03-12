@@ -39,4 +39,4 @@ DEFAULT_MAX_REDIRECTS: int = 20
 DEFAULT_TRUST_ENV: bool = True
 DEFAULT_ENCODING: DefaultEncodingTypes = "utf-8"
 DEFAULT_LIMITS = Limits(max_connections=100, max_keepalive_connections=20)
-DEFAULT_EVENT_HOOKS: EventHooks = {"request": [], "response": []}
+DEFAULT_EVENT_HOOKS: Optional[EventHooks] = None
