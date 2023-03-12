@@ -14,11 +14,10 @@ from typing import (
 )
 
 import httpx
-from httpx import URL, BaseTransport, Cookies, Headers, QueryParams, Timeout, Limits
+from httpx import URL, BaseTransport, Cookies, Headers, Limits, QueryParams, Timeout
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 
 from . import converters, utils
-from .errors import IncompatiblePathParameters, MissingStateError
 from .defaults import (
     DEFAULT_BASE_URL,
     DEFAULT_ENCODING,
@@ -27,9 +26,11 @@ from .defaults import (
     DEFAULT_LIMITS,
     DEFAULT_TRUST_ENV,
 )
+from .errors import IncompatiblePathParameters, MissingStateError
 from .types import (
     AsyncByteStream,
     AuthTypes,
+    CertTypes,
     CookiesTypes,
     CookieTypes,
     DefaultEncodingTypes,
@@ -39,6 +40,7 @@ from .types import (
     JsonTypes,
     MethodTypes,
     PathsTypes,
+    ProxiesTypes,
     QueriesTypes,
     RequestContent,
     RequestData,
@@ -50,8 +52,6 @@ from .types import (
     TimeoutTypes,
     URLTypes,
     VerifyTypes,
-    ProxiesTypes,
-    CertTypes,
 )
 
 __all__: Sequence[str] = (

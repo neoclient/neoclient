@@ -1,5 +1,6 @@
 import inspect
 import string
+import typing
 from typing import (
     Any,
     Callable,
@@ -129,3 +130,7 @@ def parse_obj_as(type_: Type[T], obj: Any) -> T:
     model: BaseModel = model_cls(__root__=obj)
 
     return getattr(model, "__root__")
+
+
+def is_generic_alias(type_: Type, /) -> bool:
+    return isinstance(type_, typing._GenericAlias)  # type: ignore

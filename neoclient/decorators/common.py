@@ -2,30 +2,29 @@ from typing import Sequence
 
 from mediate.protocols import MiddlewareCallable
 
-from .api import Decorator, CompositionDecorator, T
 from ..consumers import (
     CookieConsumer,
     CookiesConsumer,
     HeaderConsumer,
     HeadersConsumer,
-    QueryConsumer,
     QueriesConsumer,
+    QueryConsumer,
     TimeoutConsumer,
 )
 from ..errors import CompositionError
 from ..models import Request, Response
 from ..operation import OperationSpecification, get_operation
-from ..service import Service, ClientSpecification
+from ..service import ClientSpecification, Service
 from ..types import (
-    CookieTypes,
     CookiesTypes,
-    HeaderTypes,
+    CookieTypes,
     HeadersTypes,
-    QueryTypes,
+    HeaderTypes,
     QueriesTypes,
+    QueryTypes,
     TimeoutTypes,
 )
-
+from .api import CompositionDecorator, Decorator, T
 
 __all__: Sequence[str] = (
     "cookie",
@@ -65,7 +64,9 @@ def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Decorator:
 
             client_specification.middleware.add_all(middleware)
         elif callable(target):
-            operation_specification: OperationSpecification = get_operation(target).specification
+            operation_specification: OperationSpecification = get_operation(
+                target
+            ).specification
 
             operation_specification.middleware.add_all(middleware)
         else:

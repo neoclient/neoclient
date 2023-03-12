@@ -1,6 +1,5 @@
 from typing import Sequence
 
-from .api import Decorator, CompositionDecorator
 from ..consumers import (
     ContentConsumer,
     DataConsumer,
@@ -18,6 +17,7 @@ from ..types import (
     RequestData,
     RequestFiles,
 )
+from .api import CompositionDecorator, Decorator
 
 __all__: Sequence[str] = (
     "content",

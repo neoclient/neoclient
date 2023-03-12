@@ -1,8 +1,8 @@
 from typing import Sequence
 
-from .api import Decorator, CompositionDecorator
 from ..consumers import HeaderConsumer
 from ..enums import HeaderName
+from .api import CompositionDecorator, Decorator
 
 __all__: Sequence[str] = (
     "accept",

@@ -7,7 +7,6 @@ from ..models import ClientOptions, PreRequest
 from ..operation import get_operation
 from ..service import Service
 
-
 T = TypeVar("T", Callable, Type[Service])
 
 

@@ -1,4 +1,5 @@
 from typing import Mapping
+
 from neoclient import NeoClient, Request, Response
 from neoclient.typing import CallNext
 

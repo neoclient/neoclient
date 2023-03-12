@@ -62,8 +62,9 @@ def get_fields(
                 )
                 or dataclasses.is_dataclass(model_field.annotation)
                 or (
-                    isinstance(model_field.annotation, typing._GenericAlias)
-                    and model_field.annotation.__origin__ in (collections.abc.Mapping,)
+                    utils.is_generic_alias(model_field.annotation)
+                    and typing.get_origin(model_field.annotation)
+                    in (collections.abc.Mapping,)
                 )
             ):
                 parameter = BodyParameter(

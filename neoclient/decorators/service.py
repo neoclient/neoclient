@@ -1,4 +1,4 @@
-from typing import Sequence, Optional, Callable, Any, Type, TypeVar
+from typing import Any, Callable, Optional, Sequence, Type, TypeVar
 
 from httpx import URL
 from mediate.protocols import MiddlewareCallable

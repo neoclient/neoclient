@@ -1,9 +1,8 @@
 from typing import Sequence
 
-from .api import Decorator, CompositionDecorator
 from ..consumers import BaseURLConsumer, VerifyConsumer
 from ..types import VerifyTypes
-
+from .api import CompositionDecorator, Decorator
 
 __all__: Sequence[str] = (
     "base_url",

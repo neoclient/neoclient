@@ -1,4 +1,4 @@
-from typing import Any, List, Mapping, Optional, NamedTuple
+from typing import Any, List, Mapping, NamedTuple, Optional
 
 from neoclient import Query, Service, base_url, get, query_params
 
