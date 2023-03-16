@@ -158,9 +158,6 @@ class Client:
         *,
         response: Optional[Callable] = None,
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-        if response is None:
-            response = self.default_response
-
         specification: OperationSpecification = OperationSpecification(
             request=PreRequest(
                 method=method,
@@ -180,6 +177,7 @@ class Client:
                 specification=specification,
                 client=self.client,
                 middleware=middleware,
+                default_response=self.default_response,
             )
 
             # Validate operation function parameters are acceptable
