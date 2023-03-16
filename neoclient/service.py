@@ -1,12 +1,14 @@
 import inspect
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type
+
+from mediate.protocols import MiddlewareCallable
 
 from .annotations.api import has_annotation
 from .annotations.enums import Annotation
 from .client import Client
 from .middleware import Middleware
-from .models import ClientOptions
+from .models import ClientOptions, Request, Response
 from .operation import Operation, get_operation, has_operation
 
 
@@ -24,31 +26,40 @@ class ServiceMeta(type):
         mcs: Type["ServiceMeta"], name: str, bases: Tuple[type], attrs: Dict[str, Any]
     ) -> type:
         def __init__(self) -> None:
+            service_middleware: Sequence[MiddlewareCallable[Request, Response]] = [
+                member
+                for _, member in inspect.getmembers(self)
+                if has_annotation(member, Annotation.MIDDLEWARE)
+            ]
+
+            middleware: Middleware = Middleware()
+
+            middleware.add_all(self._spec.middleware.record)
+            middleware.add_all(service_middleware)
+
             self._client = Client(
                 client=self._spec.options.build(),
-                middleware=self._spec.middleware,
+                middleware=middleware,
                 default_response=self._spec.default_response,
             )
 
-            member_name: str
-            member: Any
             for member_name, member in inspect.getmembers(self):
-                if has_annotation(member, Annotation.MIDDLEWARE):
-                    self._client.middleware.add(member)
-                elif has_operation(member):
-                    bound_operation_func: Callable = self._client.bind(member)
-                    bound_operation_method: Callable = bound_operation_func.__get__(
-                        self
-                    )
+                if not has_operation(member):
+                    continue
 
-                    bound_operation: Operation = get_operation(bound_operation_method)
+                bound_operation_func: Callable = self._client.bind(member)
+                bound_operation_method: Callable = bound_operation_func.__get__(
+                    self
+                )
 
-                    bound_operation.func = bound_operation_method
-                    bound_operation.middleware = Middleware()
+                bound_operation: Operation = get_operation(bound_operation_method)
 
-                    bound_operation.middleware.add_all(self._client.middleware.record)
+                bound_operation.func = bound_operation_method
+                bound_operation.middleware = Middleware()
 
-                    setattr(self, member_name, bound_operation_method)
+                bound_operation.middleware.add_all(self._client.middleware.record)
+
+                setattr(self, member_name, bound_operation_method)
 
         attrs["_spec"] = ClientSpecification()
         attrs["__init__"] = __init__

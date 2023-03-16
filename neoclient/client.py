@@ -125,6 +125,7 @@ class Client:
     client: Optional[httpx.Client]
     middleware: Middleware
     default_response: Optional[Callable[..., Any]] = None
+    # TODO: Add an attribute for storing dependencies
 
     def __init__(
         self,
