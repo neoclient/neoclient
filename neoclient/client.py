@@ -125,7 +125,6 @@ class Client:
     client: Optional[httpx.Client]
     middleware: Middleware
     default_response: Optional[Callable[..., Any]] = None
-    # TODO: Add an attribute for storing dependencies
 
     def __init__(
         self,
@@ -146,7 +145,8 @@ class Client:
             default_response=self.default_response,
         )
 
-        # NOTE: Add the client's middleware here?
+        # Add the client's middleware
+        bound_operation.middleware.add_all(self.middleware.record)
 
         return bound_operation.wrapper
 
@@ -170,11 +170,16 @@ class Client:
         )
 
         def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
+            middleware: Middleware = Middleware()
+
+            # Add the client's middleware
+            middleware.add_all(self.middleware.record)
+
             operation: Operation[PS, RT] = Operation(
                 func=func,
                 specification=specification,
                 client=self.client,
-                middleware=self.middleware,
+                middleware=middleware,
             )
 
             # Validate operation function parameters are acceptable
