@@ -11,11 +11,12 @@ from ..consumers import (
     QueriesConsumer,
     QueryConsumer,
     TimeoutConsumer,
+    VerifyConsumer,
 )
 from ..enums import HeaderName
 from ..errors import CompositionError
 from ..models import Request, Response
-from ..operation import OperationSpecification, get_operation
+from ..operation import Operation, get_operation
 from ..service import ClientSpecification, Service
 from ..types import (
     CookiesTypes,
@@ -25,6 +26,7 @@ from ..types import (
     QueriesTypes,
     QueryTypes,
     TimeoutTypes,
+    VerifyTypes,
 )
 from .api import ConsumerDecorator, Decorator, T
 
@@ -80,11 +82,9 @@ def middleware(*middleware: MiddlewareCallable[Request, Response]) -> CommonDeco
 
             client_specification.middleware.add_all(middleware)
         elif callable(target):
-            operation_specification: OperationSpecification = get_operation(
-                target
-            ).specification
+            operation: Operation = get_operation(target)
 
-            operation_specification.middleware.add_all(middleware)
+            operation.middleware.add_all(middleware)
         else:
             raise CompositionError(f"Target of unsupported type {type(target)}")
 
@@ -121,3 +121,7 @@ def user_agent(user_agent: str, /) -> CommonDecorator:
             user_agent,
         )
     )
+
+
+def verify(verify: VerifyTypes, /) -> CommonDecorator:
+    return ConsumerDecorator(VerifyConsumer(verify))

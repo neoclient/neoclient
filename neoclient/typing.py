@@ -1,4 +1,4 @@
-from typing import Any, Protocol, Sequence, TypeVar
+from typing import Any, Protocol, Sequence, TypeVar, runtime_checkable
 
 from .models import ClientOptions, PreRequest, Request, Response
 
@@ -10,6 +10,8 @@ __all__: Sequence[str] = (
     "RequestConsumer",
     "Resolver",
     "Supplier",
+    "SupportsClientConsumer",
+    "SupportsRequestConsumer",
 )
 
 T = TypeVar("T")
@@ -48,6 +50,18 @@ class RequestConsumer(Protocol):
         ...
 
 
+@runtime_checkable
+class SupportsRequestConsumer(Protocol):
+    def consume_request(self, request: PreRequest, /) -> None:
+        ...
+
+
 class ClientConsumer(Protocol):
     def __call__(self, client: ClientOptions, /) -> None:
+        ...
+
+
+@runtime_checkable
+class SupportsClientConsumer(Protocol):
+    def consume_client(self, client: ClientOptions, /) -> None:
         ...

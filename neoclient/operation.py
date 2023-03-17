@@ -13,7 +13,7 @@ from typing_extensions import ParamSpec
 from .composition import compose
 from .errors import NotAnOperationError
 from .middleware import Middleware
-from .models import PreRequest, Request, Response
+from .models import ClientOptions, PreRequest, Request, Response
 from .resolution import resolve
 
 __all__: Sequence[str] = (
@@ -56,22 +56,30 @@ class OperationSpecification:
 @dataclass
 class Operation(Generic[PS, RT_co]):
     func: Callable[PS, RT_co]
-    specification: OperationSpecification
-    client: Optional[Client]
+    client_options: ClientOptions
+    request_options: PreRequest
+    client: Optional[Client] = None
     middleware: Middleware = field(default_factory=Middleware)
-    default_response: Optional[Callable[..., Any]] = None
+    response: Optional[Callable[..., Any]] = None
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
-        pre_request: PreRequest = self.specification.request.merge(
-            PreRequest(
-                method=self.specification.request.method,
-                url=self.specification.request.url,
-            )
-        )
+        client: Client
 
+        if self.client is not None:
+            client = self.client
+        else:
+            # Build a disposable client using the available client options
+            client = self.client_options.build()
+
+        # Create a clone of the request options, so that mutations don't
+        # affect the original copy.
+        # Mutations to the request options will occur during composition.
+        pre_request: PreRequest = self.request_options.clone()
+
+        # Compose the request using the provided arguments
         compose(self.func, pre_request, args, kwargs)
 
-        request: Request = pre_request.build_request(self.client)
+        request: Request = pre_request.build_request(client)
 
         return_annotation: Any = inspect.signature(self.func).return_annotation
 
@@ -80,14 +88,7 @@ class Operation(Generic[PS, RT_co]):
         if return_annotation is Request:
             return request
 
-        client: Client = self.client if self.client is not None else Client()
-
-        middleware: Middleware = Middleware()
-
-        middleware.record.extend(self.specification.middleware.record)
-        middleware.record.extend(self.middleware.record)
-
-        @middleware.compose
+        @self.middleware.compose
         def send_request(request: Request, /) -> Response:
             httpx_response: httpx.Response = client.send(request)
 
@@ -95,10 +96,8 @@ class Operation(Generic[PS, RT_co]):
 
         response: Response = send_request(request)
 
-        if self.specification.response is not None:
-            return resolve(self.specification.response, response)
-        if self.default_response is not None:
-            return resolve(self.default_response, response)
+        if self.response is not None:
+            return resolve(self.response, response)
 
         if return_annotation is inspect.Parameter.empty:
             try:

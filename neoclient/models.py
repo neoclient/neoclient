@@ -474,6 +474,9 @@ class PreRequest:
             },
         )
 
+    def clone(self) -> "PreRequest":
+        return self.merge(PreRequest(method=self.method, url=self.url))
+
     def _get_formatted_url(self) -> str:
         return urllib.parse.unquote(str(self.url)).format(**self.path_params)
 

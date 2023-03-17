@@ -1,6 +1,5 @@
 import inspect
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Dict, Sequence, Tuple, Type
 
 from mediate.protocols import MiddlewareCallable
 
@@ -8,20 +7,11 @@ from .annotations.api import has_annotation
 from .annotations.enums import Annotation
 from .client import Client
 from .middleware import Middleware
-from .models import ClientOptions, Request, Response
+from .models import Request, Response
 from .operation import Operation, get_operation, has_operation
+from .specification import ClientSpecification
 
-__all__: Sequence[str] = (
-    "ClientSpecification",
-    "Service",
-)
-
-
-@dataclass
-class ClientSpecification:
-    options: ClientOptions = field(default_factory=ClientOptions)
-    middleware: Middleware = field(default_factory=Middleware)
-    default_response: Optional[Callable[..., Any]] = None
+__all__: Sequence[str] = ("Service",)
 
 
 class ServiceMeta(type):
@@ -58,16 +48,6 @@ class ServiceMeta(type):
                 bound_operation: Operation = get_operation(bound_operation_method)
 
                 bound_operation.func = bound_operation_method
-
-                # The operation may have been bound to this client before
-                # (maybe even numerous times). As each time the operation is
-                # bound to a client, the client's middleware gets added, we
-                # erase any existing middleware and start afresh.
-                bound_operation.middleware = Middleware()
-                bound_operation.middleware.add_all(
-                    bound_operation.specification.middleware.record
-                )
-                bound_operation.middleware.add_all(self._client.middleware.record)
 
                 setattr(self, member_name, bound_operation_method)
 
