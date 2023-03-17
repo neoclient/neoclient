@@ -1,4 +1,4 @@
-from .client import base_url, verify
+from .client import base_url
 from .common import (
     accept,
     cookie,
@@ -11,6 +11,7 @@ from .common import (
     referer,
     timeout,
     user_agent,
+    verify,
 )
 from .operation import content, data, files, json, mount, path, path_params
 from .service import service

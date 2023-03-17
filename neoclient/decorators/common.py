@@ -11,6 +11,7 @@ from ..consumers import (
     QueriesConsumer,
     QueryConsumer,
     TimeoutConsumer,
+    VerifyConsumer,
 )
 from ..enums import HeaderName
 from ..errors import CompositionError
@@ -25,6 +26,7 @@ from ..types import (
     QueriesTypes,
     QueryTypes,
     TimeoutTypes,
+    VerifyTypes,
 )
 from .api import ConsumerDecorator, Decorator, T
 
@@ -82,7 +84,7 @@ def middleware(*middleware: MiddlewareCallable[Request, Response]) -> CommonDeco
         elif callable(target):
             operation_specification: OperationSpecification = get_operation(
                 target
-            ).specification
+            ).request_options
 
             operation_specification.middleware.add_all(middleware)
         else:
@@ -121,3 +123,7 @@ def user_agent(user_agent: str, /) -> CommonDecorator:
             user_agent,
         )
     )
+
+
+def verify(verify: VerifyTypes, /) -> CommonDecorator:
+    return ConsumerDecorator(VerifyConsumer(verify))

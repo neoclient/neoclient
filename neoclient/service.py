@@ -1,6 +1,5 @@
 import inspect
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Dict, Sequence, Tuple, Type
 
 from mediate.protocols import MiddlewareCallable
 
@@ -8,20 +7,11 @@ from .annotations.api import has_annotation
 from .annotations.enums import Annotation
 from .client import Client
 from .middleware import Middleware
-from .models import ClientOptions, Request, Response
+from .models import Request, Response
 from .operation import Operation, get_operation, has_operation
+from .specification import ClientSpecification
 
-__all__: Sequence[str] = (
-    "ClientSpecification",
-    "Service",
-)
-
-
-@dataclass
-class ClientSpecification:
-    options: ClientOptions = field(default_factory=ClientOptions)
-    middleware: Middleware = field(default_factory=Middleware)
-    default_response: Optional[Callable[..., Any]] = None
+__all__: Sequence[str] = ("Service",)
 
 
 class ServiceMeta(type):
@@ -65,7 +55,7 @@ class ServiceMeta(type):
                 # erase any existing middleware and start afresh.
                 bound_operation.middleware = Middleware()
                 bound_operation.middleware.add_all(
-                    bound_operation.specification.middleware.record
+                    bound_operation.middleware.record
                 )
                 bound_operation.middleware.add_all(self._client.middleware.record)
 

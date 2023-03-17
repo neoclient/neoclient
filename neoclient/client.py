@@ -1,9 +1,9 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Sequence, TypeVar
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, TypeVar
 
 import httpx
-from httpx import URL, Cookies, Headers, QueryParams, Timeout
+from httpx import URL, BaseTransport, Cookies, Headers, Limits, QueryParams, Timeout
 from httpx._auth import Auth
 from mediate.protocols import MiddlewareCallable
 from roster import Record
@@ -19,6 +19,7 @@ from .defaults import (
     DEFAULT_EVENT_HOOKS,
     DEFAULT_FOLLOW_REDIRECTS,
     DEFAULT_HEADERS,
+    DEFAULT_LIMITS,
     DEFAULT_MAX_REDIRECTS,
     DEFAULT_PARAMS,
     DEFAULT_TIMEOUT,
@@ -26,17 +27,20 @@ from .defaults import (
 )
 from .enums import HeaderName, HTTPMethod
 from .middleware import Middleware
-from .models import PreRequest, Request, Response
-from .operation import Operation, OperationSpecification, get_operation
+from .models import ClientOptions, PreRequest, Request, Response
+from .operation import Operation, get_operation
 from .types import (
     AuthTypes,
+    CertTypes,
     CookiesTypes,
     DefaultEncodingTypes,
     EventHooks,
     HeadersTypes,
+    ProxiesTypes,
     QueriesTypes,
     TimeoutTypes,
     URLTypes,
+    VerifyTypes,
 )
 
 __all__: Sequence[str] = (
@@ -80,10 +84,19 @@ class Session(httpx.Client):
         params: Optional[QueriesTypes] = DEFAULT_PARAMS,
         headers: Optional[HeadersTypes] = DEFAULT_HEADERS,
         cookies: Optional[CookiesTypes] = DEFAULT_COOKIES,
+        verify: VerifyTypes = True,
+        cert: Optional[CertTypes] = None,
+        http1: bool = True,
+        http2: bool = False,
+        proxies: Optional[ProxiesTypes] = None,
+        mounts: Optional[Mapping[str, BaseTransport]] = None,
         timeout: TimeoutTypes = DEFAULT_TIMEOUT,
         follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
+        limits: Limits = DEFAULT_LIMITS,
         max_redirects: int = DEFAULT_MAX_REDIRECTS,
         event_hooks: Optional[EventHooks] = DEFAULT_EVENT_HOOKS,
+        transport: Optional[BaseTransport] = None,
+        app: Optional[Callable[..., Any]] = None,
         trust_env: bool = DEFAULT_TRUST_ENV,
         default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
     ) -> None:
@@ -110,10 +123,19 @@ class Session(httpx.Client):
             params=params,
             headers=headers,
             cookies=cookies,
+            verify=verify,
+            cert=cert,
+            http1=http1,
+            http2=http2,
+            proxies=proxies,
+            mounts=mounts,
             timeout=timeout,
             follow_redirects=follow_redirects,
+            limits=limits,
             max_redirects=max_redirects,
             event_hooks=event_hooks,
+            transport=transport,
+            app=app,
             base_url=base_url,
             trust_env=trust_env,
             default_encoding=default_encoding,
@@ -142,8 +164,12 @@ class Client:
         bound_operation: Operation[PS, RT] = dataclasses.replace(
             operation,
             client=self.client,
-            default_response=self.default_response,
         )
+
+        # If the operation doesn't have a response, use the client's default response
+        # if one is available
+        if bound_operation.response is None and self.default_response is not None:
+            bound_operation.response = self.default_response
 
         # Add the client's middleware
         bound_operation.middleware.add_all(self.middleware.record)
@@ -158,13 +184,18 @@ class Client:
         *,
         response: Optional[Callable] = None,
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-        specification: OperationSpecification = OperationSpecification(
-            request=PreRequest(
-                method=method,
-                url=endpoint,
-            ),
-            response=response,
+        client_options: ClientOptions = ClientOptions()
+        request_options: PreRequest = PreRequest(
+            method=method,
+            url=endpoint,
         )
+
+        operation_response: Optional[Callable] = None
+
+        if response is not None:
+            operation_response = response
+        elif self.default_response is not None:
+            operation_response = self.default_response
 
         def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
             middleware: Middleware = Middleware()
@@ -174,14 +205,15 @@ class Client:
 
             operation: Operation[PS, RT] = Operation(
                 func=func,
-                specification=specification,
+                client_options=client_options,
+                request_options=request_options,
                 client=self.client,
                 middleware=middleware,
-                default_response=self.default_response,
+                response=operation_response,
             )
 
             # Validate operation function parameters are acceptable
-            validate_fields(get_fields(specification.request, func))
+            validate_fields(get_fields(operation.request_options, func))
 
             return operation.wrapper
 
@@ -232,10 +264,19 @@ class NeoClient(Client):
         params: Optional[QueriesTypes] = DEFAULT_PARAMS,
         headers: Optional[HeadersTypes] = DEFAULT_HEADERS,
         cookies: Optional[CookiesTypes] = DEFAULT_COOKIES,
+        verify: VerifyTypes = True,
+        cert: Optional[CertTypes] = None,
+        http1: bool = True,
+        http2: bool = False,
+        proxies: Optional[ProxiesTypes] = None,
+        mounts: Optional[Mapping[str, BaseTransport]] = None,
         timeout: TimeoutTypes = DEFAULT_TIMEOUT,
         follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
+        limits: Limits = DEFAULT_LIMITS,
         max_redirects: int = DEFAULT_MAX_REDIRECTS,
         event_hooks: Optional[EventHooks] = DEFAULT_EVENT_HOOKS,
+        transport: Optional[BaseTransport] = None,
+        app: Optional[Callable[..., Any]] = None,
         trust_env: bool = DEFAULT_TRUST_ENV,
         default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
         middleware: Optional[Sequence[MiddlewareCallable[Request, Response]]] = None,
@@ -246,10 +287,19 @@ class NeoClient(Client):
                 params=params,
                 headers=headers,
                 cookies=cookies,
+                verify=verify,
+                cert=cert,
+                http1=http1,
+                http2=http2,
+                proxies=proxies,
+                mounts=mounts,
                 timeout=timeout,
                 follow_redirects=follow_redirects,
+                limits=limits,
                 max_redirects=max_redirects,
                 event_hooks=event_hooks,
+                transport=transport,
+                app=app,
                 base_url=base_url,
                 trust_env=trust_env,
                 default_encoding=default_encoding,

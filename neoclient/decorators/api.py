@@ -26,7 +26,7 @@ class ConsumerDecorator(Decorator[T]):
 
             self.consumer.consume_client(client)
         elif callable(target):
-            request: PreRequest = get_operation(target).specification.request
+            request: PreRequest = get_operation(target).request_options.request
 
             self.consumer.consume_request(request)
         else:
