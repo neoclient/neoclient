@@ -22,7 +22,7 @@ def get(name: str = State()):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'neoclient/0.1.20'
+        'User-Agent': 'neoclient/0.1.22'
     },
     'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get'
@@ -95,7 +95,7 @@ def request(name: str = State()):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'neoclient/0.1.20',
+        'User-Agent': 'neoclient/0.1.22',
         'X-Name-Lower': 'ada lovelace',
         'X-Name-Title': 'Ada Lovelace',
         'X-Name-Upper': 'ADA LOVELACE'

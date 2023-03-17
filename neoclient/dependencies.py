@@ -1,4 +1,6 @@
+import collections.abc
 import dataclasses
+import typing
 from dataclasses import dataclass
 from typing import (
     Any,
@@ -66,9 +68,16 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
             if model_field.annotation in httpx_lookup:
                 parameter = httpx_lookup[model_field.annotation]()
             elif (
-                isinstance(model_field.annotation, type)
-                and issubclass(model_field.annotation, (BaseModel, dict))
+                (
+                    isinstance(model_field.annotation, type)
+                    and issubclass(model_field.annotation, (BaseModel, dict))
+                )
                 or dataclasses.is_dataclass(model_field.annotation)
+                or (
+                    utils.is_generic_alias(model_field.annotation)
+                    and typing.get_origin(model_field.annotation)
+                    in (collections.abc.Mapping,)
+                )
             ):
                 parameter = BodyParameter(
                     default=utils.get_default(field_info),

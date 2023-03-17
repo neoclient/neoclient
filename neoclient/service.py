@@ -1,39 +1,77 @@
 import inspect
-from typing import Any, Callable, Dict, Tuple, Type
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type
+
+from mediate.protocols import MiddlewareCallable
 
 from .annotations.api import has_annotation
 from .annotations.enums import Annotation
 from .client import Client
-from .models import ClientOptions
+from .middleware import Middleware
+from .models import ClientOptions, Request, Response
 from .operation import Operation, get_operation, has_operation
+
+__all__: Sequence[str] = (
+    "ClientSpecification",
+    "Service",
+)
+
+
+@dataclass
+class ClientSpecification:
+    options: ClientOptions = field(default_factory=ClientOptions)
+    middleware: Middleware = field(default_factory=Middleware)
+    default_response: Optional[Callable[..., Any]] = None
 
 
 class ServiceMeta(type):
+    _spec: ClientSpecification
+
     def __new__(
         mcs: Type["ServiceMeta"], name: str, bases: Tuple[type], attrs: Dict[str, Any]
     ) -> type:
         def __init__(self) -> None:
-            self._client = Client(client=self._opts.build())
+            service_middleware: Sequence[MiddlewareCallable[Request, Response]] = [
+                member
+                for _, member in inspect.getmembers(self)
+                if has_annotation(member, Annotation.MIDDLEWARE)
+            ]
 
-            member_name: str
-            member: Any
+            middleware: Middleware = Middleware()
+
+            middleware.add_all(self._spec.middleware.record)
+            middleware.add_all(service_middleware)
+
+            self._client = Client(
+                client=self._spec.options.build(),
+                middleware=middleware,
+                default_response=self._spec.default_response,
+            )
+
             for member_name, member in inspect.getmembers(self):
-                if has_annotation(member, Annotation.MIDDLEWARE):
-                    self._client.middleware.add(member)
-                elif has_operation(member):
-                    bound_operation_func: Callable = self._client.bind(member)
-                    bound_operation_method: Callable = bound_operation_func.__get__(
-                        self
-                    )
+                if not has_operation(member):
+                    continue
 
-                    bound_operation: Operation = get_operation(bound_operation_method)
+                bound_operation_func: Callable = self._client.bind(member)
+                bound_operation_method: Callable = bound_operation_func.__get__(self)
 
-                    bound_operation.func = bound_operation_method
-                    bound_operation.middleware = self._client.middleware
+                bound_operation: Operation = get_operation(bound_operation_method)
 
-                    setattr(self, member_name, bound_operation_method)
+                bound_operation.func = bound_operation_method
 
-        attrs["_opts"] = ClientOptions()
+                # The operation may have been bound to this client before
+                # (maybe even numerous times). As each time the operation is
+                # bound to a client, the client's middleware gets added, we
+                # erase any existing middleware and start afresh.
+                bound_operation.middleware = Middleware()
+                bound_operation.middleware.add_all(
+                    bound_operation.specification.middleware.record
+                )
+                bound_operation.middleware.add_all(self._client.middleware.record)
+
+                setattr(self, member_name, bound_operation_method)
+
+        attrs["_spec"] = ClientSpecification()
         attrs["__init__"] = __init__
 
         typ: type = super().__new__(mcs, name, bases, attrs)
@@ -42,7 +80,6 @@ class ServiceMeta(type):
 
 
 class Service(metaclass=ServiceMeta):
-    _opts: ClientOptions
     _client: Client
 
     def __repr__(self) -> str:

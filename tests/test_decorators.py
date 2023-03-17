@@ -215,13 +215,13 @@ def test_mount(func: Callable) -> None:
 
 
 def test_base_url(service: Type[Service]) -> None:
-    original_client_options: ClientOptions = replace(service._opts)
+    original_client_options: ClientOptions = replace(service._spec.options)
 
     base_url: str = "https://foo.bar/"
 
     decorators.base_url(base_url)(service)
 
-    assert service._opts == replace(
+    assert service._spec.options == replace(
         original_client_options, base_url="https://foo.bar/"
     )
 

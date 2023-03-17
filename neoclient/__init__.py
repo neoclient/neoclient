@@ -12,7 +12,7 @@ r"""
 ```
 """
 
-__version__: str = "0.1.20"
+__version__: str = "0.1.22"
 
 from .annotations import service_middleware
 from .client import NeoClient
@@ -34,8 +34,10 @@ from .decorators import (
     query,
     query_params,
     referer,
+    service,
     timeout,
     user_agent,
+    verify,
 )
 from .methods import delete, get, head, options, patch, post, put, request
 from .models import Request, Response

@@ -1,4 +1,6 @@
+import collections.abc
 import dataclasses
+import typing
 import urllib.parse
 from collections import Counter
 from typing import (
@@ -53,9 +55,17 @@ def get_fields(
                     alias=field_name,
                     default=utils.get_default(field_info),
                 )
-            elif isinstance(model_field.annotation, type) and (
-                issubclass(model_field.annotation, (BaseModel, dict))
+            elif (
+                (
+                    isinstance(model_field.annotation, type)
+                    and issubclass(model_field.annotation, (BaseModel, dict))
+                )
                 or dataclasses.is_dataclass(model_field.annotation)
+                or (
+                    utils.is_generic_alias(model_field.annotation)
+                    and typing.get_origin(model_field.annotation)
+                    in (collections.abc.Mapping,)
+                )
             ):
                 parameter = BodyParameter(
                     alias=field_name,

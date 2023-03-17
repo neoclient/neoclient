@@ -18,6 +18,7 @@ from .types import (
     RequestData,
     RequestFiles,
     TimeoutTypes,
+    VerifyTypes,
 )
 
 __all__: Sequence[str] = (
@@ -36,6 +37,7 @@ __all__: Sequence[str] = (
     "TimeoutConsumer",
     "MountConsumer",
     "BaseURLConsumer",
+    "VerifyConsumer",
 )
 
 
@@ -247,3 +249,11 @@ class BaseURLConsumer(Consumer):
 
     def consume_client(self, client: ClientOptions, /) -> None:
         client.base_url = URL(self.base_url)
+
+
+@dataclass
+class VerifyConsumer(Consumer):
+    verify: VerifyTypes
+
+    def consume_client(self, client: ClientOptions, /) -> None:
+        client.verify = self.verify
