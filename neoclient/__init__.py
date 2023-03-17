@@ -12,7 +12,7 @@ r"""
 ```
 """
 
-__version__: str = "0.1.22"
+__version__: str = "0.1.23"
 
 from .annotations import service_middleware
 from .client import NeoClient
