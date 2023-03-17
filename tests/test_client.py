@@ -8,7 +8,7 @@ from neoclient import Body, NeoClient, Queries, Query
 from neoclient.methods import request
 from neoclient.middleware import RequestMiddleware
 from neoclient.models import PreRequest, Request, Response
-from neoclient.operation import OperationSpecification, get_operation
+from neoclient.operation import get_operation
 
 
 class Model(BaseModel):
@@ -60,7 +60,7 @@ def test_request(client: NeoClient) -> None:
         method=method,
         url=endpoint,
     )
-    assert get_operation(foo).response == response
+    assert get_operation(foo).response is response
     assert get_operation(foo).client == client.client
 
 

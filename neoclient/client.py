@@ -161,9 +161,16 @@ class Client:
     def bind(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
         operation: Operation = get_operation(func)
 
+        # Create a clone of the operation's middleware, so that when the client's
+        # middleware gets added, it doesn't mutate the original
+        middleware: Middleware = Middleware()
+
+        middleware.add_all(operation.middleware.record)
+
         bound_operation: Operation[PS, RT] = dataclasses.replace(
             operation,
             client=self.client,
+            middleware=middleware,
         )
 
         # If the operation doesn't have a response, use the client's default response
