@@ -48,9 +48,7 @@ class ServiceMeta(type):
                     continue
 
                 bound_operation_func: Callable = self._client.bind(member)
-                bound_operation_method: Callable = bound_operation_func.__get__(
-                    self
-                )
+                bound_operation_method: Callable = bound_operation_func.__get__(self)
 
                 bound_operation: Operation = get_operation(bound_operation_method)
 
@@ -61,6 +59,9 @@ class ServiceMeta(type):
                 # bound to a client, the client's middleware gets added, we
                 # erase any existing middleware and start afresh.
                 bound_operation.middleware = Middleware()
+                bound_operation.middleware.add_all(
+                    bound_operation.specification.middleware.record
+                )
                 bound_operation.middleware.add_all(self._client.middleware.record)
 
                 setattr(self, member_name, bound_operation_method)

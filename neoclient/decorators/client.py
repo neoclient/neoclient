@@ -1,4 +1,5 @@
 from typing import Sequence, Type
+
 from typing_extensions import TypeAlias
 
 from ..consumers import BaseURLConsumer, VerifyConsumer

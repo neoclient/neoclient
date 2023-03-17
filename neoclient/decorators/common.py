@@ -1,7 +1,7 @@
 from typing import Callable, Sequence, Type, Union
-from typing_extensions import TypeAlias
 
 from mediate.protocols import MiddlewareCallable
+from typing_extensions import TypeAlias
 
 from ..consumers import (
     CookieConsumer,

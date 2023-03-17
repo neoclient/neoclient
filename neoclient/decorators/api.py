@@ -8,9 +8,7 @@ from ..operation import get_operation
 from ..service import Service
 from ..typing import Decorator
 
-__all__: Sequence[str] = (
-    "ConsumerDecorator",
-)
+__all__: Sequence[str] = ("ConsumerDecorator",)
 
 T = TypeVar("T", Callable, Type[Service])
 
