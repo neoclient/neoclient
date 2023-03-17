@@ -43,7 +43,7 @@ def service() -> Type[Service]:
 
 
 def test_query(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     key: str = "name"
     value: str = "sam"
@@ -56,7 +56,7 @@ def test_query(func: Callable) -> None:
 
 
 def test_header(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     key: str = "name"
     value: str = "sam"
@@ -69,7 +69,7 @@ def test_header(func: Callable) -> None:
 
 
 def test_cookie(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     key: str = "name"
     value: str = "sam"
@@ -82,7 +82,7 @@ def test_cookie(func: Callable) -> None:
 
 
 def test_path(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     key: str = "name"
     value: str = "sam"
@@ -95,7 +95,7 @@ def test_path(func: Callable) -> None:
 
 
 def test_query_params(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     query_params: QueriesTypes = {"name": "sam"}
 
@@ -107,7 +107,7 @@ def test_query_params(func: Callable) -> None:
 
 
 def test_headers(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     headers: HeadersTypes = {"name": "sam"}
 
@@ -119,7 +119,7 @@ def test_headers(func: Callable) -> None:
 
 
 def test_cookies(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     cookies: CookiesTypes = {"name": "sam"}
 
@@ -131,7 +131,7 @@ def test_cookies(func: Callable) -> None:
 
 
 def test_path_params(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     path_params: PathsTypes = {"name": "sam"}
 
@@ -143,7 +143,7 @@ def test_path_params(func: Callable) -> None:
 
 
 def test_content(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     content: RequestContent = "content"
 
@@ -155,7 +155,7 @@ def test_content(func: Callable) -> None:
 
 
 def test_data(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     data: RequestData = {"name": "sam"}
 
@@ -167,7 +167,7 @@ def test_data(func: Callable) -> None:
 
 
 def test_files(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     files: RequestFiles = {"file.txt": BytesIO(b"content")}
 
@@ -179,7 +179,7 @@ def test_files(func: Callable) -> None:
 
 
 def test_json(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     json: JsonTypes = {"name": "sam"}
 
@@ -191,7 +191,7 @@ def test_json(func: Callable) -> None:
 
 
 def test_timeout(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     timeout: TimeoutTypes = 5.0
 
@@ -203,7 +203,7 @@ def test_timeout(func: Callable) -> None:
 
 
 def test_mount(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     mount: str = "/mount"
 
@@ -243,7 +243,7 @@ def test_middleware(func: Callable) -> None:
 
 
 def test_user_agent(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     user_agent: str = "foo/1.0"
 
@@ -255,7 +255,7 @@ def test_user_agent(func: Callable) -> None:
 
 
 def test_accept(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     accept: str = "en-GB"
 
@@ -267,7 +267,7 @@ def test_accept(func: Callable) -> None:
 
 
 def test_referer(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options.request)
+    original_request: PreRequest = replace(get_operation(func).request_options)
 
     referer: str = "https://foo.bar/"
 
