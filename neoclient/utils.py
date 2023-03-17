@@ -27,6 +27,7 @@ __all__: Sequence[str] = (
     "get_default",
     "has_default",
     "parse_obj_as",
+    "is_generic_alias",
 )
 
 T = TypeVar("T")

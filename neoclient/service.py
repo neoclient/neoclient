@@ -11,6 +11,11 @@ from .middleware import Middleware
 from .models import ClientOptions, Request, Response
 from .operation import Operation, get_operation, has_operation
 
+__all__: Sequence[str] = (
+    "ClientSpecification",
+    "Service",
+)
+
 
 @dataclass
 class ClientSpecification:
