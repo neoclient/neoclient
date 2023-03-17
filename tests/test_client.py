@@ -56,13 +56,11 @@ def test_request(client: NeoClient) -> None:
     def foo():
         ...
 
-    assert get_operation(foo).request_options == OperationSpecification(
-        request=PreRequest(
-            method=method,
-            url=endpoint,
-        ),
-        response=response,
+    assert get_operation(foo).request_options == PreRequest(
+        method=method,
+        url=endpoint,
     )
+    assert get_operation(foo).response == response
     assert get_operation(foo).client == client.client
 
 

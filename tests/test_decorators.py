@@ -50,7 +50,7 @@ def test_query(func: Callable) -> None:
 
     decorators.query(key, value)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, params=QueryParams({key: value})
     )
 
@@ -63,7 +63,7 @@ def test_header(func: Callable) -> None:
 
     decorators.header(key, value)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, headers=Headers({key: value})
     )
 
@@ -76,7 +76,7 @@ def test_cookie(func: Callable) -> None:
 
     decorators.cookie(key, value)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, cookies=Cookies({key: value})
     )
 
@@ -89,7 +89,7 @@ def test_path(func: Callable) -> None:
 
     decorators.path(key, value)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, path_params={key: value}
     )
 
@@ -101,7 +101,7 @@ def test_query_params(func: Callable) -> None:
 
     decorators.query_params(query_params)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, params=converters.convert_query_params(query_params)
     )
 
@@ -113,7 +113,7 @@ def test_headers(func: Callable) -> None:
 
     decorators.headers(headers)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, headers=converters.convert_headers(headers)
     )
 
@@ -125,7 +125,7 @@ def test_cookies(func: Callable) -> None:
 
     decorators.cookies(cookies)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, cookies=converters.convert_cookies(cookies)
     )
 
@@ -137,7 +137,7 @@ def test_path_params(func: Callable) -> None:
 
     decorators.path_params(path_params)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, path_params=path_params
     )
 
@@ -149,7 +149,7 @@ def test_content(func: Callable) -> None:
 
     decorators.content(content)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, content=content
     )
 
@@ -161,9 +161,7 @@ def test_data(func: Callable) -> None:
 
     decorators.data(data)(func)
 
-    assert get_operation(func).request_options.request == replace(
-        original_request, data=data
-    )
+    assert get_operation(func).request_options == replace(original_request, data=data)
 
 
 def test_files(func: Callable) -> None:
@@ -173,9 +171,7 @@ def test_files(func: Callable) -> None:
 
     decorators.files(files)(func)
 
-    assert get_operation(func).request_options.request == replace(
-        original_request, files=files
-    )
+    assert get_operation(func).request_options == replace(original_request, files=files)
 
 
 def test_json(func: Callable) -> None:
@@ -185,9 +181,7 @@ def test_json(func: Callable) -> None:
 
     decorators.json(json)(func)
 
-    assert get_operation(func).request_options.request == replace(
-        original_request, json=json
-    )
+    assert get_operation(func).request_options == replace(original_request, json=json)
 
 
 def test_timeout(func: Callable) -> None:
@@ -197,7 +191,7 @@ def test_timeout(func: Callable) -> None:
 
     decorators.timeout(timeout)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, timeout=Timeout(timeout)
     )
 
@@ -209,7 +203,7 @@ def test_mount(func: Callable) -> None:
 
     decorators.mount(mount)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, url="/mount/foo"
     )
 
@@ -236,7 +230,7 @@ def test_middleware(func: Callable) -> None:
     decorators.middleware(middleware_foo)(func)
     decorators.middleware(middleware_bar)(func)
 
-    assert get_operation(func).request_options.middleware.record == [
+    assert get_operation(func).middleware.record == [
         middleware_foo,
         middleware_bar,
     ]
@@ -249,7 +243,7 @@ def test_user_agent(func: Callable) -> None:
 
     decorators.user_agent(user_agent)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, headers=Headers({"User-Agent": user_agent})
     )
 
@@ -261,7 +255,7 @@ def test_accept(func: Callable) -> None:
 
     decorators.accept(accept)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, headers=Headers({"Accept": accept})
     )
 
@@ -273,10 +267,32 @@ def test_referer(func: Callable) -> None:
 
     decorators.referer(referer)(func)
 
-    assert get_operation(func).request_options.request == replace(
+    assert get_operation(func).request_options == replace(
         original_request, headers=Headers({"Referer": referer})
     )
 
 
-def test_verify(func: Callable) -> None:
-    assert 1 == 2
+def test_verify_request(func: Callable) -> None:
+    client_options: ClientOptions = replace(get_operation(func).client_options)
+
+    verify: bool = False
+
+    decorators.verify(verify)(func)
+
+    assert get_operation(func).client_options == replace(
+        client_options,
+        verify=verify,
+    )
+
+
+def test_verify_client(service: Type[Service]) -> None:
+    original_client_options: ClientOptions = replace(service._spec.options)
+
+    verify: bool = False
+
+    decorators.verify(verify)(service)
+
+    assert service._spec.options == replace(
+        original_client_options,
+        verify=verify,
+    )
