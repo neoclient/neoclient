@@ -54,9 +54,7 @@ class ServiceMeta(type):
                 # bound to a client, the client's middleware gets added, we
                 # erase any existing middleware and start afresh.
                 bound_operation.middleware = Middleware()
-                bound_operation.middleware.add_all(
-                    bound_operation.middleware.record
-                )
+                bound_operation.middleware.add_all(bound_operation.middleware.record)
                 bound_operation.middleware.add_all(self._client.middleware.record)
 
                 setattr(self, member_name, bound_operation_method)
