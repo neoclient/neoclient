@@ -1,7 +1,8 @@
-from enum import Enum
+from enum import Enum, auto
 from typing import Sequence
 
 __all__: Sequence[str] = (
+    "Entity",
     "HTTPMethod",
     "HeaderName",
 )
@@ -15,6 +16,10 @@ class HiddenValueEnum(Enum):
 class StrEnum(str, Enum):
     def __str__(self) -> str:
         return self.value
+
+class Entity(HiddenValueEnum):
+    MIDDLEWARE = auto()
+    RESPONSE = auto()
 
 
 class HTTPMethod(HiddenValueEnum, StrEnum):

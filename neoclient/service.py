@@ -1,11 +1,11 @@
 import inspect
 from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type
 
+from annotate.utils import has_annotation
 from mediate.protocols import MiddlewareCallable
 
-from .annotations.api import has_annotation
-from .annotations.enums import Annotation
 from .client import Client
+from .enums import Entity
 from .errors import ServiceInitialisationError
 from .middleware import Middleware
 from .models import Request, Response
@@ -25,12 +25,12 @@ class ServiceMeta(type):
             service_middleware: Sequence[MiddlewareCallable[Request, Response]] = [
                 member
                 for _, member in inspect.getmembers(self)
-                if has_annotation(member, Annotation.MIDDLEWARE)
+                if has_annotation(member, Entity.MIDDLEWARE)
             ]
             service_responses: Sequence[Callable] = [
                 member
                 for _, member in inspect.getmembers(self)
-                if has_annotation(member, Annotation.RESPONSE)
+                if has_annotation(member, Entity.RESPONSE)
             ]
 
             if len(service_responses) > 1:
