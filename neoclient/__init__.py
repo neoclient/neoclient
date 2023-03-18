@@ -12,9 +12,8 @@ r"""
 ```
 """
 
-__version__: str = "0.1.24"
+__version__: str = "0.1.25"
 
-from .annotations import service_middleware, service_response
 from .client import NeoClient
 from .decorators import (
     accept,
