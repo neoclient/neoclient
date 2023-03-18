@@ -180,21 +180,26 @@ class ResolvableSingletonStringParameter(
 
 
 class QueryParameter(
-    ComposableSingletonStringParameter, ResolvableSingletonStringParameter
+    ComposableSingletonParameter[str, Sequence[str]],
+    ResolvableSingletonParameter[str, Optional[Sequence[str]]],
 ):
+    def parse_key(self, key: str, /) -> str:
+        return key
+
     def parse_value(self, value: Any, /) -> Sequence[str]:
         return convert_query_param(value)
 
-    def build_consumer(self, key: str, value: str) -> RequestConsumer:
+    def build_consumer(self, key: str, value: Sequence[str]) -> RequestConsumer:
         return QueryConsumer(key, value).consume_request
 
-    def build_resolver(self, key: str) -> Resolver[Optional[str]]:
+    def build_resolver(self, key: str) -> Resolver[Optional[Sequence[str]]]:
         return QueryResolver(key)
 
 
 @dataclass(unsafe_hash=True)
 class HeaderParameter(
-    ComposableSingletonStringParameter, ResolvableSingletonStringParameter
+    ComposableSingletonParameter[str, Sequence[str]],
+    ResolvableSingletonParameter[str, Optional[Sequence[str]]],
 ):
     convert_underscores: bool = True
 
@@ -207,10 +212,10 @@ class HeaderParameter(
     def parse_value(self, value: Any, /) -> Sequence[str]:
         return convert_header(value)
 
-    def build_consumer(self, key: str, value: str) -> RequestConsumer:
+    def build_consumer(self, key: str, value: Sequence[str]) -> RequestConsumer:
         return HeaderConsumer(key, value).consume_request
 
-    def build_resolver(self, key: str) -> Resolver[Optional[str]]:
+    def build_resolver(self, key: str) -> Resolver[Optional[Sequence[str]]]:
         return HeaderResolver(key)
 
 

@@ -21,19 +21,29 @@ T = TypeVar("T")
 
 
 @dataclass
-class QueryResolver(Resolver[Optional[str]]):
+class QueryResolver(Resolver[Optional[Sequence[str]]]):
     name: str
 
-    def __call__(self, response: Response, /) -> Optional[str]:
-        return response.request.url.params.get(self.name)
+    def __call__(self, response: Response, /) -> Optional[Sequence[str]]:
+        params: QueryParams = response.request.url.params
+
+        if self.name in params:
+            return params.get_list(self.name)
+
+        return None
 
 
 @dataclass
-class HeaderResolver(Resolver[Optional[str]]):
+class HeaderResolver(Resolver[Optional[Sequence[str]]]):
     name: str
 
-    def __call__(self, response: Response, /) -> Optional[str]:
-        return response.headers.get(self.name)
+    def __call__(self, response: Response, /) -> Optional[Sequence[str]]:
+        headers: Headers = response.headers
+
+        if self.name in headers:
+            return headers.get_list(self.name)
+
+        return None
 
 
 @dataclass

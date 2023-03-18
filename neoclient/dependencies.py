@@ -5,9 +5,11 @@ from dataclasses import dataclass
 from typing import (
     Any,
     Callable,
+    List,
     Mapping,
     MutableMapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -24,6 +26,7 @@ from .models import Request, Response
 from .params import (
     BodyParameter,
     CookiesParameter,
+    HeaderParameter,
     HeadersParameter,
     Parameter,
     QueriesParameter,
@@ -120,8 +123,9 @@ class DependencyResolver(Resolver[T]):
         arguments: MutableMapping[str, Any] = {}
 
         field_name: str
+        field_annotation: Any
         parameter: Parameter
-        for field_name, (_, parameter) in fields.items():
+        for field_name, (field_annotation, parameter) in fields.items():
             resolution: Any
 
             if parameter in cache:
@@ -138,6 +142,19 @@ class DependencyResolver(Resolver[T]):
                     cache_parameter = parameter.use_cache
                 else:
                     resolution = parameter.resolve(response)
+
+                # Coerce the value from multi-value mappings
+                if isinstance(parameter, (QueryParameter, HeaderParameter)):
+                    field_annotation_origin: Optional[Any] = typing.get_origin(
+                        field_annotation
+                    )
+
+                    if (
+                        field_annotation_origin is None
+                        or not issubclass(field_annotation_origin, (list, tuple))
+                    ) and not issubclass(field_annotation, (list, tuple)):
+                        if isinstance(resolution, Sequence) and resolution:
+                            resolution = resolution[0]
 
                 if cache_parameter:
                     cache[parameter] = resolution

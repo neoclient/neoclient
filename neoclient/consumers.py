@@ -7,7 +7,9 @@ from . import converters
 from .models import ClientOptions, PreRequest
 from .types import (
     CookieTypes,
+    CookiesTypes,
     HeaderTypes,
+    HeadersTypes,
     JsonTypes,
     PathsTypes,
     PathTypes,
@@ -149,7 +151,7 @@ class QueriesConsumer(SupportsRequestConsumer, SupportsClientConsumer):
 class HeadersConsumer(SupportsRequestConsumer, SupportsClientConsumer):
     headers: Headers
 
-    def __init__(self, headers: HeaderTypes, /) -> None:
+    def __init__(self, headers: HeadersTypes, /) -> None:
         self.headers = converters.convert_headers(headers)
 
     def consume_request(self, request: PreRequest, /) -> None:
@@ -163,7 +165,7 @@ class HeadersConsumer(SupportsRequestConsumer, SupportsClientConsumer):
 class CookiesConsumer(SupportsRequestConsumer, SupportsClientConsumer):
     cookies: Cookies
 
-    def __init__(self, cookies: CookieTypes, /) -> None:
+    def __init__(self, cookies: CookiesTypes, /) -> None:
         self.cookies = converters.convert_cookies(cookies)
 
     def consume_request(self, request: PreRequest, /) -> None:
