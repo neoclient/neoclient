@@ -12,6 +12,7 @@ __all__: Sequence[str] = (
     "ExpectedStatusCodeError",
     "ExpectedHeaderError",
     "MissingStateError",
+    "ServiceInitialisationError",
 )
 
 
@@ -74,3 +75,7 @@ class MissingStateError(Exception):
 
     def __str__(self) -> str:
         return f"State entry missing for key {self.key!r}"
+
+
+class ServiceInitialisationError(Exception):
+    pass

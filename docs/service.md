@@ -45,3 +45,28 @@ httpbin = Httpbin()
 Request: <Request('GET', 'https://httpbin.org/ip')>
 {'origin': '1.2.3.4'}
 ```
+
+## Service Response
+Service classes can define a service-level default response dependency within
+the class:
+```python
+from neoclient import Service, base_url, get, service_response
+
+
+@base_url("https://httpbin.org/")
+class Httpbin(Service):
+    @service_response
+    def _response(self, body: dict) -> str:
+        return body["origin"]
+
+    @get("/ip")
+    def ip(self) -> str:
+        ...
+
+
+httpbin = Httpbin()
+```
+```python
+>>> httpbin.ip()
+'1.2.3.4'
+```
