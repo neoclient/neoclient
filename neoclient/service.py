@@ -50,10 +50,6 @@ class ServiceMeta(type):
             if service_responses:
                 response = service_responses[0]
 
-            # print(self._response)
-            # print(response)
-            # print(self._response is response)
-
             self._client = Client(
                 client=self._spec.options.build(),
                 middleware=middleware,
