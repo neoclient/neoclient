@@ -17,6 +17,7 @@ class StrEnum(str, Enum):
     def __str__(self) -> str:
         return self.value
 
+
 class Entity(HiddenValueEnum):
     MIDDLEWARE = auto()
     RESPONSE = auto()
