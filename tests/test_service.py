@@ -2,7 +2,7 @@ from types import MethodType
 
 import pytest
 
-from neoclient import get, middleware, service_middleware, service_response
+from neoclient import get, middleware, service
 from neoclient.client import Client
 from neoclient.models import ClientOptions
 from neoclient.operation import Operation, get_operation
@@ -19,7 +19,7 @@ class SomeService(Service):
     def foo(self):
         ...
 
-    @service_middleware
+    @service.middleware
     def some_service_middleware(self, call_next, request):
         return call_next(request)
 
@@ -67,11 +67,13 @@ def test_service_response() -> None:
         def foo(self) -> str:
             ...
 
-        @service_response
+        @service.response
         def some_service_response(self) -> str:
             return "foo"
 
-    service: SomeService = SomeService()
+    some_service: SomeService = SomeService()
 
-    assert service._client.default_response == service.some_service_response
-    assert get_operation(service.foo).response == service.some_service_response
+    assert some_service._client.default_response == some_service.some_service_response
+    assert (
+        get_operation(some_service.foo).response == some_service.some_service_response
+    )

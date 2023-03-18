@@ -21,13 +21,13 @@ httpbin = Httpbin()
 ## Service Middleware
 Service classes can have service-level middleware defined within the class:
 ```python
-from neoclient import Service, base_url, get, service_middleware, Request, Response
+from neoclient import Service, base_url, get, service, Request, Response
 from neoclient.typing import CallNext
 
 
 @base_url("https://httpbin.org/")
 class Httpbin(Service):
-    @service_middleware
+    @service.middleware
     def _log(self, call_next: CallNext, request: Request) -> Response:
         print("Request:", request)
 
@@ -50,12 +50,12 @@ Request: <Request('GET', 'https://httpbin.org/ip')>
 Service classes can define a service-level default response dependency within
 the class:
 ```python
-from neoclient import Service, base_url, get, service_response
+from neoclient import Service, base_url, get, service
 
 
 @base_url("https://httpbin.org/")
 class Httpbin(Service):
-    @service_response
+    @service.response
     def _response(self, body: dict) -> str:
         return body["origin"]
 
