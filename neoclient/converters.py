@@ -37,10 +37,7 @@ def convert_query_param(value: QueryTypes, /) -> Sequence[str]:
         return (primitive_value_to_str(value),)
 
     if isinstance(value, Sequence):
-        return tuple(
-            primitive_value_to_str(item)
-            for item in value
-        )
+        return tuple(primitive_value_to_str(item) for item in value)
 
     raise ConversionError("query param", value)
 
@@ -50,10 +47,7 @@ def convert_header(value: HeaderTypes, /) -> Sequence[str]:
         return (primitive_value_to_str(value),)
 
     if isinstance(value, Sequence):
-        return tuple(
-            primitive_value_to_str(item)
-            for item in value
-        )
+        return tuple(primitive_value_to_str(item) for item in value)
 
     raise ConversionError("header", value)
 

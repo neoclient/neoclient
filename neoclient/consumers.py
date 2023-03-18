@@ -6,10 +6,10 @@ from httpx import URL, Cookies, Headers, QueryParams, Timeout
 from . import converters
 from .models import ClientOptions, PreRequest
 from .types import (
-    CookieTypes,
     CookiesTypes,
-    HeaderTypes,
+    CookieTypes,
     HeadersTypes,
+    HeaderTypes,
     JsonTypes,
     PathsTypes,
     PathTypes,
@@ -57,7 +57,7 @@ class QueryConsumer(SupportsClientConsumer, SupportsRequestConsumer):
 
     def consume_client(self, client: ClientOptions, /) -> None:
         client.params = self._apply(client.params)
-    
+
     def _apply(self, params: QueryParams, /) -> QueryParams:
         # If there's only one value, set the query param and overwrite any
         # existing entries for this key
@@ -97,10 +97,9 @@ class HeaderConsumer(SupportsRequestConsumer, SupportsClientConsumer):
         # key
         else:
             values: Sequence[Tuple[str, str]] = [
-                (self.key, value)
-                for value in self.values
+                (self.key, value) for value in self.values
             ]
-            
+
             headers.update(values)
 
 
