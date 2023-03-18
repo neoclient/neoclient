@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
 from pydantic import BaseModel
 
@@ -87,7 +87,7 @@ def test_resolve_caching() -> None:
     class SpyingQuery(QueryParameter):
         resolution_counter: Counter = counter
 
-        def resolve(self, response: Response, /) -> Optional[str]:
+        def resolve(self, response: Response, /) -> Optional[Sequence[str]]:
             self.resolution_counter.count += 1
 
             return super().resolve(response)
