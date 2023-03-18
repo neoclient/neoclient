@@ -4,19 +4,31 @@ from neoclient import converters
 
 
 def test_convert_query_param() -> None:
-    assert converters.convert_query_param("abc") == "abc"
-    assert converters.convert_query_param(123) == "123"
-    assert converters.convert_query_param(1.0) == "1.0"
-    assert converters.convert_query_param(True) == "true"
-    assert converters.convert_query_param(None) == ""
+    assert converters.convert_query_param("abc") == ["abc"]
+    assert converters.convert_query_param(123) == ["123"]
+    assert converters.convert_query_param(1.0) == ["1.0"]
+    assert converters.convert_query_param(True) == ["true"]
+    assert converters.convert_query_param(None) == [""]
+
+    assert converters.convert_query_param(("abc", "def")) == ["abc", "def"]
+    assert converters.convert_query_param((123, 456)) == ["123", "456"]
+    assert converters.convert_query_param((1.0, 2.0)) == ["1.0", "2.0"]
+    assert converters.convert_query_param((True, False)) == ["true", "false"]
+    assert converters.convert_query_param((None, None)) == ["", ""]
 
 
 def test_convert_header() -> None:
-    assert converters.convert_header("abc") == "abc"
-    assert converters.convert_header(123) == "123"
-    assert converters.convert_header(1.0) == "1.0"
-    assert converters.convert_header(True) == "true"
-    assert converters.convert_header(None) == ""
+    assert converters.convert_header("abc") == ["abc"]
+    assert converters.convert_header(123) == ["123"]
+    assert converters.convert_header(1.0) == ["1.0"]
+    assert converters.convert_header(True) == ["true"]
+    assert converters.convert_header(None) == [""]
+
+    assert converters.convert_header(("abc", "def")) == ["abc", "def"]
+    assert converters.convert_header((123, 456)) == ["123", "456"]
+    assert converters.convert_header((1.0, 2.0)) == ["1.0", "2.0"]
+    assert converters.convert_header((True, False)) == ["true", "false"]
+    assert converters.convert_header((None, None)) == ["", ""]
 
 
 def test_convert_cookie() -> None:

@@ -134,4 +134,4 @@ def parse_obj_as(type_: Type[T], obj: Any) -> T:
 
 
 def is_generic_alias(type_: Type, /) -> bool:
-    return isinstance(type_, typing._GenericAlias)  # type: ignore
+    return typing.get_origin(type_) is not None

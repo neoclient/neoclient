@@ -34,20 +34,20 @@ __all__: Sequence[str] = (
 
 def convert_query_param(value: QueryTypes, /) -> Sequence[str]:
     if isinstance(value, (str, int, float, bool)) or value is None:
-        return (primitive_value_to_str(value),)
+        return [primitive_value_to_str(value)]
 
     if isinstance(value, Sequence):
-        return tuple(primitive_value_to_str(item) for item in value)
+        return [primitive_value_to_str(item) for item in value]
 
     raise ConversionError("query param", value)
 
 
 def convert_header(value: HeaderTypes, /) -> Sequence[str]:
     if isinstance(value, (str, int, float, bool)) or value is None:
-        return (primitive_value_to_str(value),)
+        return [primitive_value_to_str(value)]
 
     if isinstance(value, Sequence):
-        return tuple(primitive_value_to_str(item) for item in value)
+        return [primitive_value_to_str(item) for item in value]
 
     raise ConversionError("header", value)
 

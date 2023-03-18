@@ -142,13 +142,16 @@ class DependencyResolver(Resolver[T]):
                 else:
                     resolution = parameter.resolve(response)
 
-                # Coerce the value from multi-value mappings
+                # If the parameter has a resolution function that is backed to
+                # a multi-value mapping (and will yield a sequence of values),
+                # inspect the field's annotation to decide whether to use the
+                # entire sequence, or only the first value within in.
                 if isinstance(parameter, (QueryParameter, HeaderParameter)):
                     field_annotation_origin: Optional[Any] = typing.get_origin(
                         field_annotation
                     )
 
-                    if (
+                    if field_annotation is Any or (
                         field_annotation_origin is None
                         or not issubclass(field_annotation_origin, (list, tuple))
                     ) and not issubclass(field_annotation, (list, tuple)):
