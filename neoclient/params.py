@@ -182,7 +182,7 @@ class ResolvableSingletonStringParameter(
 class QueryParameter(
     ComposableSingletonStringParameter, ResolvableSingletonStringParameter
 ):
-    def parse_value(self, value: Any, /) -> str:
+    def parse_value(self, value: Any, /) -> Sequence[str]:
         return convert_query_param(value)
 
     def build_consumer(self, key: str, value: str) -> RequestConsumer:
@@ -204,7 +204,7 @@ class HeaderParameter(
 
         return key
 
-    def parse_value(self, value: Any, /) -> str:
+    def parse_value(self, value: Any, /) -> Sequence[str]:
         return convert_header(value)
 
     def build_consumer(self, key: str, value: str) -> RequestConsumer:

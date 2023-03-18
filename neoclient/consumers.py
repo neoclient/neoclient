@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping, Sequence, Tuple
 
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
 
@@ -44,33 +44,62 @@ __all__: Sequence[str] = (
 @dataclass(init=False)
 class QueryConsumer(SupportsClientConsumer, SupportsRequestConsumer):
     key: str
-    value: str
+    values: Sequence[str]
 
     def __init__(self, key: str, value: QueryTypes) -> None:
         self.key = key
-        self.value = converters.convert_query_param(value)
+        self.values = converters.convert_query_param(value)
 
     def consume_request(self, request: PreRequest, /) -> None:
-        request.params = request.params.set(self.key, self.value)
+        request.params = self._apply(request.params)
 
     def consume_client(self, client: ClientOptions, /) -> None:
-        client.params = client.params.set(self.key, self.value)
+        client.params = self._apply(client.params)
+    
+    def _apply(self, params: QueryParams, /) -> QueryParams:
+        # If there's only one value, set the query param and overwrite any
+        # existing entries for this key
+        if len(self.values) == 1:
+            return params.set(self.key, self.values[0])
+
+        # Otherwise, update the query params and maintain any existing entries for
+        # this key
+        value: str
+        for value in self.values:
+            params = params.add(self.key, value)
+
+        return params
 
 
 @dataclass(init=False)
 class HeaderConsumer(SupportsRequestConsumer, SupportsClientConsumer):
     key: str
-    value: str
+    values: Sequence[str]
 
     def __init__(self, key: str, value: HeaderTypes) -> None:
         self.key = key
-        self.value = converters.convert_header(value)
+        self.values = converters.convert_header(value)
 
     def consume_request(self, request: PreRequest, /) -> None:
-        request.headers[self.key] = self.value
+        self._apply(request.headers)
 
     def consume_client(self, client: ClientOptions, /) -> None:
-        client.headers[self.key] = self.value
+        self._apply(client.headers)
+
+    def _apply(self, headers: Headers, /) -> None:
+        # If there's only one value, set the header and overwrite any existing
+        # entries for this key
+        if len(self.values) == 1:
+            headers[self.key] = self.values[0]
+        # Otherwise, update the headers and maintain any existing entries for this
+        # key
+        else:
+            values: Sequence[Tuple[str, str]] = [
+                (self.key, value)
+                for value in self.values
+            ]
+            
+            headers.update(values)
 
 
 @dataclass(init=False)
