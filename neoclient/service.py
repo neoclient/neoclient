@@ -1,11 +1,12 @@
 import inspect
-from typing import Any, Callable, Dict, Sequence, Tuple, Type
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type
 
 from mediate.protocols import MiddlewareCallable
 
 from .annotations.api import has_annotation
 from .annotations.enums import Annotation
 from .client import Client
+from .errors import ServiceInitialisationError
 from .middleware import Middleware
 from .models import Request, Response
 from .operation import Operation, get_operation, has_operation
@@ -26,16 +27,33 @@ class ServiceMeta(type):
                 for _, member in inspect.getmembers(self)
                 if has_annotation(member, Annotation.MIDDLEWARE)
             ]
+            service_responses: Sequence[Callable] = [
+                member
+                for _, member in inspect.getmembers(self)
+                if has_annotation(member, Annotation.RESPONSE)
+            ]
+
+            if len(service_responses) > 1:
+                raise ServiceInitialisationError(
+                    f"Found {len(service_responses)} service responses, expected at most 1"
+                )
 
             middleware: Middleware = Middleware()
 
             middleware.add_all(self._spec.middleware.record)
             middleware.add_all(service_middleware)
 
+            response: Optional[Callable[..., Any]] = self._spec.default_response
+
+            # If a service-level response was defined, use this instead of the one
+            # defined within the specification
+            if service_responses:
+                response = service_responses[0]
+
             self._client = Client(
                 client=self._spec.options.build(),
                 middleware=middleware,
-                default_response=self._spec.default_response,
+                default_response=response,
             )
 
             for member_name, member in inspect.getmembers(self):
