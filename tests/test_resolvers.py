@@ -23,7 +23,7 @@ def test_resolver_query() -> None:
     )
     response_without_param: Response = utils.build_response()
 
-    assert QueryResolver("name")(response_with_param) == "sam"
+    assert QueryResolver("name")(response_with_param) == ["sam"]
     assert QueryResolver("name")(response_without_param) is None
 
 
@@ -33,7 +33,7 @@ def test_resolver_header() -> None:
     )
     response_without_header: Response = utils.build_response()
 
-    assert HeaderResolver("name")(response_with_header) == "sam"
+    assert HeaderResolver("name")(response_with_header) == ["sam"]
     assert HeaderResolver("name")(response_without_header) is None
 
 

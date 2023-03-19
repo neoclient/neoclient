@@ -8,6 +8,7 @@ from typing import (
     Mapping,
     MutableMapping,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -24,6 +25,7 @@ from .models import Request, Response
 from .params import (
     BodyParameter,
     CookiesParameter,
+    HeaderParameter,
     HeadersParameter,
     Parameter,
     QueriesParameter,
@@ -120,8 +122,9 @@ class DependencyResolver(Resolver[T]):
         arguments: MutableMapping[str, Any] = {}
 
         field_name: str
+        field_annotation: Any
         parameter: Parameter
-        for field_name, (_, parameter) in fields.items():
+        for field_name, (field_annotation, parameter) in fields.items():
             resolution: Any
 
             if parameter in cache:
@@ -138,6 +141,27 @@ class DependencyResolver(Resolver[T]):
                     cache_parameter = parameter.use_cache
                 else:
                     resolution = parameter.resolve(response)
+
+                # If the parameter has a resolution function that is backed to
+                # a multi-value mapping (and will yield a sequence of values),
+                # inspect the field's annotation to decide whether to use the
+                # entire sequence, or only the first value within in.
+                if isinstance(parameter, (QueryParameter, HeaderParameter)):
+                    field_annotation_origin: Optional[Any] = typing.get_origin(
+                        field_annotation
+                    )
+
+                    if (
+                        field_annotation is Any
+                        or field_annotation not in (list, tuple)
+                        and (
+                            not utils.is_generic_alias(field_annotation)
+                            or field_annotation_origin
+                            not in (list, tuple, collections.abc.Sequence)
+                        )
+                    ):
+                        if isinstance(resolution, Sequence) and resolution:
+                            resolution = resolution[0]
 
                 if cache_parameter:
                     cache[parameter] = resolution

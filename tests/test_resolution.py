@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
+from httpx import Headers, QueryParams
 from pydantic import BaseModel
 
-from neoclient import Depends, Query, State, models
+from neoclient import Depends, Header, Query, State, models
 from neoclient.models import Response
 from neoclient.params import QueryParameter
 from neoclient.resolution import resolve
@@ -87,7 +88,7 @@ def test_resolve_caching() -> None:
     class SpyingQuery(QueryParameter):
         resolution_counter: Counter = counter
 
-        def resolve(self, response: Response, /) -> Optional[str]:
+        def resolve(self, response: Response, /) -> Optional[Sequence[str]]:
             self.resolution_counter.count += 1
 
             return super().resolve(response)
@@ -162,3 +163,59 @@ def test_resolve_state_missing(response: Response) -> None:
     resolved: Any = resolve(func, response)
 
     assert resolved == default_message
+
+
+def test_resolve_query_single() -> None:
+    def func(name: str = Query()) -> str:
+        return name
+
+    response: Response = utils.build_response(
+        request=utils.build_request(
+            params=QueryParams((("name", "sam"), ("name", "bob")))
+        )
+    )
+
+    resolved: Any = resolve(func, response)
+
+    assert resolved == "sam"
+
+
+def test_resolve_query_multi() -> None:
+    def func(name: Sequence[str] = Query()) -> Sequence[str]:
+        return name
+
+    response: Response = utils.build_response(
+        request=utils.build_request(
+            params=QueryParams((("name", "sam"), ("name", "bob")))
+        )
+    )
+
+    resolved: Any = resolve(func, response)
+
+    assert resolved == ["sam", "bob"]
+
+
+def test_resolve_header_single() -> None:
+    def func(name: str = Header()) -> str:
+        return name
+
+    response: Response = utils.build_response(
+        headers=Headers((("name", "sam"), ("name", "bob")))
+    )
+
+    resolved: Any = resolve(func, response)
+
+    assert resolved == "sam"
+
+
+def test_resolve_header_multi() -> None:
+    def func(name: Sequence[str] = Header()) -> Sequence[str]:
+        return name
+
+    response: Response = utils.build_response(
+        headers=Headers((("name", "sam"), ("name", "bob")))
+    )
+
+    resolved: Any = resolve(func, response)
+
+    assert resolved == ["sam", "bob"]

@@ -60,7 +60,7 @@ Primitive: TypeAlias = Union[
     None,
 ]
 QueryTypes: TypeAlias = Any
-HeaderTypes: TypeAlias = Any
+HeaderTypes: TypeAlias = Union[Primitive, Sequence[Primitive]]
 CookieTypes: TypeAlias = Any
 PathTypes: TypeAlias = Union[Primitive, Sequence[Primitive]]
 QueriesTypes: TypeAlias = Union[
