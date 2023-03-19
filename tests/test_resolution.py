@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Mapping, Optional, Sequence, Union
 
-from httpx import QueryParams, Headers
+from httpx import Headers, QueryParams
 from pydantic import BaseModel
 
 from neoclient import Depends, Header, Query, State, models
@@ -179,6 +179,7 @@ def test_resolve_query_single() -> None:
 
     assert resolved == "sam"
 
+
 def test_resolve_query_multi() -> None:
     def func(name: Sequence[str] = Query()) -> Sequence[str]:
         return name
@@ -193,6 +194,7 @@ def test_resolve_query_multi() -> None:
 
     assert resolved == ["sam", "bob"]
 
+
 def test_resolve_header_single() -> None:
     def func(name: str = Header()) -> str:
         return name
@@ -204,6 +206,7 @@ def test_resolve_header_single() -> None:
     resolved: Any = resolve(func, response)
 
     assert resolved == "sam"
+
 
 def test_resolve_header_multi() -> None:
     def func(name: Sequence[str] = Header()) -> Sequence[str]:
