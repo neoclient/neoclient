@@ -153,11 +153,10 @@ class DependencyResolver(Resolver[T]):
 
                     if (
                         field_annotation is Any
-                        or (
-                            field_annotation_origin is None
-                            or not issubclass(field_annotation_origin, (list, tuple))
+                        or field_annotation not in (list, tuple) and (
+                            not utils.is_generic_alias(field_annotation)
+                            or field_annotation_origin not in (list, tuple, collections.abc.Sequence)
                         )
-                        and not issubclass(field_annotation, (list, tuple))
                     ):
                         if isinstance(resolution, Sequence) and resolution:
                             resolution = resolution[0]
