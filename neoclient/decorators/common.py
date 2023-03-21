@@ -1,4 +1,4 @@
-from typing import Callable, Sequence, Type, Union
+from typing import Any, Callable, Sequence, Type, Union
 
 from mediate.protocols import MiddlewareCallable
 from typing_extensions import TypeAlias
@@ -40,8 +40,10 @@ __all__: Sequence[str] = (
     "query",
     "query_params",
     "referer",
+    "response",
     "timeout",
     "user_agent",
+    "verify",
 )
 
 CommonDecorator: TypeAlias = Decorator[Union[Callable, Type[Service]]]
@@ -108,6 +110,26 @@ def referer(referer: str, /) -> CommonDecorator:
             referer,
         )
     )
+
+def response(response: Callable[..., Any]) -> CommonDecorator:
+    def decorate(target: T, /) -> T:
+        if isinstance(target, type):
+            if not issubclass(target, Service):
+                raise CompositionError(f"Target class is not a subclass of {Service}")
+
+            client_specification: ClientSpecification = target._spec
+
+            client_specification.default_response = response
+        elif callable(target):
+            operation: Operation = get_operation(target)
+
+            operation.response = response
+        else:
+            raise CompositionError(f"Target of unsupported type {type(target)}")
+
+        return target
+
+    return decorate
 
 
 def timeout(timeout: TimeoutTypes, /) -> CommonDecorator:

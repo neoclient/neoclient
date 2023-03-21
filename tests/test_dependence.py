@@ -6,7 +6,7 @@ from pydantic import BaseConfig
 from pydantic.fields import ModelField
 
 from neoclient import Cookie
-from neoclient.dependencies import DependencyParameter, DependencyResolver, get_fields
+from neoclient.dependence import DependencyParameter, DependencyResolver, get_fields
 from neoclient.enums import HTTPMethod
 from neoclient.errors import ResolutionError
 from neoclient.models import Request, Response

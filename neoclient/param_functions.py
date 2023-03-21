@@ -2,7 +2,7 @@ from typing import Any, Callable, Optional, Sequence
 
 from pydantic import Required
 
-from .dependencies import DependencyParameter
+from .dependence import DependencyParameter
 from .params import (
     BodyParameter,
     CookieParameter,

@@ -1,221 +1,178 @@
-import collections.abc
-import dataclasses
-import typing
-from dataclasses import dataclass
-from typing import (
-    Any,
-    Callable,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
+from datetime import timedelta
+from typing import Any, Dict, List, Optional, Sequence
+
+from httpx import URL, Cookies, Headers, QueryParams, Request, Response
+
+from .types import StreamTypes
+
+__all__: Sequence[str] = (
+    "charset_encoding",
+    "content",
+    "elapsed",
+    "encoding",
+    "has_redirect_location",
+    "headers",
+    "history",
+    "http_version",
+    "is_client_error",
+    "is_closed",
+    "is_error",
+    "is_informational",
+    "is_redirect",
+    "is_server_error",
+    "is_stream_consumed",
+    "is_success",
+    "json",
+    "links",
+    "next_request",
+    "num_bytes_downloaded",
+    "reason_phrase",
+    "request",
+    "response",
+    "status_code",
+    "stream",
+    "text",
+    "url",
+    "request_content",
+    "request_headers",
+    "request_method",
+    "request_params",
+    "request_stream",
+    "request_url",
 )
 
-import httpx
-from httpx import URL, Cookies, Headers, QueryParams
-from pydantic import BaseModel
-from pydantic.fields import FieldInfo, ModelField
 
-from . import api, utils
-from .errors import PreparationError, ResolutionError
-from .models import Request, Response
-from .params import (
-    BodyParameter,
-    CookiesParameter,
-    HeaderParameter,
-    HeadersParameter,
-    Parameter,
-    QueriesParameter,
-    QueryParameter,
-    RequestParameter,
-    ResponseParameter,
-    URLParameter,
-)
-from .typing import Resolver
-from .validation import ValidatedFunction
-
-T = TypeVar("T")
+def charset_encoding(response: Response) -> Optional[str]:
+    return response.charset_encoding
 
 
-def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
-    class Config:
-        allow_population_by_field_name: bool = True
-        arbitrary_types_allowed: bool = True
-
-    httpx_lookup: Mapping[Type[Any], Type[Parameter]] = {
-        Request: RequestParameter,
-        Response: ResponseParameter,
-        httpx.Request: RequestParameter,
-        httpx.Response: ResponseParameter,
-        URL: URLParameter,
-        QueryParams: QueriesParameter,
-        Headers: HeadersParameter,
-        Cookies: CookiesParameter,
-    }
-
-    fields: MutableMapping[str, Tuple[Any, Parameter]] = {}
-
-    field_name: str
-    model_field: ModelField
-    for field_name, model_field in ValidatedFunction(
-        func, config=Config
-    ).model.__fields__.items():
-        field_info: FieldInfo = model_field.field_info
-        parameter: Parameter
-
-        if not isinstance(field_info, Parameter):
-            if model_field.annotation in httpx_lookup:
-                parameter = httpx_lookup[model_field.annotation]()
-            elif (
-                (
-                    isinstance(model_field.annotation, type)
-                    and issubclass(model_field.annotation, (BaseModel, dict))
-                )
-                or dataclasses.is_dataclass(model_field.annotation)
-                or (
-                    utils.is_generic_alias(model_field.annotation)
-                    and typing.get_origin(model_field.annotation)
-                    in (collections.abc.Mapping,)
-                )
-            ):
-                parameter = BodyParameter(
-                    default=utils.get_default(field_info),
-                )
-            else:
-                parameter = QueryParameter(
-                    default=utils.get_default(field_info),
-                )
-        else:
-            parameter = field_info
-
-        # Create a clone of the parameter so that any mutations do not affect the original
-        parameter_clone: Parameter = dataclasses.replace(parameter)
-
-        parameter_clone.prepare(model_field)
-
-        fields[field_name] = (model_field.annotation, parameter_clone)
-
-    return fields
+def content(response: Response) -> bytes:
+    return response.content
 
 
-@dataclass
-class DependencyResolver(Resolver[T]):
-    dependency: Callable[..., T]
-
-    def __call__(
-        self,
-        response: Response,
-        /,
-        *,
-        cache: Optional[MutableMapping[Parameter, Any]] = None,
-    ) -> T:
-        if cache is None:
-            cache = {}
-
-        fields: Mapping[str, Tuple[Any, Parameter]] = get_fields(self.dependency)
-
-        model_cls: Type[BaseModel] = api.create_model_cls(self.dependency, fields)
-
-        arguments: MutableMapping[str, Any] = {}
-
-        field_name: str
-        field_annotation: Any
-        parameter: Parameter
-        for field_name, (field_annotation, parameter) in fields.items():
-            resolution: Any
-
-            if parameter in cache:
-                resolution = cache[parameter]
-            else:
-                cache_parameter: bool = True
-
-                if isinstance(parameter, DependencyParameter):
-                    resolution = parameter.resolve(
-                        response,
-                        cache=cache,
-                    )
-
-                    cache_parameter = parameter.use_cache
-                else:
-                    resolution = parameter.resolve(response)
-
-                # If the parameter has a resolution function that is backed to
-                # a multi-value mapping (and will yield a sequence of values),
-                # inspect the field's annotation to decide whether to use the
-                # entire sequence, or only the first value within in.
-                if isinstance(parameter, (QueryParameter, HeaderParameter)):
-                    field_annotation_origin: Optional[Any] = typing.get_origin(
-                        field_annotation
-                    )
-
-                    if (
-                        field_annotation is Any
-                        or field_annotation not in (list, tuple)
-                        and (
-                            not utils.is_generic_alias(field_annotation)
-                            or field_annotation_origin
-                            not in (list, tuple, collections.abc.Sequence)
-                        )
-                    ):
-                        if isinstance(resolution, Sequence) and resolution:
-                            resolution = resolution[0]
-
-                if cache_parameter:
-                    cache[parameter] = resolution
-
-            # If there is no resolution (e.g. missing header/query param etc.)
-            # and the parameter has a default, then we can omit the value from
-            # the arguments.
-            # This is done so that Pydantic will use the default value, rather
-            # than complaining that None was used.
-            if resolution is None and utils.has_default(parameter):
-                continue
-
-            arguments[field_name] = resolution
-
-        model: BaseModel = model_cls(**arguments)
-
-        validated_arguments: Mapping[str, Any] = model.dict()
-
-        args: Tuple[Any, ...]
-        kwargs: Mapping[str, Any]
-        args, kwargs = utils.unpack_arguments(self.dependency, validated_arguments)
-
-        return self.dependency(*args, **kwargs)
+def cookies(response: Response) -> Cookies:
+    return response.cookies
 
 
-@dataclass(unsafe_hash=True)
-class DependencyParameter(Parameter):
-    dependency: Optional[Callable] = None
-    use_cache: bool = True
+def elapsed(response: Response) -> timedelta:
+    return response.elapsed
 
-    def resolve(
-        self,
-        response: Response,
-        /,
-        *,
-        cache: Optional[MutableMapping[Parameter, Any]] = None,
-    ) -> Any:
-        if self.dependency is None:
-            raise ResolutionError(
-                f"Cannot resolve parameter {type(self)!r} without a dependency"
-            )
 
-        return DependencyResolver(self.dependency)(response, cache=cache)
+def encoding(response: Response) -> Optional[str]:
+    return response.encoding
 
-    def prepare(self, field: ModelField, /) -> None:
-        if self.dependency is not None:
-            return
 
-        # NOTE: The annotation will nearly always be callable (e.g. `int`)
-        # This check needs to be changed to check for non primitive callables,
-        # and more generally, nothing out of the standard library.
-        if not callable(field.annotation):
-            raise PreparationError(
-                f"Failed to prepare parameter: {self!r}. Dependency has non-callable annotation"
-            )
+def has_redirect_location(response: Response) -> bool:
+    return response.has_redirect_location
 
-        self.dependency = field.annotation
+
+def headers(response: Response) -> Headers:
+    return response.headers
+
+
+def history(response: Response) -> List[Response]:
+    return response.history
+
+
+def http_version(response: Response) -> str:
+    return response.http_version
+
+
+def is_client_error(response: Response) -> bool:
+    return response.is_client_error
+
+
+def is_closed(response: Response) -> bool:
+    return response.is_closed
+
+
+def is_error(response: Response) -> bool:
+    return response.is_error
+
+
+def is_informational(response: Response) -> bool:
+    return response.is_informational
+
+
+def is_redirect(response: Response) -> bool:
+    return response.is_redirect
+
+
+def is_server_error(response: Response) -> bool:
+    return response.is_server_error
+
+
+def is_stream_consumed(response: Response) -> bool:
+    return response.is_stream_consumed
+
+
+def is_success(response: Response) -> bool:
+    return response.is_success
+
+
+def json(response: Response) -> Any:
+    return response.json()
+
+
+def links(response: Response) -> Dict[Optional[str], Dict[str, str]]:
+    return response.links
+
+
+def next_request(response: Response) -> Optional[Request]:
+    return response.next_request
+
+
+def num_bytes_downloaded(response: Response) -> int:
+    return response.num_bytes_downloaded
+
+
+def reason_phrase(response: Response) -> str:
+    return response.reason_phrase
+
+
+def request(response: Response) -> Request:
+    return response.request
+
+
+def response(response: Response) -> Response:
+    return response
+
+
+def status_code(response: Response) -> int:
+    return response.status_code
+
+
+def stream(response: Response) -> StreamTypes:
+    return response.stream
+
+
+def text(response: Response) -> str:
+    return response.text
+
+
+def url(response: Response) -> URL:
+    return response.url
+
+
+def request_content(request: Request) -> bytes:
+    return request.content
+
+
+def request_headers(request: Request) -> Headers:
+    return request.headers
+
+
+def request_method(request: Request) -> str:
+    return request.method
+
+
+def request_params(request: Request) -> QueryParams:
+    return request.url.params
+
+
+def request_stream(request: Request) -> StreamTypes:
+    return request.stream
+
+
+def request_url(request: Request) -> URL:
+    return request.url
