@@ -111,6 +111,7 @@ def referer(referer: str, /) -> CommonDecorator:
         )
     )
 
+
 def response(response: Callable[..., Any]) -> CommonDecorator:
     def decorate(target: T, /) -> T:
         if isinstance(target, type):
