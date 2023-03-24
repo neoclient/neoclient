@@ -13,7 +13,7 @@ from ..consumers import (
     TimeoutConsumer,
     VerifyConsumer,
 )
-from ..enums import HeaderName
+from ..enums import HTTPHeader
 from ..errors import CompositionError
 from ..models import Request, Response
 from ..operation import Operation, get_operation
@@ -52,7 +52,7 @@ CommonDecorator: TypeAlias = Decorator[Union[Callable, Type[Service]]]
 def accept(*content_types: str) -> CommonDecorator:
     return ConsumerDecorator(
         HeaderConsumer(
-            HeaderName.ACCEPT,
+            HTTPHeader.ACCEPT,
             ",".join(content_types),
         )
     )
@@ -106,7 +106,7 @@ def query_params(params: QueriesTypes, /) -> CommonDecorator:
 def referer(referer: str, /) -> CommonDecorator:
     return ConsumerDecorator(
         HeaderConsumer(
-            HeaderName.REFERER,
+            HTTPHeader.REFERER,
             referer,
         )
     )
@@ -140,7 +140,7 @@ def timeout(timeout: TimeoutTypes, /) -> CommonDecorator:
 def user_agent(user_agent: str, /) -> CommonDecorator:
     return ConsumerDecorator(
         HeaderConsumer(
-            HeaderName.USER_AGENT,
+            HTTPHeader.USER_AGENT,
             user_agent,
         )
     )
