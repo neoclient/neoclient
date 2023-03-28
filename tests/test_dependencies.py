@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Mapping, MutableSequence, Sequence, Tuple
 from httpx import Cookies, Headers, QueryParams, Request, Response, SyncByteStream
 from httpx import ByteStream
 
+from neoclient import dependencies
 from neoclient.enums import HTTPMethod
 
 
@@ -16,7 +17,11 @@ def test_charset_encoding() -> None:
         headers={"Content-Type": f"text/plain;charset={charset_encoding}"},
     )
 
-    assert response.charset_encoding == charset_encoding
+    assert (
+        dependencies.charset_encoding(response)
+        == response.charset_encoding
+        == charset_encoding
+    )
 
 
 def test_content() -> None:
@@ -24,7 +29,7 @@ def test_content() -> None:
 
     response: Response = Response(HTTPStatus.OK, content=content)
 
-    assert response.content == content
+    assert dependencies.content(response) == response.content == content
 
 
 def test_cookies() -> None:
@@ -47,7 +52,7 @@ def test_cookies() -> None:
         headers=response_headers,
     )
 
-    assert response.cookies == expected_cookies
+    assert dependencies.cookies(response) == response.cookies == expected_cookies
 
 
 def test_elapsed() -> None:
@@ -57,7 +62,7 @@ def test_elapsed() -> None:
 
     response.elapsed = elapsed
 
-    assert response.elapsed == elapsed
+    assert dependencies.elapsed(response) == response.elapsed == elapsed
 
 
 def test_encoding() -> None:
@@ -65,7 +70,7 @@ def test_encoding() -> None:
 
     response: Response = Response(HTTPStatus.OK, default_encoding=encoding)
 
-    assert response.encoding == encoding
+    assert dependencies.encoding(response) == response.encoding == encoding
 
 
 def test_has_redirect_location() -> None:
@@ -73,7 +78,11 @@ def test_has_redirect_location() -> None:
         HTTPStatus.SEE_OTHER, headers={"Location": "https://foo.bar/"}
     )
 
-    assert response.has_redirect_location is True
+    assert (
+        dependencies.has_redirect_location(response)
+        == response.has_redirect_location
+        is True
+    )
 
 
 def test_headers() -> None:
@@ -81,7 +90,7 @@ def test_headers() -> None:
 
     response: Response = Response(HTTPStatus.OK, headers=headers)
 
-    assert response.headers == headers
+    assert dependencies.headers(response) == response.headers == headers
 
 
 def test_history() -> None:
@@ -91,7 +100,7 @@ def test_history() -> None:
 
     response: Response = Response(HTTPStatus.OK, history=history)
 
-    assert response.history == history
+    assert dependencies.history(response) == response.history == history
 
 
 def test_http_version() -> None:
@@ -101,37 +110,45 @@ def test_http_version() -> None:
         HTTPStatus.OK, extensions={"http_version": http_version.encode()}
     )
 
-    assert response.http_version == http_version
+    assert dependencies.http_version(response) == response.http_version == http_version
 
 
 def test_is_client_error() -> None:
     response_not_client_error: Response = Response(HTTPStatus.OK)
     response_client_error: Response = Response(HTTPStatus.BAD_REQUEST)
 
-    assert response_not_client_error.is_client_error is False
-    assert response_client_error.is_client_error is True
+    assert (
+        dependencies.is_client_error(response_not_client_error)
+        is response_not_client_error.is_client_error
+        is False
+    )
+    assert (
+        dependencies.is_client_error(response_client_error)
+        is response_client_error.is_client_error
+        is True
+    )
 
 
 def test_is_closed() -> None:
     response: Response = Response(HTTPStatus.OK, stream=ByteStream(b"foo"))
 
-    assert response.is_closed is False
+    assert dependencies.is_closed(response) is response.is_closed is False
 
     response.close()
 
-    assert response.is_closed is True
+    assert dependencies.is_closed(response) is response.is_closed is True
 
 
 def test_is_error() -> None:
     response: Response = Response(HTTPStatus.INTERNAL_SERVER_ERROR)
 
-    assert response.is_error is True
+    assert dependencies.is_error(response) is response.is_error is True
 
 
 def test_is_informational() -> None:
     response: Response = Response(HTTPStatus.CONTINUE)
 
-    assert response.is_informational is True
+    assert dependencies.is_informational(response) is response.is_informational is True
 
 
 def test_is_redirect() -> None:
@@ -139,31 +156,37 @@ def test_is_redirect() -> None:
         HTTPStatus.SEE_OTHER, headers={"Location": "https://foo.bar/"}
     )
 
-    assert response.is_redirect is True
+    assert dependencies.is_redirect(response) is response.is_redirect is True
 
 
 def test_is_server_error() -> None:
     response: Response = Response(HTTPStatus.INTERNAL_SERVER_ERROR)
 
-    assert response.is_error is True
+    assert dependencies.is_server_error(response) is response.is_server_error is True
 
 
 def test_is_stream_consumed() -> None:
     response: Response = Response(HTTPStatus.OK, stream=ByteStream(b"foo"))
 
-    assert response.is_stream_consumed is False
+    assert (
+        dependencies.is_stream_consumed(response)
+        is response.is_stream_consumed
+        is False
+    )
 
     response.read()
 
-    assert response.is_stream_consumed is True
+    assert (
+        dependencies.is_stream_consumed(response) is response.is_stream_consumed is True
+    )
 
 
 def test_is_success() -> None:
     response_ok: Response = Response(HTTPStatus.OK)
     response_error: Response = Response(HTTPStatus.INTERNAL_SERVER_ERROR)
 
-    assert response_ok.is_success is True
-    assert response_error.is_success is False
+    assert dependencies.is_success(response_ok) is response_ok.is_success is True
+    assert dependencies.is_success(response_error) is response_error.is_success is False
 
 
 def test_json() -> None:
@@ -171,7 +194,7 @@ def test_json() -> None:
 
     response: Response = Response(HTTPStatus.OK, json=json)
 
-    assert response.json() == json
+    assert dependencies.json(response) == response.json() == json
 
 
 def test_links() -> None:
@@ -200,7 +223,7 @@ def test_links() -> None:
         HTTPStatus.OK, headers={"Link": ", ".join(encoded_links)}
     )
 
-    assert response.links == links
+    assert dependencies.links(response) == response.links == links
 
 
 def test_next_request() -> None:
@@ -210,7 +233,7 @@ def test_next_request() -> None:
 
     response.next_request = next_request
 
-    assert response.next_request is next_request
+    assert dependencies.next_request(response) is response.next_request is next_request
 
 
 def test_num_bytes_downloaded() -> None:
@@ -220,7 +243,11 @@ def test_num_bytes_downloaded() -> None:
 
     response.read()
 
-    assert response.num_bytes_downloaded == len(text)
+    assert (
+        dependencies.num_bytes_downloaded(response)
+        == response.num_bytes_downloaded
+        == len(text)
+    )
 
 
 def test_reason_phrase() -> None:
@@ -230,7 +257,9 @@ def test_reason_phrase() -> None:
         HTTPStatus.OK, extensions={"reason_phrase": reason_phrase.encode()}
     )
 
-    assert response.reason_phrase == reason_phrase
+    assert (
+        dependencies.reason_phrase(response) == response.reason_phrase == reason_phrase
+    )
 
 
 def test_request() -> None:
@@ -238,19 +267,23 @@ def test_request() -> None:
 
     response: Response = Response(HTTPStatus.OK, request=request)
 
-    assert response.request is request
+    assert dependencies.request(response) is response.request is request
 
 
 def test_response() -> None:
     response: Response = Response(HTTPStatus.OK)
 
-    assert response is response
+    assert dependencies.response(response) is response is response
 
 
 def test_status_code() -> None:
     response: Response = Response(HTTPStatus.PRECONDITION_FAILED)
 
-    assert response.status_code == HTTPStatus.PRECONDITION_FAILED
+    assert (
+        dependencies.status_code(response)
+        == response.status_code
+        == HTTPStatus.PRECONDITION_FAILED
+    )
 
 
 def test_stream() -> None:
@@ -258,7 +291,7 @@ def test_stream() -> None:
 
     response: Response = Response(HTTPStatus.OK, stream=stream)
 
-    assert response.stream is stream
+    assert dependencies.stream(response) is response.stream is stream
 
 
 def test_text() -> None:
@@ -266,7 +299,7 @@ def test_text() -> None:
 
     response: Response = Response(HTTPStatus.OK, text=text)
 
-    assert response.text == text
+    assert dependencies.text(response) == response.text == text
 
 
 def test_url() -> None:
@@ -274,7 +307,7 @@ def test_url() -> None:
 
     response: Response = Response(HTTPStatus.OK, request=Request(HTTPMethod.GET, url))
 
-    assert response.url == url
+    assert dependencies.url(response) == response.url == url
 
 
 def test_request_content() -> None:
@@ -282,50 +315,44 @@ def test_request_content() -> None:
 
     response: Response = Response(HTTPStatus.OK, content=content)
 
-    assert response.content == content
+    assert dependencies.content(response) == response.content == content
 
 
 def test_request_headers() -> None:
     headers: Headers = Headers({"x-foo": "foo", "x-bar": "bar"})
 
-    response: Response = Response(
-        HTTPStatus.OK, request=Request(HTTPMethod.GET, "/", headers=headers)
-    )
+    request: Request = Request(HTTPMethod.GET, "/", headers=headers)
 
-    assert response.request.headers == headers
+    assert dependencies.request_headers(request) == request.headers == headers
 
 
 def test_request_method() -> None:
     method: str = HTTPMethod.CONNECT
 
-    response: Response = Response(HTTPStatus.OK, request=Request(method, "/"))
+    request: Request = Request(method, "/")
 
-    assert response.request.method == method
+    assert dependencies.request_method(request) == request.method == method
 
 
 def test_request_params() -> None:
     params: QueryParams = QueryParams({"foo": "foo", "bar": "bar"})
 
-    response: Response = Response(
-        HTTPStatus.OK, request=Request(HTTPMethod.GET, "/", params=params)
-    )
+    request: Request = Request(HTTPMethod.GET, "/", params=params)
 
-    assert response.request.url.params == params
+    assert dependencies.request_params(request) == request.url.params == params
 
 
 def test_request_stream() -> None:
     stream: SyncByteStream = ByteStream(b"foo")
 
-    response: Response = Response(
-        HTTPStatus.OK, request=Request(HTTPMethod.GET, "/", stream=stream)
-    )
+    request: Request = Request(HTTPMethod.GET, "/", stream=stream)
 
-    assert response.request.stream is stream
+    assert dependencies.request_stream(request) is request.stream is stream
 
 
 def test_request_url() -> None:
     url: str = "https://foo.bar/"
 
-    response: Response = Response(HTTPStatus.OK, request=Request(HTTPMethod.GET, url))
+    request: Request = Request(HTTPMethod.GET, url)
 
-    assert response.url == url
+    assert dependencies.request_url(request) == request.url == url
