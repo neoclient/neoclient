@@ -1,6 +1,6 @@
 from typing import Any, Callable
 
-from .dependencies import DependencyParameter
+from .dependence import DependencyParameter
 from .models import Response
 
 

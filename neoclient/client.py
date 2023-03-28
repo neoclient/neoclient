@@ -25,7 +25,7 @@ from .defaults import (
     DEFAULT_TIMEOUT,
     DEFAULT_TRUST_ENV,
 )
-from .enums import HeaderName, HTTPMethod
+from .enums import HTTPHeader, HTTPMethod
 from .middleware import Middleware
 from .models import ClientOptions, PreRequest, Request, Response
 from .operation import Operation, get_operation
@@ -116,7 +116,7 @@ class Session(httpx.Client):
         )
         base_url = URL(base_url)
 
-        headers.setdefault(HeaderName.USER_AGENT, USER_AGENT)
+        headers.setdefault(HTTPHeader.USER_AGENT, USER_AGENT)
 
         super().__init__(
             auth=auth,

@@ -3,7 +3,7 @@ from typing import Optional, Protocol, Sequence
 
 import mediate
 
-from .enums import HeaderName
+from .enums import HTTPHeader
 from .errors import ExpectedHeaderError, ExpectedStatusCodeError
 from .models import Request, Response
 
@@ -72,7 +72,7 @@ class ExpectedContentTypeMiddleware:
         # lenient checking.
         # For example, 'application/json+foo' should likely be an acceptable
         # value when expecting a lenient form of 'application/json'
-        return ExpectedHeaderMiddleware(HeaderName.CONTENT_TYPE, self.content_type)(
+        return ExpectedHeaderMiddleware(HTTPHeader.CONTENT_TYPE, self.content_type)(
             call_next, request
         )
 

@@ -17,7 +17,7 @@ def get(message: str):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'neoclient/0.1.27'
+        'User-Agent': 'neoclient/0.1.28'
     },
     'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get?message=Hello%2C+World!'
@@ -45,7 +45,7 @@ def get(name: List[str]):
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate, br',
         'Host': 'httpbin.org',
-        'User-Agent': 'neoclient/0.1.27'
+        'User-Agent': 'neoclient/0.1.28'
     },
     'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get?name=sam&name=bob'

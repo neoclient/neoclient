@@ -4,7 +4,7 @@ from typing import Sequence
 __all__: Sequence[str] = (
     "Entity",
     "HTTPMethod",
-    "HeaderName",
+    "HTTPHeader",
 )
 
 
@@ -24,16 +24,18 @@ class Entity(HiddenValueEnum):
 
 
 class HTTPMethod(HiddenValueEnum, StrEnum):
-    PUT = "PUT"
-    GET = "GET"
-    POST = "POST"
-    HEAD = "HEAD"
-    PATCH = "PATCH"
+    CONNECT = "CONNECT"
     DELETE = "DELETE"
+    GET = "GET"
+    HEAD = "HEAD"
     OPTIONS = "OPTIONS"
+    PATCH = "PATCH"
+    POST = "POST"
+    PUT = "PUT"
+    TRACE = "TRACE"
 
 
-class HeaderName(HiddenValueEnum, StrEnum):
+class HTTPHeader(HiddenValueEnum, StrEnum):
     ACCEPT = "Accept"
     ACCEPT_ENCODING = "Accept-Encoding"
     ACCEPT_LANGUAGE = "Accept-Language"

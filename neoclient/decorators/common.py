@@ -1,4 +1,4 @@
-from typing import Callable, Sequence, Type, Union
+from typing import Any, Callable, Sequence, Type, Union
 
 from mediate.protocols import MiddlewareCallable
 from typing_extensions import TypeAlias
@@ -13,7 +13,7 @@ from ..consumers import (
     TimeoutConsumer,
     VerifyConsumer,
 )
-from ..enums import HeaderName
+from ..enums import HTTPHeader
 from ..errors import CompositionError
 from ..models import Request, Response
 from ..operation import Operation, get_operation
@@ -40,8 +40,10 @@ __all__: Sequence[str] = (
     "query",
     "query_params",
     "referer",
+    "response",
     "timeout",
     "user_agent",
+    "verify",
 )
 
 CommonDecorator: TypeAlias = Decorator[Union[Callable, Type[Service]]]
@@ -50,7 +52,7 @@ CommonDecorator: TypeAlias = Decorator[Union[Callable, Type[Service]]]
 def accept(*content_types: str) -> CommonDecorator:
     return ConsumerDecorator(
         HeaderConsumer(
-            HeaderName.ACCEPT,
+            HTTPHeader.ACCEPT,
             ",".join(content_types),
         )
     )
@@ -104,10 +106,31 @@ def query_params(params: QueriesTypes, /) -> CommonDecorator:
 def referer(referer: str, /) -> CommonDecorator:
     return ConsumerDecorator(
         HeaderConsumer(
-            HeaderName.REFERER,
+            HTTPHeader.REFERER,
             referer,
         )
     )
+
+
+def response(response: Callable[..., Any]) -> CommonDecorator:
+    def decorate(target: T, /) -> T:
+        if isinstance(target, type):
+            if not issubclass(target, Service):
+                raise CompositionError(f"Target class is not a subclass of {Service}")
+
+            client_specification: ClientSpecification = target._spec
+
+            client_specification.default_response = response
+        elif callable(target):
+            operation: Operation = get_operation(target)
+
+            operation.response = response
+        else:
+            raise CompositionError(f"Target of unsupported type {type(target)}")
+
+        return target
+
+    return decorate
 
 
 def timeout(timeout: TimeoutTypes, /) -> CommonDecorator:
@@ -117,7 +140,7 @@ def timeout(timeout: TimeoutTypes, /) -> CommonDecorator:
 def user_agent(user_agent: str, /) -> CommonDecorator:
     return ConsumerDecorator(
         HeaderConsumer(
-            HeaderName.USER_AGENT,
+            HTTPHeader.USER_AGENT,
             user_agent,
         )
     )

@@ -5,7 +5,7 @@ install:
 	@poetry install
 
 test:
-	@poetry run python -m pytest ${ROOT_DIR}
+	@poetry run python -m pytest ${ROOT_DIR} -v
 
 typecheck:
 	@poetry run python -m mypy ${ROOT_DIR}
