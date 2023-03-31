@@ -2,7 +2,7 @@ import functools
 import inspect
 from dataclasses import dataclass, field
 from json import JSONDecodeError
-from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
+from typing import Any, Callable, Generic, MutableSequence, Optional, Sequence, TypeVar
 
 import httpx
 import pydantic
@@ -47,20 +47,14 @@ def get_operation(func: Callable, /) -> "Operation":
 
 
 @dataclass
-class OperationSpecification:
-    request: PreRequest
-    response: Optional[Callable[..., Any]] = None
-    middleware: Middleware = field(default_factory=Middleware)
-
-
-@dataclass
 class Operation(Generic[PS, RT_co]):
     func: Callable[PS, RT_co]
     client_options: ClientOptions
     request_options: PreRequest
     client: Optional[Client] = None
-    middleware: Middleware = field(default_factory=Middleware)
     response: Optional[Callable[..., Any]] = None
+    middleware: Middleware = field(default_factory=Middleware)
+    dependencies: MutableSequence = field(default_factory=list)
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
         client: Client
@@ -80,6 +74,11 @@ class Operation(Generic[PS, RT_co]):
         compose(self.func, pre_request, args, kwargs)
 
         request: Request = pre_request.build_request(client)
+
+        # Compose the request using each of the composition dependencies
+        dependency: Callable[..., None]
+        for dependency in self.dependencies:
+            resolve(dependency, Response(200, request=request))
 
         return_annotation: Any = inspect.signature(self.func).return_annotation
 

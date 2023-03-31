@@ -3,6 +3,7 @@ from .common import (
     accept,
     cookie,
     cookies,
+    depends,
     header,
     headers,
     middleware,
