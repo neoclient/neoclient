@@ -4,7 +4,7 @@ from typing import Any, Optional, Sequence, TypeVar
 from httpx import Cookies, Headers, QueryParams
 
 from .models import Response
-from .typing import Resolver
+from .typing import ResponseResolver
 
 __all__: Sequence[str] = (
     "BodyResolver",
@@ -21,7 +21,7 @@ T = TypeVar("T")
 
 
 @dataclass
-class QueryResolver(Resolver[Optional[Sequence[str]]]):
+class QueryResolver(ResponseResolver[Optional[Sequence[str]]]):
     name: str
 
     def __call__(self, response: Response, /) -> Optional[Sequence[str]]:
@@ -34,7 +34,7 @@ class QueryResolver(Resolver[Optional[Sequence[str]]]):
 
 
 @dataclass
-class HeaderResolver(Resolver[Optional[Sequence[str]]]):
+class HeaderResolver(ResponseResolver[Optional[Sequence[str]]]):
     name: str
 
     def __call__(self, response: Response, /) -> Optional[Sequence[str]]:
@@ -47,39 +47,39 @@ class HeaderResolver(Resolver[Optional[Sequence[str]]]):
 
 
 @dataclass
-class CookieResolver(Resolver[Optional[str]]):
+class CookieResolver(ResponseResolver[Optional[str]]):
     name: str
 
     def __call__(self, response: Response, /) -> Optional[str]:
         return response.cookies.get(self.name)
 
 
-class QueriesResolver(Resolver[QueryParams]):
+class QueriesResolver(ResponseResolver[QueryParams]):
     @staticmethod
     def __call__(response: Response, /) -> QueryParams:
         return response.request.url.params
 
 
-class HeadersResolver(Resolver[Headers]):
+class HeadersResolver(ResponseResolver[Headers]):
     @staticmethod
     def __call__(response: Response, /) -> Headers:
         return response.headers
 
 
-class CookiesResolver(Resolver[Cookies]):
+class CookiesResolver(ResponseResolver[Cookies]):
     @staticmethod
     def __call__(response: Response, /) -> Cookies:
         return response.cookies
 
 
-class BodyResolver(Resolver[Any]):
+class BodyResolver(ResponseResolver[Any]):
     @staticmethod
     def __call__(response: Response, /) -> Any:
         return response.json()
 
 
 @dataclass
-class StateResolver(Resolver[Any]):
+class StateResolver(ResponseResolver[Any]):
     key: str
 
     def __call__(self, response: Response, /) -> Any:

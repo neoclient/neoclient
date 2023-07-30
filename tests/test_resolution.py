@@ -88,10 +88,10 @@ def test_resolve_caching() -> None:
     class SpyingQuery(QueryParameter):
         resolution_counter: Counter = counter
 
-        def resolve(self, response: Response, /) -> Optional[Sequence[str]]:
+        def resolve_response(self, response: Response, /) -> Optional[Sequence[str]]:
             self.resolution_counter.count += 1
 
-            return super().resolve(response)
+            return super().resolve_response(response)
 
     query_name_spy: SpyingQuery = SpyingQuery("name")
     p_query_name_spy: str = query_name_spy  # type: ignore

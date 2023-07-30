@@ -34,7 +34,7 @@ from .params import (
     ResponseParameter,
     URLParameter,
 )
-from .typing import Resolver
+from .typing import ResponseResolver
 from .validation import ValidatedFunction
 
 T = TypeVar("T")
@@ -102,7 +102,7 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
 
 
 @dataclass
-class DependencyResolver(Resolver[T]):
+class DependencyResolver(ResponseResolver[T]):
     dependency: Callable[..., T]
 
     def __call__(
@@ -133,14 +133,14 @@ class DependencyResolver(Resolver[T]):
                 cache_parameter: bool = True
 
                 if isinstance(parameter, DependencyParameter):
-                    resolution = parameter.resolve(
+                    resolution = parameter.resolve_response(
                         response,
                         cache=cache,
                     )
 
                     cache_parameter = parameter.use_cache
                 else:
-                    resolution = parameter.resolve(response)
+                    resolution = parameter.resolve_response(response)
 
                 # If the parameter has a resolution function that is backed to
                 # a multi-value mapping (and will yield a sequence of values),
@@ -192,7 +192,7 @@ class DependencyParameter(Parameter):
     dependency: Optional[Callable] = None
     use_cache: bool = True
 
-    def resolve(
+    def resolve_response(
         self,
         response: Response,
         /,

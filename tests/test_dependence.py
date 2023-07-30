@@ -56,10 +56,10 @@ def test_dependency_parameter_resolve() -> None:
         dependency=None
     )
 
-    assert dependency_parameter_with_dependency.resolve(response) == response
+    assert dependency_parameter_with_dependency.resolve_response(response) == response
 
     with pytest.raises(ResolutionError):
-        dependency_parameter_without_dependency.resolve(response)
+        dependency_parameter_without_dependency.resolve_response(response)
 
 
 def test_dependency_parameter_prepare() -> None:
