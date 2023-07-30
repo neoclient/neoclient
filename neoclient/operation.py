@@ -73,12 +73,13 @@ class Operation(Generic[PS, RT_co]):
         # Compose the request using the provided arguments
         compose(self.func, pre_request, args, kwargs)
 
-        request: Request = pre_request.build_request(client)
-
         # Compose the request using each of the composition dependencies
         dependency: Callable[..., None]
         for dependency in self.dependencies:
-            resolve(dependency, Response(200, request=request))
+            # resolve(dependency, Response(200, request=request))
+            raise NotImplementedError
+
+        request: Request = pre_request.build_request(client)
 
         return_annotation: Any = inspect.signature(self.func).return_annotation
 

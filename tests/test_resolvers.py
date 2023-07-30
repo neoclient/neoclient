@@ -23,8 +23,8 @@ def test_resolver_query() -> None:
     )
     response_without_param: Response = utils.build_response()
 
-    assert QueryResolver("name")(response_with_param) == ["sam"]
-    assert QueryResolver("name")(response_without_param) is None
+    assert QueryResolver("name").resolve_response(response_with_param) == ["sam"]
+    assert QueryResolver("name").resolve_response(response_without_param) is None
 
 
 def test_resolver_header() -> None:
@@ -33,8 +33,8 @@ def test_resolver_header() -> None:
     )
     response_without_header: Response = utils.build_response()
 
-    assert HeaderResolver("name")(response_with_header) == ["sam"]
-    assert HeaderResolver("name")(response_without_header) is None
+    assert HeaderResolver("name").resolve_response(response_with_header) == ["sam"]
+    assert HeaderResolver("name").resolve_response(response_without_header) is None
 
 
 def test_resolver_cookie() -> None:
@@ -43,8 +43,8 @@ def test_resolver_cookie() -> None:
     )
     response_without_cookie: Response = utils.build_response()
 
-    assert CookieResolver("name")(response_with_cookie) == "sam"
-    assert CookieResolver("name")(response_without_cookie) is None
+    assert CookieResolver("name").resolve_response(response_with_cookie) == "sam"
+    assert CookieResolver("name").resolve_response(response_without_cookie) is None
 
 
 def test_resolver_queries() -> None:
@@ -88,4 +88,4 @@ def test_resolver_state() -> None:
         state=State({"message": message}),
     )
 
-    assert StateResolver("message")(response) == message
+    assert StateResolver("message").resolve_response(response) == message

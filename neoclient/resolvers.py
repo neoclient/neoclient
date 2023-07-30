@@ -3,7 +3,7 @@ from typing import Any, Optional, Sequence, TypeVar
 
 from httpx import Cookies, Headers, QueryParams
 
-from .models import Response
+from .models import PreRequest, Response, State
 from .typing import ResponseResolver
 
 __all__: Sequence[str] = (
@@ -21,25 +21,33 @@ T = TypeVar("T")
 
 
 @dataclass
-class QueryResolver(ResponseResolver[Optional[Sequence[str]]]):
+class QueryResolver:
     name: str
 
-    def __call__(self, response: Response, /) -> Optional[Sequence[str]]:
-        params: QueryParams = response.request.url.params
+    def resolve_request(self, request: PreRequest, /) -> Optional[Sequence[str]]:
+        return self.resolve(request.params)
 
-        if self.name in params:
-            return params.get_list(self.name)
+    def resolve_response(self, response: Response, /) -> Optional[Sequence[str]]:
+        return self.resolve(response.request.url.params)
+
+    def resolve(self, query_params: QueryParams, /) -> Optional[Sequence[str]]:
+        if self.name in query_params:
+            return query_params.get_list(self.name)
 
         return None
 
 
 @dataclass
-class HeaderResolver(ResponseResolver[Optional[Sequence[str]]]):
+class HeaderResolver:
     name: str
 
-    def __call__(self, response: Response, /) -> Optional[Sequence[str]]:
-        headers: Headers = response.headers
+    def resolve_request(self, request: PreRequest, /) -> Optional[Sequence[str]]:
+        return self.resolve(request.headers)
 
+    def resolve_response(self, response: Response, /) -> Optional[Sequence[str]]:
+        return self.resolve(response.headers)
+    
+    def resolve(self, headers: Headers, /) -> Optional[Sequence[str]]:
         if self.name in headers:
             return headers.get_list(self.name)
 
@@ -47,11 +55,17 @@ class HeaderResolver(ResponseResolver[Optional[Sequence[str]]]):
 
 
 @dataclass
-class CookieResolver(ResponseResolver[Optional[str]]):
+class CookieResolver:
     name: str
 
-    def __call__(self, response: Response, /) -> Optional[str]:
-        return response.cookies.get(self.name)
+    def resolve_request(self, request: PreRequest, /) -> Optional[str]:
+        return self.resolve(request.cookies)
+
+    def resolve_response(self, response: Response, /) -> Optional[str]:
+        return self.resolve(response.cookies)
+    
+    def resolve(self, cookies: Cookies, /) -> Optional[str]:
+        return cookies.get(self.name)
 
 
 class QueriesResolver(ResponseResolver[QueryParams]):
@@ -79,8 +93,14 @@ class BodyResolver(ResponseResolver[Any]):
 
 
 @dataclass
-class StateResolver(ResponseResolver[Any]):
+class StateResolver:
     key: str
 
-    def __call__(self, response: Response, /) -> Any:
-        return response.state.get(self.key)
+    def resolve_request(self, request: PreRequest, /) -> Any:
+        return self.resolve(request.state)
+
+    def resolve_response(self, response: Response, /) -> Any:
+        return self.resolve(response.state)
+    
+    def resolve(self, state: State, /) -> Any:
+        return state.get(self.key)
