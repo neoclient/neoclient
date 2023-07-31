@@ -54,7 +54,7 @@ def test_resolver_queries() -> None:
         ),
     )
 
-    assert QueriesResolver()(response) == QueryParams({"name": "sam"})
+    assert QueriesResolver().resolve_response(response) == QueryParams({"name": "sam"})
 
 
 def test_resolver_headers() -> None:
@@ -62,7 +62,7 @@ def test_resolver_headers() -> None:
         headers={"name": "sam"},
     )
 
-    assert HeadersResolver()(response) == Headers({"name": "sam"})
+    assert HeadersResolver().resolve_response(response) == Headers({"name": "sam"})
 
 
 def test_resolver_cookies() -> None:
@@ -70,7 +70,7 @@ def test_resolver_cookies() -> None:
         headers={"Set-Cookie": "name=sam; Path=/"},
     )
 
-    assert CookiesResolver()(response) == Cookies({"name": "sam"})
+    assert CookiesResolver().resolve_response(response) == Cookies({"name": "sam"})
 
 
 def test_resolver_body() -> None:

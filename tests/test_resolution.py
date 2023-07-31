@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from neoclient import Depends, Header, Query, State, models
 from neoclient.models import Response
 from neoclient.params import QueryParameter
-from neoclient.resolution import resolve
+from neoclient.resolution import resolve_response
 
 from . import utils
 
@@ -30,7 +30,7 @@ def test_resolve_infer_query() -> None:
         )
     )
 
-    resolved: Any = resolve(func, response)
+    resolved: Any = resolve_response(func, response)
 
     assert resolved == {"name": "sam", "age": 43, "is_cool": True}
 
@@ -61,7 +61,7 @@ def test_resolve_infer_body() -> None:
         },
     )
 
-    resolved: Any = resolve(func, response)
+    resolved: Any = resolve_response(func, response)
 
     assert resolved == {
         "body_dict": {
@@ -119,7 +119,7 @@ def test_resolve_caching() -> None:
         request=utils.build_request(params={"name": "sam"})
     )
 
-    assert resolve(func, response) == {
+    assert resolve_response(func, response) == {
         "name_1": "sam",
         "name_2": "sam",
         "dependency": {
@@ -134,7 +134,7 @@ def test_resolve_default(response: Response) -> None:
     def func(query: str = Query("query", default="default")) -> str:
         return query
 
-    resolved: Any = resolve(func, response)
+    resolved: Any = resolve_response(func, response)
 
     assert resolved == "default"
 
@@ -149,7 +149,7 @@ def test_resolve_state_present() -> None:
         state=models.State({"message": message}),
     )
 
-    resolved: Any = resolve(func, response)
+    resolved: Any = resolve_response(func, response)
 
     assert resolved == message
 
@@ -160,7 +160,7 @@ def test_resolve_state_missing(response: Response) -> None:
     def func(message: str = State("message", default=default_message)) -> str:
         return message
 
-    resolved: Any = resolve(func, response)
+    resolved: Any = resolve_response(func, response)
 
     assert resolved == default_message
 
@@ -175,7 +175,7 @@ def test_resolve_query_single() -> None:
         )
     )
 
-    resolved: Any = resolve(func, response)
+    resolved: Any = resolve_response(func, response)
 
     assert resolved == "sam"
 
@@ -190,7 +190,7 @@ def test_resolve_query_multi() -> None:
         )
     )
 
-    resolved: Any = resolve(func, response)
+    resolved: Any = resolve_response(func, response)
 
     assert resolved == ["sam", "bob"]
 
@@ -203,7 +203,7 @@ def test_resolve_header_single() -> None:
         headers=Headers((("name", "sam"), ("name", "bob")))
     )
 
-    resolved: Any = resolve(func, response)
+    resolved: Any = resolve_response(func, response)
 
     assert resolved == "sam"
 
@@ -216,6 +216,6 @@ def test_resolve_header_multi() -> None:
         headers=Headers((("name", "sam"), ("name", "bob")))
     )
 
-    resolved: Any = resolve(func, response)
+    resolved: Any = resolve_response(func, response)
 
     assert resolved == ["sam", "bob"]

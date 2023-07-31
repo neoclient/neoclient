@@ -30,7 +30,7 @@ def test_get_fields() -> None:
     }
 
 
-def test_dependency_resolver_() -> None:
+def test_dependency_resolver() -> None:
     def dependency(response: Response, /) -> Response:
         return response
 
@@ -38,7 +38,7 @@ def test_dependency_resolver_() -> None:
         HTTPStatus.OK, request=Request(HTTPMethod.GET, "https://foo.com/")
     )
 
-    assert DependencyResolver(dependency)(response) == response
+    assert DependencyResolver(dependency).resolve_response(response) == response
 
 
 def test_dependency_parameter_resolve() -> None:

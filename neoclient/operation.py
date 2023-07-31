@@ -14,7 +14,7 @@ from .composition import compose
 from .errors import NotAnOperationError
 from .middleware import Middleware
 from .models import ClientOptions, PreRequest, Request, Response
-from .resolution import resolve
+from .resolution import resolve_request, resolve_response
 
 __all__: Sequence[str] = (
     "set_operation",
@@ -76,8 +76,7 @@ class Operation(Generic[PS, RT_co]):
         # Compose the request using each of the composition dependencies
         dependency: Callable[..., None]
         for dependency in self.dependencies:
-            # resolve(dependency, Response(200, request=request))
-            raise NotImplementedError
+            resolve_request(dependency, pre_request)
 
         request: Request = pre_request.build_request(client)
 
@@ -97,7 +96,7 @@ class Operation(Generic[PS, RT_co]):
         response: Response = send_request(request)
 
         if self.response is not None:
-            return resolve(self.response, response)
+            return resolve_response(self.response, response)
 
         if return_annotation is inspect.Parameter.empty:
             try:

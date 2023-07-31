@@ -68,21 +68,33 @@ class CookieResolver:
         return cookies.get(self.name)
 
 
-class QueriesResolver(ResponseResolver[QueryParams]):
+class QueriesResolver:
     @staticmethod
-    def __call__(response: Response, /) -> QueryParams:
+    def resolve_request(request: PreRequest, /) -> QueryParams:
+        return request.params
+    
+    @staticmethod
+    def resolve_response(response: Response, /) -> QueryParams:
         return response.request.url.params
 
 
-class HeadersResolver(ResponseResolver[Headers]):
+class HeadersResolver:
     @staticmethod
-    def __call__(response: Response, /) -> Headers:
+    def resolve_request(request: PreRequest, /) -> Headers:
+        return request.headers
+    
+    @staticmethod
+    def resolve_response(response: Response, /) -> Headers:
         return response.headers
 
 
-class CookiesResolver(ResponseResolver[Cookies]):
+class CookiesResolver:
     @staticmethod
-    def __call__(response: Response, /) -> Cookies:
+    def resolve_request(request: PreRequest, /) -> Cookies:
+        return request.cookies
+    
+    @staticmethod
+    def resolve_response(response: Response, /) -> Cookies:
         return response.cookies
 
 

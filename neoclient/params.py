@@ -276,8 +276,11 @@ class QueriesParameter(Parameter):
 
         QueriesConsumer(params).consume_request(request)
 
+    def resolve_request(self, request: PreRequest, /) -> QueryParams:
+        return QueriesResolver().resolve_request(request)
+
     def resolve_response(self, response: Response, /) -> QueryParams:
-        return QueriesResolver()(response)
+        return QueriesResolver().resolve_response(response)
 
 
 class HeadersParameter(Parameter):
@@ -286,8 +289,11 @@ class HeadersParameter(Parameter):
 
         HeadersConsumer(headers).consume_request(request)
 
+    def resolve_request(self, request: PreRequest, /) -> Headers:
+        return HeadersResolver().resolve_request(request)
+
     def resolve_response(self, response: Response, /) -> Headers:
-        return HeadersResolver()(response)
+        return HeadersResolver().resolve_response(response)
 
 
 class CookiesParameter(Parameter):
@@ -296,8 +302,11 @@ class CookiesParameter(Parameter):
 
         CookiesConsumer(cookies).consume_request(request)
 
+    def resolve_request(self, request: PreRequest, /) -> Cookies:
+        return CookiesResolver().resolve_request(request)
+
     def resolve_response(self, response: Response, /) -> Cookies:
-        return CookiesResolver()(response)
+        return CookiesResolver().resolve_response(response)
 
 
 class PathsParameter(Parameter):
@@ -341,6 +350,9 @@ class BodyParameter(Parameter):
 
 
 class URLParameter(Parameter):
+    def resolve_request(self, request: PreRequest, /) -> httpx.URL:
+        return request.url
+    
     def resolve_response(self, response: Response, /) -> httpx.URL:
         return response.request.url
 
