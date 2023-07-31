@@ -19,7 +19,8 @@ from mediate.protocols import MiddlewareCallable
 from roster import Record
 from typing_extensions import ParamSpec
 
-from . import __name__ as _name_, __version__ as _version_, converters
+from . import converters
+from .constants import USER_AGENT
 from .composition import get_fields, validate_fields
 from .defaults import (
     DEFAULT_AUTH,
@@ -66,8 +67,6 @@ PS = ParamSpec("PS")
 RT = TypeVar("RT")
 
 C = TypeVar("C", bound=Callable[..., Any])
-
-USER_AGENT: str = f"{_name_}/{_version_}"
 
 
 class BaseService:
