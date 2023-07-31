@@ -9,20 +9,20 @@ off a `token`, however it also needs to declare the length of the token.
 ```python
 from neoclient import NeoClient
 from neoclient.decorators import depends
-from neoclient.param_functions import Header
-from neoclient.models import Request
+from neoclient.param_functions import Header, Headers
 
 client = NeoClient("https://httpbin.org/")
 
 
-def token_length(request: Request) -> None:
-    request.headers["X-Token-Length"] = str(len(request.headers["X-Token"]))
+def token_length(headers=Headers(), x_token=Header()) -> None:
+    headers["X-Token-Length"] = str(len(x_token))
 
 
 @depends(token_length)
 @client.get("/get")
-def request(x_token: str = Header()):
+def request(x_token=Header()):
     ...
+
 ```
 ```python
 >>> request("some-token")
@@ -39,6 +39,7 @@ def request(x_token: str = Header()):
     'origin': '1.2.3.4',
     'url': 'https://httpbin.org/get'
 }
+
 ```
 
 ## Add common information to requests
@@ -48,13 +49,13 @@ opportunity to use request dependencies.
 ```python
 from neoclient import NeoClient
 from neoclient.decorators import depends
-from neoclient.models import Request
+from neoclient.param_functions import Headers
 
 client = NeoClient("https://httpbin.org/")
 
 
-def common_headers(request: Request) -> None:
-    request.headers.update(
+def common_headers(headers=Headers()) -> None:
+    headers.update(
         {
             "x-format": "json",
             "x-token": "abc123",
@@ -87,7 +88,46 @@ def request():
 ```
 
 ## Chaining dependencies
-TODO
+It is possible to chain request dependencies together through the use of the
+`Dependency(...)` parameter function.
+
+```python
+from neoclient import NeoClient
+from neoclient.decorators import depends
+from neoclient.param_functions import Depends, Header, Headers
+
+client = NeoClient("https://httpbin.org/")
+
+
+def token_length(x_token=Header()):
+    return len(x_token)
+
+
+def common_headers(headers=Headers(), x_token_length=Depends(token_length)) -> None:
+    headers["X-Token-Length"] = str(x_token_length)
+
+
+@depends(common_headers)
+@client.get("/get")
+def request(x_token=Header()):
+    ...
+```
+```python
+>>> request("some-token")
+{
+    'args': {},
+    'headers': {
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Host': 'httpbin.org',
+        'User-Agent': 'neoclient/0.1.27',
+        'X-Token': 'some-token',
+        'X-Token-Length': '10'
+    },
+    'origin': '1.2.3.4',
+    'url': 'https://httpbin.org/get'
+}
+```
 
 ## Service-level dependencies
 Request dependencies can be applied at the service-level using the `@depends`
