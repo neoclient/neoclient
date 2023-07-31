@@ -15,7 +15,7 @@ from neoclient.resolvers import (
 from . import utils
 
 
-def test_resolver_query() -> None:
+def test_QueryResolver_resolve_response() -> None:
     response_with_param: Response = utils.build_response(
         request=utils.build_request(
             params={"name": "sam"},
@@ -27,7 +27,7 @@ def test_resolver_query() -> None:
     assert QueryResolver("name").resolve_response(response_without_param) is None
 
 
-def test_resolver_header() -> None:
+def test_HeaderResolver_resolve_response() -> None:
     response_with_header: Response = utils.build_response(
         headers={"name": "sam"},
     )
@@ -37,7 +37,7 @@ def test_resolver_header() -> None:
     assert HeaderResolver("name").resolve_response(response_without_header) is None
 
 
-def test_resolver_cookie() -> None:
+def test_CookieResolver_resolve_response() -> None:
     response_with_cookie: Response = utils.build_response(
         headers={"Set-Cookie": "name=sam; Path=/"},
     )
@@ -47,7 +47,7 @@ def test_resolver_cookie() -> None:
     assert CookieResolver("name").resolve_response(response_without_cookie) is None
 
 
-def test_resolver_queries() -> None:
+def test_QueriesResolver_resolve_response() -> None:
     response: Response = utils.build_response(
         request=utils.build_request(
             params={"name": "sam"},
@@ -57,7 +57,7 @@ def test_resolver_queries() -> None:
     assert QueriesResolver().resolve_response(response) == QueryParams({"name": "sam"})
 
 
-def test_resolver_headers() -> None:
+def test_HeadersResolver_resolve_response() -> None:
     response: Response = utils.build_response(
         headers={"name": "sam"},
     )
@@ -65,7 +65,7 @@ def test_resolver_headers() -> None:
     assert HeadersResolver().resolve_response(response) == Headers({"name": "sam"})
 
 
-def test_resolver_cookies() -> None:
+def test_CookiesResolver_resolve_response() -> None:
     response: Response = utils.build_response(
         headers={"Set-Cookie": "name=sam; Path=/"},
     )
@@ -73,7 +73,7 @@ def test_resolver_cookies() -> None:
     assert CookiesResolver().resolve_response(response) == Cookies({"name": "sam"})
 
 
-def test_resolver_body() -> None:
+def test_BodyResolver() -> None:
     response: Response = utils.build_response(
         json={"name": "sam"},
     )
@@ -81,7 +81,7 @@ def test_resolver_body() -> None:
     assert BodyResolver()(response) == {"name": "sam"}
 
 
-def test_resolver_state() -> None:
+def test_StateResolver() -> None:
     message: str = "Hello, World!"
 
     response: Response = utils.build_response(
