@@ -376,6 +376,9 @@ class RequestParameter(Parameter):
     def resolve_response(self, response: Response, /) -> httpx.Request:
         return response.request
 
+    def resolve_request(self, request: PreRequest, /) -> PreRequest:
+        return request
+
 
 class StatusCodeParameter(Parameter):
     def resolve_response(self, response: Response, /) -> int:
