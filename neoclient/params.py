@@ -8,8 +8,6 @@ from httpx import Cookies, Headers, QueryParams
 from pydantic import Required
 from pydantic.fields import FieldInfo, ModelField
 
-from neoclient.typing import RequestResolver
-
 from .consumers import (
     CookieConsumer,
     CookiesConsumer,
@@ -28,7 +26,7 @@ from .converters import (
     convert_query_param,
 )
 from .errors import CompositionError, ResolutionError
-from .models import PreRequest, Response, Request
+from .models import PreRequest, Request, Response
 from .resolvers import (
     BodyResolver,
     CookieResolver,
@@ -110,10 +108,14 @@ class Parameter(FieldInfo):
         raise CompositionError(f"Parameter {type(self)!r} is not composable")
 
     def resolve_response(self, response: Response, /) -> Any:
-        raise ResolutionError(f"Parameter {type(self)!r} is not resolvable for type {Response!r}")
-    
+        raise ResolutionError(
+            f"Parameter {type(self)!r} is not resolvable for type {Response!r}"
+        )
+
     def resolve_request(self, request: PreRequest, /) -> Any:
-        raise ResolutionError(f"Parameter {type(self)!r} is not resolvable for type {PreRequest!r}")
+        raise ResolutionError(
+            f"Parameter {type(self)!r} is not resolvable for type {PreRequest!r}"
+        )
 
     def prepare(self, model_field: ModelField, /) -> None:
         if self.alias is None:
@@ -156,13 +158,13 @@ class ResolvableSingletonParameter(ABC, Parameter, Generic[K, V]):
             raise ResolutionError(
                 f"Cannot resolve parameter {type(self)!r} without an alias"
             )
-        
+
         resolver: RequestResolver[V] = self.build_request_resolver(
             self.parse_key(self.alias),
         )
 
         return resolver(request)
-    
+
     def resolve_response(self, response: Response, /) -> V:
         if self.alias is None:
             raise ResolutionError(
@@ -212,11 +214,15 @@ class QueryParameter(
 
     def build_consumer(self, key: str, value: Sequence[str]) -> RequestConsumer:
         return QueryConsumer(key, value).consume_request
-    
-    def build_request_resolver(self, key: str) -> RequestResolver[Optional[Sequence[str]]]:
+
+    def build_request_resolver(
+        self, key: str
+    ) -> RequestResolver[Optional[Sequence[str]]]:
         return QueryResolver(key).resolve_request
 
-    def build_response_resolver(self, key: str) -> ResponseResolver[Optional[Sequence[str]]]:
+    def build_response_resolver(
+        self, key: str
+    ) -> ResponseResolver[Optional[Sequence[str]]]:
         return QueryResolver(key).resolve_response
 
 
@@ -238,11 +244,15 @@ class HeaderParameter(
 
     def build_consumer(self, key: str, value: Sequence[str]) -> RequestConsumer:
         return HeaderConsumer(key, value).consume_request
-    
-    def build_request_resolver(self, key: str) -> RequestResolver[Optional[Sequence[str]]]:
+
+    def build_request_resolver(
+        self, key: str
+    ) -> RequestResolver[Optional[Sequence[str]]]:
         return HeaderResolver(key).resolve_request
 
-    def build_response_resolver(self, key: str) -> ResponseResolver[Optional[Sequence[str]]]:
+    def build_response_resolver(
+        self, key: str
+    ) -> ResponseResolver[Optional[Sequence[str]]]:
         return HeaderResolver(key).resolve_response
 
 
@@ -254,7 +264,7 @@ class CookieParameter(
 
     def build_consumer(self, key: str, value: str) -> RequestConsumer:
         return CookieConsumer(key, value).consume_request
-    
+
     def build_request_resolver(self, key: str) -> RequestResolver[Optional[str]]:
         return CookieResolver(key).resolve_request
 
@@ -352,7 +362,7 @@ class BodyParameter(Parameter):
 class URLParameter(Parameter):
     def resolve_request(self, request: PreRequest, /) -> httpx.URL:
         return request.url
-    
+
     def resolve_response(self, response: Response, /) -> httpx.URL:
         return response.request.url
 

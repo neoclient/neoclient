@@ -46,7 +46,7 @@ class HeaderResolver:
 
     def resolve_response(self, response: Response, /) -> Optional[Sequence[str]]:
         return self.resolve(response.headers)
-    
+
     def resolve(self, headers: Headers, /) -> Optional[Sequence[str]]:
         if self.name in headers:
             return headers.get_list(self.name)
@@ -63,7 +63,7 @@ class CookieResolver:
 
     def resolve_response(self, response: Response, /) -> Optional[str]:
         return self.resolve(response.cookies)
-    
+
     def resolve(self, cookies: Cookies, /) -> Optional[str]:
         return cookies.get(self.name)
 
@@ -72,7 +72,7 @@ class QueriesResolver:
     @staticmethod
     def resolve_request(request: PreRequest, /) -> QueryParams:
         return request.params
-    
+
     @staticmethod
     def resolve_response(response: Response, /) -> QueryParams:
         return response.request.url.params
@@ -82,7 +82,7 @@ class HeadersResolver:
     @staticmethod
     def resolve_request(request: PreRequest, /) -> Headers:
         return request.headers
-    
+
     @staticmethod
     def resolve_response(response: Response, /) -> Headers:
         return response.headers
@@ -92,7 +92,7 @@ class CookiesResolver:
     @staticmethod
     def resolve_request(request: PreRequest, /) -> Cookies:
         return request.cookies
-    
+
     @staticmethod
     def resolve_response(response: Response, /) -> Cookies:
         return response.cookies
@@ -113,6 +113,6 @@ class StateResolver:
 
     def resolve_response(self, response: Response, /) -> Any:
         return self.resolve(response.state)
-    
+
     def resolve(self, state: State, /) -> Any:
         return state.get(self.key)

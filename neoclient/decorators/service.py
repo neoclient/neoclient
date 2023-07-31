@@ -58,7 +58,7 @@ class ServiceDecorator(Decorator[S]):
     @staticmethod
     def response(response: C, /) -> C:
         return service_response(response)
-    
+
     @staticmethod
     def depends(dependency: C, /) -> C:
         return service_depends(dependency)

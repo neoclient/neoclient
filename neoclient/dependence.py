@@ -115,7 +115,7 @@ class DependencyResolver(Generic[T]):
         cache: Optional[MutableMapping[Parameter, Any]] = None,
     ) -> T:
         return self.resolve(request, cache=cache)
-    
+
     def resolve_response(
         self,
         response: Response,
