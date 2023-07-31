@@ -21,6 +21,7 @@ def test_service_response() -> None:
 
     assert get_annotations(some_service_response) == {Entity.RESPONSE: None}
 
+
 def test_service_depends() -> None:
     @service_depends
     def some_service_dependency() -> None:

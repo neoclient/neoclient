@@ -197,10 +197,16 @@ def test_client_middleware(client: NeoClient) -> None:
     assert response.request.headers.get("name") == "sam"
     assert response.headers.get("food") == "pizza"
 
+
 def test_client_dependencies(client: NeoClient) -> None:
     @client.depends
-    def some_dependency() -> None:
-        pass
+    def some_dependency(headers=Headers()) -> None:
+        headers["name"] = "sam"
 
-    # TODO TODO TODO
-    raise NotImplementedError
+    assert client.dependencies == [some_dependency]
+
+    @client.get("/foo")
+    def foo():
+        ...
+
+    assert get_operation(foo).dependencies == [some_dependency]
