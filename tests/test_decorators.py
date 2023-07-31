@@ -235,6 +235,7 @@ def test_middleware(func: Callable) -> None:
         middleware_bar,
     ]
 
+
 def test_depends(func: Callable[..., Any]) -> None:
     def dependency_a() -> None:
         pass

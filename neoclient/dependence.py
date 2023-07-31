@@ -48,6 +48,7 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
         arbitrary_types_allowed: bool = True
 
     httpx_lookup: Mapping[Type[Any], Type[Parameter]] = {
+        PreRequest: RequestParameter,
         Request: RequestParameter,
         Response: ResponseParameter,
         httpx.Request: RequestParameter,
