@@ -4,6 +4,7 @@ import pytest
 
 from neoclient import get, middleware, service
 from neoclient.client import Client
+from neoclient.decorators import depends
 from neoclient.models import ClientOptions
 from neoclient.operation import Operation, get_operation
 from neoclient.service import Service
@@ -13,7 +14,12 @@ def some_middleware(call_next, request):
     return call_next(request)
 
 
+def some_dependency():
+    pass
+
+
 class SomeService(Service):
+    @depends(some_dependency)
     @middleware(some_middleware)
     @get("/foo")
     def foo(self):
@@ -22,6 +28,10 @@ class SomeService(Service):
     @service.middleware
     def some_service_middleware(self, call_next, request):
         return call_next(request)
+
+    @service.depends
+    def some_service_dependency(self):
+        pass
 
 
 def test_default_opts() -> None:
@@ -77,3 +87,13 @@ def test_service_response() -> None:
     assert (
         get_operation(some_service.foo).response == some_service.some_service_response
     )
+
+
+def test_service_dependencies() -> None:
+    service: SomeService = SomeService()
+
+    assert service._client.dependencies == [service.some_service_dependency]
+    assert get_operation(service.foo).dependencies == [
+        some_dependency,
+        service.some_service_dependency,
+    ]

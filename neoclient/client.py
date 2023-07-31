@@ -20,8 +20,8 @@ from roster import Record
 from typing_extensions import ParamSpec
 
 from . import converters
-from .constants import USER_AGENT
 from .composition import get_fields, validate_fields
+from .constants import USER_AGENT
 from .defaults import (
     DEFAULT_AUTH,
     DEFAULT_BASE_URL,

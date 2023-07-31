@@ -10,14 +10,13 @@ from neoclient.dependence import DependencyParameter, DependencyResolver, get_fi
 from neoclient.enums import HTTPMethod
 from neoclient.errors import ResolutionError
 from neoclient.models import PreRequest, Request, Response
+from neoclient.param_functions import Req
 from neoclient.params import (
     BodyParameter,
     CookieParameter,
     HeadersParameter,
     QueryParameter,
 )
-
-from neoclient.param_functions import Req
 
 
 def test_get_fields() -> None:
