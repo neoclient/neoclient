@@ -27,12 +27,12 @@ class ServiceMeta(type):
                 for _, member in inspect.getmembers(self)
                 if has_annotation(member, Entity.MIDDLEWARE)
             ]
-            service_responses: Sequence[Callable] = [
+            service_responses: Sequence[Callable[..., Any]] = [
                 member
                 for _, member in inspect.getmembers(self)
                 if has_annotation(member, Entity.RESPONSE)
             ]
-            service_dependencies: Sequence[Callable] = [
+            service_dependencies: Sequence[Callable[..., Any]] = [
                 member
                 for _, member in inspect.getmembers(self)
                 if has_annotation(member, Entity.DEPENDENCY)

@@ -241,3 +241,35 @@ httpbin = Httpbin()
     }
 }
 ```
+
+## Client-level dependencies
+Request dependencies can be applied at the client-level using the client's `depends`
+decorator.
+
+```python
+from neoclient import NeoClient, Headers
+
+client = NeoClient("https://httpbin.org/")
+
+
+@client.depends
+def common_headers(headers=Headers()):
+    headers["X-Token"] = "some-token-123"
+
+
+@client.get("/headers")
+def request():
+    ...
+```
+```python
+>>> request()
+{
+    'headers': {
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Host': 'httpbin.org',
+        'User-Agent': 'neoclient/0.1.27',
+        'X-Token': 'some-token-123'
+    }
+}
+```

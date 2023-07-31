@@ -15,7 +15,6 @@ C = TypeVar("C", bound=Callable)
 M = TypeVar(
     "M", MiddlewareCallable[Request, Response], MiddlewareMethod[Request, Response]
 )
-D = TypeVar("D", bound=Sequence[Callable[..., Any]])
 S = TypeVar("S", bound=Type[Service])
 
 

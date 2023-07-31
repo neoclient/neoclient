@@ -65,6 +65,8 @@ T = TypeVar("T")
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
 
+C = TypeVar("C", bound=Callable[..., Any])
+
 USER_AGENT: str = f"neoclient/{__version__}"
 
 
@@ -289,6 +291,11 @@ class Client:
         self, endpoint: str, /, *, response: Optional[Callable] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HTTPMethod.OPTIONS.name, endpoint, response=response)
+    
+    def depends(self, target: C, /) -> C:
+        self.dependencies.append(target)
+
+        return target
 
 
 class NeoClient(Client):
