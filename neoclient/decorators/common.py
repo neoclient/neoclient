@@ -59,15 +59,15 @@ def accept(*content_types: str) -> CommonDecorator:
     )
 
 
-def depends(*dependencies: Callable[..., None]) -> CommonDecorator:
+def depends(*dependencies: Callable[..., Any]) -> CommonDecorator:
     def decorate(target: T, /) -> T:
         if isinstance(target, type):
             if not issubclass(target, Service):
                 raise CompositionError(f"Target class is not a subclass of {Service}")
 
-            raise NotImplementedError(
-                "@depends not currently supported for service classes"
-            )
+            client_specification: ClientSpecification = target._spec
+
+            client_specification.dependencies.extend(dependencies)
         elif callable(target):
             operation: Operation = get_operation(target)
 

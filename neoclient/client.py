@@ -1,6 +1,16 @@
 import dataclasses
-from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, TypeVar
+from dataclasses import dataclass, field
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    MutableSequence,
+    Optional,
+    Sequence,
+    TypeVar,
+)
 
 import httpx
 from httpx import URL, BaseTransport, Cookies, Headers, Limits, QueryParams, Timeout
@@ -147,16 +157,19 @@ class Client:
     client: Optional[httpx.Client]
     middleware: Middleware
     default_response: Optional[Callable[..., Any]] = None
+    dependencies: MutableSequence[Callable[..., Any]] = field(default_factory=list)
 
     def __init__(
         self,
         client: Optional[httpx.Client] = None,
         middleware: Optional[Middleware] = None,
         default_response: Optional[Callable[..., Any]] = None,
+        dependencies: Optional[Sequence[Callable[..., Any]]] = None,
     ) -> None:
         self.client = client
         self.middleware = middleware if middleware is not None else Middleware()
         self.default_response = default_response
+        self.dependencies = [*dependencies] if dependencies is not None else []
 
     def bind(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
         operation: Operation = get_operation(func)
@@ -167,10 +180,17 @@ class Client:
 
         middleware.add_all(operation.middleware.record)
 
+        # Create a clone of the operation's dependencies, so that when the client's
+        # dependencies get added, it doesn't mutate the original
+        dependencies: MutableSequence[Callable[..., Any]] = []
+
+        dependencies.extend(operation.dependencies)
+
         bound_operation: Operation[PS, RT] = dataclasses.replace(
             operation,
             client=self.client,
             middleware=middleware,
+            dependencies=dependencies,
         )
 
         # If the operation doesn't have a response, use the client's default response
@@ -180,6 +200,9 @@ class Client:
 
         # Add the client's middleware
         bound_operation.middleware.add_all(self.middleware.record)
+
+        # Add the client's dependencies
+        dependencies.extend(self.dependencies)
 
         return bound_operation.wrapper
 
@@ -210,6 +233,11 @@ class Client:
             # Add the client's middleware
             middleware.add_all(self.middleware.record)
 
+            dependencies: MutableSequence[Callable[..., Any]] = []
+
+            # Add the client's dependencies
+            dependencies.extend(self.dependencies)
+
             operation: Operation[PS, RT] = Operation(
                 func=func,
                 client_options=client_options,
@@ -217,6 +245,7 @@ class Client:
                 client=self.client,
                 middleware=middleware,
                 response=operation_response,
+                dependencies=dependencies,
             )
 
             # Validate operation function parameters are acceptable
@@ -287,6 +316,8 @@ class NeoClient(Client):
         trust_env: bool = DEFAULT_TRUST_ENV,
         default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
         middleware: Optional[Sequence[MiddlewareCallable[Request, Response]]] = None,
+        default_response: Optional[Callable[..., Any]] = None,
+        dependencies: Optional[Sequence[Callable[..., Any]]] = None,
     ) -> None:
         super().__init__(
             client=Session(
@@ -316,4 +347,6 @@ class NeoClient(Client):
                 if middleware is not None
                 else Middleware()
             ),
+            default_response=default_response,
+            dependencies=(dependencies if dependencies is not None else []),
         )

@@ -85,3 +85,119 @@ def request():
     'url': 'https://httpbin.org/get'
 }
 ```
+
+## Chaining dependencies
+TODO
+
+## Service-level dependencies
+Request dependencies can be applied at the service-level using the `@depends`
+decorator.
+
+```python
+from neoclient import Headers, Service, base_url, depends, get
+
+
+def common_headers(headers=Headers()) -> None:
+    headers.update({"x-client-name": "CLIENT-A", "x-client-version": "1.0.3"})
+
+
+@depends(common_headers)
+@base_url("https://httpbin.org/")
+class Httpbin(Service):
+    @get("/headers")
+    def foo(self):
+        ...
+
+    @get("/headers")
+    def bar(self):
+        ...
+
+httpbin = Httpbin()
+```
+```python
+>>> httpbin.foo()
+{
+    'headers': {
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Host': 'httpbin.org',
+        'User-Agent': 'python-httpx/0.23.3',
+        'X-Client-Name': 'CLIENT-A',
+        'X-Client-Version': '1.0.3'
+    }
+}
+```
+
+If you prefer, you can also specify service-level dependencies using the `@service`
+decorator:
+```python
+from neoclient import Headers, Service, get, service
+
+def common_headers(headers=Headers()) -> None:
+    headers.update({"x-client-name": "CLIENT-A", "x-client-version": "1.0.3"})
+
+@service("https://httpbin.org/", dependencies=(common_headers,))
+class Httpbin(Service):
+    @get("/headers")
+    def foo(self):
+        ...
+
+    @get("/headers")
+    def bar(self):
+        ...
+
+
+httpbin = Httpbin()
+```
+```python
+>>> httpbin.foo()
+{
+    'headers': {
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Host': 'httpbin.org',
+        'User-Agent': 'python-httpx/0.23.3',
+        'X-Client-Name': 'CLIENT-A',
+        'X-Client-Version': '1.0.3'
+    }
+}
+```
+
+### Inline service-level dependencies
+If you prefer, or if your needs necessitate, you can define request dependencies
+inline in your service class. For example:
+
+```python
+from neoclient import Headers, Service, base_url, get, service
+
+
+@base_url("https://httpbin.org/")
+class Httpbin(Service):
+    @service.depends
+    def common_headers(self, headers=Headers()) -> None:
+        headers.update({"x-client-name": "CLIENT-A", "x-client-version": "1.0.3"})
+
+    @get("/headers")
+    def foo(self):
+        ...
+
+    @get("/headers")
+    def bar(self):
+        ...
+
+
+httpbin = Httpbin()
+```
+```python
+>>> httpbin.foo()
+{
+    'headers': {
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Host': 'httpbin.org',
+        'User-Agent': 'python-httpx/0.23.3',
+        'X-Client-Name': 'CLIENT-A',
+        'X-Client-Version': '1.0.3'
+    }
+}
+```

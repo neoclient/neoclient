@@ -54,7 +54,7 @@ class Operation(Generic[PS, RT_co]):
     client: Optional[Client] = None
     response: Optional[Callable[..., Any]] = None
     middleware: Middleware = field(default_factory=Middleware)
-    dependencies: MutableSequence = field(default_factory=list)
+    dependencies: MutableSequence[Callable[..., Any]] = field(default_factory=list)
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
         client: Client
