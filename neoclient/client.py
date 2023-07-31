@@ -19,7 +19,7 @@ from mediate.protocols import MiddlewareCallable
 from roster import Record
 from typing_extensions import ParamSpec
 
-from . import __version__, converters
+from . import __name__ as _name_, __version__ as _version_, converters
 from .composition import get_fields, validate_fields
 from .defaults import (
     DEFAULT_AUTH,
@@ -67,7 +67,7 @@ RT = TypeVar("RT")
 
 C = TypeVar("C", bound=Callable[..., Any])
 
-USER_AGENT: str = f"neoclient/{__version__}"
+USER_AGENT: str = f"{_name_}/{_version_}"
 
 
 class BaseService:
