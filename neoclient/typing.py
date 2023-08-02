@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from typing import Any, Protocol, Sequence, TypeVar, runtime_checkable
 
 from .models import ClientOptions, PreRequest, Request, Response
@@ -7,11 +8,16 @@ __all__: Sequence[str] = (
     "Decorator",
     "ClientConsumer",
     "Composer",
+    "Consumer",
+    "Function",
     "RequestConsumer",
+    "RequestResolver",
     "ResponseResolver",
     "Supplier",
-    "SupportsClientConsumer",
-    "SupportsRequestConsumer",
+    "SupportsConsumeClient",
+    "SupportsConsumeRequest",
+    "SupportsResolveRequest",
+    "SupportsResolveResponse",
 )
 
 T = TypeVar("T")
@@ -53,26 +59,42 @@ class RequestResolver(Function[PreRequest, T_co], Protocol[T_co]):
     pass
 
 
-class Composer(Protocol):
-    def compose(self, request: PreRequest, argument: Any, /) -> None:
-        ...
-
-
 class RequestConsumer(Consumer[PreRequest], Protocol):
     pass
-
-
-@runtime_checkable
-class SupportsRequestConsumer(Protocol):
-    def consume_request(self, request: PreRequest, /) -> None:
-        ...
 
 
 class ClientConsumer(Consumer[ClientOptions], Protocol):
     pass
 
 
+class Composer(Protocol):
+    def compose(self, request: PreRequest, argument: Any, /) -> None:
+        ...
+
+
 @runtime_checkable
-class SupportsClientConsumer(Protocol):
+class SupportsConsumeRequest(Protocol):
+    @abstractmethod
+    def consume_request(self, request: PreRequest, /) -> None:
+        ...
+
+
+@runtime_checkable
+class SupportsConsumeClient(Protocol):
+    @abstractmethod
     def consume_client(self, client: ClientOptions, /) -> None:
+        ...
+
+
+@runtime_checkable
+class SupportsResolveRequest(Protocol[T_co]):
+    @abstractmethod
+    def resolve_request(self, request: PreRequest, /) -> T_co:
+        ...
+
+
+@runtime_checkable
+class SupportsResolveResponse(Protocol[T_co]):
+    @abstractmethod
+    def resolve_response(self, response: Response, /) -> T_co:
         ...

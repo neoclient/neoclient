@@ -21,7 +21,7 @@ from .types import (
     TimeoutTypes,
     VerifyTypes,
 )
-from .typing import SupportsClientConsumer, SupportsRequestConsumer
+from .typing import SupportsConsumeClient, SupportsConsumeRequest
 
 __all__: Sequence[str] = (
     "QueryConsumer",
@@ -44,7 +44,7 @@ __all__: Sequence[str] = (
 
 
 @dataclass(init=False)
-class QueryConsumer(SupportsClientConsumer, SupportsRequestConsumer):
+class QueryConsumer(SupportsConsumeClient, SupportsConsumeRequest):
     key: str
     values: Sequence[str]
 
@@ -74,7 +74,7 @@ class QueryConsumer(SupportsClientConsumer, SupportsRequestConsumer):
 
 
 @dataclass(init=False)
-class HeaderConsumer(SupportsRequestConsumer, SupportsClientConsumer):
+class HeaderConsumer(SupportsConsumeRequest, SupportsConsumeClient):
     key: str
     values: Sequence[str]
 
@@ -104,7 +104,7 @@ class HeaderConsumer(SupportsRequestConsumer, SupportsClientConsumer):
 
 
 @dataclass(init=False)
-class CookieConsumer(SupportsRequestConsumer, SupportsClientConsumer):
+class CookieConsumer(SupportsConsumeRequest, SupportsConsumeClient):
     key: str
     value: str
 
@@ -120,7 +120,7 @@ class CookieConsumer(SupportsRequestConsumer, SupportsClientConsumer):
 
 
 @dataclass(init=False)
-class PathConsumer(SupportsRequestConsumer):
+class PathConsumer(SupportsConsumeRequest):
     key: str
     value: str
 
@@ -133,7 +133,7 @@ class PathConsumer(SupportsRequestConsumer):
 
 
 @dataclass(init=False)
-class QueriesConsumer(SupportsRequestConsumer, SupportsClientConsumer):
+class QueriesConsumer(SupportsConsumeRequest, SupportsConsumeClient):
     params: QueryParams
 
     def __init__(self, params: QueriesTypes, /) -> None:
@@ -147,7 +147,7 @@ class QueriesConsumer(SupportsRequestConsumer, SupportsClientConsumer):
 
 
 @dataclass(init=False)
-class HeadersConsumer(SupportsRequestConsumer, SupportsClientConsumer):
+class HeadersConsumer(SupportsConsumeRequest, SupportsConsumeClient):
     headers: Headers
 
     def __init__(self, headers: HeadersTypes, /) -> None:
@@ -161,7 +161,7 @@ class HeadersConsumer(SupportsRequestConsumer, SupportsClientConsumer):
 
 
 @dataclass(init=False)
-class CookiesConsumer(SupportsRequestConsumer, SupportsClientConsumer):
+class CookiesConsumer(SupportsConsumeRequest, SupportsConsumeClient):
     cookies: Cookies
 
     def __init__(self, cookies: CookiesTypes, /) -> None:
@@ -175,7 +175,7 @@ class CookiesConsumer(SupportsRequestConsumer, SupportsClientConsumer):
 
 
 @dataclass(init=False)
-class PathsConsumer(SupportsRequestConsumer):
+class PathsConsumer(SupportsConsumeRequest):
     path_params: Mapping[str, str]
 
     def __init__(self, path_params: PathsTypes, /) -> None:
@@ -186,7 +186,7 @@ class PathsConsumer(SupportsRequestConsumer):
 
 
 @dataclass
-class ContentConsumer(SupportsRequestConsumer):
+class ContentConsumer(SupportsConsumeRequest):
     content: RequestContent
 
     def consume_request(self, request: PreRequest, /) -> None:
@@ -194,7 +194,7 @@ class ContentConsumer(SupportsRequestConsumer):
 
 
 @dataclass
-class DataConsumer(SupportsRequestConsumer):
+class DataConsumer(SupportsConsumeRequest):
     data: RequestData
 
     def consume_request(self, request: PreRequest, /) -> None:
@@ -202,7 +202,7 @@ class DataConsumer(SupportsRequestConsumer):
 
 
 @dataclass
-class FilesConsumer(SupportsRequestConsumer):
+class FilesConsumer(SupportsConsumeRequest):
     files: RequestFiles
 
     def consume_request(self, request: PreRequest, /) -> None:
@@ -210,7 +210,7 @@ class FilesConsumer(SupportsRequestConsumer):
 
 
 @dataclass
-class JsonConsumer(SupportsRequestConsumer):
+class JsonConsumer(SupportsConsumeRequest):
     json: JsonTypes
 
     def consume_request(self, request: PreRequest, /) -> None:
@@ -218,7 +218,7 @@ class JsonConsumer(SupportsRequestConsumer):
 
 
 @dataclass(init=False)
-class TimeoutConsumer(SupportsRequestConsumer, SupportsClientConsumer):
+class TimeoutConsumer(SupportsConsumeRequest, SupportsConsumeClient):
     timeout: Timeout
 
     def __init__(self, timeout: TimeoutTypes, /) -> None:
@@ -232,7 +232,7 @@ class TimeoutConsumer(SupportsRequestConsumer, SupportsClientConsumer):
 
 
 @dataclass
-class StateConsumer(SupportsRequestConsumer):
+class StateConsumer(SupportsConsumeRequest):
     key: str
     value: Any
 
@@ -241,7 +241,7 @@ class StateConsumer(SupportsRequestConsumer):
 
 
 @dataclass
-class MountConsumer(SupportsRequestConsumer):
+class MountConsumer(SupportsConsumeRequest):
     path: str
 
     def consume_request(self, request: PreRequest, /) -> None:
@@ -249,7 +249,7 @@ class MountConsumer(SupportsRequestConsumer):
 
 
 @dataclass
-class BaseURLConsumer(SupportsClientConsumer):
+class BaseURLConsumer(SupportsConsumeClient):
     base_url: str
 
     def consume_client(self, client: ClientOptions, /) -> None:
@@ -257,7 +257,7 @@ class BaseURLConsumer(SupportsClientConsumer):
 
 
 @dataclass
-class VerifyConsumer(SupportsClientConsumer):
+class VerifyConsumer(SupportsConsumeClient):
     verify: VerifyTypes
 
     def consume_client(self, client: ClientOptions, /) -> None:

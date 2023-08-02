@@ -4,7 +4,7 @@ from typing import Any, Optional, Sequence, TypeVar
 from httpx import Cookies, Headers, QueryParams
 
 from .models import PreRequest, Response, State
-from .typing import ResponseResolver
+from .typing import ResponseResolver, SupportsResolveRequest, SupportsResolveResponse
 
 __all__: Sequence[str] = (
     "BodyResolver",
@@ -21,7 +21,7 @@ T = TypeVar("T")
 
 
 @dataclass
-class QueryResolver:
+class QueryResolver(SupportsResolveRequest, SupportsResolveResponse):
     name: str
 
     def resolve_request(self, request: PreRequest, /) -> Optional[Sequence[str]]:
@@ -38,7 +38,7 @@ class QueryResolver:
 
 
 @dataclass
-class HeaderResolver:
+class HeaderResolver(SupportsResolveRequest, SupportsResolveResponse):
     name: str
 
     def resolve_request(self, request: PreRequest, /) -> Optional[Sequence[str]]:
@@ -55,7 +55,7 @@ class HeaderResolver:
 
 
 @dataclass
-class CookieResolver:
+class CookieResolver(SupportsResolveRequest, SupportsResolveResponse):
     name: str
 
     def resolve_request(self, request: PreRequest, /) -> Optional[str]:
@@ -68,7 +68,7 @@ class CookieResolver:
         return cookies.get(self.name)
 
 
-class QueriesResolver:
+class QueriesResolver(SupportsResolveRequest, SupportsResolveResponse):
     @staticmethod
     def resolve_request(request: PreRequest, /) -> QueryParams:
         return request.params
@@ -78,7 +78,7 @@ class QueriesResolver:
         return response.request.url.params
 
 
-class HeadersResolver:
+class HeadersResolver(SupportsResolveRequest, SupportsResolveResponse):
     @staticmethod
     def resolve_request(request: PreRequest, /) -> Headers:
         return request.headers
@@ -88,7 +88,7 @@ class HeadersResolver:
         return response.headers
 
 
-class CookiesResolver:
+class CookiesResolver(SupportsResolveRequest, SupportsResolveResponse):
     @staticmethod
     def resolve_request(request: PreRequest, /) -> Cookies:
         return request.cookies
@@ -105,7 +105,7 @@ class BodyResolver(ResponseResolver[Any]):
 
 
 @dataclass
-class StateResolver:
+class StateResolver(SupportsResolveRequest, SupportsResolveResponse):
     key: str
 
     def resolve_request(self, request: PreRequest, /) -> Any:
