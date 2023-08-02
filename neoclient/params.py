@@ -26,7 +26,7 @@ from .converters import (
     convert_query_param,
 )
 from .errors import CompositionError, ResolutionError
-from .models import PreRequest, Request, Response
+from .models import PreRequest, Response
 from .resolvers import (
     BodyResolver,
     CookieResolver,
@@ -55,6 +55,7 @@ __all__: Sequence[str] = (
     "ResponseParameter",
     "RequestParameter",
     "StatusCodeParameter",
+    "ReasonParameter",
 )
 
 K = TypeVar("K")
@@ -402,3 +403,8 @@ class StateParameter(
 
     def build_response_resolver(self, key: str) -> ResponseResolver[Any]:
         return StateResolver(key).resolve_response
+
+
+class ReasonParameter(Parameter):
+    def resolve_response(self, response: Response, /) -> str:
+        return response.reason_phrase

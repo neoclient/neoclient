@@ -13,6 +13,7 @@ from .params import (
     PathsParameter,
     QueriesParameter,
     QueryParameter,
+    ReasonParameter,
     RequestParameter,
     ResponseParameter,
     StateParameter,
@@ -33,6 +34,7 @@ __all__: Sequence[str] = (
     "Body",
     "Depends",
     "URL",
+    "Reason",
     "Req",
     "Resp",
     "StatusCode",
@@ -295,6 +297,9 @@ def Resp() -> ResponseParameter:
 
 def StatusCode() -> StatusCodeParameter:
     return StatusCodeParameter()
+
+def Reason() -> ReasonParameter:
+    return ReasonParameter()
 
 
 def State(
