@@ -26,7 +26,7 @@ from .converters import (
     convert_query_param,
 )
 from .errors import CompositionError, ResolutionError
-from .models import PreRequest, Response
+from .models import PreRequest, Request, Response
 from .resolvers import (
     BodyResolver,
     CookieResolver,
@@ -38,7 +38,7 @@ from .resolvers import (
     StateResolver,
 )
 from .types import CookiesTypes, HeadersTypes, PathsTypes, QueriesTypes
-from .typing import RequestConsumer, Resolver, Supplier
+from .typing import RequestConsumer, RequestResolver, ResponseResolver, Supplier
 from .utils import parse_obj_as
 
 __all__: Sequence[str] = (
@@ -107,8 +107,15 @@ class Parameter(FieldInfo):
     def compose(self, request: PreRequest, argument: Any, /) -> None:
         raise CompositionError(f"Parameter {type(self)!r} is not composable")
 
-    def resolve(self, response: Response, /) -> Any:
-        raise ResolutionError(f"Parameter {type(self)!r} is not resolvable")
+    def resolve_response(self, response: Response, /) -> Any:
+        raise ResolutionError(
+            f"Parameter {type(self)!r} is not resolvable for type {Response!r}"
+        )
+
+    def resolve_request(self, request: PreRequest, /) -> Any:
+        raise ResolutionError(
+            f"Parameter {type(self)!r} is not resolvable for type {PreRequest!r}"
+        )
 
     def prepare(self, model_field: ModelField, /) -> None:
         if self.alias is None:
@@ -146,13 +153,25 @@ class ComposableSingletonParameter(ABC, Parameter, Generic[K, V]):
 
 
 class ResolvableSingletonParameter(ABC, Parameter, Generic[K, V]):
-    def resolve(self, response: Response, /) -> V:
+    def resolve_request(self, request: PreRequest, /) -> V:
         if self.alias is None:
             raise ResolutionError(
                 f"Cannot resolve parameter {type(self)!r} without an alias"
             )
 
-        resolver: Resolver[V] = self.build_resolver(
+        resolver: RequestResolver[V] = self.build_request_resolver(
+            self.parse_key(self.alias),
+        )
+
+        return resolver(request)
+
+    def resolve_response(self, response: Response, /) -> V:
+        if self.alias is None:
+            raise ResolutionError(
+                f"Cannot resolve parameter {type(self)!r} without an alias"
+            )
+
+        resolver: ResponseResolver[V] = self.build_response_resolver(
             self.parse_key(self.alias),
         )
 
@@ -163,7 +182,11 @@ class ResolvableSingletonParameter(ABC, Parameter, Generic[K, V]):
         ...
 
     @abstractmethod
-    def build_resolver(self, key: K) -> Resolver[V]:
+    def build_request_resolver(self, key: K) -> RequestResolver[V]:
+        ...
+
+    @abstractmethod
+    def build_response_resolver(self, key: K) -> ResponseResolver[V]:
         ...
 
 
@@ -192,8 +215,15 @@ class QueryParameter(
     def build_consumer(self, key: str, value: Sequence[str]) -> RequestConsumer:
         return QueryConsumer(key, value).consume_request
 
-    def build_resolver(self, key: str) -> Resolver[Optional[Sequence[str]]]:
-        return QueryResolver(key)
+    def build_request_resolver(
+        self, key: str
+    ) -> RequestResolver[Optional[Sequence[str]]]:
+        return QueryResolver(key).resolve_request
+
+    def build_response_resolver(
+        self, key: str
+    ) -> ResponseResolver[Optional[Sequence[str]]]:
+        return QueryResolver(key).resolve_response
 
 
 @dataclass(unsafe_hash=True)
@@ -215,8 +245,15 @@ class HeaderParameter(
     def build_consumer(self, key: str, value: Sequence[str]) -> RequestConsumer:
         return HeaderConsumer(key, value).consume_request
 
-    def build_resolver(self, key: str) -> Resolver[Optional[Sequence[str]]]:
-        return HeaderResolver(key)
+    def build_request_resolver(
+        self, key: str
+    ) -> RequestResolver[Optional[Sequence[str]]]:
+        return HeaderResolver(key).resolve_request
+
+    def build_response_resolver(
+        self, key: str
+    ) -> ResponseResolver[Optional[Sequence[str]]]:
+        return HeaderResolver(key).resolve_response
 
 
 class CookieParameter(
@@ -228,8 +265,11 @@ class CookieParameter(
     def build_consumer(self, key: str, value: str) -> RequestConsumer:
         return CookieConsumer(key, value).consume_request
 
-    def build_resolver(self, key: str) -> Resolver[Optional[str]]:
-        return CookieResolver(key)
+    def build_request_resolver(self, key: str) -> RequestResolver[Optional[str]]:
+        return CookieResolver(key).resolve_request
+
+    def build_response_resolver(self, key: str) -> ResponseResolver[Optional[str]]:
+        return CookieResolver(key).resolve_response
 
 
 class PathParameter(ComposableSingletonStringParameter):
@@ -246,8 +286,11 @@ class QueriesParameter(Parameter):
 
         QueriesConsumer(params).consume_request(request)
 
-    def resolve(self, response: Response, /) -> QueryParams:
-        return QueriesResolver()(response)
+    def resolve_request(self, request: PreRequest, /) -> QueryParams:
+        return QueriesResolver().resolve_request(request)
+
+    def resolve_response(self, response: Response, /) -> QueryParams:
+        return QueriesResolver().resolve_response(response)
 
 
 class HeadersParameter(Parameter):
@@ -256,8 +299,11 @@ class HeadersParameter(Parameter):
 
         HeadersConsumer(headers).consume_request(request)
 
-    def resolve(self, response: Response, /) -> Headers:
-        return HeadersResolver()(response)
+    def resolve_request(self, request: PreRequest, /) -> Headers:
+        return HeadersResolver().resolve_request(request)
+
+    def resolve_response(self, response: Response, /) -> Headers:
+        return HeadersResolver().resolve_response(response)
 
 
 class CookiesParameter(Parameter):
@@ -266,8 +312,11 @@ class CookiesParameter(Parameter):
 
         CookiesConsumer(cookies).consume_request(request)
 
-    def resolve(self, response: Response, /) -> Cookies:
-        return CookiesResolver()(response)
+    def resolve_request(self, request: PreRequest, /) -> Cookies:
+        return CookiesResolver().resolve_request(request)
+
+    def resolve_response(self, response: Response, /) -> Cookies:
+        return CookiesResolver().resolve_response(response)
 
 
 class PathsParameter(Parameter):
@@ -306,27 +355,33 @@ class BodyParameter(Parameter):
             else:
                 request.json.update(json_value)
 
-    def resolve(self, response: Response, /) -> Any:
+    def resolve_response(self, response: Response, /) -> Any:
         return BodyResolver()(response)
 
 
 class URLParameter(Parameter):
-    def resolve(self, response: Response, /) -> httpx.URL:
+    def resolve_request(self, request: PreRequest, /) -> httpx.URL:
+        return request.url
+
+    def resolve_response(self, response: Response, /) -> httpx.URL:
         return response.request.url
 
 
 class ResponseParameter(Parameter):
-    def resolve(self, response: Response, /) -> Response:
+    def resolve_response(self, response: Response, /) -> Response:
         return response
 
 
 class RequestParameter(Parameter):
-    def resolve(self, response: Response, /) -> httpx.Request:
+    def resolve_response(self, response: Response, /) -> httpx.Request:
         return response.request
+
+    def resolve_request(self, request: PreRequest, /) -> PreRequest:
+        return request
 
 
 class StatusCodeParameter(Parameter):
-    def resolve(self, response: Response, /) -> int:
+    def resolve_response(self, response: Response, /) -> int:
         return response.status_code
 
 
@@ -342,5 +397,8 @@ class StateParameter(
     def build_consumer(self, key: str, value: Any) -> RequestConsumer:
         return StateConsumer(key, value).consume_request
 
-    def build_resolver(self, key: str) -> Resolver[Any]:
-        return StateResolver(key)
+    def build_request_resolver(self, key: str) -> RequestResolver[Any]:
+        return StateResolver(key).resolve_request
+
+    def build_response_resolver(self, key: str) -> ResponseResolver[Any]:
+        return StateResolver(key).resolve_response

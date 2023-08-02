@@ -9,7 +9,8 @@ from neoclient import Cookie
 from neoclient.dependence import DependencyParameter, DependencyResolver, get_fields
 from neoclient.enums import HTTPMethod
 from neoclient.errors import ResolutionError
-from neoclient.models import Request, Response
+from neoclient.models import PreRequest, Request, Response
+from neoclient.param_functions import Req
 from neoclient.params import (
     BodyParameter,
     CookieParameter,
@@ -30,7 +31,7 @@ def test_get_fields() -> None:
     }
 
 
-def test_dependency_resolver_() -> None:
+def test_DependencyResolver_resolve_response() -> None:
     def dependency(response: Response, /) -> Response:
         return response
 
@@ -38,10 +39,19 @@ def test_dependency_resolver_() -> None:
         HTTPStatus.OK, request=Request(HTTPMethod.GET, "https://foo.com/")
     )
 
-    assert DependencyResolver(dependency)(response) == response
+    assert DependencyResolver(dependency).resolve_response(response) == response
 
 
-def test_dependency_parameter_resolve() -> None:
+def test_DependencyResolver_resolve_request() -> None:
+    def dependency(request=Req()) -> PreRequest:
+        return request
+
+    request: PreRequest = PreRequest(HTTPMethod.GET, "https://foo.com/")
+
+    assert DependencyResolver(dependency).resolve_request(request) == request
+
+
+def test_DependencyParameter_resolve() -> None:
     def dependency(response: Response, /) -> Response:
         return response
 
@@ -56,13 +66,13 @@ def test_dependency_parameter_resolve() -> None:
         dependency=None
     )
 
-    assert dependency_parameter_with_dependency.resolve(response) == response
+    assert dependency_parameter_with_dependency.resolve_response(response) == response
 
     with pytest.raises(ResolutionError):
-        dependency_parameter_without_dependency.resolve(response)
+        dependency_parameter_without_dependency.resolve_response(response)
 
 
-def test_dependency_parameter_prepare() -> None:
+def test_DependencyParameter_prepare() -> None:
     def some_dependency(response: Response, /) -> Response:
         return response
 

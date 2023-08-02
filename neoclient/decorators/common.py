@@ -34,6 +34,7 @@ __all__: Sequence[str] = (
     "accept",
     "cookie",
     "cookies",
+    "depends",
     "header",
     "headers",
     "middleware",
@@ -56,6 +57,27 @@ def accept(*content_types: str) -> CommonDecorator:
             ",".join(content_types),
         )
     )
+
+
+def depends(*dependencies: Callable[..., Any]) -> CommonDecorator:
+    def decorate(target: T, /) -> T:
+        if isinstance(target, type):
+            if not issubclass(target, Service):
+                raise CompositionError(f"Target class is not a subclass of {Service}")
+
+            client_specification: ClientSpecification = target._spec
+
+            client_specification.dependencies.extend(dependencies)
+        elif callable(target):
+            operation: Operation = get_operation(target)
+
+            operation.dependencies.extend(dependencies)
+        else:
+            raise CompositionError(f"Target of unsupported type {type(target)}")
+
+        return target
+
+    return decorate
 
 
 def cookie(key: str, value: CookieTypes) -> CommonDecorator:

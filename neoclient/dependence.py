@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import (
     Any,
     Callable,
+    Generic,
     Mapping,
     MutableMapping,
     Optional,
@@ -12,6 +13,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
 )
 
 import httpx
@@ -21,7 +23,7 @@ from pydantic.fields import FieldInfo, ModelField
 
 from . import api, utils
 from .errors import PreparationError, ResolutionError
-from .models import Request, Response
+from .models import PreRequest, Request, Response
 from .params import (
     BodyParameter,
     CookiesParameter,
@@ -34,7 +36,7 @@ from .params import (
     ResponseParameter,
     URLParameter,
 )
-from .typing import Resolver
+from .typing import ResponseResolver
 from .validation import ValidatedFunction
 
 T = TypeVar("T")
@@ -46,6 +48,7 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
         arbitrary_types_allowed: bool = True
 
     httpx_lookup: Mapping[Type[Any], Type[Parameter]] = {
+        PreRequest: RequestParameter,
         Request: RequestParameter,
         Response: ResponseParameter,
         httpx.Request: RequestParameter,
@@ -102,12 +105,30 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
 
 
 @dataclass
-class DependencyResolver(Resolver[T]):
+class DependencyResolver(Generic[T]):
     dependency: Callable[..., T]
 
-    def __call__(
+    def resolve_request(
+        self,
+        request: PreRequest,
+        /,
+        *,
+        cache: Optional[MutableMapping[Parameter, Any]] = None,
+    ) -> T:
+        return self.resolve(request, cache=cache)
+
+    def resolve_response(
         self,
         response: Response,
+        /,
+        *,
+        cache: Optional[MutableMapping[Parameter, Any]] = None,
+    ) -> T:
+        return self.resolve(response, cache=cache)
+
+    def resolve(
+        self,
+        request_or_response: Union[PreRequest, Response],
         /,
         *,
         cache: Optional[MutableMapping[Parameter, Any]] = None,
@@ -133,14 +154,23 @@ class DependencyResolver(Resolver[T]):
                 cache_parameter: bool = True
 
                 if isinstance(parameter, DependencyParameter):
-                    resolution = parameter.resolve(
-                        response,
-                        cache=cache,
-                    )
+                    if isinstance(request_or_response, PreRequest):
+                        resolution = parameter.resolve_request(
+                            request_or_response,
+                            cache=cache,
+                        )
+                    else:
+                        resolution = parameter.resolve_response(
+                            request_or_response,
+                            cache=cache,
+                        )
 
                     cache_parameter = parameter.use_cache
                 else:
-                    resolution = parameter.resolve(response)
+                    if isinstance(request_or_response, PreRequest):
+                        resolution = parameter.resolve_request(request_or_response)
+                    else:
+                        resolution = parameter.resolve_response(request_or_response)
 
                 # If the parameter has a resolution function that is backed to
                 # a multi-value mapping (and will yield a sequence of values),
@@ -192,7 +222,21 @@ class DependencyParameter(Parameter):
     dependency: Optional[Callable] = None
     use_cache: bool = True
 
-    def resolve(
+    def resolve_request(
+        self,
+        request: PreRequest,
+        /,
+        *,
+        cache: Optional[MutableMapping[Parameter, Any]] = None,
+    ) -> Any:
+        if self.dependency is None:
+            raise ResolutionError(
+                f"Cannot resolve parameter {type(self)!r} without a dependency"
+            )
+
+        return DependencyResolver(self.dependency).resolve_request(request, cache=cache)
+
+    def resolve_response(
         self,
         response: Response,
         /,
@@ -204,7 +248,9 @@ class DependencyParameter(Parameter):
                 f"Cannot resolve parameter {type(self)!r} without a dependency"
             )
 
-        return DependencyResolver(self.dependency)(response, cache=cache)
+        return DependencyResolver(self.dependency).resolve_response(
+            response, cache=cache
+        )
 
     def prepare(self, field: ModelField, /) -> None:
         if self.dependency is not None:

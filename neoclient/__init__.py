@@ -22,6 +22,7 @@ from .decorators import (
     cookie,
     cookies,
     data,
+    depends,
     files,
     header,
     headers,

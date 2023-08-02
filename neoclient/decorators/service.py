@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional, Sequence, Type, TypeVar
 from httpx import URL
 from mediate.protocols import MiddlewareCallable, MiddlewareMethod
 
-from ..annotations import service_middleware, service_response
+from ..annotations import service_depends, service_middleware, service_response
 from ..models import Request, Response
 from ..service import Service
 from ..typing import Decorator
@@ -23,6 +23,7 @@ class ServiceDecorator(Decorator[S]):
     base_url: Optional[str] = None
     middlewares: Optional[Sequence[MiddlewareCallable[Request, Response]]] = None
     default_response: Optional[Callable[..., Any]] = None
+    dependencies: Optional[Sequence[Callable[..., Any]]] = None
 
     def __init__(
         self,
@@ -30,10 +31,12 @@ class ServiceDecorator(Decorator[S]):
         *,
         middleware: Optional[Sequence[MiddlewareCallable[Request, Response]]] = None,
         default_response: Optional[Callable[..., Any]] = None,
+        dependencies: Optional[Sequence[Callable[..., Any]]] = None,
     ) -> None:
         self.base_url = base_url
         self.middlewares = middleware
         self.default_response = default_response
+        self.dependencies = dependencies
 
     def __call__(self, target: S, /) -> S:
         if self.base_url is not None:
@@ -42,6 +45,8 @@ class ServiceDecorator(Decorator[S]):
             target._spec.middleware.add_all(self.middlewares)
         if self.default_response is not None:
             target._spec.default_response = self.default_response
+        if self.dependencies is not None:
+            target._spec.dependencies.extend(self.dependencies)
 
         return target
 
@@ -52,6 +57,10 @@ class ServiceDecorator(Decorator[S]):
     @staticmethod
     def response(response: C, /) -> C:
         return service_response(response)
+
+    @staticmethod
+    def depends(dependency: C, /) -> C:
+        return service_depends(dependency)
 
 
 service: Type[ServiceDecorator] = ServiceDecorator

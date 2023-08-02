@@ -1,6 +1,6 @@
 from dataclasses import replace
 from io import BytesIO
-from typing import Callable, Type
+from typing import Any, Callable, Type
 
 from httpx import Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
@@ -233,6 +233,22 @@ def test_middleware(func: Callable) -> None:
     assert get_operation(func).middleware.record == [
         middleware_foo,
         middleware_bar,
+    ]
+
+
+def test_depends(func: Callable[..., Any]) -> None:
+    def dependency_a() -> None:
+        pass
+
+    def dependency_b() -> None:
+        pass
+
+    decorators.depends(dependency_a)(func)
+    decorators.depends(dependency_b)(func)
+
+    assert get_operation(func).dependencies == [
+        dependency_a,
+        dependency_b,
     ]
 
 

@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Dict, MutableSequence, Optional, Sequence, Tuple, Type
 
 from annotate.utils import has_annotation
 from mediate.protocols import MiddlewareCallable
@@ -27,10 +27,15 @@ class ServiceMeta(type):
                 for _, member in inspect.getmembers(self)
                 if has_annotation(member, Entity.MIDDLEWARE)
             ]
-            service_responses: Sequence[Callable] = [
+            service_responses: Sequence[Callable[..., Any]] = [
                 member
                 for _, member in inspect.getmembers(self)
                 if has_annotation(member, Entity.RESPONSE)
+            ]
+            service_dependencies: Sequence[Callable[..., Any]] = [
+                member
+                for _, member in inspect.getmembers(self)
+                if has_annotation(member, Entity.DEPENDENCY)
             ]
 
             if len(service_responses) > 1:
@@ -50,10 +55,16 @@ class ServiceMeta(type):
             if service_responses:
                 response = service_responses[0]
 
+            dependencies: MutableSequence[Callable[..., Any]] = []
+
+            dependencies.extend(self._spec.dependencies)
+            dependencies.extend(service_dependencies)
+
             self._client = Client(
                 client=self._spec.options.build(),
                 middleware=middleware,
                 default_response=response,
+                dependencies=dependencies,
             )
 
             for member_name, member in inspect.getmembers(self):

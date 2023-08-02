@@ -2,8 +2,15 @@ import datetime
 from http import HTTPStatus
 from typing import Any, Dict, List, Mapping, MutableSequence, Sequence, Tuple
 
-from httpx import Cookies, Headers, QueryParams, Request, Response, SyncByteStream
-from httpx import ByteStream
+from httpx import (
+    ByteStream,
+    Cookies,
+    Headers,
+    QueryParams,
+    Request,
+    Response,
+    SyncByteStream,
+)
 
 from neoclient import dependencies
 from neoclient.enums import HTTPMethod

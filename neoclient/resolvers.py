@@ -3,8 +3,8 @@ from typing import Any, Optional, Sequence, TypeVar
 
 from httpx import Cookies, Headers, QueryParams
 
-from .models import Response
-from .typing import Resolver
+from .models import PreRequest, Response, State
+from .typing import ResponseResolver
 
 __all__: Sequence[str] = (
     "BodyResolver",
@@ -21,25 +21,33 @@ T = TypeVar("T")
 
 
 @dataclass
-class QueryResolver(Resolver[Optional[Sequence[str]]]):
+class QueryResolver:
     name: str
 
-    def __call__(self, response: Response, /) -> Optional[Sequence[str]]:
-        params: QueryParams = response.request.url.params
+    def resolve_request(self, request: PreRequest, /) -> Optional[Sequence[str]]:
+        return self.resolve(request.params)
 
-        if self.name in params:
-            return params.get_list(self.name)
+    def resolve_response(self, response: Response, /) -> Optional[Sequence[str]]:
+        return self.resolve(response.request.url.params)
+
+    def resolve(self, query_params: QueryParams, /) -> Optional[Sequence[str]]:
+        if self.name in query_params:
+            return query_params.get_list(self.name)
 
         return None
 
 
 @dataclass
-class HeaderResolver(Resolver[Optional[Sequence[str]]]):
+class HeaderResolver:
     name: str
 
-    def __call__(self, response: Response, /) -> Optional[Sequence[str]]:
-        headers: Headers = response.headers
+    def resolve_request(self, request: PreRequest, /) -> Optional[Sequence[str]]:
+        return self.resolve(request.headers)
 
+    def resolve_response(self, response: Response, /) -> Optional[Sequence[str]]:
+        return self.resolve(response.headers)
+
+    def resolve(self, headers: Headers, /) -> Optional[Sequence[str]]:
         if self.name in headers:
             return headers.get_list(self.name)
 
@@ -47,40 +55,64 @@ class HeaderResolver(Resolver[Optional[Sequence[str]]]):
 
 
 @dataclass
-class CookieResolver(Resolver[Optional[str]]):
+class CookieResolver:
     name: str
 
-    def __call__(self, response: Response, /) -> Optional[str]:
-        return response.cookies.get(self.name)
+    def resolve_request(self, request: PreRequest, /) -> Optional[str]:
+        return self.resolve(request.cookies)
+
+    def resolve_response(self, response: Response, /) -> Optional[str]:
+        return self.resolve(response.cookies)
+
+    def resolve(self, cookies: Cookies, /) -> Optional[str]:
+        return cookies.get(self.name)
 
 
-class QueriesResolver(Resolver[QueryParams]):
+class QueriesResolver:
     @staticmethod
-    def __call__(response: Response, /) -> QueryParams:
+    def resolve_request(request: PreRequest, /) -> QueryParams:
+        return request.params
+
+    @staticmethod
+    def resolve_response(response: Response, /) -> QueryParams:
         return response.request.url.params
 
 
-class HeadersResolver(Resolver[Headers]):
+class HeadersResolver:
     @staticmethod
-    def __call__(response: Response, /) -> Headers:
+    def resolve_request(request: PreRequest, /) -> Headers:
+        return request.headers
+
+    @staticmethod
+    def resolve_response(response: Response, /) -> Headers:
         return response.headers
 
 
-class CookiesResolver(Resolver[Cookies]):
+class CookiesResolver:
     @staticmethod
-    def __call__(response: Response, /) -> Cookies:
+    def resolve_request(request: PreRequest, /) -> Cookies:
+        return request.cookies
+
+    @staticmethod
+    def resolve_response(response: Response, /) -> Cookies:
         return response.cookies
 
 
-class BodyResolver(Resolver[Any]):
+class BodyResolver(ResponseResolver[Any]):
     @staticmethod
     def __call__(response: Response, /) -> Any:
         return response.json()
 
 
 @dataclass
-class StateResolver(Resolver[Any]):
+class StateResolver:
     key: str
 
-    def __call__(self, response: Response, /) -> Any:
-        return response.state.get(self.key)
+    def resolve_request(self, request: PreRequest, /) -> Any:
+        return self.resolve(request.state)
+
+    def resolve_response(self, response: Response, /) -> Any:
+        return self.resolve(response.state)
+
+    def resolve(self, state: State, /) -> Any:
+        return state.get(self.key)

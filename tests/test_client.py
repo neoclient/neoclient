@@ -8,7 +8,7 @@ from neoclient import Body, NeoClient, Queries, Query
 from neoclient.methods import request
 from neoclient.middleware import RequestMiddleware
 from neoclient.models import PreRequest, Request, Response
-from neoclient.operation import get_operation
+from neoclient.operation import Operation, get_operation
 
 
 class Model(BaseModel):
@@ -34,15 +34,31 @@ def test_bind(client: NeoClient) -> None:
     endpoint: str = "/endpoint"
 
     def response() -> None:
-        return None
+        pass
+
+    def middleware(call_next, request):
+        pass
+
+    def dependency() -> None:
+        pass
 
     @request(method, endpoint, response=response)
     def foo():
         ...
 
+    unbound_operation: Operation = get_operation(foo)
+
+    unbound_operation.middleware.add(middleware)
+    unbound_operation.dependencies.append(dependency)
+
     bound_foo: Callable = client.bind(foo)
 
-    assert get_operation(bound_foo).client == client.client
+    bound_operation: Operation = get_operation(bound_foo)
+
+    assert bound_operation.func != foo
+    assert bound_operation.client == client.client
+    assert bound_operation.middleware.record == [middleware]
+    assert bound_operation.response == response
 
 
 def test_request(client: NeoClient) -> None:
@@ -180,3 +196,17 @@ def test_client_middleware(client: NeoClient) -> None:
 
     assert response.request.headers.get("name") == "sam"
     assert response.headers.get("food") == "pizza"
+
+
+def test_client_dependencies(client: NeoClient) -> None:
+    @client.depends
+    def some_dependency(headers=Headers()) -> None:
+        headers["name"] = "sam"
+
+    assert client.dependencies == [some_dependency]
+
+    @client.get("/foo")
+    def foo():
+        ...
+
+    assert get_operation(foo).dependencies == [some_dependency]

@@ -2,7 +2,7 @@ import functools
 import inspect
 from dataclasses import dataclass, field
 from json import JSONDecodeError
-from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
+from typing import Any, Callable, Generic, MutableSequence, Optional, Sequence, TypeVar
 
 import httpx
 import pydantic
@@ -14,7 +14,7 @@ from .composition import compose
 from .errors import NotAnOperationError
 from .middleware import Middleware
 from .models import ClientOptions, PreRequest, Request, Response
-from .resolution import resolve
+from .resolution import resolve_request, resolve_response
 
 __all__: Sequence[str] = (
     "set_operation",
@@ -47,20 +47,14 @@ def get_operation(func: Callable, /) -> "Operation":
 
 
 @dataclass
-class OperationSpecification:
-    request: PreRequest
-    response: Optional[Callable[..., Any]] = None
-    middleware: Middleware = field(default_factory=Middleware)
-
-
-@dataclass
 class Operation(Generic[PS, RT_co]):
     func: Callable[PS, RT_co]
     client_options: ClientOptions
     request_options: PreRequest
     client: Optional[Client] = None
-    middleware: Middleware = field(default_factory=Middleware)
     response: Optional[Callable[..., Any]] = None
+    middleware: Middleware = field(default_factory=Middleware)
+    dependencies: MutableSequence[Callable[..., Any]] = field(default_factory=list)
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
         client: Client
@@ -78,6 +72,11 @@ class Operation(Generic[PS, RT_co]):
 
         # Compose the request using the provided arguments
         compose(self.func, pre_request, args, kwargs)
+
+        # Compose the request using each of the composition dependencies
+        dependency: Callable[..., None]
+        for dependency in self.dependencies:
+            resolve_request(dependency, pre_request)
 
         request: Request = pre_request.build_request(client)
 
@@ -97,7 +96,7 @@ class Operation(Generic[PS, RT_co]):
         response: Response = send_request(request)
 
         if self.response is not None:
-            return resolve(self.response, response)
+            return resolve_response(self.response, response)
 
         if return_annotation is inspect.Parameter.empty:
             try:

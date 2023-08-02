@@ -8,7 +8,7 @@ __all__: Sequence[str] = (
     "ClientConsumer",
     "Composer",
     "RequestConsumer",
-    "Resolver",
+    "ResponseResolver",
     "Supplier",
     "SupportsClientConsumer",
     "SupportsRequestConsumer",
@@ -35,9 +35,22 @@ class Supplier(Protocol[T_co]):
         ...
 
 
-class Resolver(Protocol[T_co]):
-    def __call__(self, response: Response, /) -> T_co:
+class Consumer(Protocol[T_contra]):
+    def __call__(self, t: T_contra, /) -> None:
         ...
+
+
+class Function(Protocol[T_contra, R_co]):
+    def __call__(self, t: T_contra, /) -> R_co:
+        ...
+
+
+class ResponseResolver(Function[Response, T_co], Protocol[T_co]):
+    pass
+
+
+class RequestResolver(Function[PreRequest, T_co], Protocol[T_co]):
+    pass
 
 
 class Composer(Protocol):
@@ -45,9 +58,8 @@ class Composer(Protocol):
         ...
 
 
-class RequestConsumer(Protocol):
-    def __call__(self, request: PreRequest, /) -> None:
-        ...
+class RequestConsumer(Consumer[PreRequest], Protocol):
+    pass
 
 
 @runtime_checkable
@@ -56,9 +68,8 @@ class SupportsRequestConsumer(Protocol):
         ...
 
 
-class ClientConsumer(Protocol):
-    def __call__(self, client: ClientOptions, /) -> None:
-        ...
+class ClientConsumer(Consumer[ClientOptions], Protocol):
+    pass
 
 
 @runtime_checkable
