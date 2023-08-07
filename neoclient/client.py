@@ -13,7 +13,7 @@ from typing import (
 )
 
 import httpx
-from httpx import URL, BaseTransport, Cookies, Headers, Limits, QueryParams, Timeout
+from httpx import URL, BaseTransport, Cookies, Headers, Limits, Timeout
 from httpx._auth import Auth
 from mediate.protocols import MiddlewareCallable
 from roster import Record
@@ -38,7 +38,7 @@ from .defaults import (
 )
 from .enums import HTTPHeader, HTTPMethod
 from .middleware import Middleware
-from .models import ClientOptions, PreRequest, Request, Response
+from .models import ClientOptions, PreRequest, Request, Response, QueryParams
 from .operation import Operation, get_operation
 from .types import (
     AuthTypes,
@@ -111,8 +111,13 @@ class Session(httpx.Client):
         trust_env: bool = DEFAULT_TRUST_ENV,
         default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
     ) -> None:
+        # params = (
+        #     converters.convert_query_params(params)
+        #     if params is not None
+        #     else QueryParams()
+        # )
         params = (
-            converters.convert_query_params(params)
+            QueryParams(params)
             if params is not None
             else QueryParams()
         )

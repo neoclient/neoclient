@@ -14,7 +14,7 @@ from typing import (
 )
 
 import httpx
-from httpx import URL, BaseTransport, Cookies, Headers, Limits, QueryParams, Timeout
+from httpx import URL, BaseTransport, Cookies, Headers, Limits, Timeout
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 
 from . import converters, utils
@@ -58,6 +58,16 @@ __all__: Sequence[str] = (
     "Response",
     "PreRequest",
 )
+
+
+class QueryParams(httpx.QueryParams):
+    pass
+    # def __init__(self, arg: Optional[QueriesTypes] = None, /, **kwargs: Any) -> None:
+    #     assert not (arg is not None and kwargs), "Cannot mix named and unnamed arguments."
+
+    #     value: QueriesTypes = arg if arg is not None else kwargs
+
+    #     super().__init__(value)
 
 
 class State:
@@ -294,11 +304,12 @@ class ClientOptions:
         default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
     ) -> None:
         self.auth = auth
-        self.params = (
-            converters.convert_query_params(params)
-            if params is not None
-            else QueryParams()
-        )
+        # self.params = (
+        #     converters.convert_query_params(params)
+        #     if params is not None
+        #     else QueryParams()
+        # )
+        self.params = QueryParams(params) if params is not None else QueryParams()
         self.headers = (
             converters.convert_headers(headers) if headers is not None else Headers()
         )
@@ -384,11 +395,12 @@ class PreRequest:
     ) -> None:
         self.method = method if isinstance(method, str) else method.decode()
         self.url = URL(url)
-        self.params = (
-            converters.convert_query_params(params)
-            if params is not None
-            else QueryParams()
-        )
+        # self.params = (
+        #     converters.convert_query_params(params)
+        #     if params is not None
+        #     else QueryParams()
+        # )
+        self.params = QueryParams(params) if params is not None else QueryParams()
         self.headers = (
             converters.convert_headers(headers) if headers is not None else Headers()
         )

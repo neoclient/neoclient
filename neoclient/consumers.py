@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence, Tuple
 
-from httpx import URL, Cookies, Headers, QueryParams, Timeout
+import httpx
+from httpx import URL, Cookies, Headers, Timeout
 
 from . import converters
 from .models import ClientOptions, PreRequest
