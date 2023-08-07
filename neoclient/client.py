@@ -127,6 +127,7 @@ class Session(httpx.Client):
         )
         base_url = URL(base_url)
 
+        # Set a default User-Agent header
         headers.setdefault(HTTPHeader.USER_AGENT, USER_AGENT)
 
         super().__init__(
