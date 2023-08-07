@@ -52,6 +52,12 @@ from .types import (
 )
 
 __all__: Sequence[str] = (
+    # httpx models
+    "Cookies",
+    "Headers",
+    "QueryParams",
+    "URL",
+    # neoclient models
     "State",
     "ClientOptions",
     "Request",
