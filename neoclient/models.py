@@ -335,10 +335,15 @@ class ClientOptions:
         self.default_encoding = default_encoding
 
     def build(self) -> httpx.Client:
-        client: httpx.Client = httpx.Client(
+        headers: Headers = Headers(self.headers)
+
+        # Set a default User-Agent header
+        headers.setdefault(HTTPHeader.USER_AGENT, USER_AGENT)
+
+        return httpx.Client(
             auth=self.auth,
             params=self.params,
-            headers=self.headers,
+            headers=headers,
             cookies=self.cookies,
             verify=self.verify,
             cert=self.cert,
@@ -357,11 +362,6 @@ class ClientOptions:
             trust_env=self.trust_env,
             default_encoding=self.default_encoding,
         )
-
-        # Set a default User-Agent header
-        client.headers.setdefault(HTTPHeader.USER_AGENT, USER_AGENT)
-
-        return client
 
 
 @dataclass(init=False)
