@@ -18,6 +18,7 @@ from httpx import URL, BaseTransport, Cookies, Headers, Limits, QueryParams, Tim
 from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 
 from . import converters, utils
+from .constants import USER_AGENT
 from .defaults import (
     DEFAULT_BASE_URL,
     DEFAULT_ENCODING,
@@ -25,6 +26,7 @@ from .defaults import (
     DEFAULT_LIMITS,
     DEFAULT_TRUST_ENV,
 )
+from .enums import HTTPHeader
 from .errors import IncompatiblePathParameters, MissingStateError
 from .types import (
     AsyncByteStream,
@@ -333,7 +335,7 @@ class ClientOptions:
         self.default_encoding = default_encoding
 
     def build(self) -> httpx.Client:
-        return httpx.Client(
+        client: httpx.Client = httpx.Client(
             auth=self.auth,
             params=self.params,
             headers=self.headers,
@@ -355,6 +357,11 @@ class ClientOptions:
             trust_env=self.trust_env,
             default_encoding=self.default_encoding,
         )
+
+        # Set a default User-Agent header
+        client.headers.setdefault(HTTPHeader.USER_AGENT, USER_AGENT)
+
+        return client
 
 
 @dataclass(init=False)
