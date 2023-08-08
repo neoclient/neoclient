@@ -174,8 +174,12 @@ class Client:
         self.client = client
         self.middleware = middleware if middleware is not None else Middleware()
         self.default_response = default_response
-        self.request_dependencies = [*request_dependencies] if request_dependencies is not None else []
-        self.response_dependencies = [*response_dependencies] if response_dependencies is not None else []
+        self.request_dependencies = (
+            [*request_dependencies] if request_dependencies is not None else []
+        )
+        self.response_dependencies = (
+            [*response_dependencies] if response_dependencies is not None else []
+        )
 
     def bind(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
         operation: Operation = get_operation(func)
@@ -370,6 +374,10 @@ class NeoClient(Client):
                 else Middleware()
             ),
             default_response=default_response,
-            request_dependencies=(request_dependencies if request_dependencies is not None else []),
-            response_dependencies=(response_dependencies if response_dependencies is not None else []),
+            request_dependencies=(
+                request_dependencies if request_dependencies is not None else []
+            ),
+            response_dependencies=(
+                response_dependencies if response_dependencies is not None else []
+            ),
         )
