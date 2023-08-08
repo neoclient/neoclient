@@ -15,6 +15,7 @@ from .errors import NotAnOperationError
 from .middleware import Middleware
 from .models import ClientOptions, PreRequest, Request, Response
 from .resolution import resolve_request, resolve_response
+from .typing import Dependency
 
 __all__: Sequence[str] = (
     "set_operation",
@@ -52,9 +53,10 @@ class Operation(Generic[PS, RT_co]):
     client_options: ClientOptions
     request_options: PreRequest
     client: Optional[Client] = None
-    response: Optional[Callable[..., Any]] = None
+    response: Optional[Dependency] = None
     middleware: Middleware = field(default_factory=Middleware)
-    dependencies: MutableSequence[Callable[..., Any]] = field(default_factory=list)
+    request_dependencies: MutableSequence[Dependency] = field(default_factory=list)
+    response_dependencies: MutableSequence[Dependency] = field(default_factory=list)
 
     def __call__(self, *args: PS.args, **kwargs: PS.kwargs) -> Any:
         client: Client
@@ -74,9 +76,9 @@ class Operation(Generic[PS, RT_co]):
         compose(self.func, pre_request, args, kwargs)
 
         # Compose the request using each of the composition dependencies
-        dependency: Callable[..., None]
-        for dependency in self.dependencies:
-            resolve_request(dependency, pre_request)
+        request_dependency: Dependency
+        for request_dependency in self.request_dependencies:
+            resolve_request(request_dependency, pre_request)
 
         request: Request = pre_request.build_request(client)
 
@@ -94,6 +96,11 @@ class Operation(Generic[PS, RT_co]):
             return Response.from_httpx_response(httpx_response)
 
         response: Response = send_request(request)
+
+        # Feed the response through each of the response dependencies
+        response_dependency: Dependency
+        for response_dependency in self.response_dependencies:
+            resolve_response(response_dependency, response)
 
         if self.response is not None:
             return resolve_response(self.response, response)

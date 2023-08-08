@@ -22,7 +22,6 @@ from .decorators import (
     cookie,
     cookies,
     data,
-    depends,
     files,
     header,
     headers,
@@ -40,7 +39,7 @@ from .decorators import (
     user_agent,
     verify,
 )
-from .methods import delete, get, head, options, patch, post, put, request
+from .decorators.request import delete, get, head, options, patch, post, put, request
 from .models import Request, Response
 from .param_functions import (
     URL,

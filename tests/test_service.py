@@ -4,7 +4,7 @@ import pytest
 
 from neoclient import get, middleware, service
 from neoclient.client import Client
-from neoclient.decorators import depends
+from neoclient.decorators import request
 from neoclient.models import ClientOptions
 from neoclient.operation import Operation, get_operation
 from neoclient.service import Service
@@ -19,7 +19,7 @@ def some_dependency():
 
 
 class SomeService(Service):
-    @depends(some_dependency)
+    @request.depends(some_dependency)
     @middleware(some_middleware)
     @get("/foo")
     def foo(self):

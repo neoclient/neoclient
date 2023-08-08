@@ -3,17 +3,18 @@ from .common import (
     accept,
     cookie,
     cookies,
-    depends,
     header,
     headers,
     middleware,
     query,
     query_params,
     referer,
-    response,
+    request_depends,
     timeout,
     user_agent,
     verify,
 )
 from .operation import content, data, files, json, mount, path, path_params
+from .request import delete, get, head, options, patch, post, put, request
+from .response import response
 from .service import service

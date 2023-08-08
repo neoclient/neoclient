@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
-from typing import Any, Callable, MutableSequence, Optional, Sequence
+from typing import MutableSequence, Optional, Sequence
 
 from .middleware import Middleware
 from .models import ClientOptions
+from .typing import Dependency
 
 __all__: Sequence[str] = ("ClientSpecification",)
 
@@ -11,5 +12,6 @@ __all__: Sequence[str] = ("ClientSpecification",)
 class ClientSpecification:
     options: ClientOptions = field(default_factory=ClientOptions)
     middleware: Middleware = field(default_factory=Middleware)
-    default_response: Optional[Callable[..., Any]] = None
-    dependencies: MutableSequence[Callable[..., Any]] = field(default_factory=list)
+    default_response: Optional[Dependency] = None
+    request_dependencies: MutableSequence[Dependency] = field(default_factory=list)
+    response_dependencies: MutableSequence[Dependency] = field(default_factory=list)

@@ -12,4 +12,4 @@ __all__: Sequence[str] = (
 
 service_middleware: Annotation = Annotation(Entity.MIDDLEWARE)
 service_response: Annotation = Annotation(Entity.RESPONSE)
-service_depends: Annotation = Annotation(Entity.DEPENDENCY)
+service_depends: Annotation = Annotation(Entity.REQUEST_DEPENDENCY)

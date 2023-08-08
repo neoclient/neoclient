@@ -1,4 +1,4 @@
-from typing import Any, Callable, Sequence, Type, Union
+from typing import Any, Callable, Sequence, Type, TypeVar, Union
 
 from mediate.protocols import MiddlewareCallable
 from typing_extensions import TypeAlias
@@ -28,26 +28,28 @@ from ..types import (
     TimeoutTypes,
     VerifyTypes,
 )
-from .api import ConsumerDecorator, Decorator, T
+from .api import ConsumerDecorator, T
 
 __all__: Sequence[str] = (
     "accept",
     "cookie",
     "cookies",
-    "depends",
+    "request_depends",
+    "response_depends",
     "header",
     "headers",
     "middleware",
     "query",
     "query_params",
     "referer",
-    "response",
     "timeout",
     "user_agent",
     "verify",
 )
 
-CommonDecorator: TypeAlias = Decorator[Union[Callable, Type[Service]]]
+TT = TypeVar("TT", Callable, Type[Service])
+
+CommonDecorator: TypeAlias = Callable[[TT], TT]
 
 
 def accept(*content_types: str) -> CommonDecorator:
@@ -59,7 +61,7 @@ def accept(*content_types: str) -> CommonDecorator:
     )
 
 
-def depends(*dependencies: Callable[..., Any]) -> CommonDecorator:
+def request_depends(*dependencies: Callable[..., Any]) -> CommonDecorator:
     def decorate(target: T, /) -> T:
         if isinstance(target, type):
             if not issubclass(target, Service):
@@ -67,11 +69,32 @@ def depends(*dependencies: Callable[..., Any]) -> CommonDecorator:
 
             client_specification: ClientSpecification = target._spec
 
-            client_specification.dependencies.extend(dependencies)
+            client_specification.request_dependencies.extend(dependencies)
         elif callable(target):
             operation: Operation = get_operation(target)
 
-            operation.dependencies.extend(dependencies)
+            operation.request_dependencies.extend(dependencies)
+        else:
+            raise CompositionError(f"Target of unsupported type {type(target)}")
+
+        return target
+
+    return decorate
+
+
+def response_depends(*dependencies: Callable[..., Any]) -> CommonDecorator:
+    def decorate(target: T, /) -> T:
+        if isinstance(target, type):
+            if not issubclass(target, Service):
+                raise CompositionError(f"Target class is not a subclass of {Service}")
+
+            client_specification: ClientSpecification = target._spec
+
+            client_specification.response_dependencies.extend(dependencies)
+        elif callable(target):
+            operation: Operation = get_operation(target)
+
+            operation.response_dependencies.extend(dependencies)
         else:
             raise CompositionError(f"Target of unsupported type {type(target)}")
 
@@ -132,27 +155,6 @@ def referer(referer: str, /) -> CommonDecorator:
             referer,
         )
     )
-
-
-def response(response: Callable[..., Any]) -> CommonDecorator:
-    def decorate(target: T, /) -> T:
-        if isinstance(target, type):
-            if not issubclass(target, Service):
-                raise CompositionError(f"Target class is not a subclass of {Service}")
-
-            client_specification: ClientSpecification = target._spec
-
-            client_specification.default_response = response
-        elif callable(target):
-            operation: Operation = get_operation(target)
-
-            operation.response = response
-        else:
-            raise CompositionError(f"Target of unsupported type {type(target)}")
-
-        return target
-
-    return decorate
 
 
 def timeout(timeout: TimeoutTypes, /) -> CommonDecorator:

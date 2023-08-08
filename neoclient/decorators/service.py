@@ -46,7 +46,7 @@ class ServiceDecorator(Decorator[S]):
         if self.default_response is not None:
             target._spec.default_response = self.default_response
         if self.dependencies is not None:
-            target._spec.dependencies.extend(self.dependencies)
+            target._spec.request_dependencies.extend(self.dependencies)
 
         return target
 

@@ -5,7 +5,7 @@ from httpx import Headers
 from pydantic import BaseModel, Required
 
 from neoclient import Body, NeoClient, Queries, Query
-from neoclient.methods import request
+from neoclient.decorators import request
 from neoclient.middleware import RequestMiddleware
 from neoclient.models import PreRequest, Request, Response
 from neoclient.operation import Operation, get_operation

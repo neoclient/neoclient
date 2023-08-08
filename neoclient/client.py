@@ -53,6 +53,7 @@ from .types import (
     URLTypes,
     VerifyTypes,
 )
+from .typing import Dependency
 
 __all__: Sequence[str] = (
     "Session",
@@ -158,20 +159,23 @@ class Session(httpx.Client):
 class Client:
     client: Optional[httpx.Client]
     middleware: Middleware
-    default_response: Optional[Callable[..., Any]] = None
-    dependencies: MutableSequence[Callable[..., Any]] = field(default_factory=list)
+    default_response: Optional[Dependency] = None
+    request_dependencies: MutableSequence[Dependency] = field(default_factory=list)
+    response_dependencies: MutableSequence[Dependency] = field(default_factory=list)
 
     def __init__(
         self,
         client: Optional[httpx.Client] = None,
         middleware: Optional[Middleware] = None,
-        default_response: Optional[Callable[..., Any]] = None,
-        dependencies: Optional[Sequence[Callable[..., Any]]] = None,
+        default_response: Optional[Dependency] = None,
+        request_dependencies: Optional[Sequence[Dependency]] = None,
+        response_dependencies: Optional[Sequence[Dependency]] = None,
     ) -> None:
         self.client = client
         self.middleware = middleware if middleware is not None else Middleware()
         self.default_response = default_response
-        self.dependencies = [*dependencies] if dependencies is not None else []
+        self.request_dependencies = [*request_dependencies] if request_dependencies is not None else []
+        self.response_dependencies = [*response_dependencies] if response_dependencies is not None else []
 
     def bind(self, func: Callable[PS, RT], /) -> Callable[PS, RT]:
         operation: Operation = get_operation(func)
@@ -179,20 +183,24 @@ class Client:
         # Create a clone of the operation's middleware, so that when the client's
         # middleware gets added, it doesn't mutate the original
         middleware: Middleware = Middleware()
-
         middleware.add_all(operation.middleware.record)
 
-        # Create a clone of the operation's dependencies, so that when the client's
-        # dependencies get added, it doesn't mutate the original
-        dependencies: MutableSequence[Callable[..., Any]] = []
+        # Create a clone of the operation's request dependencies, so that when
+        # the client's request dependencies get added, it doesn't mutate the original
+        request_dependencies: MutableSequence[Dependency] = []
+        request_dependencies.extend(operation.request_dependencies)
 
-        dependencies.extend(operation.dependencies)
+        # Create a clone of the operation's response dependencies, so that when
+        # the client's response dependencies get added, it doesn't mutate the original
+        response_dependencies: MutableSequence[Dependency] = []
+        response_dependencies.extend(operation.response_dependencies)
 
         bound_operation: Operation[PS, RT] = dataclasses.replace(
             operation,
             client=self.client,
             middleware=middleware,
-            dependencies=dependencies,
+            request_dependencies=request_dependencies,
+            response_dependencies=response_dependencies,
         )
 
         # If the operation doesn't have a response, use the client's default response
@@ -203,8 +211,11 @@ class Client:
         # Add the client's middleware
         bound_operation.middleware.add_all(self.middleware.record)
 
-        # Add the client's dependencies
-        dependencies.extend(self.dependencies)
+        # Add the client's request dependencies
+        request_dependencies.extend(self.request_dependencies)
+
+        # Add the client's response dependencies
+        response_dependencies.extend(self.response_dependencies)
 
         return bound_operation.wrapper
 
@@ -214,7 +225,7 @@ class Client:
         endpoint: str,
         /,
         *,
-        response: Optional[Callable] = None,
+        response: Optional[Dependency] = None,
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         client_options: ClientOptions = ClientOptions()
         request_options: PreRequest = PreRequest(
@@ -230,15 +241,17 @@ class Client:
             operation_response = self.default_response
 
         def decorator(func: Callable[PS, RT], /) -> Callable[PS, RT]:
+            # Create a copy of the client's middleware
             middleware: Middleware = Middleware()
-
-            # Add the client's middleware
             middleware.add_all(self.middleware.record)
 
-            dependencies: MutableSequence[Callable[..., Any]] = []
+            # Create a copy of the client's request dependencies
+            request_dependencies: MutableSequence[Callable[..., Any]] = []
+            request_dependencies.extend(self.request_dependencies)
 
-            # Add the client's dependencies
-            dependencies.extend(self.dependencies)
+            # Create a copy of the client's response dependencies
+            response_dependencies: MutableSequence[Callable[..., Any]] = []
+            response_dependencies.extend(self.response_dependencies)
 
             operation: Operation[PS, RT] = Operation(
                 func=func,
@@ -247,7 +260,8 @@ class Client:
                 client=self.client,
                 middleware=middleware,
                 response=operation_response,
-                dependencies=dependencies,
+                request_dependencies=request_dependencies,
+                response_dependencies=response_dependencies,
             )
 
             # Validate operation function parameters are acceptable
@@ -258,42 +272,42 @@ class Client:
         return decorator
 
     def put(
-        self, endpoint: str, /, *, response: Optional[Callable] = None
+        self, endpoint: str, /, *, response: Optional[Dependency] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HTTPMethod.PUT.name, endpoint, response=response)
 
     def get(
-        self, endpoint: str, /, *, response: Optional[Callable] = None
+        self, endpoint: str, /, *, response: Optional[Dependency] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HTTPMethod.GET.name, endpoint, response=response)
 
     def post(
-        self, endpoint: str, /, *, response: Optional[Callable] = None
+        self, endpoint: str, /, *, response: Optional[Dependency] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HTTPMethod.POST.name, endpoint, response=response)
 
     def head(
-        self, endpoint: str, /, *, response: Optional[Callable] = None
+        self, endpoint: str, /, *, response: Optional[Dependency] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HTTPMethod.HEAD.name, endpoint, response=response)
 
     def patch(
-        self, endpoint: str, /, *, response: Optional[Callable] = None
+        self, endpoint: str, /, *, response: Optional[Dependency] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HTTPMethod.PATCH.name, endpoint, response=response)
 
     def delete(
-        self, endpoint: str, /, *, response: Optional[Callable] = None
+        self, endpoint: str, /, *, response: Optional[Dependency] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HTTPMethod.DELETE.name, endpoint, response=response)
 
     def options(
-        self, endpoint: str, /, *, response: Optional[Callable] = None
+        self, endpoint: str, /, *, response: Optional[Dependency] = None
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HTTPMethod.OPTIONS.name, endpoint, response=response)
 
     def depends(self, target: C, /) -> C:
-        self.dependencies.append(target)
+        self.request_dependencies.append(target)
 
         return target
 
@@ -323,8 +337,9 @@ class NeoClient(Client):
         trust_env: bool = DEFAULT_TRUST_ENV,
         default_encoding: DefaultEncodingTypes = DEFAULT_ENCODING,
         middleware: Optional[Sequence[MiddlewareCallable[Request, Response]]] = None,
-        default_response: Optional[Callable[..., Any]] = None,
-        dependencies: Optional[Sequence[Callable[..., Any]]] = None,
+        default_response: Optional[Dependency] = None,
+        request_dependencies: Optional[Sequence[Dependency]] = None,
+        response_dependencies: Optional[Sequence[Dependency]] = None,
     ) -> None:
         super().__init__(
             client=Session(
@@ -355,5 +370,6 @@ class NeoClient(Client):
                 else Middleware()
             ),
             default_response=default_response,
-            dependencies=(dependencies if dependencies is not None else []),
+            request_dependencies=(request_dependencies if request_dependencies is not None else []),
+            response_dependencies=(response_dependencies if response_dependencies is not None else []),
         )
