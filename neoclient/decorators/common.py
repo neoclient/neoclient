@@ -1,7 +1,8 @@
-from typing import Any, Callable, Sequence, Type, TypeVar, Union
+from typing import Callable, Sequence, Type, TypeVar
 
 from mediate.protocols import MiddlewareCallable
 from typing_extensions import TypeAlias
+
 
 from ..consumers import (
     CookieConsumer,
@@ -28,6 +29,7 @@ from ..types import (
     TimeoutTypes,
     VerifyTypes,
 )
+from ..typing import Dependency
 from .api import ConsumerDecorator, T
 
 __all__: Sequence[str] = (
@@ -61,7 +63,7 @@ def accept(*content_types: str) -> CommonDecorator:
     )
 
 
-def request_depends(*dependencies: Callable[..., Any]) -> CommonDecorator:
+def request_depends(*dependencies: Dependency) -> CommonDecorator:
     def decorate(target: T, /) -> T:
         if isinstance(target, type):
             if not issubclass(target, Service):
@@ -82,7 +84,7 @@ def request_depends(*dependencies: Callable[..., Any]) -> CommonDecorator:
     return decorate
 
 
-def response_depends(*dependencies: Callable[..., Any]) -> CommonDecorator:
+def response_depends(*dependencies: Dependency) -> CommonDecorator:
     def decorate(target: T, /) -> T:
         if isinstance(target, type):
             if not issubclass(target, Service):

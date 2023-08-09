@@ -250,11 +250,11 @@ class Client:
             middleware.add_all(self.middleware.record)
 
             # Create a copy of the client's request dependencies
-            request_dependencies: MutableSequence[Callable[..., Any]] = []
+            request_dependencies: MutableSequence[Dependency] = []
             request_dependencies.extend(self.request_dependencies)
 
             # Create a copy of the client's response dependencies
-            response_dependencies: MutableSequence[Callable[..., Any]] = []
+            response_dependencies: MutableSequence[Dependency] = []
             response_dependencies.extend(self.response_dependencies)
 
             operation: Operation[PS, RT] = Operation(

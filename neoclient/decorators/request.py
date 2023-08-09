@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Sequence, TypeVar
+from typing import Callable, Optional, Sequence, TypeVar
 
 from typing_extensions import ParamSpec
 
 from ..client import Client
 from ..enums import HTTPMethod
+from ..typing import Dependency
 
 __all__: Sequence[str] = (
     "request",
@@ -26,7 +27,7 @@ def request(
     endpoint: str,
     /,
     *,
-    response: Optional[Callable[..., Any]] = None,
+    response: Optional[Dependency] = None,
 ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
     return Client().request(method, endpoint, response=response)
 
@@ -40,7 +41,7 @@ class MethodRequestDecorator:
         endpoint: str,
         /,
         *,
-        response: Optional[Callable[..., Any]] = None,
+        response: Optional[Dependency] = None,
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return request(self.method, endpoint, response=response)
 
