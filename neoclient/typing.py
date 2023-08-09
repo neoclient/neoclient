@@ -38,6 +38,7 @@ class CallNext(Protocol):
 
 
 class Decorator(Protocol[T]):
+    @abstractmethod
     def __call__(self, target: T, /) -> T:
         ...
 

@@ -1,6 +1,4 @@
-from typing import Callable, Sequence
-
-from typing_extensions import TypeAlias
+from typing import Any, Callable, Sequence, TypeVar
 
 from ..consumers import (
     ContentConsumer,
@@ -19,7 +17,6 @@ from ..types import (
     RequestData,
     RequestFiles,
 )
-from ..typing import Decorator
 from .api import ConsumerDecorator
 
 __all__: Sequence[str] = (
@@ -32,32 +29,32 @@ __all__: Sequence[str] = (
     "path_params",
 )
 
-OperationDecorator: TypeAlias = Decorator[Callable]
+C = TypeVar("C", bound=Callable[..., Any])
 
 
-def content(content: RequestContent, /) -> OperationDecorator:
+def content(content: RequestContent, /) -> Callable[[C], C]:
     return ConsumerDecorator(ContentConsumer(content))
 
 
-def data(data: RequestData, /) -> OperationDecorator:
+def data(data: RequestData, /) -> Callable[[C], C]:
     return ConsumerDecorator(DataConsumer(data))
 
 
-def files(files: RequestFiles, /) -> OperationDecorator:
+def files(files: RequestFiles, /) -> Callable[[C], C]:
     return ConsumerDecorator(FilesConsumer(files))
 
 
-def json(json: JsonTypes, /) -> OperationDecorator:
+def json(json: JsonTypes, /) -> Callable[[C], C]:
     return ConsumerDecorator(JsonConsumer(json))
 
 
-def mount(path: str, /) -> OperationDecorator:
+def mount(path: str, /) -> Callable[[C], C]:
     return ConsumerDecorator(MountConsumer(path))
 
 
-def path(key: str, value: PathTypes) -> OperationDecorator:
+def path(key: str, value: PathTypes) -> Callable[[C], C]:
     return ConsumerDecorator(PathConsumer(key, value))
 
 
-def path_params(path_params: PathsTypes, /) -> OperationDecorator:
+def path_params(path_params: PathsTypes, /) -> Callable[[C], C]:
     return ConsumerDecorator(PathsConsumer(path_params))

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Optional, Sequence, Type, TypeVar
+from typing import Callable, Optional, Sequence, Type, TypeVar
 
 from httpx import URL
 from mediate.protocols import MiddlewareCallable, MiddlewareMethod

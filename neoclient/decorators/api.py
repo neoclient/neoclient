@@ -5,18 +5,18 @@ from ..errors import CompositionError
 from ..models import ClientOptions, PreRequest
 from ..operation import get_operation
 from ..service import Service
-from ..typing import Decorator, SupportsConsumeClient, SupportsConsumeRequest
+from ..typing import SupportsConsumeClient, SupportsConsumeRequest
 
 __all__: Sequence[str] = ("ConsumerDecorator",)
 
-T = TypeVar("T", Callable, Type[Service])
+TT = TypeVar("TT", Callable, Type[Service])
 
 
 @dataclass
-class ConsumerDecorator(Decorator[T]):
+class ConsumerDecorator:
     consumer: Union[SupportsConsumeRequest, SupportsConsumeClient]
 
-    def __call__(self, target: T, /) -> T:
+    def __call__(self, target: TT, /) -> TT:
         if isinstance(target, type):
             if not issubclass(target, Service):
                 raise CompositionError(f"Target class is not a subclass of {Service}")

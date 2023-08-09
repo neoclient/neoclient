@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Sequence, Type, TypeVar
+from typing import Any, Callable, Sequence, Type, TypeVar
 
 from ..errors import CompositionError
 from ..operation import Operation, get_operation
@@ -9,7 +9,7 @@ from ..typing import Dependency
 
 __all__: Sequence[str] = ("response",)
 
-CS = TypeVar("CS", Callable, Type[Service])
+CS = TypeVar("CS", Callable[..., Any], Type[Service])
 
 
 @dataclass
