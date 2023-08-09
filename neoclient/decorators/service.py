@@ -28,7 +28,8 @@ class ServiceDecorator(Decorator[S]):
     base_url: Optional[str] = None
     middlewares: Optional[Sequence[MiddlewareCallable[Request, Response]]] = None
     default_response: Optional[Dependency] = None
-    dependencies: Optional[Sequence[Dependency]] = None
+    request_dependencies: Optional[Sequence[Dependency]] = None
+    response_dependencies: Optional[Sequence[Dependency]] = None
 
     def __init__(
         self,
@@ -36,12 +37,14 @@ class ServiceDecorator(Decorator[S]):
         *,
         middleware: Optional[Sequence[MiddlewareCallable[Request, Response]]] = None,
         default_response: Optional[Dependency] = None,
-        dependencies: Optional[Sequence[Dependency]] = None,
+        request_dependencies: Optional[Sequence[Dependency]] = None,
+        response_dependencies: Optional[Sequence[Dependency]] = None,
     ) -> None:
         self.base_url = base_url
         self.middlewares = middleware
         self.default_response = default_response
-        self.dependencies = dependencies
+        self.request_dependencies = request_dependencies
+        self.response_dependencies = response_dependencies
 
     def __call__(self, target: S, /) -> S:
         if self.base_url is not None:
@@ -50,8 +53,10 @@ class ServiceDecorator(Decorator[S]):
             target._spec.middleware.add_all(self.middlewares)
         if self.default_response is not None:
             target._spec.default_response = self.default_response
-        if self.dependencies is not None:
-            target._spec.request_dependencies.extend(self.dependencies)
+        if self.request_dependencies is not None:
+            target._spec.request_dependencies.extend(self.request_dependencies)
+        if self.response_dependencies is not None:
+            target._spec.response_dependencies.extend(self.response_dependencies)
 
         return target
 

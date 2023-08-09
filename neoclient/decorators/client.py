@@ -8,8 +8,6 @@ __all__: Sequence[str] = ("base_url",)
 
 TT = TypeVar("TT", Callable, Type[Service])
 
-Foo = Callable[[TT], TT]
 
-
-def base_url(base_url: str, /):
+def base_url(base_url: str, /) -> Callable[[TT], TT]:
     return ConsumerDecorator(BaseURLConsumer(base_url))

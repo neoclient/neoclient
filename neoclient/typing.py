@@ -6,6 +6,7 @@ from typing_extensions import TypeAlias
 from .models import ClientOptions, PreRequest, Request, Response
 
 __all__: Sequence[str] = (
+    "AnyCallable",
     "CallNext",
     "Decorator",
     "Dependency",
