@@ -6,7 +6,6 @@ from ..operation import Operation, get_operation
 from ..service import Service
 from ..specification import ClientSpecification
 from ..typing import Dependency
-from .common import response_depends
 
 __all__: Sequence[str] = ("response",)
 
@@ -33,10 +32,6 @@ class ResponseDecorator:
             raise CompositionError(f"Target of unsupported type {type(target)}")
 
         return target
-
-    @staticmethod
-    def depends(*dependencies: Dependency) -> Callable[[CS], CS]:
-        return response_depends(*dependencies)
 
 
 response: Type[ResponseDecorator] = ResponseDecorator

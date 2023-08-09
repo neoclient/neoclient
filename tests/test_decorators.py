@@ -243,8 +243,8 @@ def test_request_depends(func: Callable[..., Any]) -> None:
     def dependency_b() -> None:
         pass
 
-    decorators.request.depends(dependency_a)(func)
-    decorators.request.depends(dependency_b)(func)
+    decorators.request_depends(dependency_a)(func)
+    decorators.request_depends(dependency_b)(func)
 
     assert get_operation(func).request_dependencies == [
         dependency_a,
@@ -259,8 +259,8 @@ def test_response_depends(func: Callable[..., Any]) -> None:
     def dependency_b() -> None:
         pass
 
-    decorators.response.depends(dependency_a)(func)
-    decorators.response.depends(dependency_b)(func)
+    decorators.response_depends(dependency_a)(func)
+    decorators.response_depends(dependency_b)(func)
 
     assert get_operation(func).response_dependencies == [
         dependency_a,

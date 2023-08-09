@@ -10,6 +10,7 @@ from .common import (
     query_params,
     referer,
     request_depends,
+    response_depends,
     timeout,
     user_agent,
     verify,

@@ -67,7 +67,7 @@ T = TypeVar("T")
 PS = ParamSpec("PS")
 RT = TypeVar("RT")
 
-C = TypeVar("C", bound=Callable[..., Any])
+D = TypeVar("D", bound=Dependency)
 
 
 class BaseService:
@@ -310,10 +310,15 @@ class Client:
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         return self.request(HTTPMethod.OPTIONS.name, endpoint, response=response)
 
-    def depends(self, target: C, /) -> C:
-        self.request_dependencies.append(target)
+    def request_depends(self, dependency: D, /) -> D:
+        self.request_dependencies.append(dependency)
 
-        return target
+        return dependency
+
+    def response_depends(self, dependency: D, /) -> D:
+        self.response_dependencies.append(dependency)
+
+        return dependency
 
 
 class NeoClient(Client):

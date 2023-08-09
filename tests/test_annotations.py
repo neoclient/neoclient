@@ -1,8 +1,8 @@
 from annotate.utils import get_annotations
 
 from neoclient.annotations import (
-    service_request_depends,
     service_middleware,
+    service_request_depends,
     service_response,
     service_response_depends,
 )

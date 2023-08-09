@@ -4,7 +4,12 @@ from typing import Any, Callable, Optional, Sequence, Type, TypeVar
 from httpx import URL
 from mediate.protocols import MiddlewareCallable, MiddlewareMethod
 
-from ..annotations import service_request_depends, service_middleware, service_response
+from ..annotations import (
+    service_middleware,
+    service_request_depends,
+    service_response,
+    service_response_depends,
+)
 from ..models import Request, Response
 from ..service import Service
 from ..typing import Decorator
@@ -59,8 +64,12 @@ class ServiceDecorator(Decorator[S]):
         return service_response(response)
 
     @staticmethod
-    def depends(dependency: C, /) -> C:
+    def request_depends(dependency: C, /) -> C:
         return service_request_depends(dependency)
+
+    @staticmethod
+    def response_depends(dependency: C, /) -> C:
+        return service_response_depends(dependency)
 
 
 service: Type[ServiceDecorator] = ServiceDecorator

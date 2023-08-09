@@ -205,7 +205,7 @@ def test_client_middleware(client: NeoClient) -> None:
 
 
 def test_client_request_dependencies(client: NeoClient) -> None:
-    @client.depends
+    @client.request_depends
     def request_dependency(headers=Headers()) -> None:
         headers["name"] = "sam"
 
