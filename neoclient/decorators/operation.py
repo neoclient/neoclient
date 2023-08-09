@@ -17,7 +17,7 @@ from ..types import (
     RequestData,
     RequestFiles,
 )
-from .api import ConsumerDecorator
+from .api import OperationConsumerDecorator
 
 __all__: Sequence[str] = (
     "content",
@@ -33,28 +33,28 @@ C = TypeVar("C", bound=Callable[..., Any])
 
 
 def content(content: RequestContent, /) -> Callable[[C], C]:
-    return ConsumerDecorator(ContentConsumer(content))
+    return OperationConsumerDecorator(ContentConsumer(content))
 
 
 def data(data: RequestData, /) -> Callable[[C], C]:
-    return ConsumerDecorator(DataConsumer(data))
+    return OperationConsumerDecorator(DataConsumer(data))
 
 
 def files(files: RequestFiles, /) -> Callable[[C], C]:
-    return ConsumerDecorator(FilesConsumer(files))
+    return OperationConsumerDecorator(FilesConsumer(files))
 
 
 def json(json: JsonTypes, /) -> Callable[[C], C]:
-    return ConsumerDecorator(JsonConsumer(json))
+    return OperationConsumerDecorator(JsonConsumer(json))
 
 
 def mount(path: str, /) -> Callable[[C], C]:
-    return ConsumerDecorator(MountConsumer(path))
+    return OperationConsumerDecorator(MountConsumer(path))
 
 
 def path(key: str, value: PathTypes) -> Callable[[C], C]:
-    return ConsumerDecorator(PathConsumer(key, value))
+    return OperationConsumerDecorator(PathConsumer(key, value))
 
 
 def path_params(path_params: PathsTypes, /) -> Callable[[C], C]:
-    return ConsumerDecorator(PathsConsumer(path_params))
+    return OperationConsumerDecorator(PathsConsumer(path_params))

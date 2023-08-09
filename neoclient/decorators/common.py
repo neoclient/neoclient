@@ -117,7 +117,9 @@ def headers(headers: HeadersTypes, /) -> Callable[[TT], TT]:
     return ConsumerDecorator(HeadersConsumer(headers))
 
 
-def middleware(*middleware: MiddlewareCallable[Request, Response]) -> Callable[[TT], TT]:
+def middleware(
+    *middleware: MiddlewareCallable[Request, Response]
+) -> Callable[[TT], TT]:
     def decorate(target: TT, /) -> TT:
         if isinstance(target, type):
             if not issubclass(target, Service):
