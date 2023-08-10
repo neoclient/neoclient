@@ -5,7 +5,6 @@ from .common import (
     cookies,
     header,
     headers,
-    middleware,
     query,
     query_params,
     referer,
@@ -16,6 +15,7 @@ from .common import (
     verify,
 )
 from .middleware import (
+    middleware,
     expect_content_type,
     expect_header,
     expect_status,

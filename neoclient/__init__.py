@@ -26,7 +26,6 @@ from .decorators import (
     header,
     headers,
     json,
-    middleware,
     mount,
     path,
     path_params,
@@ -42,6 +41,7 @@ from .decorators import (
     verify,
 )
 from .decorators.middleware import (
+    middleware,
     expect_content_type,
     expect_header,
     expect_status,
