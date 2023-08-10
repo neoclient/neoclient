@@ -6,9 +6,9 @@ from mediate.protocols import MiddlewareCallable, MiddlewareMethod
 
 from ..annotations import (
     service_middleware,
-    service_request_depends,
+    service_request_dependency,
     service_response,
-    service_response_depends,
+    service_response_dependency,
 )
 from ..models import Request, Response
 from ..service import Service
@@ -70,11 +70,11 @@ class ServiceDecorator(Decorator[S]):
 
     @staticmethod
     def request_depends(dependency: C, /) -> C:
-        return service_request_depends(dependency)
+        return service_request_dependency(dependency)
 
     @staticmethod
     def response_depends(dependency: C, /) -> C:
-        return service_response_depends(dependency)
+        return service_response_dependency(dependency)
 
 
 service: Type[ServiceDecorator] = ServiceDecorator
