@@ -43,6 +43,10 @@ class SomeService(Service):
     def some_service_request_dependency(self):
         pass
 
+    @service.response_depends
+    def some_service_response_dependency(self):
+        pass
+
 
 def test_default_opts() -> None:
     assert SomeService._spec.options == ClientOptions()
@@ -108,4 +112,16 @@ def test_service_request_dependencies() -> None:
     assert get_operation(service.foo).request_dependencies == [
         some_request_dependency,
         service.some_service_request_dependency,
+    ]
+
+
+def test_service_response_dependencies() -> None:
+    service: SomeService = SomeService()
+
+    assert service._client.response_dependencies == [
+        service.some_service_response_dependency
+    ]
+    assert get_operation(service.foo).response_dependencies == [
+        some_response_dependency,
+        service.some_service_response_dependency,
     ]
