@@ -1,7 +1,7 @@
 import pytest
 
+from neoclient.decorators import get
 from neoclient.errors import DuplicateParameters
-from neoclient.methods import get
 from neoclient.param_functions import Query
 
 

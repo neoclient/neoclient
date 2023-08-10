@@ -21,7 +21,8 @@ class StrEnum(str, Enum):
 class Entity(HiddenValueEnum):
     MIDDLEWARE = auto()
     RESPONSE = auto()
-    DEPENDENCY = auto()
+    REQUEST_DEPENDENCY = auto()
+    RESPONSE_DEPENDENCY = auto()
 
 
 class HTTPMethod(HiddenValueEnum, StrEnum):

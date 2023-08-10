@@ -1,6 +1,11 @@
 from annotate.utils import get_annotations
 
-from neoclient.annotations import service_depends, service_middleware, service_response
+from neoclient.annotations import (
+    service_middleware,
+    service_request_dependency,
+    service_response,
+    service_response_dependency,
+)
 from neoclient.enums import Entity
 from neoclient.models import Request, Response
 from neoclient.typing import CallNext
@@ -22,9 +27,17 @@ def test_service_response() -> None:
     assert get_annotations(some_service_response) == {Entity.RESPONSE: None}
 
 
-def test_service_depends() -> None:
-    @service_depends
-    def some_service_dependency() -> None:
+def test_service_request_dependency() -> None:
+    @service_request_dependency
+    def request_dependency() -> None:
         return None
 
-    assert get_annotations(some_service_dependency) == {Entity.DEPENDENCY: None}
+    assert get_annotations(request_dependency) == {Entity.REQUEST_DEPENDENCY: None}
+
+
+def test_service_response_depends() -> None:
+    @service_response_dependency
+    def response_dependency() -> None:
+        return None
+
+    assert get_annotations(response_dependency) == {Entity.RESPONSE_DEPENDENCY: None}

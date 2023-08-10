@@ -36,7 +36,6 @@ from .params import (
     ResponseParameter,
     URLParameter,
 )
-from .typing import ResponseResolver
 from .validation import ValidatedFunction
 
 T = TypeVar("T")

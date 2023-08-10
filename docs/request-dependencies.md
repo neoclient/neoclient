@@ -8,7 +8,7 @@ off a `token`, however it also needs to declare the length of the token.
 
 ```python
 from neoclient import NeoClient
-from neoclient.decorators import depends
+from neoclient.decorators import request_depends
 from neoclient.param_functions import Header, Headers
 
 client = NeoClient("https://httpbin.org/")
@@ -18,7 +18,7 @@ def token_length(headers=Headers(), x_token=Header()) -> None:
     headers["X-Token-Length"] = str(len(x_token))
 
 
-@depends(token_length)
+@request_depends(token_length)
 @client.get("/get")
 def request(x_token=Header()):
     ...
@@ -48,7 +48,7 @@ opportunity to use request dependencies.
 
 ```python
 from neoclient import NeoClient
-from neoclient.decorators import depends
+from neoclient.decorators import request_depends
 from neoclient.param_functions import Headers
 
 client = NeoClient("https://httpbin.org/")
@@ -64,7 +64,7 @@ def common_headers(headers=Headers()) -> None:
     )
 
 
-@depends(common_headers)
+@request_depends(common_headers)
 @client.get("/get")
 def request():
     ...
@@ -93,7 +93,7 @@ It is possible to chain request dependencies together through the use of the
 
 ```python
 from neoclient import NeoClient
-from neoclient.decorators import depends
+from neoclient.decorators import request_depends
 from neoclient.param_functions import Depends, Header, Headers
 
 client = NeoClient("https://httpbin.org/")
@@ -107,7 +107,7 @@ def common_headers(headers=Headers(), x_token_length=Depends(token_length)) -> N
     headers["X-Token-Length"] = str(x_token_length)
 
 
-@depends(common_headers)
+@request_depends(common_headers)
 @client.get("/get")
 def request(x_token=Header()):
     ...
@@ -130,18 +130,18 @@ def request(x_token=Header()):
 ```
 
 ## Service-level dependencies
-Request dependencies can be applied at the service-level using the `@depends`
+Request dependencies can be applied at the service-level using the `@request_depends`
 decorator.
 
 ```python
-from neoclient import Headers, Service, base_url, depends, get
+from neoclient import Headers, Service, base_url, request_depends, get
 
 
 def common_headers(headers=Headers()) -> None:
     headers.update({"x-client-name": "CLIENT-A", "x-client-version": "1.0.3"})
 
 
-@depends(common_headers)
+@request_depends(common_headers)
 @base_url("https://httpbin.org/")
 class Httpbin(Service):
     @get("/headers")
@@ -176,7 +176,7 @@ from neoclient import Headers, Service, get, service
 def common_headers(headers=Headers()) -> None:
     headers.update({"x-client-name": "CLIENT-A", "x-client-version": "1.0.3"})
 
-@service("https://httpbin.org/", dependencies=(common_headers,))
+@service("https://httpbin.org/", request_dependencies=(common_headers,))
 class Httpbin(Service):
     @get("/headers")
     def foo(self):
@@ -213,7 +213,7 @@ from neoclient import Headers, Service, base_url, get, service
 
 @base_url("https://httpbin.org/")
 class Httpbin(Service):
-    @service.depends
+    @service.request_depends
     def common_headers(self, headers=Headers()) -> None:
         headers.update({"x-client-name": "CLIENT-A", "x-client-version": "1.0.3"})
 
@@ -252,7 +252,7 @@ from neoclient import NeoClient, Headers
 client = NeoClient("https://httpbin.org/")
 
 
-@client.depends
+@client.request_depends
 def common_headers(headers=Headers()):
     headers["X-Token"] = "some-token-123"
 

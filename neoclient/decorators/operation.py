@@ -1,6 +1,4 @@
-from typing import Callable, Sequence
-
-from typing_extensions import TypeAlias
+from typing import Any, Callable, Sequence, TypeVar
 
 from ..consumers import (
     ContentConsumer,
@@ -19,8 +17,7 @@ from ..types import (
     RequestData,
     RequestFiles,
 )
-from ..typing import Decorator
-from .api import ConsumerDecorator
+from .api import OperationConsumerDecorator
 
 __all__: Sequence[str] = (
     "content",
@@ -32,32 +29,32 @@ __all__: Sequence[str] = (
     "path_params",
 )
 
-OperationDecorator: TypeAlias = Decorator[Callable]
+C = TypeVar("C", bound=Callable[..., Any])
 
 
-def content(content: RequestContent, /) -> OperationDecorator:
-    return ConsumerDecorator(ContentConsumer(content))
+def content(content: RequestContent, /) -> Callable[[C], C]:
+    return OperationConsumerDecorator(ContentConsumer(content))
 
 
-def data(data: RequestData, /) -> OperationDecorator:
-    return ConsumerDecorator(DataConsumer(data))
+def data(data: RequestData, /) -> Callable[[C], C]:
+    return OperationConsumerDecorator(DataConsumer(data))
 
 
-def files(files: RequestFiles, /) -> OperationDecorator:
-    return ConsumerDecorator(FilesConsumer(files))
+def files(files: RequestFiles, /) -> Callable[[C], C]:
+    return OperationConsumerDecorator(FilesConsumer(files))
 
 
-def json(json: JsonTypes, /) -> OperationDecorator:
-    return ConsumerDecorator(JsonConsumer(json))
+def json(json: JsonTypes, /) -> Callable[[C], C]:
+    return OperationConsumerDecorator(JsonConsumer(json))
 
 
-def mount(path: str, /) -> OperationDecorator:
-    return ConsumerDecorator(MountConsumer(path))
+def mount(path: str, /) -> Callable[[C], C]:
+    return OperationConsumerDecorator(MountConsumer(path))
 
 
-def path(key: str, value: PathTypes) -> OperationDecorator:
-    return ConsumerDecorator(PathConsumer(key, value))
+def path(key: str, value: PathTypes) -> Callable[[C], C]:
+    return OperationConsumerDecorator(PathConsumer(key, value))
 
 
-def path_params(path_params: PathsTypes, /) -> OperationDecorator:
-    return ConsumerDecorator(PathsConsumer(path_params))
+def path_params(path_params: PathsTypes, /) -> Callable[[C], C]:
+    return OperationConsumerDecorator(PathsConsumer(path_params))

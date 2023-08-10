@@ -1,11 +1,15 @@
 from abc import abstractmethod
-from typing import Any, Protocol, Sequence, TypeVar, runtime_checkable
+from typing import Any, Callable, Protocol, Sequence, TypeVar, runtime_checkable
+
+from typing_extensions import TypeAlias
 
 from .models import ClientOptions, PreRequest, Request, Response
 
 __all__: Sequence[str] = (
+    "AnyCallable",
     "CallNext",
     "Decorator",
+    "Dependency",
     "ClientConsumer",
     "Composer",
     "Consumer",
@@ -25,6 +29,9 @@ T_contra = TypeVar("T_contra", contravariant=True)
 T_co = TypeVar("T_co", covariant=True)
 R_co = TypeVar("R_co", covariant=True)
 
+AnyCallable: TypeAlias = Callable[..., Any]
+Dependency: TypeAlias = AnyCallable
+
 
 class CallNext(Protocol):
     def __call__(self, request: Request, /) -> Response:
@@ -32,6 +39,7 @@ class CallNext(Protocol):
 
 
 class Decorator(Protocol[T]):
+    @abstractmethod
     def __call__(self, target: T, /) -> T:
         ...
 

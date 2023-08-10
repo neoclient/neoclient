@@ -5,7 +5,7 @@ from httpx import Headers
 from pydantic import BaseModel, Required
 
 from neoclient import Body, NeoClient, Queries, Query
-from neoclient.methods import request
+from neoclient.decorators import request
 from neoclient.middleware import RequestMiddleware
 from neoclient.models import PreRequest, Request, Response
 from neoclient.operation import Operation, get_operation
@@ -39,7 +39,10 @@ def test_bind(client: NeoClient) -> None:
     def middleware(call_next, request):
         pass
 
-    def dependency() -> None:
+    def request_dependency() -> None:
+        pass
+
+    def response_dependency() -> None:
         pass
 
     @request(method, endpoint, response=response)
@@ -49,7 +52,8 @@ def test_bind(client: NeoClient) -> None:
     unbound_operation: Operation = get_operation(foo)
 
     unbound_operation.middleware.add(middleware)
-    unbound_operation.dependencies.append(dependency)
+    unbound_operation.request_dependencies.append(request_dependency)
+    unbound_operation.response_dependencies.append(response_dependency)
 
     bound_foo: Callable = client.bind(foo)
 
@@ -59,6 +63,8 @@ def test_bind(client: NeoClient) -> None:
     assert bound_operation.client == client.client
     assert bound_operation.middleware.record == [middleware]
     assert bound_operation.response == response
+    assert bound_operation.request_dependencies == [request_dependency]
+    assert bound_operation.response_dependencies == [response_dependency]
 
 
 def test_request(client: NeoClient) -> None:
@@ -198,15 +204,29 @@ def test_client_middleware(client: NeoClient) -> None:
     assert response.headers.get("food") == "pizza"
 
 
-def test_client_dependencies(client: NeoClient) -> None:
-    @client.depends
-    def some_dependency(headers=Headers()) -> None:
+def test_client_request_dependencies(client: NeoClient) -> None:
+    @client.request_depends
+    def request_dependency(headers=Headers()) -> None:
         headers["name"] = "sam"
 
-    assert client.dependencies == [some_dependency]
+    assert client.request_dependencies == [request_dependency]
 
     @client.get("/foo")
     def foo():
         ...
 
-    assert get_operation(foo).dependencies == [some_dependency]
+    assert get_operation(foo).request_dependencies == [request_dependency]
+
+
+def test_client_response_dependencies(client: NeoClient) -> None:
+    @client.response_depends
+    def response_dependency():
+        ...
+
+    assert client.response_dependencies == [response_dependency]
+
+    @client.get("/foo")
+    def foo():
+        ...
+
+    assert get_operation(foo).response_dependencies == [response_dependency]

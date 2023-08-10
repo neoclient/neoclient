@@ -236,17 +236,33 @@ def test_middleware(func: Callable) -> None:
     ]
 
 
-def test_depends(func: Callable[..., Any]) -> None:
+def test_request_depends(func: Callable[..., Any]) -> None:
     def dependency_a() -> None:
         pass
 
     def dependency_b() -> None:
         pass
 
-    decorators.depends(dependency_a)(func)
-    decorators.depends(dependency_b)(func)
+    decorators.request_depends(dependency_a)(func)
+    decorators.request_depends(dependency_b)(func)
 
-    assert get_operation(func).dependencies == [
+    assert get_operation(func).request_dependencies == [
+        dependency_a,
+        dependency_b,
+    ]
+
+
+def test_response_depends(func: Callable[..., Any]) -> None:
+    def dependency_a() -> None:
+        pass
+
+    def dependency_b() -> None:
+        pass
+
+    decorators.response_depends(dependency_a)(func)
+    decorators.response_depends(dependency_b)(func)
+
+    assert get_operation(func).response_dependencies == [
         dependency_a,
         dependency_b,
     ]
