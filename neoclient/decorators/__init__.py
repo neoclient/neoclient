@@ -15,10 +15,10 @@ from .common import (
     verify,
 )
 from .middleware import (
-    middleware,
     expect_content_type,
     expect_header,
     expect_status,
+    middleware,
     raise_for_status,
 )
 from .operation import content, data, files, json, mount, path, path_params

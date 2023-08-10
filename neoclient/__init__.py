@@ -41,10 +41,10 @@ from .decorators import (
     verify,
 )
 from .decorators.middleware import (
-    middleware,
     expect_content_type,
     expect_header,
     expect_status,
+    middleware,
     raise_for_status,
 )
 from .decorators.request import delete, get, head, options, patch, post, put, request
