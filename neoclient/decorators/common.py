@@ -1,7 +1,5 @@
 from typing import Callable, Sequence, Type, TypeVar
 
-from mediate.protocols import MiddlewareCallable
-
 from ..consumers import (
     CookieConsumer,
     CookiesConsumer,
@@ -14,7 +12,6 @@ from ..consumers import (
 )
 from ..enums import HTTPHeader
 from ..errors import CompositionError
-from ..models import Request, Response
 from ..operation import Operation, get_operation
 from ..service import ClientSpecification, Service
 from ..types import (
@@ -38,7 +35,6 @@ __all__: Sequence[str] = (
     "response_depends",
     "header",
     "headers",
-    "middleware",
     "query",
     "query_params",
     "referer",
@@ -115,29 +111,6 @@ def header(key: str, value: HeaderTypes) -> Callable[[TT], TT]:
 
 def headers(headers: HeadersTypes, /) -> Callable[[TT], TT]:
     return ConsumerDecorator(HeadersConsumer(headers))
-
-
-def middleware(
-    *middleware: MiddlewareCallable[Request, Response]
-) -> Callable[[TT], TT]:
-    def decorate(target: TT, /) -> TT:
-        if isinstance(target, type):
-            if not issubclass(target, Service):
-                raise CompositionError(f"Target class is not a subclass of {Service}")
-
-            client_specification: ClientSpecification = target._spec
-
-            client_specification.middleware.add_all(middleware)
-        elif callable(target):
-            operation: Operation = get_operation(target)
-
-            operation.middleware.add_all(middleware)
-        else:
-            raise CompositionError(f"Target of unsupported type {type(target)}")
-
-        return target
-
-    return decorate
 
 
 def query(key: str, value: QueryTypes) -> Callable[[TT], TT]:

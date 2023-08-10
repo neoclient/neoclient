@@ -26,7 +26,6 @@ from .decorators import (
     header,
     headers,
     json,
-    middleware,
     mount,
     path,
     path_params,
@@ -40,6 +39,13 @@ from .decorators import (
     timeout,
     user_agent,
     verify,
+)
+from .decorators.middleware import (
+    expect_content_type,
+    expect_header,
+    expect_status,
+    middleware,
+    raise_for_status,
 )
 from .decorators.request import delete, get, head, options, patch, post, put, request
 from .models import Request, Response
