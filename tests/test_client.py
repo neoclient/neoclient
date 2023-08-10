@@ -216,3 +216,17 @@ def test_client_request_dependencies(client: NeoClient) -> None:
         ...
 
     assert get_operation(foo).request_dependencies == [request_dependency]
+
+
+def test_client_response_dependencies(client: NeoClient) -> None:
+    @client.response_depends
+    def response_dependency():
+        ...
+
+    assert client.response_dependencies == [response_dependency]
+
+    @client.get("/foo")
+    def foo():
+        ...
+
+    assert get_operation(foo).response_dependencies == [response_dependency]
