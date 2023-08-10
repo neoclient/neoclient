@@ -41,6 +41,12 @@ from .decorators import (
     user_agent,
     verify,
 )
+from .decorators.middleware import (
+    expect_content_type,
+    expect_header,
+    expect_status,
+    raise_for_status,
+)
 from .decorators.request import delete, get, head, options, patch, post, put, request
 from .models import Request, Response
 from .param_functions import (

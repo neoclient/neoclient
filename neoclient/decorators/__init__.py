@@ -15,6 +15,12 @@ from .common import (
     user_agent,
     verify,
 )
+from .middleware import (
+    expect_content_type,
+    expect_header,
+    expect_status,
+    raise_for_status,
+)
 from .operation import content, data, files, json, mount, path, path_params
 from .request import delete, get, head, options, patch, post, put, request
 from .response import response
