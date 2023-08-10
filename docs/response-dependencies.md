@@ -50,6 +50,7 @@ def request():
 >>> request()
 'gunicorn'
 ```
+
 The above example could be simplied futher down to just:
 ```python
 from neoclient import Header, NeoClient
@@ -68,4 +69,30 @@ def request():
 ```python
 >>> request()
 'gunicorn'
+```
+
+## Disposable response dependencies
+It is possible to invoke response dependencies, without keeping their response.
+These disposable response dependencies come in handy for a variety of situations,
+such as exception handling. Disposable response dependencies act a bit like
+middleware, but leverage the power of dependency injection.
+
+```python
+from neoclient.decorators import get, response_depends
+from neoclient.models import Headers
+from neoclient.param_functions import Depends
+
+
+def server(headers: Headers) -> str:
+    return headers["server"]
+
+
+def log_server(server: str = Depends(server)) -> None:
+    print("Server:", server)
+
+
+@response_depends(log_server)
+@get("https://httpbin.org/get")
+def request():
+    ...
 ```
