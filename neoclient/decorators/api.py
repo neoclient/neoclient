@@ -4,7 +4,7 @@ from typing import Any, Callable, Sequence, Type, TypeVar, Union
 from ..errors import CompositionError
 from ..models import ClientOptions, PreRequest
 from ..operation import get_operation
-from ..service import Service
+from ..services import Service
 from ..typing import SupportsConsumeClient, SupportsConsumeRequest
 
 __all__: Sequence[str] = (

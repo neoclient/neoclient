@@ -11,7 +11,7 @@ from ..annotations import (
     service_response_dependency,
 )
 from ..models import Request, Response
-from ..service import Service
+from ..services import Service
 from ..typing import Decorator, Dependency
 
 __all__: Sequence[str] = ("service",)

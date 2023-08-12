@@ -6,10 +6,10 @@ from httpx import Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
 
 from neoclient import converters, decorators, get
-from neoclient.middleware import RequestMiddleware
+from neoclient.middlewares import RequestMiddleware
 from neoclient.models import ClientOptions, PreRequest, Request, Response
 from neoclient.operation import get_operation
-from neoclient.service import Service
+from neoclient.services import Service
 from neoclient.types import (
     CookiesTypes,
     HeadersTypes,

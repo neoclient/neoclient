@@ -3,15 +3,15 @@ from typing import Any, Callable, Optional, Sequence, Type, TypeVar
 from mediate.protocols import MiddlewareCallable
 
 from ..errors import CompositionError
-from ..middleware import (
+from ..middlewares import (
     ExpectedContentTypeMiddleware,
     ExpectedHeaderMiddleware,
     ExpectedStatusCodeMiddleware,
 )
-from ..middleware import raise_for_status as raise_for_status_middleware
+from ..middlewares import raise_for_status as raise_for_status_middleware
 from ..models import Request, Response
 from ..operation import Operation, get_operation
-from ..service import Service
+from ..services import Service
 from ..specification import ClientSpecification
 
 __all__: Sequence[str] = (

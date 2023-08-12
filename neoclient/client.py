@@ -37,7 +37,7 @@ from .defaults import (
     DEFAULT_TRUST_ENV,
 )
 from .enums import HTTPHeader, HTTPMethod
-from .middleware import Middleware
+from .middlewares import Middleware
 from .models import ClientOptions, PreRequest, Request, Response
 from .operation import Operation, get_operation
 from .types import (

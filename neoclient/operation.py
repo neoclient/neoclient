@@ -12,7 +12,7 @@ from typing_extensions import ParamSpec
 
 from .composition import compose
 from .errors import NotAnOperationError
-from .middleware import Middleware
+from .middlewares import Middleware
 from .models import ClientOptions, PreRequest, Request, Response
 from .resolution import resolve_request, resolve_response
 from .typing import Dependency

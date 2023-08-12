@@ -1,5 +1,3 @@
-from http import HTTPStatus
-
 import pytest
 from httpx import Headers
 from pydantic import BaseConfig
@@ -9,14 +7,16 @@ from neoclient import Cookie
 from neoclient.dependence import DependencyParameter, DependencyResolver, get_fields
 from neoclient.enums import HTTPMethod
 from neoclient.errors import ResolutionError
-from neoclient.models import PreRequest, Request, Response
-from neoclient.param_functions import Req
+from neoclient.models import PreRequest, Response
+from neoclient.param_functions import Request
 from neoclient.params import (
     BodyParameter,
     CookieParameter,
     HeadersParameter,
     QueryParameter,
 )
+
+from .utils import build_response
 
 
 def test_get_fields() -> None:
@@ -35,15 +35,13 @@ def test_DependencyResolver_resolve_response() -> None:
     def dependency(response: Response, /) -> Response:
         return response
 
-    response: Response = Response(
-        HTTPStatus.OK, request=Request(HTTPMethod.GET, "https://foo.com/")
-    )
+    response: Response = build_response()
 
     assert DependencyResolver(dependency).resolve_response(response) == response
 
 
 def test_DependencyResolver_resolve_request() -> None:
-    def dependency(request=Req()) -> PreRequest:
+    def dependency(request=Request()) -> PreRequest:
         return request
 
     request: PreRequest = PreRequest(HTTPMethod.GET, "https://foo.com/")
@@ -55,9 +53,7 @@ def test_DependencyParameter_resolve() -> None:
     def dependency(response: Response, /) -> Response:
         return response
 
-    response: Response = Response(
-        HTTPStatus.OK, request=Request(HTTPMethod.GET, "https://foo.com/")
-    )
+    response: Response = build_response()
 
     dependency_parameter_with_dependency: DependencyParameter = DependencyParameter(
         dependency=dependency

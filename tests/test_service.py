@@ -12,7 +12,7 @@ from neoclient.decorators import (
 )
 from neoclient.models import ClientOptions
 from neoclient.operation import Operation, get_operation
-from neoclient.service import Service
+from neoclient.services import Service
 
 
 def some_middleware(call_next, request):
