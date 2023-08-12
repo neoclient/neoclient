@@ -41,7 +41,7 @@ def test_DependencyResolver_resolve_response() -> None:
 
 
 def test_DependencyResolver_resolve_request() -> None:
-    def dependency(request = Request()) -> PreRequest:
+    def dependency(request=Request()) -> PreRequest:
         return request
 
     request: PreRequest = PreRequest(HTTPMethod.GET, "https://foo.com/")
