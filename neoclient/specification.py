@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import MutableSequence, Optional, Sequence
 
-from .middleware import Middleware
+from .middlewares import Middleware
 from .models import ClientOptions
 from .typing import Dependency
 

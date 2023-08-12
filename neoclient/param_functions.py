@@ -35,8 +35,8 @@ __all__: Sequence[str] = (
     "Depends",
     "URL",
     "Reason",
-    "Req",
-    "Resp",
+    "Request",
+    "Response",
     "StatusCode",
 )
 
@@ -287,11 +287,11 @@ def URL() -> URLParameter:
     return URLParameter()
 
 
-def Req() -> RequestParameter:
+def Request() -> RequestParameter:
     return RequestParameter()
 
 
-def Resp() -> ResponseParameter:
+def Response() -> ResponseParameter:
     return ResponseParameter()
 
 

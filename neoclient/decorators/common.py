@@ -13,7 +13,7 @@ from ..consumers import (
 from ..enums import HTTPHeader
 from ..errors import CompositionError
 from ..operation import Operation, get_operation
-from ..service import ClientSpecification, Service
+from ..services import ClientSpecification, Service
 from ..types import (
     CookiesTypes,
     CookieTypes,

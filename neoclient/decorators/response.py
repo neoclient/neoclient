@@ -3,7 +3,7 @@ from typing import Any, Callable, Sequence, Type, TypeVar
 
 from ..errors import CompositionError
 from ..operation import Operation, get_operation
-from ..service import Service
+from ..services import Service
 from ..specification import ClientSpecification
 from ..typing import Dependency
 
