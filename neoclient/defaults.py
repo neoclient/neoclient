@@ -11,6 +11,7 @@ from .types import (
     QueriesTypes,
     TimeoutTypes,
     URLTypes,
+    VerifyTypes,
 )
 
 __all__: Sequence[str] = (
@@ -26,6 +27,7 @@ __all__: Sequence[str] = (
     "DEFAULT_TRUST_ENV",
     "DEFAULT_ENCODING",
     "DEFAULT_LIMITS",
+    "DEFAULT_VERIFY",
 )
 
 DEFAULT_BASE_URL: URLTypes = URL()
@@ -40,3 +42,4 @@ DEFAULT_TRUST_ENV: bool = True
 DEFAULT_ENCODING: DefaultEncodingTypes = "utf-8"
 DEFAULT_LIMITS = Limits(max_connections=100, max_keepalive_connections=20)
 DEFAULT_EVENT_HOOKS: Optional[EventHooks] = None
+DEFAULT_VERIFY: VerifyTypes = True

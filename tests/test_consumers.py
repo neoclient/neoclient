@@ -11,6 +11,7 @@ from neoclient.consumers import (
     CookiesConsumer,
     DataConsumer,
     FilesConsumer,
+    FollowRedirectsConsumer,
     HeaderConsumer,
     HeadersConsumer,
     JsonConsumer,
@@ -21,6 +22,7 @@ from neoclient.consumers import (
     StateConsumer,
     TimeoutConsumer,
 )
+from neoclient.defaults import DEFAULT_FOLLOW_REDIRECTS
 from neoclient.models import PreRequest, State
 from neoclient.types import JsonTypes, RequestContent, RequestData, RequestFiles
 
@@ -202,5 +204,16 @@ def test_consumer_state(pre_request: PreRequest) -> None:
     expected_pre_request.state = State({"message": message})
 
     StateConsumer("message", message).consume_request(pre_request)
+
+    assert pre_request == expected_pre_request
+
+
+def test_FollowRedirectsConsumer(pre_request: PreRequest) -> None:
+    follow_redirects: bool = not DEFAULT_FOLLOW_REDIRECTS
+
+    expected_pre_request: PreRequest = pre_request.clone()
+    expected_pre_request.follow_redirects = follow_redirects
+
+    FollowRedirectsConsumer(follow_redirects).consume_request(pre_request)
 
     assert pre_request == expected_pre_request

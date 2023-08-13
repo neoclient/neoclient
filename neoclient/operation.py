@@ -92,9 +92,14 @@ class Operation(Generic[PS, RT_co]):
         if return_annotation is Request:
             return request
 
+        follow_redirects: bool = pre_request.follow_redirects
+
         @self.middleware.compose
         def send_request(request: Request, /) -> Response:
-            httpx_response: httpx.Response = client.send(request)
+            httpx_response: httpx.Response = client.send(
+                request,
+                follow_redirects=follow_redirects,
+            )
 
             return Response.from_httpx_response(httpx_response)
 

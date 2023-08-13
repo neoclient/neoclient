@@ -6,6 +6,7 @@ from httpx import URL, Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
 
 from neoclient import converters, decorators, get
+from neoclient.defaults import DEFAULT_FOLLOW_REDIRECTS
 from neoclient.middlewares import RequestMiddleware
 from neoclient.models import ClientOptions, PreRequest, Request, Response, State
 from neoclient.operation import get_operation
@@ -330,3 +331,14 @@ def test_persist_pre_request(func: Callable[..., Any]) -> None:
 
     assert hasattr(pre_request.state, "pre_request")
     assert isinstance(pre_request.state.pre_request, PreRequest)
+
+
+def test_follow_redirects(func: Callable[..., Any]) -> None:
+    follow_redirects: bool = not DEFAULT_FOLLOW_REDIRECTS
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.follow_redirects = follow_redirects
+
+    decorators.follow_redirects(follow_redirects)(func)
+
+    assert get_operation(func).pre_request == expected_pre_request

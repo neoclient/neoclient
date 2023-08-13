@@ -379,6 +379,7 @@ class PreRequest:
     timeout: Optional[Timeout]
     path_params: MutableMapping[str, str]
     state: State
+    follow_redirects: bool
 
     def __init__(
         self,
@@ -395,6 +396,7 @@ class PreRequest:
         timeout: Optional[TimeoutTypes] = None,
         path_params: Optional[PathsTypes] = None,
         state: Optional[State] = None,
+        follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
     ) -> None:
         self.method = method if isinstance(method, str) else method.decode()
         self.url = URL(url)
@@ -422,6 +424,7 @@ class PreRequest:
             else {}
         )
         self.state = state if state is not None else State()
+        self.follow_redirects = follow_redirects
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__}({self.method!r}, {str(self.url)!r})>"
@@ -446,6 +449,7 @@ class PreRequest:
                 self.timeout == pre_request.timeout,
                 self.path_params == pre_request.path_params,
                 self.state == pre_request.state,
+                self.follow_redirects == pre_request.follow_redirects,
             )
         )
 
@@ -511,10 +515,17 @@ class PreRequest:
                 **pre_request.path_params,
             },
             state=State({**self.state._state, **pre_request.state._state}),
+            follow_redirects=self.follow_redirects and pre_request.follow_redirects,
         )
 
     def clone(self) -> "PreRequest":
-        return self.merge(PreRequest(method=self.method, url=self.url))
+        return self.merge(
+            PreRequest(
+                method=self.method,
+                url=self.url,
+                follow_redirects=self.follow_redirects,
+            )
+        )
 
     def _get_formatted_url(self) -> str:
         return urllib.parse.unquote(str(self.url)).format(**self.path_params)
