@@ -153,7 +153,9 @@ class Request(httpx.Request):
         super().__init__(
             method=method,
             url=url,
-            params=params,
+            params=(
+                converters.convert_query_params(params) if params is not None else None
+            ),
             headers=headers,
             cookies=(
                 converters.convert_cookies(cookies) if cookies is not None else None
