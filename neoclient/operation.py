@@ -80,6 +80,9 @@ class Operation(Generic[PS, RT_co]):
         for request_dependency in self.request_dependencies:
             resolve_request(request_dependency, pre_request)
 
+        # Validate the pre-request (e.g. to ensure no path params have been missed)
+        pre_request.validate()
+
         request: Request = pre_request.build_request(client)
 
         return_annotation: Any = inspect.signature(self.func).return_annotation
