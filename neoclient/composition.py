@@ -147,6 +147,3 @@ def compose(
         argument: Any = validated_arguments[field_name]
 
         parameter.compose(request, argument)
-
-    # Validate the request (e.g. to ensure no path params have been missed)
-    request.validate()
