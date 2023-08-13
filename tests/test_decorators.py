@@ -336,5 +336,8 @@ def test_persist_pre_request(func: Callable[..., Any]) -> None:
     decorators.persist_pre_request(func)
 
     assert len(get_operation(func).request_dependencies) == 1
-    assert hasattr(func().state, "pre_request")
-    assert isinstance(func().state.pre_request, PreRequest)
+
+    pre_request: PreRequest = func()
+
+    assert hasattr(pre_request.state, "pre_request")
+    assert isinstance(pre_request.state.pre_request, PreRequest)
