@@ -174,12 +174,9 @@ class CookiesConsumer(SupportsConsumeRequest, SupportsConsumeClient):
         client.cookies.update(self.cookies)
 
 
-@dataclass # (init=False)
+@dataclass
 class PathsConsumer(SupportsConsumeRequest):
     path_params: Mapping[str, str]
-
-    # def __init__(self, path_params: PathsTypes, /, *, delimiter="/") -> None:
-    #     self.path_params = converters.convert_path_params(path_params)
 
     def consume_request(self, request: PreRequest, /) -> None:
         request.path_params.update(self.path_params)

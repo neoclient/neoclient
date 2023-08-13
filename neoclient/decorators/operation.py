@@ -1,4 +1,6 @@
-from typing import Any, Callable, Sequence, TypeVar
+from typing import Any, Callable, Mapping, Sequence, TypeVar
+
+from ..converters import convert_path_param, convert_path_params
 
 from ..consumers import (
     ContentConsumer,
@@ -52,9 +54,25 @@ def mount(path: str, /) -> Callable[[C], C]:
     return OperationConsumerDecorator(MountConsumer(path))
 
 
-def path(key: str, value: PathTypes) -> Callable[[C], C]:
-    return OperationConsumerDecorator(PathConsumer(key, value))
+def path(
+    key: str,
+    value: PathTypes,
+    *,
+    delimiter: str = "/",
+) -> Callable[[C], C]:
+    converted_value: str = convert_path_param(value, delimiter=delimiter)
+
+    return OperationConsumerDecorator(PathConsumer(key, converted_value))
 
 
-def path_params(path_params: PathsTypes, /) -> Callable[[C], C]:
-    return OperationConsumerDecorator(PathsConsumer(path_params))
+def path_params(
+    path_params: PathsTypes,
+    /,
+    *,
+    delimiter: str = "/",
+) -> Callable[[C], C]:
+    converted_path_params: Mapping[str, str] = convert_path_params(
+        path_params, delimiter=delimiter
+    )
+
+    return OperationConsumerDecorator(PathsConsumer(converted_path_params))

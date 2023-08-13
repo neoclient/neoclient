@@ -137,8 +137,6 @@ def test_consumer_path_params(pre_request: PreRequest) -> None:
 
     assert pre_request == expected_pre_request
 
-    assert PathsConsumer({"age": 123}) == PathsConsumer({"age": "123"})
-
 
 def test_consumer_content(pre_request: PreRequest) -> None:
     content: RequestContent = "content"
