@@ -1,5 +1,6 @@
 import collections.abc
 import dataclasses
+import inspect
 import typing
 import urllib.parse
 from collections import Counter
@@ -20,7 +21,13 @@ from pydantic.fields import FieldInfo, ModelField
 from . import api, utils
 from .errors import DuplicateParameters
 from .models import PreRequest
-from .params import BodyParameter, Parameter, PathParameter, QueryParameter
+from .params import (
+    BodyParameter,
+    Parameter,
+    PathParameter,
+    QueriesParameter,
+    QueryParameter,
+)
 from .validation import ValidatedFunction
 
 __all__: Sequence[str] = (
@@ -40,11 +47,18 @@ def get_fields(
         else set()
     )
 
+    validated_function: ValidatedFunction = ValidatedFunction(func)
+
+    parameters: Mapping[
+        str, inspect.Parameter
+    ] = validated_function.signature.parameters
+
     fields: MutableMapping[str, Tuple[Any, Parameter]] = {}
 
     field_name: str
     model_field: ModelField
-    for field_name, model_field in ValidatedFunction(func).model.__fields__.items():
+    for field_name, model_field in validated_function.model.__fields__.items():
+        raw_parameter: inspect.Parameter = parameters[field_name]
         field_info: FieldInfo = model_field.field_info
         parameter: Parameter
 
@@ -55,6 +69,8 @@ def get_fields(
                     alias=field_name,
                     default=utils.get_default(field_info),
                 )
+            elif raw_parameter.kind is inspect.Parameter.VAR_KEYWORD:
+                parameter = QueriesParameter()
             elif (
                 (
                     isinstance(model_field.annotation, type)
@@ -73,6 +89,7 @@ def get_fields(
                 )
             else:
                 parameter = QueryParameter(
+                    alias=field_name,
                     default=utils.get_default(field_info),
                 )
         else:

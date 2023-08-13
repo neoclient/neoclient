@@ -1,13 +1,10 @@
 import pytest
-
-from neoclient import Request, Response
-from neoclient.middlewares import ExpectedContentTypeMiddleware
-
 from mediate.protocols import MiddlewareCallable
 
+from neoclient import Request, Response
 from neoclient.enums import HTTPHeader
-
 from neoclient.errors import ExpectedContentTypeError
+from neoclient.middlewares import ExpectedContentTypeMiddleware
 
 from . import utils
 
