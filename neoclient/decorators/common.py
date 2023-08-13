@@ -3,6 +3,7 @@ from typing import Callable, Sequence, Type, TypeVar
 from ..consumers import (
     CookieConsumer,
     CookiesConsumer,
+    FollowRedirectsConsumer,
     HeaderConsumer,
     HeadersConsumer,
     QueriesConsumer,
@@ -145,3 +146,7 @@ def user_agent(user_agent: str, /) -> Callable[[TT], TT]:
 
 def verify(verify: VerifyTypes, /) -> Callable[[TT], TT]:
     return ConsumerDecorator(VerifyConsumer(verify))
+
+
+def follow_redirects(follow_redirects: bool, /) -> Callable[[TT], TT]:
+    return ConsumerDecorator(FollowRedirectsConsumer(follow_redirects))

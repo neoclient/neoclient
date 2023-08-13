@@ -259,3 +259,14 @@ class VerifyConsumer(SupportsConsumeClient):
 
     def consume_client(self, client: ClientOptions, /) -> None:
         client.verify = self.verify
+
+
+@dataclass
+class FollowRedirectsConsumer(SupportsConsumeRequest, SupportsConsumeClient):
+    follow_redirects: bool
+
+    def consume_request(self, request: PreRequest, /) -> None:
+        request.follow_redirects = self.follow_redirects
+
+    def consume_client(self, client: ClientOptions, /) -> None:
+        client.follow_redirects = self.follow_redirects
