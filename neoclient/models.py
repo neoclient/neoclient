@@ -25,7 +25,6 @@ from .defaults import (
     DEFAULT_FOLLOW_REDIRECTS,
     DEFAULT_LIMITS,
     DEFAULT_TRUST_ENV,
-    DEFAULT_VERIFY,
 )
 from .enums import HTTPHeader
 from .errors import IncompatiblePathParameters, MissingStateError
@@ -520,7 +519,13 @@ class PreRequest:
         )
 
     def clone(self) -> "PreRequest":
-        return self.merge(PreRequest(method=self.method, url=self.url))
+        return self.merge(
+            PreRequest(
+                method=self.method,
+                url=self.url,
+                follow_redirects=self.follow_redirects,
+            )
+        )
 
     def _get_formatted_url(self) -> str:
         return urllib.parse.unquote(str(self.url)).format(**self.path_params)

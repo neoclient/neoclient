@@ -16,7 +16,6 @@ from .middlewares import Middleware
 from .models import ClientOptions, PreRequest, Request, Response
 from .resolution import resolve_request, resolve_response
 from .typing import Dependency
-from .types import VerifyTypes
 
 __all__: Sequence[str] = (
     "set_operation",

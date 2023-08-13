@@ -1,7 +1,5 @@
 from typing import Any, Callable, Mapping, Sequence, TypeVar
 
-from ..converters import convert_path_param, convert_path_params
-
 from ..consumers import (
     ContentConsumer,
     DataConsumer,
@@ -11,6 +9,7 @@ from ..consumers import (
     PathConsumer,
     PathsConsumer,
 )
+from ..converters import convert_path_param, convert_path_params
 from ..types import (
     JsonTypes,
     PathsTypes,

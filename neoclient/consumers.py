@@ -40,6 +40,7 @@ __all__: Sequence[str] = (
     "MountConsumer",
     "BaseURLConsumer",
     "VerifyConsumer",
+    "FollowRedirectsConsumer",
 )
 
 
