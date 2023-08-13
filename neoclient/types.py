@@ -66,8 +66,8 @@ PathTypes: TypeAlias = Union[Primitive, Sequence[Primitive]]
 QueriesTypes: TypeAlias = Union[
     QueryParams,
     Mapping[str, Union[Primitive, Sequence[Primitive]]],
-    List[Tuple[str, Primitive]],
-    Tuple[Tuple[str, Primitive], ...],
+    Sequence[Tuple[str, Primitive]],
+    Sequence[str],
     str,
     bytes,
 ]

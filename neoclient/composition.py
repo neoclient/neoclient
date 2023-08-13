@@ -69,7 +69,10 @@ def get_fields(
                     alias=field_name,
                     default=utils.get_default(field_info),
                 )
-            elif raw_parameter.kind is inspect.Parameter.VAR_KEYWORD:
+            elif raw_parameter.kind in (
+                inspect.Parameter.VAR_POSITIONAL,
+                inspect.Parameter.VAR_KEYWORD,
+            ):
                 parameter = QueriesParameter()
             elif (
                 (
