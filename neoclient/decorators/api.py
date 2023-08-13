@@ -27,7 +27,7 @@ class OperationConsumerDecorator:
             raise CompositionError(f"Target of unsupported type {type(target)}")
 
         if isinstance(self.consumer, SupportsConsumeRequest):
-            pre_request: PreRequest = get_operation(target).request_options
+            pre_request: PreRequest = get_operation(target).pre_request
 
             self.consumer.consume_request(pre_request)
         else:

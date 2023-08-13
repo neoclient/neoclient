@@ -232,7 +232,7 @@ class Client:
         response: Optional[Dependency] = None,
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         client_options: ClientOptions = ClientOptions()
-        request_options: PreRequest = PreRequest(
+        pre_request: PreRequest = PreRequest(
             method=method,
             url=endpoint,
         )
@@ -260,7 +260,7 @@ class Client:
             operation: Operation[PS, RT] = Operation(
                 func=func,
                 client_options=client_options,
-                request_options=request_options,
+                pre_request=pre_request,
                 client=self.client,
                 middleware=middleware,
                 response=operation_response,
@@ -269,7 +269,7 @@ class Client:
             )
 
             # Validate operation function parameters are acceptable
-            validate_fields(get_fields(operation.request_options, func))
+            validate_fields(get_fields(operation.pre_request, func))
 
             return operation.wrapper
 

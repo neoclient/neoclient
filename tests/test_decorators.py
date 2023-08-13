@@ -1,8 +1,8 @@
 from dataclasses import replace
 from io import BytesIO
-from typing import Any, Callable, Type
+from typing import Any, Callable, MutableMapping, Type
 
-from httpx import Cookies, Headers, QueryParams, Timeout
+from httpx import URL, Cookies, Headers, QueryParams, Timeout
 from pytest import fixture
 
 from neoclient import converters, decorators, get
@@ -43,169 +43,161 @@ def service() -> Type[Service]:
 
 
 def test_query(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     key: str = "name"
     value: str = "sam"
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.params = QueryParams({key: value})
 
     decorators.query(key, value)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, params=QueryParams({key: value})
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_header(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     key: str = "name"
     value: str = "sam"
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.headers = Headers({key: value})
 
     decorators.header(key, value)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, headers=Headers({key: value})
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_cookie(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     key: str = "name"
     value: str = "sam"
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.cookies = Cookies({key: value})
 
     decorators.cookie(key, value)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, cookies=Cookies({key: value})
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_path(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     key: str = "name"
     value: str = "sam"
 
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.path_params = {key: value}
+
     decorators.path(key, value)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, path_params={key: value}
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_query_params(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     query_params: QueriesTypes = {"name": "sam"}
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.params = converters.convert_query_params(query_params)
 
     decorators.query_params(query_params)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, params=converters.convert_query_params(query_params)
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_headers(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     headers: HeadersTypes = {"name": "sam"}
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.headers = converters.convert_headers(headers)
 
     decorators.headers(headers)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, headers=converters.convert_headers(headers)
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_cookies(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     cookies: CookiesTypes = {"name": "sam"}
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.cookies = converters.convert_cookies(cookies)
 
     decorators.cookies(cookies)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, cookies=converters.convert_cookies(cookies)
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_path_params(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     path_params: PathsTypes = {"name": "sam"}
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.path_params = converters.convert_path_params(path_params)
 
     decorators.path_params(path_params)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, path_params=path_params
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_content(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     content: RequestContent = "content"
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.content = content
 
     decorators.content(content)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, content=content
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_data(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     data: RequestData = {"name": "sam"}
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.data = data
 
     decorators.data(data)(func)
 
-    assert get_operation(func).request_options == replace(original_request, data=data)
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_files(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     files: RequestFiles = {"file.txt": BytesIO(b"content")}
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.files = files
 
     decorators.files(files)(func)
 
-    assert get_operation(func).request_options == replace(original_request, files=files)
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_json(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     json: JsonTypes = {"name": "sam"}
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.json = json
 
     decorators.json(json)(func)
 
-    assert get_operation(func).request_options == replace(original_request, json=json)
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_timeout(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     timeout: TimeoutTypes = 5.0
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.timeout = converters.convert_timeout(timeout)
 
     decorators.timeout(timeout)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, timeout=Timeout(timeout)
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_mount(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     mount: str = "/mount"
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.url = URL("/mount/foo")
 
     decorators.mount(mount)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, url="/mount/foo"
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_base_url(service: Type[Service]) -> None:
@@ -269,39 +261,36 @@ def test_response_depends(func: Callable[..., Any]) -> None:
 
 
 def test_user_agent(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     user_agent: str = "foo/1.0"
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.headers = Headers({"User-Agent": user_agent})
 
     decorators.user_agent(user_agent)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, headers=Headers({"User-Agent": user_agent})
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_accept(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     accept: str = "en-GB"
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.headers = Headers({"Accept": accept})
 
     decorators.accept(accept)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, headers=Headers({"Accept": accept})
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_referer(func: Callable) -> None:
-    original_request: PreRequest = replace(get_operation(func).request_options)
-
     referer: str = "https://foo.bar/"
+
+    expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
+    expected_pre_request.headers = Headers({"Referer": referer})
 
     decorators.referer(referer)(func)
 
-    assert get_operation(func).request_options == replace(
-        original_request, headers=Headers({"Referer": referer})
-    )
+    assert get_operation(func).pre_request == expected_pre_request
 
 
 def test_verify_request(func: Callable) -> None:
@@ -331,7 +320,7 @@ def test_verify_client(service: Type[Service]) -> None:
 
 
 def test_persist_pre_request(func: Callable[..., Any]) -> None:
-    assert get_operation(func).request_options.state == State()
+    assert get_operation(func).pre_request.state == State()
 
     decorators.persist_pre_request(func)
 
