@@ -23,6 +23,7 @@ from .decorators import (
     cookies,
     data,
     files,
+    follow_redirects,
     header,
     headers,
     json,

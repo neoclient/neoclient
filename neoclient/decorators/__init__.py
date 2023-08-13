@@ -3,6 +3,7 @@ from .common import (
     accept,
     cookie,
     cookies,
+    follow_redirects,
     header,
     headers,
     query,
