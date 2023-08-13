@@ -2,9 +2,15 @@ from dataclasses import dataclass, field
 from typing import Optional, Protocol, Sequence
 
 import mediate
+import mediatype
+from mediatype import MediaType
 
 from .enums import HTTPHeader
-from .errors import ExpectedHeaderError, ExpectedStatusCodeError
+from .errors import (
+    ExpectedContentTypeError,
+    ExpectedHeaderError,
+    ExpectedStatusCodeError,
+)
 from .models import Request, Response
 
 __all__: Sequence[str] = (
@@ -65,16 +71,51 @@ class ExpectedHeaderMiddleware:
 
 @dataclass
 class ExpectedContentTypeMiddleware:
-    content_type: str
+    content_type: MediaType
+
+    suffix: bool
+    parameters: bool
+
+    def __init__(
+        self,
+        content_type: str,
+        /,
+        *,
+        suffix: Optional[bool] = None,
+        parameters: Optional[bool] = None,
+    ) -> None:
+        self.content_type = mediatype.parse(content_type)
+
+        if suffix is None:
+            suffix = self.content_type.suffix is not None
+        if parameters is None:
+            parameters = self.content_type.parameters is not None
+
+        self.suffix = suffix
+        self.parameters = parameters
 
     def __call__(self, call_next: RequestMiddleware, request: Request, /) -> Response:
-        # NOTE: In the future this should parse the content type to support
-        # lenient checking.
-        # For example, 'application/json+foo' should likely be an acceptable
-        # value when expecting a lenient form of 'application/json'
-        return ExpectedHeaderMiddleware(HTTPHeader.CONTENT_TYPE, self.content_type)(
-            call_next, request
-        )
+        response: Response = call_next(request)
+
+        raw_content_type: str = response.headers.get(HTTPHeader.CONTENT_TYPE)
+
+        if raw_content_type is None:
+            raise ExpectedHeaderError(HTTPHeader.CONTENT_TYPE)
+
+        content_type: MediaType = mediatype.parse(raw_content_type)
+
+        expected_content_type: str = self._media_type_to_string(self.content_type)
+        actual_content_type: str = self._media_type_to_string(content_type)
+
+        if expected_content_type != actual_content_type:
+            raise ExpectedContentTypeError(
+                expected=expected_content_type, actual=actual_content_type
+            )
+
+        return response
+
+    def _media_type_to_string(self, media_type: MediaType, /) -> str:
+        return media_type.string(suffix=self.suffix, parameters=self.parameters)
 
 
 def raise_for_status(call_next: RequestMiddleware, request: Request, /) -> Response:
