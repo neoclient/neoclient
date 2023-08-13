@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "neoclient"
-version = "0.1.39"
+version = "0.1.40"
 description = "Fast API Clients for Python"
 authors = ["Tom Bulled <26026015+tombulled@users.noreply.github.com>"]
 license = "MIT"
