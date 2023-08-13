@@ -189,7 +189,7 @@ def Path(
         min_length=min_length,
         max_length=max_length,
         regex=regex,
-        delimiter=delimiter
+        delimiter=delimiter,
     )
 
 
