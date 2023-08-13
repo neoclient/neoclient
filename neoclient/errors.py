@@ -79,7 +79,7 @@ class ExpectedContentTypeError(Exception):
 
     def __str__(self) -> str:
         return (
-            f"Response {HTTPHeader.CONTENT_TYPE.value} has incorrect value."
+            f"Response {HTTPHeader.CONTENT_TYPE} has incorrect value."
             f" Expected {self.expected!r}, got {self.actual!r}"
         )
 
