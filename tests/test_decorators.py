@@ -7,7 +7,7 @@ from pytest import fixture
 
 from neoclient import converters, decorators, get
 from neoclient.middlewares import RequestMiddleware
-from neoclient.models import ClientOptions, PreRequest, Request, Response
+from neoclient.models import ClientOptions, PreRequest, Request, Response, State
 from neoclient.operation import get_operation
 from neoclient.services import Service
 from neoclient.types import (
@@ -26,7 +26,7 @@ from neoclient.types import (
 @fixture
 def func() -> Callable:
     @get("/foo")
-    def foo():
+    def foo() -> PreRequest:
         ...
 
     return foo
@@ -328,3 +328,16 @@ def test_verify_client(service: Type[Service]) -> None:
         original_client_options,
         verify=verify,
     )
+
+
+def test_persist_pre_request(func: Callable[..., Any]) -> None:
+    assert get_operation(func).request_options.state == State()
+
+    decorators.persist_pre_request(func)
+
+    assert len(get_operation(func).request_dependencies) == 1
+
+    pre_request: PreRequest = func()
+
+    assert hasattr(pre_request.state, "pre_request")
+    assert isinstance(pre_request.state.pre_request, PreRequest)
