@@ -171,6 +171,7 @@ def Path(
     min_length: Optional[int] = None,
     max_length: Optional[int] = None,
     regex: Optional[str] = None,
+    delimiter: str = "/",
 ) -> PathParameter:
     return PathParameter(
         default=default,
@@ -188,6 +189,7 @@ def Path(
         min_length=min_length,
         max_length=max_length,
         regex=regex,
+        delimiter=delimiter
     )
 
 
@@ -249,6 +251,7 @@ def Paths(
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
     unique_items: Optional[bool] = None,
+    delimiter: str = "/",
 ) -> PathsParameter:
     return PathsParameter(
         default=default,
@@ -256,6 +259,7 @@ def Paths(
         min_items=min_items,
         max_items=max_items,
         unique_items=unique_items,
+        delimiter=delimiter,
     )
 
 

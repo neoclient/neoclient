@@ -208,7 +208,7 @@ def test_base_url(service: Type[Service]) -> None:
     decorators.base_url(base_url)(service)
 
     assert service._spec.options == replace(
-        original_client_options, base_url="https://foo.bar/"
+        original_client_options, base_url=URL(base_url)
     )
 
 
