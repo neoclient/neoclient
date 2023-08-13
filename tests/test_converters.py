@@ -63,6 +63,12 @@ def test_convert_query_params() -> None:
     assert converters.convert_query_params(
         (("name", "sam"), ("age", "43"))
     ) == QueryParams({"name": "sam", "age": "43"})
+    assert converters.convert_query_params(("name", "age")) == QueryParams(
+        {"name": "", "age": ""}
+    )
+    assert converters.convert_query_params("name=sam&age=43") == QueryParams(
+        {"name": "sam", "age": "43"}
+    )
 
 
 def test_convert_headers() -> None:

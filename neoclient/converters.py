@@ -82,8 +82,14 @@ def convert_query_params(value: QueriesTypes, /) -> QueryParams:
     if isinstance(value, QueryParams):
         return value
 
-    if isinstance(value, (Mapping, list, tuple)):
+    if isinstance(value, (Mapping, str, bytes)):
         return QueryParams(value)
+
+    if isinstance(value, Sequence):
+        if all(isinstance(v, tuple) for v in value):
+            return QueryParams([*value])
+        elif all(isinstance(v, str) for v in value):
+            return QueryParams([(str(v), None) for v in value])
 
     raise ConversionError("query params", value)
 
