@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any, Optional, Sequence
 
+from .enums import HTTPHeader
+
 __all__: Sequence[str] = (
     "DuplicateParameters",
     "IncompatiblePathParameters",
@@ -77,7 +79,7 @@ class ExpectedContentTypeError(Exception):
 
     def __str__(self) -> str:
         return (
-            f"Response Content-Type has incorrect value."
+            f"Response {HTTPHeader.CONTENT_TYPE.value} has incorrect value."
             f" Expected {self.expected!r}, got {self.actual!r}"
         )
 
