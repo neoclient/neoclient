@@ -78,7 +78,7 @@ def test_request(client: NeoClient) -> None:
     def foo():
         ...
 
-    assert get_operation(foo).request_options == PreRequest(
+    assert get_operation(foo).pre_request == PreRequest(
         method=method,
         url=endpoint,
     )

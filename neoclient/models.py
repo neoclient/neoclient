@@ -166,13 +166,12 @@ class Request(httpx.Request):
             extensions=extensions,
         )
 
-        if state is not None:
-            self.state = state
-        else:
-            self.state = State()
+        self.state = state if state is not None else State()
 
     @classmethod
-    def from_httpx_request(cls, httpx_request: httpx.Request, /) -> "Request":
+    def from_httpx_request(
+        cls, httpx_request: httpx.Request, /, *, state: Optional[State] = None
+    ) -> "Request":
         if hasattr(httpx_request, "_content"):
             request: Request = cls(
                 method=httpx_request.method,
@@ -180,6 +179,7 @@ class Request(httpx.Request):
                 headers=httpx_request.headers,
                 extensions=httpx_request.extensions,
                 stream=httpx_request.stream,
+                state=state,
             )
 
             request._content = httpx_request.content
@@ -192,6 +192,7 @@ class Request(httpx.Request):
             headers=httpx_request.headers,
             extensions=httpx_request.extensions,
             stream=httpx_request.stream,
+            state=state,
         )
 
 
@@ -228,19 +229,19 @@ class Response(httpx.Response):
             default_encoding=default_encoding,
         )
 
-        if state is not None:
-            self.state = state
-        else:
-            self.state = State()
+        self.state = state if state is not None else State()
 
     @classmethod
-    def from_httpx_response(cls, httpx_response: httpx.Response, /) -> "Response":
+    def from_httpx_response(
+        cls, httpx_response: httpx.Response, /, *, state: Optional[State] = None
+    ) -> "Response":
         if hasattr(httpx_response, "_content"):
             response: Response = cls(
                 status_code=httpx_response.status_code,
                 headers=httpx_response.headers,
                 request=httpx_response.request,
                 stream=httpx_response.stream,
+                state=state,
             )
 
             response._content = httpx_response.content
@@ -252,6 +253,7 @@ class Response(httpx.Response):
             headers=httpx_response.headers,
             request=httpx_response.request,
             stream=httpx_response.stream,
+            state=state,
         )
 
 
@@ -364,7 +366,6 @@ class ClientOptions:
         )
 
 
-@dataclass(init=False)
 class PreRequest:
     method: str
     url: URL
@@ -422,6 +423,32 @@ class PreRequest:
         )
         self.state = state if state is not None else State()
 
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__}({self.method!r}, {str(self.url)!r})>"
+
+    def __eq__(self, rhs: Any, /) -> bool:
+        if not isinstance(rhs, PreRequest):
+            return False
+
+        pre_request: PreRequest = rhs
+
+        return all(
+            (
+                self.method == pre_request.method,
+                self.url == pre_request.url,
+                self.params == pre_request.params,
+                self.headers == pre_request.headers,
+                self.cookies == pre_request.cookies,
+                self.content == pre_request.content,
+                self.data == pre_request.data,
+                self.files == pre_request.files,
+                self.json == pre_request.json,
+                self.timeout == pre_request.timeout,
+                self.path_params == pre_request.path_params,
+                self.state == pre_request.state,
+            )
+        )
+
     def build_request(self, client: Optional[httpx.Client]) -> Request:
         url: str = self._get_formatted_url()
 
@@ -459,9 +486,7 @@ class PreRequest:
             extensions=extensions,
         )
 
-        request: Request = Request.from_httpx_request(httpx_request)
-
-        request.state = self.state
+        request: Request = Request.from_httpx_request(httpx_request, state=self.state)
 
         return request
 
@@ -485,6 +510,7 @@ class PreRequest:
                 **self.path_params,
                 **pre_request.path_params,
             },
+            state=State({**self.state._state, **pre_request.state._state}),
         )
 
     def clone(self) -> "PreRequest":

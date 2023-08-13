@@ -51,7 +51,7 @@ def get_operation(func: Callable, /) -> "Operation":
 class Operation(Generic[PS, RT_co]):
     func: Callable[PS, RT_co]
     client_options: ClientOptions
-    request_options: PreRequest
+    pre_request: PreRequest
     client: Optional[Client] = None
     response: Optional[Dependency] = None
     middleware: Middleware = field(default_factory=Middleware)
@@ -70,7 +70,7 @@ class Operation(Generic[PS, RT_co]):
         # Create a clone of the request options, so that mutations don't
         # affect the original copy.
         # Mutations to the request options will occur during composition.
-        pre_request: PreRequest = self.request_options.clone()
+        pre_request: PreRequest = self.pre_request.clone()
 
         # Compose the request using the provided arguments
         compose(self.func, pre_request, args, kwargs)
