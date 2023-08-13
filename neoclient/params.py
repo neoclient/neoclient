@@ -23,6 +23,7 @@ from .converters import (
     convert_cookie,
     convert_header,
     convert_path_param,
+    convert_path_params,
     convert_query_param,
 )
 from .errors import CompositionError, ResolutionError
@@ -273,9 +274,12 @@ class CookieParameter(
         return CookieResolver(key).resolve_response
 
 
+@dataclass(unsafe_hash=True)
 class PathParameter(ComposableSingletonStringParameter):
+    delimiter: str = "/"
+
     def parse_value(self, value: Any, /) -> str:
-        return convert_path_param(value)
+        return convert_path_param(value, delimiter=self.delimiter)
 
     def build_consumer(self, key: str, value: str) -> RequestConsumer:
         return PathConsumer(key, value).consume_request
@@ -320,9 +324,16 @@ class CookiesParameter(Parameter):
         return CookiesResolver().resolve_response(response)
 
 
+@dataclass(unsafe_hash=True)
 class PathsParameter(Parameter):
+    delimiter: str = "/"
+
     def compose(self, request: PreRequest, argument: Any, /) -> None:
-        path_params: PathsTypes = parse_obj_as(PathsTypes, argument)  # type: ignore
+        raw_path_params: PathsTypes = parse_obj_as(PathsTypes, argument)  # type: ignore
+
+        path_params: Mapping[str, str] = convert_path_params(
+            raw_path_params, delimiter=self.delimiter
+        )
 
         PathsConsumer(path_params).consume_request(request)
 

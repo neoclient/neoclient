@@ -182,6 +182,7 @@ def Path(
     min_length: Optional[int] = None,
     max_length: Optional[int] = None,
     regex: Optional[str] = None,
+    delimiter: str = "/",
 ) -> Any: ...
 @overload
 def Path(
@@ -200,6 +201,7 @@ def Path(
     min_length: Optional[int] = None,
     max_length: Optional[int] = None,
     regex: Optional[str] = None,
+    delimiter: str = "/",
 ) -> T: ...
 @overload
 def Path(
@@ -218,6 +220,7 @@ def Path(
     min_length: Optional[int] = None,
     max_length: Optional[int] = None,
     regex: Optional[str] = None,
+    delimiter: str = "/",
 ) -> T: ...
 
 # Queries
@@ -302,6 +305,7 @@ def Paths(
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
     unique_items: Optional[bool] = None,
+    delimiter: str = "/",
 ) -> Any: ...
 @overload
 def Paths(
@@ -310,6 +314,7 @@ def Paths(
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
     unique_items: Optional[bool] = None,
+    delimiter: str = "/",
 ) -> T: ...
 @overload
 def Paths(
@@ -318,6 +323,7 @@ def Paths(
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
     unique_items: Optional[bool] = None,
+    delimiter: str = "/",
 ) -> T: ...
 
 # Body

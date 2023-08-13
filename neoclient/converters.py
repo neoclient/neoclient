@@ -59,7 +59,7 @@ def convert_cookie(value: CookieTypes, /) -> str:
     return str(value)
 
 
-def convert_path_param(value: PathTypes, /) -> str:
+def convert_path_param(value: PathTypes, /, *, delimiter: str = "/") -> str:
     if isinstance(value, (str, int, float, bool)) or value is None:
         return primitive_value_to_str(value)
 
@@ -73,7 +73,7 @@ def convert_path_param(value: PathTypes, /) -> str:
             if converted_segment:
                 segments.append(converted_segment)
 
-        return "/".join(segments)
+        return delimiter.join(segments)
 
     raise ConversionError("path param", value)
 
@@ -111,11 +111,19 @@ def convert_cookies(value: CookiesTypes, /) -> Cookies:
     raise ConversionError("cookies", value)
 
 
-def convert_path_params(path_params: PathsTypes, /) -> MutableMapping[str, str]:
+def convert_path_params(
+    path_params: PathsTypes, /, *, delimiter: str = "/"
+) -> MutableMapping[str, str]:
     if isinstance(path_params, Mapping):
-        return {key: convert_path_param(value) for key, value in path_params.items()}
+        return {
+            key: convert_path_param(value, delimiter=delimiter)
+            for key, value in path_params.items()
+        }
 
-    return {key: convert_path_param(value) for key, value in path_params}
+    return {
+        key: convert_path_param(value, delimiter=delimiter)
+        for key, value in path_params
+    }
 
 
 def convert_timeout(value: TimeoutTypes, /) -> Timeout:
