@@ -6,8 +6,8 @@ from ..consumers import (
     FollowRedirectsConsumer,
     HeaderConsumer,
     HeadersConsumer,
-    QueriesConsumer,
     QueryConsumer,
+    QueryParamsConsumer,
     TimeoutConsumer,
     VerifyConsumer,
 )
@@ -20,7 +20,7 @@ from ..types import (
     CookieTypes,
     HeadersTypes,
     HeaderTypes,
-    QueriesTypes,
+    QueryParamsTypes,
     QueryTypes,
     TimeoutTypes,
     VerifyTypes,
@@ -118,8 +118,8 @@ def query(key: str, value: QueryTypes) -> Callable[[TT], TT]:
     return ConsumerDecorator(QueryConsumer(key, value))
 
 
-def query_params(params: QueriesTypes, /) -> Callable[[TT], TT]:
-    return ConsumerDecorator(QueriesConsumer(params))
+def query_params(params: QueryParamsTypes, /) -> Callable[[TT], TT]:
+    return ConsumerDecorator(QueryParamsConsumer(params))
 
 
 def referer(referer: str, /) -> Callable[[TT], TT]:

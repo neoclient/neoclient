@@ -1,5 +1,5 @@
 # examples/path-params
-Example for the `Paths` parameter
+Example for the `PathParams` parameter
 
 ## Start the Server
 ```console

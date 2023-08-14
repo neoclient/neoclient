@@ -13,7 +13,7 @@ __all__: Sequence[str] = (
     "HeaderResolver",
     "HeadersResolver",
     "QueryResolver",
-    "QueriesResolver",
+    "QueryParamsResolver",
     "StateResolver",
 )
 
@@ -68,7 +68,7 @@ class CookieResolver(SupportsResolveRequest, SupportsResolveResponse):
         return cookies.get(self.name)
 
 
-class QueriesResolver(SupportsResolveRequest, SupportsResolveResponse):
+class QueryParamsResolver(SupportsResolveRequest, SupportsResolveResponse):
     @staticmethod
     def resolve_request(request: PreRequest, /) -> QueryParams:
         return request.params

@@ -7,12 +7,12 @@ from ..consumers import (
     JsonConsumer,
     MountConsumer,
     PathConsumer,
-    PathsConsumer,
+    PathParamsConsumer,
 )
 from ..converters import convert_path_param, convert_path_params
 from ..types import (
     JsonTypes,
-    PathsTypes,
+    PathParamsTypes,
     PathTypes,
     RequestContent,
     RequestData,
@@ -65,7 +65,7 @@ def path(
 
 
 def path_params(
-    path_params: PathsTypes,
+    path_params: PathParamsTypes,
     /,
     *,
     delimiter: str = "/",
@@ -74,4 +74,4 @@ def path_params(
         path_params, delimiter=delimiter
     )
 
-    return OperationConsumerDecorator(PathsConsumer(converted_path_params))
+    return OperationConsumerDecorator(PathParamsConsumer(converted_path_params))

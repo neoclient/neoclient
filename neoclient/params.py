@@ -14,9 +14,9 @@ from .consumers import (
     HeaderConsumer,
     HeadersConsumer,
     PathConsumer,
-    PathsConsumer,
-    QueriesConsumer,
+    PathParamsConsumer,
     QueryConsumer,
+    QueryParamsConsumer,
     StateConsumer,
 )
 from .converters import (
@@ -34,11 +34,11 @@ from .resolvers import (
     CookiesResolver,
     HeaderResolver,
     HeadersResolver,
-    QueriesResolver,
+    QueryParamsResolver,
     QueryResolver,
     StateResolver,
 )
-from .types import CookiesTypes, HeadersTypes, PathsTypes, QueriesTypes
+from .types import CookiesTypes, HeadersTypes, PathParamsTypes, QueryParamsTypes
 from .typing import RequestConsumer, RequestResolver, ResponseResolver, Supplier
 from .utils import parse_obj_as
 
@@ -47,10 +47,10 @@ __all__: Sequence[str] = (
     "HeaderParameter",
     "CookieParameter",
     "PathParameter",
-    "QueriesParameter",
+    "QueryParamsParameter",
     "HeadersParameter",
     "CookiesParameter",
-    "PathsParameter",
+    "PathParamsParameter",
     "BodyParameter",
     "URLParameter",
     "ResponseParameter",
@@ -285,17 +285,17 @@ class PathParameter(ComposableSingletonStringParameter):
         return PathConsumer(key, value).consume_request
 
 
-class QueriesParameter(Parameter):
+class QueryParamsParameter(Parameter):
     def compose(self, request: PreRequest, argument: Any, /) -> None:
-        params: QueriesTypes = parse_obj_as(QueriesTypes, argument)  # type: ignore
+        params: QueryParamsTypes = parse_obj_as(QueryParamsTypes, argument)  # type: ignore
 
-        QueriesConsumer(params).consume_request(request)
+        QueryParamsConsumer(params).consume_request(request)
 
     def resolve_request(self, request: PreRequest, /) -> QueryParams:
-        return QueriesResolver().resolve_request(request)
+        return QueryParamsResolver().resolve_request(request)
 
     def resolve_response(self, response: Response, /) -> QueryParams:
-        return QueriesResolver().resolve_response(response)
+        return QueryParamsResolver().resolve_response(response)
 
 
 class HeadersParameter(Parameter):
@@ -325,17 +325,17 @@ class CookiesParameter(Parameter):
 
 
 @dataclass(unsafe_hash=True)
-class PathsParameter(Parameter):
+class PathParamsParameter(Parameter):
     delimiter: str = "/"
 
     def compose(self, request: PreRequest, argument: Any, /) -> None:
-        raw_path_params: PathsTypes = parse_obj_as(PathsTypes, argument)  # type: ignore
+        raw_path_params: PathParamsTypes = parse_obj_as(PathParamsTypes, argument)  # type: ignore
 
         path_params: Mapping[str, str] = convert_path_params(
             raw_path_params, delimiter=self.delimiter
         )
 
-        PathsConsumer(path_params).consume_request(request)
+        PathParamsConsumer(path_params).consume_request(request)
 
 
 @dataclass(unsafe_hash=True)

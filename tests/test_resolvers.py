@@ -7,7 +7,7 @@ from neoclient.resolvers import (
     CookiesResolver,
     HeaderResolver,
     HeadersResolver,
-    QueriesResolver,
+    QueryParamsResolver,
     QueryResolver,
     StateResolver,
 )
@@ -77,22 +77,26 @@ def test_CookieResolver_resolve_response() -> None:
     assert CookieResolver("name").resolve_response(response_without_cookie) is None
 
 
-def test_QueriesResolver_resolve_request() -> None:
+def test_QueryParamsResolver_resolve_request() -> None:
     request: PreRequest = utils.build_pre_request(
         params={"name": "sam"},
     )
 
-    assert QueriesResolver().resolve_request(request) == QueryParams({"name": "sam"})
+    assert QueryParamsResolver().resolve_request(request) == QueryParams(
+        {"name": "sam"}
+    )
 
 
-def test_QueriesResolver_resolve_response() -> None:
+def test_QueryParamsResolver_resolve_response() -> None:
     response: Response = utils.build_response(
         request=utils.build_request(
             params={"name": "sam"},
         ),
     )
 
-    assert QueriesResolver().resolve_response(response) == QueryParams({"name": "sam"})
+    assert QueryParamsResolver().resolve_response(response) == QueryParams(
+        {"name": "sam"}
+    )
 
 
 def test_HeadersResolver_resolve_request() -> None:

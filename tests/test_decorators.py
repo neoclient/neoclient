@@ -1,8 +1,8 @@
 from dataclasses import replace
 from io import BytesIO
-from typing import Any, Callable, MutableMapping, Type
+from typing import Any, Callable, Type
 
-from httpx import URL, Cookies, Headers, QueryParams, Timeout
+from httpx import URL, Cookies, Headers, QueryParams
 from pytest import fixture
 
 from neoclient import converters, decorators, get
@@ -15,8 +15,8 @@ from neoclient.types import (
     CookiesTypes,
     HeadersTypes,
     JsonTypes,
-    PathsTypes,
-    QueriesTypes,
+    PathParamsTypes,
+    QueryParamsTypes,
     RequestContent,
     RequestData,
     RequestFiles,
@@ -92,7 +92,7 @@ def test_path(func: Callable) -> None:
 
 
 def test_query_params(func: Callable) -> None:
-    query_params: QueriesTypes = {"name": "sam"}
+    query_params: QueryParamsTypes = {"name": "sam"}
 
     expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
     expected_pre_request.params = converters.convert_query_params(query_params)
@@ -125,7 +125,7 @@ def test_cookies(func: Callable) -> None:
 
 
 def test_path_params(func: Callable) -> None:
-    path_params: PathsTypes = {"name": "sam"}
+    path_params: PathParamsTypes = {"name": "sam"}
 
     expected_pre_request: PreRequest = get_operation(func).pre_request.clone()
     expected_pre_request.path_params = converters.convert_path_params(path_params)

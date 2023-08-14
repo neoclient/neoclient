@@ -10,9 +10,9 @@ from .params import (
     HeaderParameter,
     HeadersParameter,
     PathParameter,
-    PathsParameter,
-    QueriesParameter,
+    PathParamsParameter,
     QueryParameter,
+    QueryParamsParameter,
     ReasonParameter,
     RequestParameter,
     ResponseParameter,
@@ -200,8 +200,8 @@ def QueryParams(
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
     unique_items: Optional[bool] = None,
-) -> QueriesParameter:
-    return QueriesParameter(
+) -> QueryParamsParameter:
+    return QueryParamsParameter(
         default=default,
         default_factory=default_factory,
         min_items=min_items,
@@ -252,8 +252,8 @@ def PathParams(
     max_items: Optional[int] = None,
     unique_items: Optional[bool] = None,
     delimiter: str = "/",
-) -> PathsParameter:
-    return PathsParameter(
+) -> PathParamsParameter:
+    return PathParamsParameter(
         default=default,
         default_factory=default_factory,
         min_items=min_items,

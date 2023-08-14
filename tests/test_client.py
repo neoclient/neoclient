@@ -4,7 +4,7 @@ import pytest
 from httpx import Headers
 from pydantic import BaseModel, Required
 
-from neoclient import Body, NeoClient, QueryParams, Query
+from neoclient import Body, NeoClient, Query, QueryParams
 from neoclient.decorators import request
 from neoclient.middlewares import RequestMiddleware
 from neoclient.models import PreRequest, Request, Response

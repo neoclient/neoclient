@@ -11,9 +11,9 @@ from .types import (
     HeadersTypes,
     HeaderTypes,
     JsonTypes,
-    PathsTypes,
+    PathParamsTypes,
     PathTypes,
-    QueriesTypes,
+    QueryParamsTypes,
     QueryTypes,
     RequestContent,
     RequestData,
@@ -28,10 +28,10 @@ __all__: Sequence[str] = (
     "HeaderConsumer",
     "CookieConsumer",
     "PathConsumer",
-    "QueriesConsumer",
+    "QueryParamsConsumer",
     "HeadersConsumer",
     "CookiesConsumer",
-    "PathsConsumer",
+    "PathParamsConsumer",
     "ContentConsumer",
     "DataConsumer",
     "FilesConsumer",
@@ -134,10 +134,10 @@ class PathConsumer(SupportsConsumeRequest):
 
 
 @dataclass(init=False)
-class QueriesConsumer(SupportsConsumeRequest, SupportsConsumeClient):
+class QueryParamsConsumer(SupportsConsumeRequest, SupportsConsumeClient):
     params: QueryParams
 
-    def __init__(self, params: QueriesTypes, /) -> None:
+    def __init__(self, params: QueryParamsTypes, /) -> None:
         self.params = converters.convert_query_params(params)
 
     def consume_request(self, request: PreRequest, /) -> None:
@@ -176,7 +176,7 @@ class CookiesConsumer(SupportsConsumeRequest, SupportsConsumeClient):
 
 
 @dataclass
-class PathsConsumer(SupportsConsumeRequest):
+class PathParamsConsumer(SupportsConsumeRequest):
     path_params: Mapping[str, str]
 
     def consume_request(self, request: PreRequest, /) -> None:

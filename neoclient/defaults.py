@@ -8,7 +8,7 @@ from .types import (
     DefaultEncodingTypes,
     EventHooks,
     HeadersTypes,
-    QueriesTypes,
+    QueryParamsTypes,
     TimeoutTypes,
     URLTypes,
     VerifyTypes,
@@ -32,7 +32,7 @@ __all__: Sequence[str] = (
 
 DEFAULT_BASE_URL: URLTypes = URL()
 DEFAULT_AUTH: Optional[AuthTypes] = None
-DEFAULT_PARAMS: Optional[QueriesTypes] = None
+DEFAULT_PARAMS: Optional[QueryParamsTypes] = None
 DEFAULT_HEADERS: Optional[HeadersTypes] = None
 DEFAULT_COOKIES: Optional[CookiesTypes] = None
 DEFAULT_TIMEOUT: TimeoutTypes = Timeout(timeout=5.0)

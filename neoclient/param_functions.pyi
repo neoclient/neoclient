@@ -223,7 +223,7 @@ def Path(
     delimiter: str = "/",
 ) -> T: ...
 
-# Queries
+# QueryParams
 @overload
 def QueryParams(
     *,
@@ -298,7 +298,7 @@ def Cookies(
     unique_items: Optional[bool] = None,
 ) -> T: ...
 
-# Paths
+# PathParams
 @overload
 def PathParams(
     *,
