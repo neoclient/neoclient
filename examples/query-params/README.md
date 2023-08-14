@@ -1,5 +1,5 @@
 # examples/query-params
-Example for the `Queries` parameter
+Example for the `QueryParams` parameter
 
 ## Start the Server
 ```console

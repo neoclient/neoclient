@@ -16,9 +16,9 @@ from neoclient.consumers import (
     HeadersConsumer,
     JsonConsumer,
     PathConsumer,
-    PathsConsumer,
-    QueriesConsumer,
+    PathParamsConsumer,
     QueryConsumer,
+    QueryParamsConsumer,
     StateConsumer,
     TimeoutConsumer,
 )
@@ -94,11 +94,11 @@ def test_consumer_query_params(pre_request: PreRequest) -> None:
     expected_pre_request: PreRequest = pre_request.clone()
     expected_pre_request.params = params
 
-    QueriesConsumer(params).consume_request(pre_request)
+    QueryParamsConsumer(params).consume_request(pre_request)
 
     assert pre_request == expected_pre_request
 
-    assert QueriesConsumer({"name": "sam"}) == QueriesConsumer(
+    assert QueryParamsConsumer({"name": "sam"}) == QueryParamsConsumer(
         QueryParams({"name": "sam"})
     )
 
@@ -135,7 +135,7 @@ def test_consumer_path_params(pre_request: PreRequest) -> None:
     expected_pre_request: PreRequest = pre_request.clone()
     expected_pre_request.path_params = path_params
 
-    PathsConsumer(path_params).consume_request(pre_request)
+    PathParamsConsumer(path_params).consume_request(pre_request)
 
     assert pre_request == expected_pre_request
 

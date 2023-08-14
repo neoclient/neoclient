@@ -25,8 +25,8 @@ from .params import (
     BodyParameter,
     Parameter,
     PathParameter,
-    QueriesParameter,
     QueryParameter,
+    QueryParamsParameter,
 )
 from .validation import ValidatedFunction
 
@@ -73,7 +73,7 @@ def get_fields(
                 inspect.Parameter.VAR_POSITIONAL,
                 inspect.Parameter.VAR_KEYWORD,
             ):
-                parameter = QueriesParameter()
+                parameter = QueryParamsParameter()
             elif (
                 (
                     isinstance(model_field.annotation, type)

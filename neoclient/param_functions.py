@@ -10,9 +10,9 @@ from .params import (
     HeaderParameter,
     HeadersParameter,
     PathParameter,
-    PathsParameter,
-    QueriesParameter,
+    PathParamsParameter,
     QueryParameter,
+    QueryParamsParameter,
     ReasonParameter,
     RequestParameter,
     ResponseParameter,
@@ -27,10 +27,10 @@ __all__: Sequence[str] = (
     "Header",
     "Cookie",
     "Path",
-    "Queries",
+    "QueryParams",
     "Headers",
     "Cookies",
-    "Paths",
+    "PathParams",
     "Body",
     "Depends",
     "URL",
@@ -193,15 +193,15 @@ def Path(
     )
 
 
-def Queries(
+def QueryParams(
     *,
     default: Any = Required,
     default_factory: Optional[Supplier[Any]] = None,
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
     unique_items: Optional[bool] = None,
-) -> QueriesParameter:
-    return QueriesParameter(
+) -> QueryParamsParameter:
+    return QueryParamsParameter(
         default=default,
         default_factory=default_factory,
         min_items=min_items,
@@ -244,7 +244,7 @@ def Cookies(
     )
 
 
-def Paths(
+def PathParams(
     *,
     default: Any = Required,
     default_factory: Optional[Supplier[Any]] = None,
@@ -252,8 +252,8 @@ def Paths(
     max_items: Optional[int] = None,
     unique_items: Optional[bool] = None,
     delimiter: str = "/",
-) -> PathsParameter:
-    return PathsParameter(
+) -> PathParamsParameter:
+    return PathParamsParameter(
         default=default,
         default_factory=default_factory,
         min_items=min_items,

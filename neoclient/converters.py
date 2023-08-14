@@ -10,10 +10,10 @@ from .types import (
     CookieTypes,
     HeadersTypes,
     HeaderTypes,
-    PathsTypes,
+    PathParamsTypes,
     PathTypes,
     Primitive,
-    QueriesTypes,
+    QueryParamsTypes,
     QueryTypes,
     TimeoutTypes,
 )
@@ -78,7 +78,7 @@ def convert_path_param(value: PathTypes, /, *, delimiter: str = "/") -> str:
     raise ConversionError("path param", value)
 
 
-def convert_query_params(value: QueriesTypes, /) -> QueryParams:
+def convert_query_params(value: QueryParamsTypes, /) -> QueryParams:
     if isinstance(value, QueryParams):
         return value
 
@@ -118,7 +118,7 @@ def convert_cookies(value: CookiesTypes, /) -> Cookies:
 
 
 def convert_path_params(
-    path_params: PathsTypes, /, *, delimiter: str = "/"
+    path_params: PathParamsTypes, /, *, delimiter: str = "/"
 ) -> MutableMapping[str, str]:
     if isinstance(path_params, Mapping):
         return {

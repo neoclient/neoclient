@@ -38,10 +38,10 @@ __all__: Sequence[str] = (
     "HeaderTypes",
     "CookieTypes",
     "PathTypes",
-    "QueriesTypes",
+    "QueryParamsTypes",
     "HeadersTypes",
     "CookiesTypes",
-    "PathsTypes",
+    "PathParamsTypes",
     "MethodTypes",
     "JsonTypes",
     "StreamTypes",
@@ -63,7 +63,7 @@ QueryTypes: TypeAlias = Any
 HeaderTypes: TypeAlias = Union[Primitive, Sequence[Primitive]]
 CookieTypes: TypeAlias = Any
 PathTypes: TypeAlias = Union[Primitive, Sequence[Primitive]]
-QueriesTypes: TypeAlias = Union[
+QueryParamsTypes: TypeAlias = Union[
     QueryParams,
     Mapping[str, Union[Primitive, Sequence[Primitive]]],
     Sequence[Tuple[str, Primitive]],
@@ -82,7 +82,7 @@ CookiesTypes: TypeAlias = Union[
     Mapping[str, str],
     Sequence[Tuple[str, str]],
 ]
-PathsTypes: TypeAlias = Union[
+PathParamsTypes: TypeAlias = Union[
     Mapping[str, PathTypes],
     Sequence[Tuple[str, PathTypes]],
 ]

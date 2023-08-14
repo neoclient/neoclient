@@ -30,8 +30,8 @@ from .params import (
     HeaderParameter,
     HeadersParameter,
     Parameter,
-    QueriesParameter,
     QueryParameter,
+    QueryParamsParameter,
     RequestParameter,
     ResponseParameter,
     URLParameter,
@@ -53,7 +53,7 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
         httpx.Request: RequestParameter,
         httpx.Response: ResponseParameter,
         URL: URLParameter,
-        QueryParams: QueriesParameter,
+        QueryParams: QueryParamsParameter,
         Headers: HeadersParameter,
         Cookies: CookiesParameter,
     }
