@@ -225,14 +225,14 @@ def Path(
 
 # Queries
 @overload
-def Queries(
+def QueryParams(
     *,
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
     unique_items: Optional[bool] = None,
 ) -> Any: ...
 @overload
-def Queries(
+def QueryParams(
     default: T,
     *,
     min_items: Optional[int] = None,
@@ -240,7 +240,7 @@ def Queries(
     unique_items: Optional[bool] = None,
 ) -> T: ...
 @overload
-def Queries(
+def QueryParams(
     *,
     default_factory: Supplier[T],
     min_items: Optional[int] = None,
@@ -300,7 +300,7 @@ def Cookies(
 
 # Paths
 @overload
-def Paths(
+def PathParams(
     *,
     min_items: Optional[int] = None,
     max_items: Optional[int] = None,
@@ -308,7 +308,7 @@ def Paths(
     delimiter: str = "/",
 ) -> Any: ...
 @overload
-def Paths(
+def PathParams(
     default: T,
     *,
     min_items: Optional[int] = None,
@@ -317,7 +317,7 @@ def Paths(
     delimiter: str = "/",
 ) -> T: ...
 @overload
-def Paths(
+def PathParams(
     *,
     default_factory: Supplier[T],
     min_items: Optional[int] = None,

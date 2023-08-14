@@ -27,10 +27,10 @@ __all__: Sequence[str] = (
     "Header",
     "Cookie",
     "Path",
-    "Queries",
+    "QueryParams",
     "Headers",
     "Cookies",
-    "Paths",
+    "PathParams",
     "Body",
     "Depends",
     "URL",
@@ -193,7 +193,7 @@ def Path(
     )
 
 
-def Queries(
+def QueryParams(
     *,
     default: Any = Required,
     default_factory: Optional[Supplier[Any]] = None,
@@ -244,7 +244,7 @@ def Cookies(
     )
 
 
-def Paths(
+def PathParams(
     *,
     default: Any = Required,
     default_factory: Optional[Supplier[Any]] = None,

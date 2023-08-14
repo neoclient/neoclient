@@ -4,7 +4,7 @@ import pytest
 from httpx import Headers
 from pydantic import BaseModel, Required
 
-from neoclient import Body, NeoClient, Queries, Query
+from neoclient import Body, NeoClient, QueryParams, Query
 from neoclient.decorators import request
 from neoclient.middlewares import RequestMiddleware
 from neoclient.models import PreRequest, Request, Response
@@ -169,7 +169,7 @@ def test_single_query_param(client: NeoClient) -> None:
 
 def test_multiple_query_params(client: NeoClient) -> None:
     @client.get("/items/")
-    def create_item(params: dict = Queries()) -> PreRequest:
+    def create_item(params: dict = QueryParams()) -> PreRequest:
         ...
 
     assert create_item({"sort": "ascending"}) == PreRequest(
