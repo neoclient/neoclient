@@ -30,9 +30,15 @@ class BasicAuth(Auth):
         request.headers[HTTPHeader.AUTHORIZATION] = self.authorization
 
         return request
+    
+    @property
+    def credentials(self) -> str:
+        return f"{self.username}:{self.password}"
+    
+    @property
+    def token(self) -> str:
+        return b64encode(self.credentials.encode()).decode()
 
     @property
     def authorization(self) -> str:
-        token: str = b64encode(f"{self.username}:{self.password}".encode()).decode()
-
-        return f"Basic {token}"
+        return f"Basic {self.token}"

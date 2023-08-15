@@ -1,8 +1,9 @@
 from typing import Any, Callable, Sequence, Type, TypeVar
-from .middleware import middleware
+
 from ..auths import Auth, BasicAuth
 from ..middlewares import AuthMiddleware
 from ..services import Service
+from .middleware import middleware
 
 __all__: Sequence[str] = (
     "auth",
