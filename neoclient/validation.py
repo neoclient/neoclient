@@ -18,7 +18,7 @@ from typing import (
     overload,
 )
 
-from pydantic import Required
+from pydantic.fields import Undefined
 from pydantic.config import Extra
 from pydantic.main import BaseModel, create_model
 from pydantic.typing import get_all_type_hints
@@ -128,7 +128,7 @@ class ValidatedFunction(Generic[PS, RT]):
             )
 
             default: Any = (
-                Required if parameter.default is Parameter.empty else parameter.default
+                Undefined if parameter.default is Parameter.empty else parameter.default
             )
 
             if parameter.kind is Parameter.VAR_POSITIONAL:
