@@ -1,17 +1,18 @@
 import pytest
-from mediate.protocols import MiddlewareCallable
 
 from neoclient import Request, Response
+from neoclient.auths import Auth, BasicAuth
 from neoclient.enums import HTTPHeader
 from neoclient.errors import ExpectedContentTypeError
-from neoclient.middlewares import ExpectedContentTypeMiddleware
+from neoclient.middlewares import AuthMiddleware, ExpectedContentTypeMiddleware
+from neoclient.typing import MiddlewareCallable
 
 from . import utils
 
 
 def test_ExpectedContentTypeMiddleware_no_suffix_no_parameters() -> None:
     def invoke_middleware(
-        middleware: MiddlewareCallable[Request, Response],
+        middleware: MiddlewareCallable,
         content_type: str,
     ) -> None:
         def call_next(request: Request, /) -> Response:
@@ -21,9 +22,7 @@ def test_ExpectedContentTypeMiddleware_no_suffix_no_parameters() -> None:
 
         middleware(call_next, utils.build_request())
 
-    middleware: MiddlewareCallable[Request, Response] = ExpectedContentTypeMiddleware(
-        "application/json"
-    )
+    middleware: MiddlewareCallable = ExpectedContentTypeMiddleware("application/json")
 
     invoke_middleware(middleware, "application/json")  # ok
     invoke_middleware(middleware, "application/JSON")  # ok
@@ -37,7 +36,7 @@ def test_ExpectedContentTypeMiddleware_no_suffix_no_parameters() -> None:
 
 def test_ExpectedContentTypeMiddleware_suffix_no_parameters() -> None:
     def invoke_middleware(
-        middleware: MiddlewareCallable[Request, Response],
+        middleware: MiddlewareCallable,
         content_type: str,
     ) -> None:
         def call_next(request: Request, /) -> Response:
@@ -47,7 +46,7 @@ def test_ExpectedContentTypeMiddleware_suffix_no_parameters() -> None:
 
         middleware(call_next, utils.build_request())
 
-    middleware: MiddlewareCallable[Request, Response] = ExpectedContentTypeMiddleware(
+    middleware: MiddlewareCallable = ExpectedContentTypeMiddleware(
         "application/json+opensearch", suffix=True
     )
 
@@ -69,7 +68,7 @@ def test_ExpectedContentTypeMiddleware_suffix_no_parameters() -> None:
 
 def test_ExpectedContentTypeMiddleware_suffix_parameters() -> None:
     def invoke_middleware(
-        middleware: MiddlewareCallable[Request, Response],
+        middleware: MiddlewareCallable,
         content_type: str,
     ) -> None:
         def call_next(request: Request, /) -> Response:
@@ -79,7 +78,7 @@ def test_ExpectedContentTypeMiddleware_suffix_parameters() -> None:
 
         middleware(call_next, utils.build_request())
 
-    middleware: MiddlewareCallable[Request, Response] = ExpectedContentTypeMiddleware(
+    middleware: MiddlewareCallable = ExpectedContentTypeMiddleware(
         'application/json+opensearch; charset="utf-8"', suffix=True
     )
 
@@ -104,3 +103,22 @@ def test_ExpectedContentTypeMiddleware_suffix_parameters() -> None:
 
     with pytest.raises(ExpectedContentTypeError):
         invoke_middleware(middleware, 'application/json; charset="utf-8"')  # not ok
+
+
+def test_AuthMiddleware() -> None:
+    username: str = "username"
+    password: str = "password"
+    authorization: str = "Basic dXNlcm5hbWU6cGFzc3dvcmQ="
+
+    def call_next(request: Request, /) -> Response:
+        return utils.build_response(request=request)
+
+    middleware: MiddlewareCallable = AuthMiddleware(BasicAuth(username, password))
+
+    request: Request = utils.build_request()
+
+    assert request.headers.get(HTTPHeader.AUTHORIZATION) is None
+
+    middleware(call_next, request)
+
+    assert request.headers.get(HTTPHeader.AUTHORIZATION) == authorization

@@ -8,6 +8,7 @@ from pytest import fixture
 from neoclient import converters, decorators, get
 from neoclient.auths import Auth, BasicAuth
 from neoclient.defaults import DEFAULT_FOLLOW_REDIRECTS
+from neoclient.middlewares import AuthMiddleware
 from neoclient.models import ClientOptions, PreRequest, Request, Response, State
 from neoclient.operation import get_operation
 from neoclient.services import Service
@@ -23,8 +24,6 @@ from neoclient.types import (
     TimeoutTypes,
 )
 from neoclient.typing import CallNext
-
-from neoclient.middlewares import AuthMiddleware
 
 
 @fixture
