@@ -41,6 +41,7 @@ class HTTPHeader(HiddenValueEnum, StrEnum):
     ACCEPT = "Accept"
     ACCEPT_ENCODING = "Accept-Encoding"
     ACCEPT_LANGUAGE = "Accept-Language"
+    AUTHORIZATION = "Authorization"
     CACHE_CONTROL = "Cache-Control"
     CONNECTION = "Connection"
     CONTENT_TYPE = "Content-Type"

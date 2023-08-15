@@ -7,7 +7,6 @@ from pytest import fixture
 
 from neoclient import converters, decorators, get
 from neoclient.defaults import DEFAULT_FOLLOW_REDIRECTS
-from neoclient.middlewares import RequestMiddleware
 from neoclient.models import ClientOptions, PreRequest, Request, Response, State
 from neoclient.operation import get_operation
 from neoclient.services import Service
@@ -22,6 +21,7 @@ from neoclient.types import (
     RequestFiles,
     TimeoutTypes,
 )
+from neoclient.typing import CallNext
 
 
 @fixture
@@ -214,10 +214,10 @@ def test_base_url(service: Type[Service]) -> None:
 
 
 def test_middleware(func: Callable) -> None:
-    def middleware_foo(call_next: RequestMiddleware, request: Request) -> Response:
+    def middleware_foo(call_next: CallNext, request: Request) -> Response:
         return call_next(request)
 
-    def middleware_bar(call_next: RequestMiddleware, request: Request) -> Response:
+    def middleware_bar(call_next: CallNext, request: Request) -> Response:
         return call_next(request)
 
     decorators.middleware(middleware_foo)(func)

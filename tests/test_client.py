@@ -6,9 +6,9 @@ from pydantic import BaseModel, Required
 
 from neoclient import Body, NeoClient, Query, QueryParams
 from neoclient.decorators import request
-from neoclient.middlewares import RequestMiddleware
 from neoclient.models import PreRequest, Request, Response
 from neoclient.operation import Operation, get_operation
+from neoclient.typing import CallNext
 
 
 class Model(BaseModel):
@@ -183,7 +183,7 @@ def test_multiple_query_params(client: NeoClient) -> None:
 
 def test_client_middleware(client: NeoClient) -> None:
     @client.middleware
-    def some_middleware(_: RequestMiddleware, request: Request) -> Response:
+    def some_middleware(_: CallNext, request: Request) -> Response:
         request.headers["name"] = "sam"
 
         # As a mock HTTP server is not currently being used, the response is faked
