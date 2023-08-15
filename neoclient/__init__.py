@@ -41,6 +41,7 @@ from .decorators import (
     user_agent,
     verify,
 )
+from .decorators.auth import auth, basic_auth
 from .decorators.middleware import (
     expect_content_type,
     expect_header,

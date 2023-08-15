@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from base64 import b64encode
 from dataclasses import dataclass
 from typing import Sequence, TypeVar
@@ -16,6 +16,7 @@ R = TypeVar("R", bound=httpx.Request)
 
 
 class Auth(ABC):
+    @abstractmethod
     def auth(self, request: R, /) -> R:
         raise NotImplementedError
 

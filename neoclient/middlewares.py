@@ -5,7 +5,7 @@ import mediate
 import mediatype
 from mediatype import MediaType
 
-from .auth import Auth
+from .auths import Auth
 from .enums import HTTPHeader
 from .errors import (
     ExpectedContentTypeError,

@@ -15,6 +15,7 @@ __all__: Sequence[str] = (
     "Composer",
     "Consumer",
     "Function",
+    "MiddlewareCallable",
     "RequestConsumer",
     "RequestResolver",
     "ResponseResolver",
