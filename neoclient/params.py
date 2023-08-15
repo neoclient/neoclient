@@ -6,7 +6,7 @@ import fastapi.encoders
 import httpx
 from httpx import Cookies, Headers, QueryParams
 from pydantic import Required
-from pydantic.fields import FieldInfo, ModelField
+from pydantic.fields import FieldInfo, ModelField, Undefined
 
 from .consumers import (
     CookieConsumer,
@@ -66,7 +66,7 @@ V = TypeVar("V")
 @dataclass(unsafe_hash=True)
 class Parameter(FieldInfo):
     alias: Optional[str] = None
-    default: Any = Required
+    default: Any = Undefined
     default_factory: Optional[Supplier[Any]] = None
     title: Optional[str] = field(default=None, compare=False)
     description: Optional[str] = field(default=None, compare=False)
@@ -131,6 +131,8 @@ class ComposableSingletonParameter(ABC, Parameter, Generic[K, V]):
                 f"Cannot compose parameter {type(self)!r} without an alias"
             )
 
+        # If no argument was provided, and a value is not required for this
+        # parameter, skip composition.
         if argument is None and self.default is not Required:
             return
 
