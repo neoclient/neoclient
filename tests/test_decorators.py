@@ -6,8 +6,9 @@ from httpx import URL, Cookies, Headers, QueryParams
 from pytest import fixture
 
 from neoclient import converters, decorators, get
+from neoclient.auths import Auth, BasicAuth
 from neoclient.defaults import DEFAULT_FOLLOW_REDIRECTS
-from neoclient.middlewares import RequestMiddleware
+from neoclient.middlewares import AuthMiddleware
 from neoclient.models import ClientOptions, PreRequest, Request, Response, State
 from neoclient.operation import get_operation
 from neoclient.services import Service
@@ -22,6 +23,7 @@ from neoclient.types import (
     RequestFiles,
     TimeoutTypes,
 )
+from neoclient.typing import CallNext
 
 
 @fixture
@@ -214,10 +216,10 @@ def test_base_url(service: Type[Service]) -> None:
 
 
 def test_middleware(func: Callable) -> None:
-    def middleware_foo(call_next: RequestMiddleware, request: Request) -> Response:
+    def middleware_foo(call_next: CallNext, request: Request) -> Response:
         return call_next(request)
 
-    def middleware_bar(call_next: RequestMiddleware, request: Request) -> Response:
+    def middleware_bar(call_next: CallNext, request: Request) -> Response:
         return call_next(request)
 
     decorators.middleware(middleware_foo)(func)
@@ -342,3 +344,22 @@ def test_follow_redirects(func: Callable[..., Any]) -> None:
     decorators.follow_redirects(follow_redirects)(func)
 
     assert get_operation(func).pre_request == expected_pre_request
+
+
+def test_auth(func: Callable[..., Any]) -> None:
+    auth: Auth = BasicAuth("username", "password")
+
+    decorators.auth(auth)(func)
+
+    assert get_operation(func).middleware.record == [AuthMiddleware(auth)]
+
+
+def test_basic_auth(func: Callable[..., Any]) -> None:
+    username: str = "username"
+    password: str = "password"
+
+    decorators.basic_auth(username, password)(func)
+
+    assert get_operation(func).middleware.record == [
+        AuthMiddleware(BasicAuth(username, password))
+    ]

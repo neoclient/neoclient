@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
-from typing import Optional, Protocol, Sequence
+from typing import Optional, Sequence
 
 import mediate
 import mediatype
 from mediatype import MediaType
 
+from .auths import Auth
 from .enums import HTTPHeader
 from .errors import (
     ExpectedContentTypeError,
@@ -12,11 +13,14 @@ from .errors import (
     ExpectedStatusCodeError,
 )
 from .models import Request, Response
+from .typing import CallNext, MiddlewareCallable
 
 __all__: Sequence[str] = (
     "Middleware",
-    "RequestMiddleware",
+    "AuthMiddleware",
     "ExpectedStatusCodeMiddleware",
+    "ExpectedHeaderMiddleware",
+    "ExpectedContentTypeMiddleware",
     "raise_for_status",
 )
 
@@ -25,9 +29,12 @@ class Middleware(mediate.Middleware[Request, Response]):
     pass
 
 
-class RequestMiddleware(Protocol):
-    def __call__(self, request: Request, /) -> Response:
-        ...
+@dataclass
+class AuthMiddleware(MiddlewareCallable):
+    auth: Auth
+
+    def __call__(self, call_next: CallNext, request: Request, /) -> Response:
+        return call_next(self.auth.auth(request))
 
 
 @dataclass(init=False)
@@ -37,7 +44,7 @@ class ExpectedStatusCodeMiddleware:
     def __init__(self, *codes: int) -> None:
         self.codes = codes
 
-    def __call__(self, call_next: RequestMiddleware, request: Request, /) -> Response:
+    def __call__(self, call_next: CallNext, request: Request, /) -> Response:
         response: Response = call_next(request)
 
         if response.status_code not in self.codes:
@@ -53,7 +60,7 @@ class ExpectedHeaderMiddleware:
     name: str
     value: Optional[str] = None
 
-    def __call__(self, call_next: RequestMiddleware, request: Request, /) -> Response:
+    def __call__(self, call_next: CallNext, request: Request, /) -> Response:
         response: Response = call_next(request)
 
         if self.name not in response.headers:
@@ -94,7 +101,7 @@ class ExpectedContentTypeMiddleware:
         self.suffix = suffix
         self.parameters = parameters
 
-    def __call__(self, call_next: RequestMiddleware, request: Request, /) -> Response:
+    def __call__(self, call_next: CallNext, request: Request, /) -> Response:
         response: Response = call_next(request)
 
         raw_content_type: str = response.headers.get(HTTPHeader.CONTENT_TYPE)
@@ -118,7 +125,7 @@ class ExpectedContentTypeMiddleware:
         return media_type.string(suffix=self.suffix, parameters=self.parameters)
 
 
-def raise_for_status(call_next: RequestMiddleware, request: Request, /) -> Response:
+def raise_for_status(call_next: CallNext, request: Request, /) -> Response:
     response: Response = call_next(request)
 
     response.raise_for_status()

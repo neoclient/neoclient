@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from typing import Any, Callable, Protocol, Sequence, TypeVar, runtime_checkable
 
+import mediate
 from typing_extensions import TypeAlias
 
 from .models import ClientOptions, PreRequest, Request, Response
@@ -14,6 +15,7 @@ __all__: Sequence[str] = (
     "Composer",
     "Consumer",
     "Function",
+    "MiddlewareCallable",
     "RequestConsumer",
     "RequestResolver",
     "ResponseResolver",
@@ -31,6 +33,8 @@ R_co = TypeVar("R_co", covariant=True)
 
 AnyCallable: TypeAlias = Callable[..., Any]
 Dependency: TypeAlias = AnyCallable
+
+MiddlewareCallable: TypeAlias = mediate.protocols.MiddlewareCallable[Request, Response]
 
 
 class CallNext(Protocol):
