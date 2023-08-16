@@ -19,8 +19,6 @@ from httpx import Cookies, Headers, QueryParams
 from pydantic import Required
 from pydantic.fields import FieldInfo, ModelField, Undefined
 
-from neoclient.models import PreRequest
-
 from .consumers import (
     CookieConsumer,
     CookiesConsumer,
