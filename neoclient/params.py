@@ -1,12 +1,25 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, Generic, Mapping, Optional, Sequence, Set, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+)
 
 import fastapi.encoders
 import httpx
 from httpx import Cookies, Headers, QueryParams
 from pydantic import Required
 from pydantic.fields import FieldInfo, ModelField, Undefined
+
+from neoclient.models import PreRequest
 
 from .consumers import (
     CookieConsumer,
@@ -338,6 +351,9 @@ class PathParamsParameter(Parameter):
         )
 
         PathParamsConsumer(path_params).consume_request(request)
+
+    def resolve_request(self, request: PreRequest) -> MutableMapping[str, str]:
+        return request.path_params
 
 
 @dataclass(unsafe_hash=True)
