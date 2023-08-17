@@ -30,6 +30,7 @@ __all__: Sequence[str] = (
     "path_params",
 )
 
+
 def content(content: RequestContent, /) -> OperationDecorator:
     return OperationConsumerDecorator(ContentConsumer(content))
 

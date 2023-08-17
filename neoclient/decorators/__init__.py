@@ -1,8 +1,4 @@
-from .api import (
-    OperationDecorator,
-    ServiceDecorator,
-    CommonDecorator,
-)
+from .api import CommonDecorator, OperationDecorator, ServiceDecorator
 from .auth import auth, basic_auth
 from .client import base_url
 from .common import (

@@ -26,12 +26,7 @@ from ..types import (
     VerifyTypes,
 )
 from ..typing import Dependency
-from .api import (
-    ConsumerDecorator,
-    RequestDependsDecorator,
-    CommonDecorator,
-    CS,
-)
+from .api import CS, CommonDecorator, ConsumerDecorator, RequestDependsDecorator
 
 __all__: Sequence[str] = (
     "accept",

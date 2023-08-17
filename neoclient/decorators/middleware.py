@@ -13,7 +13,7 @@ from ..models import Request, Response
 from ..operation import Operation, get_operation
 from ..services import Service
 from ..specification import ClientSpecification
-from .api import CommonDecorator, CS
+from .api import CS, CommonDecorator
 
 __all__: Sequence[str] = (
     "middleware",
@@ -24,9 +24,7 @@ __all__: Sequence[str] = (
 )
 
 
-def middleware(
-    *middleware: MiddlewareCallable[Request, Response]
-) -> CommonDecorator:
+def middleware(*middleware: MiddlewareCallable[Request, Response]) -> CommonDecorator:
     def decorate(target: CS, /) -> CS:
         if isinstance(target, type):
             if not issubclass(target, Service):
