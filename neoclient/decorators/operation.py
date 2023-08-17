@@ -1,4 +1,4 @@
-from typing import Any, Callable, Mapping, Sequence, TypeVar
+from typing import Mapping, Sequence
 
 from ..consumers import (
     ContentConsumer,
@@ -18,7 +18,7 @@ from ..types import (
     RequestData,
     RequestFiles,
 )
-from .api import OperationConsumerDecorator
+from .api import OperationConsumerDecorator, OperationDecorator
 
 __all__: Sequence[str] = (
     "content",
@@ -30,26 +30,23 @@ __all__: Sequence[str] = (
     "path_params",
 )
 
-C = TypeVar("C", bound=Callable[..., Any])
-
-
-def content(content: RequestContent, /) -> Callable[[C], C]:
+def content(content: RequestContent, /) -> OperationDecorator:
     return OperationConsumerDecorator(ContentConsumer(content))
 
 
-def data(data: RequestData, /) -> Callable[[C], C]:
+def data(data: RequestData, /) -> OperationDecorator:
     return OperationConsumerDecorator(DataConsumer(data))
 
 
-def files(files: RequestFiles, /) -> Callable[[C], C]:
+def files(files: RequestFiles, /) -> OperationDecorator:
     return OperationConsumerDecorator(FilesConsumer(files))
 
 
-def json(json: JsonTypes, /) -> Callable[[C], C]:
+def json(json: JsonTypes, /) -> OperationDecorator:
     return OperationConsumerDecorator(JsonConsumer(json))
 
 
-def mount(path: str, /) -> Callable[[C], C]:
+def mount(path: str, /) -> OperationDecorator:
     return OperationConsumerDecorator(MountConsumer(path))
 
 
@@ -58,7 +55,7 @@ def path(
     value: PathTypes,
     *,
     delimiter: str = "/",
-) -> Callable[[C], C]:
+) -> OperationDecorator:
     converted_value: str = convert_path_param(value, delimiter=delimiter)
 
     return OperationConsumerDecorator(PathConsumer(key, converted_value))
@@ -69,7 +66,7 @@ def path_params(
     /,
     *,
     delimiter: str = "/",
-) -> Callable[[C], C]:
+) -> OperationDecorator:
     converted_path_params: Mapping[str, str] = convert_path_params(
         path_params, delimiter=delimiter
     )

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Optional, Sequence, Type, TypeVar
+from typing import Optional, Sequence, Type, TypeVar
 
 from httpx import URL
 from mediate.protocols import MiddlewareCallable, MiddlewareMethod
@@ -11,20 +11,18 @@ from ..annotations import (
     service_response_dependency,
 )
 from ..models import Request, Response
-from ..services import Service
-from ..typing import Decorator, Dependency
+from ..typing import Dependency
+from .api import C, S, ServiceDecorator
 
 __all__: Sequence[str] = ("service",)
 
-C = TypeVar("C", bound=Callable)
 M = TypeVar(
     "M", MiddlewareCallable[Request, Response], MiddlewareMethod[Request, Response]
 )
-S = TypeVar("S", bound=Type[Service])
 
 
 @dataclass
-class ServiceDecorator(Decorator[S]):
+class ServiceDecoratorImpl(ServiceDecorator):
     base_url: Optional[str] = None
     middlewares: Optional[Sequence[MiddlewareCallable[Request, Response]]] = None
     default_response: Optional[Dependency] = None
@@ -77,4 +75,4 @@ class ServiceDecorator(Decorator[S]):
         return service_response_dependency(dependency)
 
 
-service: Type[ServiceDecorator] = ServiceDecorator
+service: Type[ServiceDecoratorImpl] = ServiceDecoratorImpl

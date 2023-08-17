@@ -1,19 +1,18 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Sequence, Type, TypeVar
+from typing import Sequence, Type
 
 from ..errors import CompositionError
 from ..operation import Operation, get_operation
 from ..services import Service
 from ..specification import ClientSpecification
 from ..typing import Dependency
+from .api import CS, CommonDecorator
 
 __all__: Sequence[str] = ("response",)
 
-CS = TypeVar("CS", Callable[..., Any], Type[Service])
-
 
 @dataclass
-class ResponseDecorator:
+class ResponseDecorator(CommonDecorator):
     dependency: Dependency
 
     def __call__(self, target: CS, /) -> CS:

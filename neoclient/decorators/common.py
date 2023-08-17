@@ -1,4 +1,4 @@
-from typing import Callable, Sequence, Type, TypeVar
+from typing import Sequence
 
 from ..consumers import (
     CookieConsumer,
@@ -26,7 +26,12 @@ from ..types import (
     VerifyTypes,
 )
 from ..typing import Dependency
-from .api import ConsumerDecorator
+from .api import (
+    ConsumerDecorator,
+    RequestDependsDecorator,
+    CommonDecorator,
+    CS,
+)
 
 __all__: Sequence[str] = (
     "accept",
@@ -44,10 +49,12 @@ __all__: Sequence[str] = (
     "verify",
 )
 
-TT = TypeVar("TT", Callable, Type[Service])
+
+def request_depends(*dependencies: Dependency) -> CommonDecorator:
+    return RequestDependsDecorator(*dependencies)
 
 
-def accept(*content_types: str) -> Callable[[TT], TT]:
+def accept(*content_types: str) -> CommonDecorator:
     return ConsumerDecorator(
         HeaderConsumer(
             HTTPHeader.ACCEPT,
@@ -56,29 +63,8 @@ def accept(*content_types: str) -> Callable[[TT], TT]:
     )
 
 
-def request_depends(*dependencies: Dependency) -> Callable[[TT], TT]:
-    def decorate(target: TT, /) -> TT:
-        if isinstance(target, type):
-            if not issubclass(target, Service):
-                raise CompositionError(f"Target class is not a subclass of {Service}")
-
-            client_specification: ClientSpecification = target._spec
-
-            client_specification.request_dependencies.extend(dependencies)
-        elif callable(target):
-            operation: Operation = get_operation(target)
-
-            operation.request_dependencies.extend(dependencies)
-        else:
-            raise CompositionError(f"Target of unsupported type {type(target)}")
-
-        return target
-
-    return decorate
-
-
-def response_depends(*dependencies: Dependency) -> Callable[[TT], TT]:
-    def decorate(target: TT, /) -> TT:
+def response_depends(*dependencies: Dependency) -> CommonDecorator:
+    def decorate(target: CS, /) -> CS:
         if isinstance(target, type):
             if not issubclass(target, Service):
                 raise CompositionError(f"Target class is not a subclass of {Service}")
@@ -98,31 +84,31 @@ def response_depends(*dependencies: Dependency) -> Callable[[TT], TT]:
     return decorate
 
 
-def cookie(key: str, value: CookieTypes) -> Callable[[TT], TT]:
+def cookie(key: str, value: CookieTypes) -> CommonDecorator:
     return ConsumerDecorator(CookieConsumer(key, value))
 
 
-def cookies(cookies: CookiesTypes, /) -> Callable[[TT], TT]:
+def cookies(cookies: CookiesTypes, /) -> CommonDecorator:
     return ConsumerDecorator(CookiesConsumer(cookies))
 
 
-def header(key: str, value: HeaderTypes) -> Callable[[TT], TT]:
+def header(key: str, value: HeaderTypes) -> CommonDecorator:
     return ConsumerDecorator(HeaderConsumer(key, value))
 
 
-def headers(headers: HeadersTypes, /) -> Callable[[TT], TT]:
+def headers(headers: HeadersTypes, /) -> CommonDecorator:
     return ConsumerDecorator(HeadersConsumer(headers))
 
 
-def query(key: str, value: QueryTypes) -> Callable[[TT], TT]:
+def query(key: str, value: QueryTypes) -> CommonDecorator:
     return ConsumerDecorator(QueryConsumer(key, value))
 
 
-def query_params(params: QueryParamsTypes, /) -> Callable[[TT], TT]:
+def query_params(params: QueryParamsTypes, /) -> CommonDecorator:
     return ConsumerDecorator(QueryParamsConsumer(params))
 
 
-def referer(referer: str, /) -> Callable[[TT], TT]:
+def referer(referer: str, /) -> CommonDecorator:
     return ConsumerDecorator(
         HeaderConsumer(
             HTTPHeader.REFERER,
@@ -131,11 +117,11 @@ def referer(referer: str, /) -> Callable[[TT], TT]:
     )
 
 
-def timeout(timeout: TimeoutTypes, /) -> Callable[[TT], TT]:
+def timeout(timeout: TimeoutTypes, /) -> CommonDecorator:
     return ConsumerDecorator(TimeoutConsumer(timeout))
 
 
-def user_agent(user_agent: str, /) -> Callable[[TT], TT]:
+def user_agent(user_agent: str, /) -> CommonDecorator:
     return ConsumerDecorator(
         HeaderConsumer(
             HTTPHeader.USER_AGENT,
@@ -144,9 +130,9 @@ def user_agent(user_agent: str, /) -> Callable[[TT], TT]:
     )
 
 
-def verify(verify: VerifyTypes, /) -> Callable[[TT], TT]:
+def verify(verify: VerifyTypes, /) -> CommonDecorator:
     return ConsumerDecorator(VerifyConsumer(verify))
 
 
-def follow_redirects(follow_redirects: bool, /) -> Callable[[TT], TT]:
+def follow_redirects(follow_redirects: bool, /) -> CommonDecorator:
     return ConsumerDecorator(FollowRedirectsConsumer(follow_redirects))

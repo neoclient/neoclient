@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Sequence, Type, TypeVar
+from typing import Optional, Sequence
 
 from mediate.protocols import MiddlewareCallable
 
@@ -13,6 +13,7 @@ from ..models import Request, Response
 from ..operation import Operation, get_operation
 from ..services import Service
 from ..specification import ClientSpecification
+from .api import CommonDecorator, CS
 
 __all__: Sequence[str] = (
     "middleware",
@@ -22,14 +23,10 @@ __all__: Sequence[str] = (
     "raise_for_status",
 )
 
-C = TypeVar("C", bound=Callable[..., Any])
-S = TypeVar("S", bound=Type[Service])
-CS = TypeVar("CS", Callable[..., Any], Type[Service])
-
 
 def middleware(
     *middleware: MiddlewareCallable[Request, Response]
-) -> Callable[[CS], CS]:
+) -> CommonDecorator:
     def decorate(target: CS, /) -> CS:
         if isinstance(target, type):
             if not issubclass(target, Service):
@@ -50,15 +47,15 @@ def middleware(
     return decorate
 
 
-def expect_content_type(content_type: str, /) -> Callable[[CS], CS]:
+def expect_content_type(content_type: str, /) -> CommonDecorator:
     return middleware(ExpectedContentTypeMiddleware(content_type))
 
 
-def expect_header(name: str, value: Optional[str] = None) -> Callable[[CS], CS]:
+def expect_header(name: str, value: Optional[str] = None) -> CommonDecorator:
     return middleware(ExpectedHeaderMiddleware(name, value))
 
 
-def expect_status(*status_codes: int) -> Callable[[CS], CS]:
+def expect_status(*status_codes: int) -> CommonDecorator:
     return middleware(ExpectedStatusCodeMiddleware(*status_codes))
 
 
