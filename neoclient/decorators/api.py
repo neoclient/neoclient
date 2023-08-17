@@ -16,7 +16,7 @@ from ..models import ClientOptions, PreRequest
 from ..operation import Operation, get_operation
 from ..services import Service
 from ..specification import ClientSpecification
-from ..typing import Consumer, Dependency, SupportsConsumeClient, SupportsConsumeRequest
+from ..typing import Consumer, SupportsConsumeClient, SupportsConsumeRequest
 
 __all__: Sequence[str] = (
     # Protocols
@@ -27,8 +27,6 @@ __all__: Sequence[str] = (
     "ConsumerDecorator",
     "OperationConsumerDecorator",
     "ServiceConsumerDecorator",
-    # Implementations
-    "RequestDependsDecorator",
 )
 
 C = TypeVar("C", bound=Callable[..., Any])
@@ -156,7 +154,14 @@ class ConsumerDecorator(CommonDecorator):
 
             return ServiceConsumerDecorator(self.consumer)(target)
         elif callable(target):
-            if isinstance(self.consumer, SupportsConsumeClientSpecification):
+            if not isinstance(
+                self.consumer,
+                (
+                    SupportsConsumeOperation,
+                    SupportsConsumeRequest,
+                    SupportsConsumeClient,
+                ),
+            ):
                 raise CompositionError(
                     f"Consumer {type(self.consumer).__name__!r} does not support consuming"
                     f" target of type {type(target)}"
@@ -165,28 +170,3 @@ class ConsumerDecorator(CommonDecorator):
             return OperationConsumerDecorator(self.consumer)(target)
         else:
             raise CompositionError(f"Target of unsupported type {type(target)}")
-
-
-@dataclass
-class RequestDependsDecorator(CommonDecorator):
-    dependencies: Sequence[Dependency]
-
-    def __init__(self, *dependencies: Dependency) -> None:
-        self.dependencies = dependencies
-
-    def __call__(self, target: CS, /) -> CS:
-        if isinstance(target, type):
-            if not issubclass(target, Service):
-                raise CompositionError(f"Target class is not a subclass of {Service}")
-
-            client_specification: ClientSpecification = target._spec
-
-            client_specification.request_dependencies.extend(self.dependencies)
-        elif callable(target):
-            operation: Operation = get_operation(target)
-
-            operation.request_dependencies.extend(self.dependencies)
-        else:
-            raise CompositionError(f"Target of unsupported type {type(target)}")
-
-        return target

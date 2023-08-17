@@ -11,7 +11,6 @@ from .types import (
     HeadersTypes,
     HeaderTypes,
     JsonTypes,
-    PathParamsTypes,
     PathTypes,
     QueryParamsTypes,
     QueryTypes,

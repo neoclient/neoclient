@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Sequence
 
 from ..consumers import (
@@ -12,9 +13,9 @@ from ..consumers import (
     VerifyConsumer,
 )
 from ..enums import HTTPHeader
-from ..errors import CompositionError
-from ..operation import Operation, get_operation
-from ..services import ClientSpecification, Service
+from ..operation import Operation
+from ..services import ClientSpecification
+from ..specification import ClientSpecification
 from ..types import (
     CookiesTypes,
     CookieTypes,
@@ -26,7 +27,13 @@ from ..types import (
     VerifyTypes,
 )
 from ..typing import Dependency
-from .api import CS, CommonDecorator, ConsumerDecorator, RequestDependsDecorator
+from .api import (
+    CS,
+    CommonDecorator,
+    ConsumerDecorator,
+    SupportsConsumeClientSpecification,
+    SupportsConsumeOperation,
+)
 
 __all__: Sequence[str] = (
     "accept",
@@ -45,8 +52,38 @@ __all__: Sequence[str] = (
 )
 
 
+@dataclass
+class RequestDependsConsumer(
+    SupportsConsumeClientSpecification, SupportsConsumeOperation
+):
+    dependencies: Sequence[Dependency]
+
+    def consume_client_spec(self, client_specification: ClientSpecification) -> None:
+        client_specification.request_dependencies.extend(self.dependencies)
+
+    def consume_operation(self, operation: Operation) -> None:
+        operation.request_dependencies.extend(self.dependencies)
+
+
+@dataclass
+class ResponseDependsConsumer(
+    SupportsConsumeClientSpecification, SupportsConsumeOperation
+):
+    dependencies: Sequence[Dependency]
+
+    def consume_client_spec(self, client_specification: ClientSpecification) -> None:
+        client_specification.response_dependencies.extend(self.dependencies)
+
+    def consume_operation(self, operation: Operation) -> None:
+        operation.response_dependencies.extend(self.dependencies)
+
+
 def request_depends(*dependencies: Dependency) -> CommonDecorator:
-    return RequestDependsDecorator(*dependencies)
+    return ConsumerDecorator(RequestDependsConsumer(dependencies))
+
+
+def response_depends(*dependencies: Dependency) -> CommonDecorator:
+    return ConsumerDecorator(ResponseDependsConsumer(dependencies))
 
 
 def accept(*content_types: str) -> CommonDecorator:
@@ -56,27 +93,6 @@ def accept(*content_types: str) -> CommonDecorator:
             ",".join(content_types),
         )
     )
-
-
-def response_depends(*dependencies: Dependency) -> CommonDecorator:
-    def decorate(target: CS, /) -> CS:
-        if isinstance(target, type):
-            if not issubclass(target, Service):
-                raise CompositionError(f"Target class is not a subclass of {Service}")
-
-            client_specification: ClientSpecification = target._spec
-
-            client_specification.response_dependencies.extend(dependencies)
-        elif callable(target):
-            operation: Operation = get_operation(target)
-
-            operation.response_dependencies.extend(dependencies)
-        else:
-            raise CompositionError(f"Target of unsupported type {type(target)}")
-
-        return target
-
-    return decorate
 
 
 def cookie(key: str, value: CookieTypes) -> CommonDecorator:
