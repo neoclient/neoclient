@@ -50,6 +50,7 @@ from .decorators.middleware import (
 from .decorators.request import delete, get, head, options, patch, post, put, request
 from .models import PreRequest, Request, Response
 from .param_functions import (
+    AllState,
     URL,
     Body,
     Cookie,

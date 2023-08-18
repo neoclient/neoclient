@@ -1,6 +1,7 @@
 from typing import Any, Callable, Optional, TypeVar, overload
 
 from .typing import Supplier
+from . import models
 
 T = TypeVar("T")
 
@@ -376,3 +377,6 @@ def State(name: Optional[str] = None) -> Any: ...
 def State(name: Optional[str] = None, *, default: T) -> Any: ...
 @overload
 def State(name: Optional[str] = None, *, default_factory: Supplier[T]) -> T: ...
+
+# AllState
+def AllState() -> models.State: ...
