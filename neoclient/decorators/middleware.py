@@ -1,8 +1,8 @@
-from typing import Any, Callable, Optional, Sequence, Type, TypeVar
+from dataclasses import dataclass
+from typing import Optional, Sequence
 
 from mediate.protocols import MiddlewareCallable
 
-from ..errors import CompositionError
 from ..middlewares import (
     ExpectedContentTypeMiddleware,
     ExpectedHeaderMiddleware,
@@ -10,9 +10,15 @@ from ..middlewares import (
 )
 from ..middlewares import raise_for_status as raise_for_status_middleware
 from ..models import Request, Response
-from ..operation import Operation, get_operation
-from ..services import Service
+from ..operation import Operation
 from ..specification import ClientSpecification
+from .api import (
+    CS,
+    CommonDecorator,
+    ConsumerDecorator,
+    SupportsConsumeClientSpecification,
+    SupportsConsumeOperation,
+)
 
 __all__: Sequence[str] = (
     "middleware",
@@ -22,43 +28,31 @@ __all__: Sequence[str] = (
     "raise_for_status",
 )
 
-C = TypeVar("C", bound=Callable[..., Any])
-S = TypeVar("S", bound=Type[Service])
-CS = TypeVar("CS", Callable[..., Any], Type[Service])
+
+@dataclass
+class MiddlewareConsumer(SupportsConsumeClientSpecification, SupportsConsumeOperation):
+    middleware: Sequence[MiddlewareCallable[Request, Response]]
+
+    def consume_client_spec(self, client_specification: ClientSpecification) -> None:
+        client_specification.middleware.add_all(self.middleware)
+
+    def consume_operation(self, operation: Operation) -> None:
+        operation.middleware.add_all(self.middleware)
 
 
-def middleware(
-    *middleware: MiddlewareCallable[Request, Response]
-) -> Callable[[CS], CS]:
-    def decorate(target: CS, /) -> CS:
-        if isinstance(target, type):
-            if not issubclass(target, Service):
-                raise CompositionError(f"Target class is not a subclass of {Service}")
-
-            client_specification: ClientSpecification = target._spec
-
-            client_specification.middleware.add_all(middleware)
-        elif callable(target):
-            operation: Operation = get_operation(target)
-
-            operation.middleware.add_all(middleware)
-        else:
-            raise CompositionError(f"Target of unsupported type {type(target)}")
-
-        return target
-
-    return decorate
+def middleware(*middleware: MiddlewareCallable[Request, Response]) -> CommonDecorator:
+    return ConsumerDecorator(MiddlewareConsumer(middleware))
 
 
-def expect_content_type(content_type: str, /) -> Callable[[CS], CS]:
+def expect_content_type(content_type: str, /) -> CommonDecorator:
     return middleware(ExpectedContentTypeMiddleware(content_type))
 
 
-def expect_header(name: str, value: Optional[str] = None) -> Callable[[CS], CS]:
+def expect_header(name: str, value: Optional[str] = None) -> CommonDecorator:
     return middleware(ExpectedHeaderMiddleware(name, value))
 
 
-def expect_status(*status_codes: int) -> Callable[[CS], CS]:
+def expect_status(*status_codes: int) -> CommonDecorator:
     return middleware(ExpectedStatusCodeMiddleware(*status_codes))
 
 

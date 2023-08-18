@@ -12,11 +12,10 @@ r"""
 ```
 """
 
-__version__: str = "0.1.49"
+__version__: str = "0.1.50"
 
 from .client import NeoClient
 from .decorators import (
-    accept,
     base_url,
     content,
     cookie,
@@ -32,15 +31,14 @@ from .decorators import (
     path_params,
     query,
     query_params,
-    referer,
     request_depends,
     response,
     response_depends,
     service,
     timeout,
-    user_agent,
     verify,
 )
+from .decorators._headers import accept, referer, user_agent
 from .decorators.auth import auth, basic_auth
 from .decorators.middleware import (
     expect_content_type,

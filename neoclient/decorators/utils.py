@@ -1,13 +1,10 @@
-from typing import Any, Callable, Sequence, Type, TypeVar
-
-from neoclient.services import Service
+from typing import Sequence
 
 from ..param_functions import Request
+from .api import CS
 from .common import request_depends
 
 __all__: Sequence[str] = ("persist_pre_request",)
-
-CS = TypeVar("CS", Callable[..., Any], Type[Service])
 
 
 def _persist_pre_request_dependency(request=Request()):

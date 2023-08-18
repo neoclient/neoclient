@@ -1,13 +1,10 @@
-from typing import Callable, Sequence, Type, TypeVar
+from typing import Sequence
 
 from ..consumers import BaseURLConsumer
-from ..services import Service
-from .api import ConsumerDecorator
+from .api import ServiceConsumerDecorator, ServiceDecorator
 
 __all__: Sequence[str] = ("base_url",)
 
-TT = TypeVar("TT", Callable, Type[Service])
 
-
-def base_url(base_url: str, /) -> Callable[[TT], TT]:
-    return ConsumerDecorator(BaseURLConsumer(base_url))
+def base_url(base_url: str, /) -> ServiceDecorator:
+    return ServiceConsumerDecorator(BaseURLConsumer(base_url))

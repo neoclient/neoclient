@@ -1,7 +1,8 @@
+from ._headers import accept, referer, user_agent
+from .api import CommonDecorator, OperationDecorator, ServiceDecorator
 from .auth import auth, basic_auth
 from .client import base_url
 from .common import (
-    accept,
     cookie,
     cookies,
     follow_redirects,
@@ -9,11 +10,9 @@ from .common import (
     headers,
     query,
     query_params,
-    referer,
     request_depends,
     response_depends,
     timeout,
-    user_agent,
     verify,
 )
 from .middleware import (
