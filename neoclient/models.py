@@ -88,12 +88,15 @@ class State(SimpleNamespace, MutableMapping):
         setattr(self, key, value)
 
     def __getitem__(self, key: str) -> Any:
-        if hasattr(self, key):
-            return getattr(self, key)
+        if not hasattr(self, key):
+            raise KeyError(key)
 
-        raise KeyError(key)
+        return getattr(self, key)
 
     def __delitem__(self, key: str) -> None:
+        if not hasattr(self, key):
+            raise KeyError(key)
+
         delattr(self, key)
 
     def __len__(self) -> int:
@@ -494,7 +497,7 @@ class PreRequest:
                 **self.path_params,
                 **pre_request.path_params,
             },
-            state=State({**self.state._state, **pre_request.state._state}),
+            state=State({**self.state, **pre_request.state}),
             follow_redirects=self.follow_redirects and pre_request.follow_redirects,
         )
 
