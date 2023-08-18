@@ -12,7 +12,7 @@ r"""
 ```
 """
 
-__version__: str = "0.1.51"
+__version__: str = "0.1.52"
 
 from .client import NeoClient
 from .decorators import (
@@ -68,4 +68,5 @@ from .param_functions import (
     State,
     StatusCode,
 )
+from .sentinels import Required, Undefined
 from .services import Service

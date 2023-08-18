@@ -1,9 +1,11 @@
 import urllib.parse
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import (
     Any,
     Callable,
     Dict,
+    Iterator,
     List,
     Mapping,
     MutableMapping,
@@ -28,7 +30,7 @@ from .defaults import (
     DEFAULT_TRUST_ENV,
 )
 from .enums import HTTPHeader
-from .errors import IncompatiblePathParameters, MissingStateError
+from .errors import IncompatiblePathParameters
 from .types import (
     AsyncByteStream,
     AuthTypes,
@@ -69,67 +71,39 @@ __all__: Sequence[str] = (
 )
 
 
-class State:
-    _state: MutableMapping[str, Any]
+class State(SimpleNamespace, MutableMapping):
+    def __init__(
+        self, mapping: Optional[Mapping[str, Any]] = None, /, **kwargs: Any
+    ) -> None:
+        arguments: MutableMapping[str, Any] = {}
 
-    def __init__(self, state: Optional[MutableMapping[str, Any]] = None):
-        if state is None:
-            state = {}
+        if mapping is not None:
+            arguments.update(mapping)
 
-        super().__setattr__("_state", state)
+        arguments.update(kwargs)
 
-    def __repr__(self) -> str:
-        context: str = ", ".join(
-            f"{key}={value!r}" for key, value in self._state.items()
-        )
-        return f"{type(self).__name__}({context})"
-
-    def __eq__(self, value: object) -> bool:
-        if isinstance(value, type(self)):
-            return self._state == value._state
-
-        return False
-
-    def _set(self, key: str, value: Any) -> None:
-        self._state[key] = value
-
-    def _get(self, key: str) -> Any:
-        if key in self._state:
-            return self._state[key]
-
-        raise MissingStateError(key=key)
-
-    def _del(self, key: str) -> None:
-        del self._state[key]
+        super().__init__(**arguments)
 
     def __setitem__(self, key: str, value: Any) -> None:
-        self._set(key, value)
-
-    def __setattr__(self, key: str, value: Any) -> None:
-        self._set(key, value)
+        setattr(self, key, value)
 
     def __getitem__(self, key: str) -> Any:
-        try:
-            return self._get(key)
-        except MissingStateError as missing_state_error:
-            raise KeyError(key) from missing_state_error
+        if not hasattr(self, key):
+            raise KeyError(key)
 
-    def __getattr__(self, key: str) -> Any:
-        try:
-            return self._get(key)
-        except MissingStateError as missing_state_error:
-            raise AttributeError(
-                f"{type(self).__name__!r} object has no attribute {key!r}"
-            ) from missing_state_error
+        return getattr(self, key)
 
     def __delitem__(self, key: str) -> None:
-        self._del(key)
+        if not hasattr(self, key):
+            raise KeyError(key)
 
-    def __delattr__(self, key: str) -> None:
-        self._del(key)
+        delattr(self, key)
 
-    def get(self, key: str, default: Any = None) -> Any:
-        return self._state.get(key, default)
+    def __len__(self) -> int:
+        return len(self.__dict__)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.__dict__)
 
 
 class Request(httpx.Request):
@@ -523,7 +497,7 @@ class PreRequest:
                 **self.path_params,
                 **pre_request.path_params,
             },
-            state=State({**self.state._state, **pre_request.state._state}),
+            state=State({**self.state, **pre_request.state}),
             follow_redirects=self.follow_redirects and pre_request.follow_redirects,
         )
 
