@@ -4,6 +4,9 @@ from pydantic.fields import Undefined
 
 from .dependence import DependencyParameter
 from .params import (
+    AllRequestStateParameter,
+    AllResponseStateParameter,
+    AllStateParameter,
     BodyParameter,
     CookieParameter,
     CookiesParameter,
@@ -39,6 +42,10 @@ __all__: Sequence[str] = (
     "Request",
     "Response",
     "StatusCode",
+    "State",
+    "AllRequestState",
+    "AllResponseState",
+    "AllState",
 )
 
 P = TypeVar("P", bound=Parameter)
@@ -352,3 +359,15 @@ def State(
             alias=name,
         )
     )
+
+
+def AllRequestState() -> AllRequestStateParameter:
+    return _validate(AllRequestStateParameter())
+
+
+def AllResponseState() -> AllResponseStateParameter:
+    return _validate(AllResponseStateParameter())
+
+
+def AllState() -> AllStateParameter:
+    return _validate(AllStateParameter())
