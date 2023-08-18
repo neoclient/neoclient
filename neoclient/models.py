@@ -15,7 +15,6 @@ from typing import (
 
 import httpx
 from httpx import URL, BaseTransport, Cookies, Headers, Limits, QueryParams, Timeout
-from httpx._config import DEFAULT_MAX_REDIRECTS, DEFAULT_TIMEOUT_CONFIG
 
 from . import converters, utils
 from .constants import USER_AGENT
@@ -24,6 +23,8 @@ from .defaults import (
     DEFAULT_ENCODING,
     DEFAULT_FOLLOW_REDIRECTS,
     DEFAULT_LIMITS,
+    DEFAULT_MAX_REDIRECTS,
+    DEFAULT_TIMEOUT,
     DEFAULT_TRUST_ENV,
 )
 from .enums import HTTPHeader
@@ -174,6 +175,9 @@ class Request(httpx.Request):
     def from_httpx_request(
         cls, httpx_request: httpx.Request, /, *, state: Optional[State] = None
     ) -> "Request":
+        if isinstance(httpx_request, Request):
+            return httpx_request
+
         if hasattr(httpx_request, "_content"):
             request: Request = cls(
                 method=httpx_request.method,
@@ -212,7 +216,7 @@ class Response(httpx.Response):
         html: Optional[str] = None,
         json: Any = None,
         stream: Union[SyncByteStream, AsyncByteStream, None] = None,
-        request: Optional[httpx.Request] = None,
+        request: Optional[Request] = None,
         extensions: Optional[ResponseExtensions] = None,
         history: Optional[List[httpx.Response]] = None,
         default_encoding: Union[str, Callable[[bytes], str]] = "utf-8",
@@ -242,7 +246,8 @@ class Response(httpx.Response):
             response: Response = cls(
                 status_code=httpx_response.status_code,
                 headers=httpx_response.headers,
-                request=httpx_response.request,
+                # NOTE: Type below temporarily ignored due to #168
+                request=httpx_response.request,  # type: ignore
                 stream=httpx_response.stream,
                 state=state,
             )
@@ -254,7 +259,8 @@ class Response(httpx.Response):
         return cls(
             status_code=httpx_response.status_code,
             headers=httpx_response.headers,
-            request=httpx_response.request,
+            # NOTE: Type below temporarily ignored due to #168
+            request=httpx_response.request,  # type: ignore
             stream=httpx_response.stream,
             state=state,
         )
@@ -295,7 +301,7 @@ class ClientOptions:
         http2: bool = False,
         proxies: Optional[ProxiesTypes] = None,
         mounts: Optional[Mapping[str, BaseTransport]] = None,
-        timeout: TimeoutTypes = DEFAULT_TIMEOUT_CONFIG,
+        timeout: TimeoutTypes = DEFAULT_TIMEOUT,
         follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
         limits: Limits = DEFAULT_LIMITS,
         max_redirects: int = DEFAULT_MAX_REDIRECTS,
