@@ -16,8 +16,8 @@ __version__: str = "0.1.50"
 
 from .client import NeoClient
 from .decorators import (
-    base_url,
     content,
+    base_url,
     cookie,
     cookies,
     data,
