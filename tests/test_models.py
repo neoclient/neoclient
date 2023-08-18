@@ -1,5 +1,6 @@
-from neoclient.models import State
 import pytest
+
+from neoclient.models import State
 
 
 def test_State_init() -> None:
@@ -56,6 +57,7 @@ def test_State_del_attr() -> None:
 
     with pytest.raises(AttributeError):
         del state.missing
+
 
 def test_State_del_item() -> None:
     state: State = State(name="sam", age=43)
