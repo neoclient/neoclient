@@ -14,7 +14,6 @@ __all__: Sequence[str] = (
     "ExpectedStatusCodeError",
     "ExpectedHeaderError",
     "ExpectedContentTypeError",
-    "MissingStateError",
     "ServiceInitialisationError",
 )
 
@@ -82,14 +81,6 @@ class ExpectedContentTypeError(Exception):
             f"Response {HTTPHeader.CONTENT_TYPE} has incorrect value."
             f" Expected {self.expected!r}, got {self.actual!r}"
         )
-
-
-@dataclass
-class MissingStateError(Exception):
-    key: str
-
-    def __str__(self) -> str:
-        return f"State entry missing for key {self.key!r}"
 
 
 class ServiceInitialisationError(Exception):
