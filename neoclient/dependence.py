@@ -23,8 +23,9 @@ from pydantic.fields import FieldInfo, ModelField
 
 from . import api, utils
 from .errors import PreparationError, ResolutionError
-from .models import PreRequest, Request, Response
+from .models import PreRequest, Request, Response, State
 from .params import (
+    AllStateParameter,
     BodyParameter,
     CookiesParameter,
     HeaderParameter,
@@ -46,7 +47,7 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
         allow_population_by_field_name: bool = True
         arbitrary_types_allowed: bool = True
 
-    httpx_lookup: Mapping[Type[Any], Type[Parameter]] = {
+    infer_lookup: Mapping[Type[Any], Type[Parameter]] = {
         PreRequest: RequestParameter,
         Request: RequestParameter,
         Response: ResponseParameter,
@@ -56,6 +57,7 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
         QueryParams: QueryParamsParameter,
         Headers: HeadersParameter,
         Cookies: CookiesParameter,
+        State: AllStateParameter,
     }
 
     fields: MutableMapping[str, Tuple[Any, Parameter]] = {}
@@ -69,8 +71,8 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
         parameter: Parameter
 
         if not isinstance(field_info, Parameter):
-            if model_field.annotation in httpx_lookup:
-                parameter = httpx_lookup[model_field.annotation]()
+            if model_field.annotation in infer_lookup:
+                parameter = infer_lookup[model_field.annotation]()
             elif (
                 (
                     isinstance(model_field.annotation, type)
