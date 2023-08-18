@@ -54,7 +54,6 @@ from .typing import RequestConsumer, RequestResolver, ResponseResolver, Supplier
 from .utils import parse_obj_as
 
 __all__: Sequence[str] = (
-    "AllStateParameter",
     "QueryParameter",
     "HeaderParameter",
     "CookieParameter",
@@ -69,6 +68,9 @@ __all__: Sequence[str] = (
     "RequestParameter",
     "StatusCodeParameter",
     "ReasonParameter",
+    "AllRequestStateParameter",
+    "AllResponseStateParameter",
+    "AllStateParameter",
 )
 
 K = TypeVar("K")
@@ -438,9 +440,18 @@ class ReasonParameter(Parameter):
         return response.reason_phrase
 
 
-class AllStateParameter(Parameter):
+class AllRequestStateParameter(Parameter):
+    def resolve_request(self, request: PreRequest, /) -> State:
+        return request.state
+
+    def resolve_response(self, response: Response, /) -> State:
+        return response.request.state
+
+
+class AllResponseStateParameter(Parameter):
     def resolve_response(self, response: Response, /) -> State:
         return response.state
 
-    def resolve_request(self, request: PreRequest, /) -> State:
-        return request.state
+
+class AllStateParameter(AllResponseStateParameter, AllRequestStateParameter):
+    pass

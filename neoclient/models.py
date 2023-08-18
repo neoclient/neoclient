@@ -199,6 +199,7 @@ class Request(httpx.Request):
 
 
 class Response(httpx.Response):
+    request: Request
     state: State
 
     def __init__(
