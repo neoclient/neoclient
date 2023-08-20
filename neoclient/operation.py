@@ -2,6 +2,7 @@ import functools
 import inspect
 from dataclasses import dataclass, field
 from json import JSONDecodeError
+from types import FunctionType
 from typing import Any, Callable, Generic, MutableSequence, Optional, Sequence, TypeVar
 
 import httpx
@@ -111,7 +112,20 @@ class Operation(Generic[PS, RT_co]):
             resolve_response(response_dependency, response)
 
         if self.response is not None:
-            return resolve_response(self.response, response)
+            resolved_response: Any
+
+            # If the response dependency is a class-style decorator, resolve
+            # the response against the class instance's `__call__` method, otherwise
+            # inspection of the dependency may inadvertently be inspecting the
+            # `__init__` method instead.
+            if not isinstance(self.response, FunctionType) and hasattr(
+                self.response, "__call__"
+            ):
+                resolved_response = resolve_response(self.response.__call__, response)
+            else:
+                resolved_response = resolve_response(self.response, response)
+
+            return pydantic.parse_obj_as(return_annotation, resolved_response)
 
         if return_annotation is inspect.Parameter.empty:
             try:

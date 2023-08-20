@@ -363,3 +363,26 @@ def test_request_url() -> None:
     request: Request = Request(HTTPMethod.GET, url)
 
     assert dependencies.request_url(request) == request.url == url
+
+
+def test_header() -> None:
+    headers: Headers = Headers({"name": "sam"})
+
+    assert dependencies.header("name")(headers) == "sam"
+    assert dependencies.header("age")(headers) is None
+
+
+def test_location() -> None:
+    headers_has_location: Headers = Headers({"location": "some-location"})
+    headers_no_location: Headers = Headers()
+
+    assert dependencies.location(headers_has_location) == "some-location"
+    assert dependencies.location(headers_no_location) is None
+
+
+def test_server() -> None:
+    headers_has_server: Headers = Headers({"server": "some-server"})
+    headers_no_server: Headers = Headers()
+
+    assert dependencies.server(headers_has_server) == "some-server"
+    assert dependencies.server(headers_no_server) is None
