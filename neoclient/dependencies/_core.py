@@ -3,11 +3,12 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from httpx import URL, Cookies, Headers, QueryParams, Request, Response
 
-from .types import StreamTypes
+from ..types import StreamTypes
 
 __all__: Sequence[str] = (
     "charset_encoding",
     "content",
+    "cookies",
     "elapsed",
     "encoding",
     "has_redirect_location",
