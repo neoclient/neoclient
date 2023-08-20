@@ -217,7 +217,7 @@ class Response(httpx.Response):
         cls, httpx_response: httpx.Response, /, *, state: Optional[State] = None
     ) -> "Response":
         response: Response
-        
+
         if hasattr(httpx_response, "_content"):
             response = cls(
                 status_code=httpx_response.status_code,
