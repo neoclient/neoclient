@@ -216,8 +216,10 @@ class Response(httpx.Response):
     def from_httpx_response(
         cls, httpx_response: httpx.Response, /, *, state: Optional[State] = None
     ) -> "Response":
+        response: Response
+        
         if hasattr(httpx_response, "_content"):
-            response: Response = cls(
+            response = cls(
                 status_code=httpx_response.status_code,
                 headers=httpx_response.headers,
                 # NOTE: Type below temporarily ignored due to #168
@@ -227,17 +229,19 @@ class Response(httpx.Response):
             )
 
             response._content = httpx_response.content
+        else:
+            response = cls(
+                status_code=httpx_response.status_code,
+                headers=httpx_response.headers,
+                # NOTE: Type below temporarily ignored due to #168
+                request=httpx_response.request,  # type: ignore
+                stream=httpx_response.stream,
+                state=state,
+            )
 
-            return response
+        response.history = httpx_response.history
 
-        return cls(
-            status_code=httpx_response.status_code,
-            headers=httpx_response.headers,
-            # NOTE: Type below temporarily ignored due to #168
-            request=httpx_response.request,  # type: ignore
-            stream=httpx_response.stream,
-            state=state,
-        )
+        return response
 
 
 @dataclass(init=False)
