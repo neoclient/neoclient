@@ -132,5 +132,5 @@ dmypy.json
 .vscode/
 
 # Custom
-_.*.py
+# _.*.py
 .ignore/

@@ -46,6 +46,11 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
     class Config:
         allow_population_by_field_name: bool = True
         arbitrary_types_allowed: bool = True
+        # A shallow/deep copy of request/response attributes (e.g. path params)
+        # fundamentally ruins the principal of composition/resolution, as
+        # a copy will be provided, rather than the original, and mutations
+        # will therefore not persist.
+        copy_on_model_validation: str = "none"
 
     infer_lookup: Mapping[Type[Any], Type[Parameter]] = {
         PreRequest: RequestParameter,
@@ -140,6 +145,10 @@ class DependencyResolver(Generic[T]):
         fields: Mapping[str, Tuple[Any, Parameter]] = get_fields(self.dependency)
 
         model_cls: Type[BaseModel] = api.create_model_cls(self.dependency, fields)
+
+        print(fields)
+        print(model_cls)
+        print(model_cls.Config.__dict__)
 
         arguments: MutableMapping[str, Any] = {}
 

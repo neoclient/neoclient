@@ -19,6 +19,11 @@ def create_model_cls(
     class Config:
         allow_population_by_field_name: bool = True
         arbitrary_types_allowed: bool = True
+        # A shallow/deep copy of request/response attributes (e.g. path params)
+        # fundamentally ruins the principal of composition/resolution, as
+        # a copy will be provided, rather than the original, and mutations
+        # will therefore not persist.
+        copy_on_model_validation: str = "none"
 
     return create_func_model(func, fields, config=Config)
 

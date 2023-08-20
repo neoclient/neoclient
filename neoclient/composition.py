@@ -47,7 +47,15 @@ def get_fields(
         else set()
     )
 
-    validated_function: ValidatedFunction = ValidatedFunction(func)
+    model_config: Mapping[str, Any] = {
+        # A shallow/deep copy of request/response attributes (e.g. path params)
+        # fundamentally ruins the principal of composition/resolution, as
+        # a copy will be provided, rather than the original, and mutations
+        # will therefore not persist.
+        "copy_on_model_validation": "none"
+    }
+
+    validated_function: ValidatedFunction = ValidatedFunction(func, config=model_config)
 
     parameters: Mapping[
         str, inspect.Parameter
