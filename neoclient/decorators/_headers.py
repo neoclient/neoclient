@@ -1,10 +1,8 @@
-from typing import Sequence
-
 from ..consumers import HeaderConsumer
 from ..enums import HTTPHeader
 from .api import CommonDecorator, ConsumerDecorator
 
-__all__: Sequence[str] = ("accept", "referer", "user_agent")
+__all__ = ("accept", "referer", "user_agent")
 
 
 def accept(*content_types: str) -> CommonDecorator:

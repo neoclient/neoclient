@@ -1,8 +1,12 @@
 # neoclient/decorators
 NeoClient Decorators
 
-## Headers
-### `accept`
+## About
+These decorators allow you to configure your operations and services.
+
+## Available Decorators
+### Headers
+#### `accept`
 Set an `Accept` header on the request
 ```python
 from neoclient import get

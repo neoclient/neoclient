@@ -1,4 +1,4 @@
-from ._headers import accept, referer, user_agent
+from ._headers import *
 from .api import CommonDecorator, OperationDecorator, ServiceDecorator
 from .auth import auth, basic_auth
 from .client import base_url

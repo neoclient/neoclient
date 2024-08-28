@@ -176,7 +176,7 @@ class DependencyResolver(Generic[T]):
                 # If the parameter has a resolution function that is backed to
                 # a multi-value mapping (and will yield a sequence of values),
                 # inspect the field's annotation to decide whether to use the
-                # entire sequence, or only the first value within in.
+                # entire sequence, or only the first value within it.
                 if isinstance(parameter, (QueryParameter, HeaderParameter)):
                     field_annotation_origin: Optional[Any] = typing.get_origin(
                         field_annotation

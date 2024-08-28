@@ -27,7 +27,7 @@ def ip():
     return get("https://httpbin.org/ip").json()
 ```
 
-or for `httpx`:
+and practically identical for `httpx`:
 ```python
 from httpx import get
 
