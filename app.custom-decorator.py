@@ -11,6 +11,11 @@ This is helpful to simplify the decorator API, to make it approachable
 to humans.
 """
 
+def with_referer(referer: str, /):
+    def apply(request):
+        request.headers["referer"] = referer
+    return apply
+
 
 @dataclass
 class RefererHeaderConsumer(RequestConsumer):
