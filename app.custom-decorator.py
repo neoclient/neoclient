@@ -9,6 +9,12 @@ TODO: Write up documentation on how to create your own decorator.
 
 This is helpful to simplify the decorator API, to make it approachable
 to humans.
+
+Decorators can either be applied to an operation or a service
+
+class MyDecorator(Decorator):
+    def handle_request(self, request):
+        request.headers["name"] = "bob"
 """
 
 def with_referer(referer: str, /):
