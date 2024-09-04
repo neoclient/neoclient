@@ -1,6 +1,13 @@
-from neoclient.decorators.api3 import Decorator
+from neoclient.decorators.api import Decorator
 from neoclient import get
 from neoclient.operation import Operation
+
+"""
+from neoclient.decorator import Decorator, DecoratorException
+
+from neoclient.decorators.api import Decorator
+from neoclient.decorators import referer
+"""
 
 
 class MyDecorator(Decorator):

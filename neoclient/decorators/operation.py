@@ -18,7 +18,7 @@ from ..types import (
     RequestData,
     RequestFiles,
 )
-from .api import OperationConsumerDecorator, OperationDecorator
+from .old_api import OperationConsumerDecorator, OperationDecorator
 
 __all__: Sequence[str] = (
     "content",

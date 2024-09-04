@@ -1,172 +1,170 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import (
-    Any,
-    Callable,
-    Protocol,
-    Sequence,
-    Type,
-    TypeVar,
-    Union,
-    runtime_checkable,
-)
+from typing import Any, Callable, Optional, Sequence, Tuple, Type, TypeVar
 
-from ..errors import CompositionError
-from ..models import ClientOptions, PreRequest
-from ..operation import Operation, get_operation
-from ..services import Service
-from ..specification import ClientSpecification
-from ..typing import Consumer, SupportsConsumeClient, SupportsConsumeRequest
+from httpx import Headers
+from neoclient import converters
+from neoclient.operation import Operation, get_operation
+from neoclient.services import Service
+from neoclient.specification import ClientSpecification
+from neoclient.types import HeaderTypes
+from neoclient.typing import Consumer
+from neoclient import typing
 
-__all__: Sequence[str] = (
-    # Protocols
-    "OperationDecorator",
-    "ServiceDecorator",
-    "CommonDecorator",
-    # Wrappers
-    "ConsumerDecorator",
-    "OperationConsumerDecorator",
-    "ServiceConsumerDecorator",
-)
-
-C = TypeVar("C", bound=Callable[..., Any])
-S = TypeVar("S", bound=Type[Service])
 CS = TypeVar("CS", Callable[..., Any], Type[Service])
 
 
-@runtime_checkable
-class SupportsConsumeClientSpecification(Protocol):
-    @abstractmethod
-    def consume_client_spec(self, client_specification: ClientSpecification, /) -> None:
-        ...
-
-
-@runtime_checkable
-class SupportsConsumeOperation(Protocol):
-    @abstractmethod
-    def consume_operation(self, operation: Operation, /) -> None:
-        ...
-
-
-class ClientSpecificationConsumer(Consumer[ClientSpecification], Protocol):
+class DecorationError(Exception):
     pass
 
 
-class OperationConsumer(Consumer[Operation], Protocol):
-    pass
-
-
-class OperationDecorator(Protocol):
-    @abstractmethod
-    def __call__(self, target: C, /) -> C:
-        raise NotImplementedError
-
-
-class ServiceDecorator(Protocol):
-    @abstractmethod
-    def __call__(self, target: S, /) -> S:
-        raise NotImplementedError
-
-
-class CommonDecorator(Protocol):
-    @abstractmethod
-    def __call__(self, target: CS, /) -> CS:
-        raise NotImplementedError
-
-
-@dataclass
-class OperationConsumerDecorator(OperationDecorator):
-    consumer: Union[
-        SupportsConsumeOperation,
-        SupportsConsumeRequest,
-        SupportsConsumeClient,
-    ]
-
-    def __call__(self, target: C, /) -> C:
-        if not callable(target):
-            raise CompositionError(f"Target of unsupported type {type(target)}")
-
-        operation: Operation = get_operation(target)
-
-        if isinstance(self.consumer, SupportsConsumeOperation):
-            self.consumer.consume_operation(operation)
-        elif isinstance(self.consumer, SupportsConsumeRequest):
-            pre_request: PreRequest = operation.pre_request
-
-            self.consumer.consume_request(pre_request)
-        elif isinstance(self.consumer, SupportsConsumeClient):
-            client_options: ClientOptions = operation.client_options
-
-            self.consumer.consume_client(client_options)
-        else:
-            raise CompositionError(
-                f"Consumer {self.consumer} does not support consuming a request or client"
-            )
-
-        return target
-
-
-@dataclass
-class ServiceConsumerDecorator(ServiceDecorator):
-    consumer: Union[SupportsConsumeClientSpecification, SupportsConsumeClient]
-
-    def __call__(self, target: S, /) -> S:
-        if not isinstance(target, type):
-            raise CompositionError(f"Target of unsupported type {type(target)}")
-
-        if not issubclass(target, Service):
-            raise CompositionError(f"Target class is not a subclass of {Service}")
-
-        specification: ClientSpecification = target._spec
-        options: ClientOptions = specification.options
-
-        if isinstance(self.consumer, SupportsConsumeClientSpecification):
-            self.consumer.consume_client_spec(specification)
-        elif isinstance(self.consumer, SupportsConsumeClient):
-            self.consumer.consume_client(options)
-        else:
-            raise CompositionError(
-                f"Consumer {self.consumer} does not support consuming client specification or options"
-            )
-
-        return target
-
-
-@dataclass
-class ConsumerDecorator(CommonDecorator):
-    consumer: Union[
-        SupportsConsumeOperation,
-        SupportsConsumeRequest,
-        SupportsConsumeClientSpecification,
-        SupportsConsumeClient,
-    ]
-
+class Decorator:
     def __call__(self, target: CS, /) -> CS:
         if isinstance(target, type):
-            if not isinstance(
-                self.consumer,
-                (SupportsConsumeClientSpecification, SupportsConsumeClient),
-            ):
-                raise CompositionError(
-                    f"Consumer {type(self.consumer).__name__!r} does not support consumption"
-                    f" of type {Service}"
-                )
+            if not issubclass(target, Service):
+                raise DecorationError(f"Target class is not a subclass of {Service}")
 
-            return ServiceConsumerDecorator(self.consumer)(target)
+            specification: ClientSpecification = target._spec
+
+            self.decorate_client(specification)
         elif callable(target):
-            if not isinstance(
-                self.consumer,
-                (
-                    SupportsConsumeOperation,
-                    SupportsConsumeRequest,
-                    SupportsConsumeClient,
-                ),
-            ):
-                raise CompositionError(
-                    f"Consumer {type(self.consumer).__name__!r} does not support consuming"
-                    f" target of type {type(target)}"
-                )
+            operation: Operation = get_operation(target)
 
-            return OperationConsumerDecorator(self.consumer)(target)
+            self.decorate_operation(operation)
         else:
-            raise CompositionError(f"Target of unsupported type {type(target)}")
+            raise DecorationError(f"Target of unsupported type {type(target)}")
+
+        return target
+
+    def decorate_operation(self, operation: Operation, /) -> None:
+        raise DecorationError("Decorating operation not supported")
+
+    def decorate_client(self, client: ClientSpecification, /) -> None:
+        raise DecorationError("Decorating client not supported")
+
+
+# @dataclass
+# class ConsumerDecorator(Decorator):
+#     consume_operation: Optional[Consumer[Operation]] = None
+#     consume_client: Optional[Consumer[ClientSpecification]] = None
+
+#     def decorate_operation(self, operation: Operation, /) -> None:
+#         if self.consume_operation is None:
+#             super().decorate_operation(operation)
+
+#         self.consume_operation(operation)
+
+#     def decorate_client(self, client: ClientSpecification, /) -> None:
+#         if self.consume_client is None:
+#             super().decorate_client(client)
+
+#         self.consume_client(client)
+
+
+@dataclass
+class OperationDecorator(Decorator):
+    consumer: Consumer[Operation]
+
+    def decorate_operation(self, operation: Operation, /) -> None:
+        self.consume_operation(operation)
+
+
+@dataclass
+class ClientDecorator(Decorator):
+    consumer: Consumer[Operation]
+
+    def decorate_operation(self, operation: Operation, /) -> None:
+        self.consume_operation(operation)
+
+
+def operation_decorator(consumer: Consumer[Operation], /):
+    return OperationDecorator(consumer)
+
+
+def client_decorator(consumer: Consumer[ClientSpecification], /):
+    return ClientDecorator(consumer)
+
+
+# def headers_decorator(consumer: Consumer[Headers], /):
+#     def consume_operation(operation: Operation, /) -> None:
+#         return consumer(operation.pre_request.headers)
+
+#     def consume_client(client: ClientSpecification, /) -> None:
+#         return consumer(client.options.headers)
+
+#     return ConsumerDecorator(
+#         consume_operation=consume_operation, consume_client=consume_client
+#     )
+
+
+# def header_decorator(key: str, value: HeaderTypes, /):
+#     values: Sequence[str] = converters.convert_header(value)
+
+#     def consume_headers(headers: Headers, /) -> None:
+#         # If there's only one value, set the header and overwrite any existing
+#         # entries for this key
+#         if len(values) == 1:
+#             headers[key] = values[0]
+#         # Otherwise, update the headers and maintain any existing entries for this
+#         # key
+#         else:
+#             values: Sequence[Tuple[str, str]] = [(key, value) for value in values]
+
+#             headers.update(values)
+
+#     return headers_decorator(consume_headers)
+
+
+@dataclass
+class HeadersDecorator(Decorator):
+    consumer: Consumer[Headers]
+
+    def decorate_operation(self, operation: Operation, /) -> None:
+        return self.consumer(operation.pre_request.headers)
+
+    def decorate_client(self, client: ClientSpecification, /) -> None:
+        return self.consumer(client.options.headers)
+
+
+def headers_decorator(consumer: Consumer[Headers], /):
+    return HeadersDecorator(consumer)
+
+
+# class HeadersDecorator(Decorator, ABC):
+#     @abstractmethod
+#     def decorate_headers(self, headers: Headers, /) -> None:
+#         raise NotImplementedError
+
+#     def decorate_operation(self, operation: Operation, /) -> None:
+#         return self.decorate_headers(operation.pre_request.headers)
+
+#     def decorate_client(self, client: ClientSpecification, /) -> None:
+#         return self.decorate_headers(client.options.headers)
+
+
+# @dataclass(init=False)
+# class HeaderConsumer(Consumer[Headers]):
+#     key: str
+#     values: Sequence[str]
+
+#     def __init__(self, key: str, value: HeaderTypes) -> None:
+#         self.key = key
+#         self.values = converters.convert_header(value)
+
+#     def __call__(self, headers: Headers, /) -> None:
+#         # If there's only one value, set the header and overwrite any existing
+#         # entries for this key
+#         if len(self.values) == 1:
+#             headers[self.key] = self.values[0]
+#         # Otherwise, update the headers and maintain any existing entries for this
+#         # key
+#         else:
+#             values: Sequence[Tuple[str, str]] = [
+#                 (self.key, value) for value in self.values
+#             ]
+
+#             headers.update(values)
+
+
+# def header_decorator(key: str, value: HeaderTypes, /):
+#     return HeaderDecorator(key, value)

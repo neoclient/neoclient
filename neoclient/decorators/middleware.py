@@ -12,7 +12,7 @@ from ..middlewares import raise_for_status as raise_for_status_middleware
 from ..models import Request, Response
 from ..operation import Operation
 from ..specification import ClientSpecification
-from .api import (
+from .old_api import (
     CS,
     CommonDecorator,
     ConsumerDecorator,

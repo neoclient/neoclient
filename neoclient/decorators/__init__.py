@@ -1,5 +1,5 @@
 from ._headers import *
-from .api import CommonDecorator, OperationDecorator, ServiceDecorator
+from .old_api import CommonDecorator, OperationDecorator, ServiceDecorator
 from .auth import auth, basic_auth
 from .client import base_url
 from .common import (

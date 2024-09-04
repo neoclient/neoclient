@@ -4,7 +4,7 @@ from typing import Sequence
 from ..operation import Operation
 from ..specification import ClientSpecification
 from ..typing import Dependency
-from .api import (
+from .old_api import (
     CommonDecorator,
     ConsumerDecorator,
     SupportsConsumeClientSpecification,

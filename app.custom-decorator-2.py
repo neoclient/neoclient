@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from httpx import Headers
 
-from neoclient.decorators.api3 import HeadersDecorator
+from neoclient.decorators.api import HeadersDecorator
 from neoclient import get
 
 

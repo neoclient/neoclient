@@ -1,7 +1,7 @@
 from typing import Sequence
 
 from ..consumers import BaseURLConsumer
-from .api import ServiceConsumerDecorator, ServiceDecorator
+from .old_api import ServiceConsumerDecorator, ServiceDecorator
 
 __all__: Sequence[str] = ("base_url",)
 

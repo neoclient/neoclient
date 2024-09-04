@@ -12,7 +12,7 @@ from ..annotations import (
 )
 from ..models import Request, Response
 from ..typing import Dependency
-from .api import C, S, ServiceDecorator
+from .old_api import C, S, ServiceDecorator
 
 __all__: Sequence[str] = ("service",)
 
