@@ -1,7 +1,7 @@
 from ._headers import *
 from .old_api import CommonDecorator, OperationDecorator, ServiceDecorator
-from .auth import auth, basic_auth
-from .client import base_url
+from ._auth import auth, basic_auth
+from ._client import base_url
 from .common import (
     cookie,
     cookies,
@@ -15,7 +15,7 @@ from .common import (
     timeout,
     verify,
 )
-from .middleware import (
+from ._middleware import (
     expect_content_type,
     expect_header,
     expect_status,

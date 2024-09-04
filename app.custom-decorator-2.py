@@ -20,4 +20,5 @@ def referer(referer: str, /):
 
 @referer("https://www.google.com/")
 @get("https://httpbin.org/headers")
-def headers(): ...
+def headers():
+    ...

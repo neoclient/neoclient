@@ -21,7 +21,11 @@
 
 # --------------
 
-from neoclient.decorators.api import header_decorator, headers_decorator, operation_decorator
+from neoclient.decorators.api import (
+    header_decorator,
+    headers_decorator,
+    operation_decorator,
+)
 from neoclient import get
 from httpx import Headers
 
@@ -31,16 +35,20 @@ from neoclient.operation import Operation
 #     lambda headers: headers.update({"referer": "https://www.google.com/"})
 # )
 
+
 @operation_decorator
 def log_operation(operation: Operation, /) -> None:
     print("Operation:", operation)
+
 
 @headers_decorator
 def google_referer(headers: Headers, /) -> None:
     headers["referer"] = "https://www.google.com/"
 
+
 @header_decorator("name", "sam")
 @log_operation
 @google_referer
 @get("https://httpbin.org/headers")
-def headers(): ...
+def headers():
+    ...

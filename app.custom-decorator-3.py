@@ -20,4 +20,5 @@ my_decorator: Decorator = MyDecorator()
 
 @my_decorator
 @get("https://httpbin.org/headers")
-def headers(): ...
+def headers():
+    ...

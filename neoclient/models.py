@@ -414,7 +414,7 @@ class PreRequest:
         self.follow_redirects = follow_redirects
 
     def __repr__(self) -> str:
-        return f"<{type(self).__name__}(\"{str(self.method)}\", \"{str(self.url)}\")>"
+        return f'<{type(self).__name__}("{str(self.method)}", "{str(self.url)}")>'
 
     def __eq__(self, rhs: Any, /) -> bool:
         if not isinstance(rhs, PreRequest):

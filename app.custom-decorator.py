@@ -17,9 +17,11 @@ class MyDecorator(Decorator):
         request.headers["name"] = "bob"
 """
 
+
 def with_referer(referer: str, /):
     def apply(request):
         request.headers["referer"] = referer
+
     return apply
 
 

@@ -49,6 +49,7 @@ class Composer:
     def compose_client_spec(self, client_specification: ClientSpecification, /) -> None:
         raise CompositionError.not_supported(ClientSpecification)
 
+
 # class RequestComposer(ABC, Composer):
 #     @abstractmethod
 #     def compose_request(self, request: PreRequest, /) -> None:
@@ -59,6 +60,7 @@ class Composer:
 
 #     def compose_client_spec(self, client_specification: ClientSpecification, /) -> None:
 #         return self.compose_client(client_specification.options)
+
 
 def compose(target: CompositionTarget, *composers: Composer) -> None:
     # if isinstance(target, PreRequest):

@@ -12,6 +12,7 @@ class Request:
 def add_referer(request: Request, /) -> None:
     request.headers["referer"] = "https://www.google.com/"
 
+
 from neoclient.consumers import HeaderConsumer
 
 add_referer = HeaderConsumer("referer", "https://www.google.com/")

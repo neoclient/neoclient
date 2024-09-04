@@ -39,8 +39,8 @@ from .decorators import (
     verify,
 )
 from .decorators._headers import accept, referer, user_agent
-from .decorators.auth import auth, basic_auth
-from .decorators.middleware import (
+from .decorators._auth import auth, basic_auth
+from .decorators._middleware import (
     expect_content_type,
     expect_header,
     expect_status,

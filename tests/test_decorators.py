@@ -222,8 +222,8 @@ def test_middleware(func: Callable) -> None:
     def middleware_bar(call_next: CallNext, request: Request) -> Response:
         return call_next(request)
 
-    decorators.middleware(middleware_foo)(func)
-    decorators.middleware(middleware_bar)(func)
+    decorators._middleware(middleware_foo)(func)
+    decorators._middleware(middleware_bar)(func)
 
     assert get_operation(func).middleware.record == [
         middleware_foo,
@@ -349,7 +349,7 @@ def test_follow_redirects(func: Callable[..., Any]) -> None:
 def test_auth(func: Callable[..., Any]) -> None:
     auth: Auth = BasicAuth("username", "password")
 
-    decorators.auth(auth)(func)
+    decorators._auth(auth)(func)
 
     assert get_operation(func).middleware.record == [AuthMiddleware(auth)]
 
