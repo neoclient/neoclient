@@ -1,7 +1,9 @@
+from ._auth import *
+from ._client import *
 from ._headers import *
+from ._middleware import *
+
 from .old_api import CommonDecorator, OperationDecorator, ServiceDecorator
-from ._auth import auth, basic_auth
-from ._client import base_url
 from .common import (
     cookie,
     cookies,
@@ -14,13 +16,6 @@ from .common import (
     response_depends,
     timeout,
     verify,
-)
-from ._middleware import (
-    expect_content_type,
-    expect_header,
-    expect_status,
-    middleware,
-    raise_for_status,
 )
 from .operation import content, data, files, json, mount, path, path_params
 from .request import delete, get, head, options, patch, post, put, request

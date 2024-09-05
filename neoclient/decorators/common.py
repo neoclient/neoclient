@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Sequence
+from typing import MutableSequence, Sequence
+
+from neoclient.decorators.api import Decorator
 
 from ..consumers import (
     CookieConsumer,
@@ -26,14 +28,9 @@ from ..types import (
     VerifyTypes,
 )
 from ..typing import Dependency
-from .old_api import (
-    CommonDecorator,
-    ConsumerDecorator,
-    SupportsConsumeClientSpecification,
-    SupportsConsumeOperation,
-)
+from .old_api import ConsumerDecorator
 
-__all__: Sequence[str] = (
+__all__ = (
     "cookie",
     "cookies",
     "request_depends",
@@ -48,70 +45,79 @@ __all__: Sequence[str] = (
 
 
 @dataclass
-class RequestDependsConsumer(
-    SupportsConsumeClientSpecification, SupportsConsumeOperation
-):
+class RequestDependsDecorator(Decorator):
     dependencies: Sequence[Dependency]
 
-    def consume_client_spec(self, client_specification: ClientSpecification) -> None:
-        client_specification.request_dependencies.extend(self.dependencies)
+    def decorate_operation(self, operation: Operation, /) -> None:
+        return self.consumer(operation.request_dependencies)
 
-    def consume_operation(self, operation: Operation) -> None:
-        operation.request_dependencies.extend(self.dependencies)
+    def decorate_client(self, client: ClientSpecification, /) -> None:
+        return self.consumer(client.request_dependencies)
+
+    def _decorate_request_dependencies(
+        self, request_dependencies: MutableSequence[Dependency], /
+    ) -> None:
+        request_dependencies.extend(self.dependencies)
 
 
 @dataclass
-class ResponseDependsConsumer(
-    SupportsConsumeClientSpecification, SupportsConsumeOperation
-):
+class ResponseDependsDecorator(Decorator):
     dependencies: Sequence[Dependency]
 
-    def consume_client_spec(self, client_specification: ClientSpecification) -> None:
-        client_specification.response_dependencies.extend(self.dependencies)
+    def decorate_operation(self, operation: Operation, /) -> None:
+        return self.consumer(operation.response_dependencies)
 
-    def consume_operation(self, operation: Operation) -> None:
-        operation.response_dependencies.extend(self.dependencies)
+    def decorate_client(self, client: ClientSpecification, /) -> None:
+        return self.consumer(client.response_dependencies)
 
-
-def request_depends(*dependencies: Dependency) -> CommonDecorator:
-    return ConsumerDecorator(RequestDependsConsumer(dependencies))
-
-
-def response_depends(*dependencies: Dependency) -> CommonDecorator:
-    return ConsumerDecorator(ResponseDependsConsumer(dependencies))
+    def _decorate_response_dependencies(
+        self, response_dependencies: MutableSequence[Dependency], /
+    ) -> None:
+        response_dependencies.extend(self.dependencies)
 
 
-def cookie(key: str, value: CookieTypes) -> CommonDecorator:
+# TODO: Type responses
+
+
+def request_depends(*dependencies: Dependency):
+    return RequestDependsDecorator(dependencies)
+
+
+def response_depends(*dependencies: Dependency):
+    return ResponseDependsDecorator(dependencies)
+
+
+def cookie(key: str, value: CookieTypes):
     return ConsumerDecorator(CookieConsumer(key, value))
 
 
-def cookies(cookies: CookiesTypes, /) -> CommonDecorator:
+def cookies(cookies: CookiesTypes, /):
     return ConsumerDecorator(CookiesConsumer(cookies))
 
 
-def header(key: str, value: HeaderTypes) -> CommonDecorator:
+def header(key: str, value: HeaderTypes):
     return ConsumerDecorator(HeaderConsumer(key, value))
 
 
-def headers(headers: HeadersTypes, /) -> CommonDecorator:
+def headers(headers: HeadersTypes, /):
     return ConsumerDecorator(HeadersConsumer(headers))
 
 
-def query(key: str, value: QueryTypes) -> CommonDecorator:
+def query(key: str, value: QueryTypes):
     return ConsumerDecorator(QueryConsumer(key, value))
 
 
-def query_params(params: QueryParamsTypes, /) -> CommonDecorator:
+def query_params(params: QueryParamsTypes, /):
     return ConsumerDecorator(QueryParamsConsumer(params))
 
 
-def timeout(timeout: TimeoutTypes, /) -> CommonDecorator:
+def timeout(timeout: TimeoutTypes, /):
     return ConsumerDecorator(TimeoutConsumer(timeout))
 
 
-def verify(verify: VerifyTypes, /) -> CommonDecorator:
+def verify(verify: VerifyTypes, /):
     return ConsumerDecorator(VerifyConsumer(verify))
 
 
-def follow_redirects(follow_redirects: bool, /) -> CommonDecorator:
+def follow_redirects(follow_redirects: bool, /):
     return ConsumerDecorator(FollowRedirectsConsumer(follow_redirects))
