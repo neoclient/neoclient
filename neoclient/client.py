@@ -38,7 +38,7 @@ from .defaults import (
 )
 from .enums import HTTPHeader, HTTPMethod
 from .middlewares import Middleware
-from .models import ClientOptions, PreRequest, Request, Response
+from .models import ClientOptions, RequestOptions, Request, Response
 from .operation import Operation, get_operation
 from .types import (
     AuthTypes,
@@ -232,7 +232,7 @@ class Client:
         response: Optional[Dependency] = None,
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         client_options: ClientOptions = ClientOptions()
-        pre_request: PreRequest = PreRequest(
+        pre_request: RequestOptions = RequestOptions(
             method=method,
             url=endpoint,
         )
@@ -260,7 +260,7 @@ class Client:
             operation: Operation[PS, RT] = Operation(
                 func=func,
                 client_options=client_options,
-                pre_request=pre_request,
+                request_options=pre_request,
                 client=self.client,
                 middleware=middleware,
                 response=operation_response,
@@ -269,7 +269,7 @@ class Client:
             )
 
             # Validate operation function parameters are acceptable
-            validate_fields(get_fields(operation.pre_request, func))
+            validate_fields(get_fields(operation.request_options, func))
 
             return operation.wrapper
 

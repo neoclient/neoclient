@@ -10,6 +10,6 @@ __all__ = ("base_url",)
 def base_url(base_url: str, /):
     @client_decorator
     def decorate(client: ClientSpecification, /) -> None:
-        client.base_url = URL(base_url)
+        client.options.base_url = URL(base_url)
 
     return decorate

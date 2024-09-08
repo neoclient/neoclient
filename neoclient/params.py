@@ -38,7 +38,7 @@ from .converters import (
     convert_query_param,
 )
 from .errors import CompositionError, ResolutionError
-from .models import PreRequest, Response, State
+from .models import RequestOptions, Response, State
 from .resolvers import (
     BodyResolver,
     CookieResolver,
@@ -120,7 +120,7 @@ class Parameter(FieldInfo):
         if self.alias is not None:
             self.alias = str(self.alias)
 
-    def compose(self, request: PreRequest, argument: Any, /) -> None:
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
         raise CompositionError(f"Parameter {type(self)!r} is not composable")
 
     def resolve_response(self, response: Response, /) -> Any:
@@ -128,9 +128,9 @@ class Parameter(FieldInfo):
             f"Parameter {type(self)!r} is not resolvable for type {Response!r}"
         )
 
-    def resolve_request(self, request: PreRequest, /) -> Any:
+    def resolve_request(self, request: RequestOptions, /) -> Any:
         raise ResolutionError(
-            f"Parameter {type(self)!r} is not resolvable for type {PreRequest!r}"
+            f"Parameter {type(self)!r} is not resolvable for type {RequestOptions!r}"
         )
 
     def prepare(self, model_field: ModelField, /) -> None:
@@ -139,7 +139,7 @@ class Parameter(FieldInfo):
 
 
 class ComposableSingletonParameter(ABC, Parameter, Generic[K, V]):
-    def compose(self, request: PreRequest, argument: Any, /) -> None:
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
         if self.alias is None:
             raise CompositionError(
                 f"Cannot compose parameter {type(self)!r} without an alias"
@@ -171,7 +171,7 @@ class ComposableSingletonParameter(ABC, Parameter, Generic[K, V]):
 
 
 class ResolvableSingletonParameter(ABC, Parameter, Generic[K, V]):
-    def resolve_request(self, request: PreRequest, /) -> V:
+    def resolve_request(self, request: RequestOptions, /) -> V:
         if self.alias is None:
             raise ResolutionError(
                 f"Cannot resolve parameter {type(self)!r} without an alias"
@@ -302,12 +302,12 @@ class PathParameter(ComposableSingletonStringParameter):
 
 
 class QueryParamsParameter(Parameter):
-    def compose(self, request: PreRequest, argument: Any, /) -> None:
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
         params: QueryParamsTypes = parse_obj_as(QueryParamsTypes, argument)  # type: ignore
 
         QueryParamsConsumer(params).consume_request(request)
 
-    def resolve_request(self, request: PreRequest, /) -> QueryParams:
+    def resolve_request(self, request: RequestOptions, /) -> QueryParams:
         return QueryParamsResolver().resolve_request(request)
 
     def resolve_response(self, response: Response, /) -> QueryParams:
@@ -315,12 +315,12 @@ class QueryParamsParameter(Parameter):
 
 
 class HeadersParameter(Parameter):
-    def compose(self, request: PreRequest, argument: Any, /) -> None:
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
         headers: HeadersTypes = parse_obj_as(HeadersTypes, argument)  # type: ignore
 
         HeadersConsumer(headers).consume_request(request)
 
-    def resolve_request(self, request: PreRequest, /) -> Headers:
+    def resolve_request(self, request: RequestOptions, /) -> Headers:
         return HeadersResolver().resolve_request(request)
 
     def resolve_response(self, response: Response, /) -> Headers:
@@ -328,12 +328,12 @@ class HeadersParameter(Parameter):
 
 
 class CookiesParameter(Parameter):
-    def compose(self, request: PreRequest, argument: Any, /) -> None:
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
         cookies: CookiesTypes = parse_obj_as(CookiesTypes, argument)  # type: ignore
 
         CookiesConsumer(cookies).consume_request(request)
 
-    def resolve_request(self, request: PreRequest, /) -> Cookies:
+    def resolve_request(self, request: RequestOptions, /) -> Cookies:
         return CookiesResolver().resolve_request(request)
 
     def resolve_response(self, response: Response, /) -> Cookies:
@@ -344,7 +344,7 @@ class CookiesParameter(Parameter):
 class PathParamsParameter(Parameter):
     delimiter: str = "/"
 
-    def compose(self, request: PreRequest, argument: Any, /) -> None:
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
         raw_path_params: PathParamsTypes = parse_obj_as(PathParamsTypes, argument)  # type: ignore
 
         path_params: Mapping[str, str] = convert_path_params(
@@ -353,7 +353,7 @@ class PathParamsParameter(Parameter):
 
         PathParamsConsumer(path_params).consume_request(request)
 
-    def resolve_request(self, request: PreRequest) -> MutableMapping[str, str]:
+    def resolve_request(self, request: RequestOptions) -> MutableMapping[str, str]:
         return request.path_params
 
 
@@ -361,7 +361,7 @@ class PathParamsParameter(Parameter):
 class BodyParameter(Parameter):
     embed: bool = False
 
-    def compose(self, request: PreRequest, argument: Any, /) -> None:
+    def compose(self, request: RequestOptions, argument: Any, /) -> None:
         # If the parameter is not required and has no value, it can be omitted
         if argument is None and self.default is not Required:
             return
@@ -391,7 +391,7 @@ class BodyParameter(Parameter):
 
 
 class URLParameter(Parameter):
-    def resolve_request(self, request: PreRequest, /) -> httpx.URL:
+    def resolve_request(self, request: RequestOptions, /) -> httpx.URL:
         return request.url
 
     def resolve_response(self, response: Response, /) -> httpx.URL:
@@ -407,7 +407,7 @@ class RequestParameter(Parameter):
     def resolve_response(self, response: Response, /) -> httpx.Request:
         return response.request
 
-    def resolve_request(self, request: PreRequest, /) -> PreRequest:
+    def resolve_request(self, request: RequestOptions, /) -> RequestOptions:
         return request
 
 
@@ -441,7 +441,7 @@ class ReasonParameter(Parameter):
 
 
 class AllRequestStateParameter(Parameter):
-    def resolve_request(self, request: PreRequest, /) -> State:
+    def resolve_request(self, request: RequestOptions, /) -> State:
         return request.state
 
     def resolve_response(self, response: Response, /) -> State:

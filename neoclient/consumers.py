@@ -4,7 +4,7 @@ from typing import Any, Mapping, Sequence, Tuple
 from httpx import URL, Cookies, Headers, QueryParams, Timeout
 
 from . import converters
-from .models import ClientOptions, PreRequest
+from .models import ClientOptions, RequestOptions
 from .types import (
     CookiesTypes,
     CookieTypes,
@@ -52,7 +52,7 @@ class QueryConsumer(SupportsConsumeClient, SupportsConsumeRequest):
         self.key = key
         self.values = converters.convert_query_param(value)
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.params = self._apply(request.params)
 
     def consume_client(self, client: ClientOptions, /) -> None:
@@ -82,7 +82,7 @@ class HeaderConsumer(SupportsConsumeRequest, SupportsConsumeClient):
         self.key = key
         self.values = converters.convert_header(value)
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         self._apply(request.headers)
 
     def consume_client(self, client: ClientOptions, /) -> None:
@@ -112,7 +112,7 @@ class CookieConsumer(SupportsConsumeRequest, SupportsConsumeClient):
         self.key = key
         self.value = converters.convert_cookie(value)
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.cookies[self.key] = self.value
 
     def consume_client(self, client: ClientOptions, /) -> None:
@@ -128,7 +128,7 @@ class PathConsumer(SupportsConsumeRequest):
         self.key = key
         self.value = converters.convert_path_param(value)
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.path_params[self.key] = self.value
 
 
@@ -139,7 +139,7 @@ class QueryParamsConsumer(SupportsConsumeRequest, SupportsConsumeClient):
     def __init__(self, params: QueryParamsTypes, /) -> None:
         self.params = converters.convert_query_params(params)
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.params = request.params.merge(self.params)
 
     def consume_client(self, client: ClientOptions, /) -> None:
@@ -153,7 +153,7 @@ class HeadersConsumer(SupportsConsumeRequest, SupportsConsumeClient):
     def __init__(self, headers: HeadersTypes, /) -> None:
         self.headers = converters.convert_headers(headers)
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.headers.update(self.headers)
 
     def consume_client(self, client: ClientOptions, /) -> None:
@@ -167,7 +167,7 @@ class CookiesConsumer(SupportsConsumeRequest, SupportsConsumeClient):
     def __init__(self, cookies: CookiesTypes, /) -> None:
         self.cookies = converters.convert_cookies(cookies)
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.cookies.update(self.cookies)
 
     def consume_client(self, client: ClientOptions, /) -> None:
@@ -178,7 +178,7 @@ class CookiesConsumer(SupportsConsumeRequest, SupportsConsumeClient):
 class PathParamsConsumer(SupportsConsumeRequest):
     path_params: Mapping[str, str]
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.path_params.update(self.path_params)
 
 
@@ -186,7 +186,7 @@ class PathParamsConsumer(SupportsConsumeRequest):
 class ContentConsumer(SupportsConsumeRequest):
     content: RequestContent
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.content = self.content
 
 
@@ -194,7 +194,7 @@ class ContentConsumer(SupportsConsumeRequest):
 class DataConsumer(SupportsConsumeRequest):
     data: RequestData
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.data = self.data
 
 
@@ -202,7 +202,7 @@ class DataConsumer(SupportsConsumeRequest):
 class FilesConsumer(SupportsConsumeRequest):
     files: RequestFiles
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.files = self.files
 
 
@@ -210,7 +210,7 @@ class FilesConsumer(SupportsConsumeRequest):
 class JsonConsumer(SupportsConsumeRequest):
     json: JsonTypes
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.json = self.json
 
 
@@ -221,7 +221,7 @@ class TimeoutConsumer(SupportsConsumeRequest, SupportsConsumeClient):
     def __init__(self, timeout: TimeoutTypes, /) -> None:
         self.timeout = converters.convert_timeout(timeout)
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.timeout = self.timeout
 
     def consume_client(self, client: ClientOptions, /) -> None:
@@ -233,7 +233,7 @@ class StateConsumer(SupportsConsumeRequest):
     key: str
     value: Any
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.state[self.key] = self.value
 
 
@@ -241,7 +241,7 @@ class StateConsumer(SupportsConsumeRequest):
 class MountConsumer(SupportsConsumeRequest):
     path: str
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.url = request.url.copy_with(path=self.path + request.url.path)
 
 
@@ -265,7 +265,7 @@ class VerifyConsumer(SupportsConsumeClient):
 class FollowRedirectsConsumer(SupportsConsumeRequest, SupportsConsumeClient):
     follow_redirects: bool
 
-    def consume_request(self, request: PreRequest, /) -> None:
+    def consume_request(self, request: RequestOptions, /) -> None:
         request.follow_redirects = self.follow_redirects
 
     def consume_client(self, client: ClientOptions, /) -> None:

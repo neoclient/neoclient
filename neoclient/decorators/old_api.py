@@ -12,7 +12,7 @@ from typing import (
 )
 
 from ..errors import CompositionError
-from ..models import ClientOptions, PreRequest
+from ..models import ClientOptions, RequestOptions
 from ..operation import Operation, get_operation
 from ..services import Service
 from ..specification import ClientSpecification
@@ -91,7 +91,7 @@ class OperationConsumerDecorator(OperationDecorator):
         if isinstance(self.consumer, SupportsConsumeOperation):
             self.consumer.consume_operation(operation)
         elif isinstance(self.consumer, SupportsConsumeRequest):
-            pre_request: PreRequest = operation.pre_request
+            pre_request: RequestOptions = operation.request_options
 
             self.consumer.consume_request(pre_request)
         elif isinstance(self.consumer, SupportsConsumeClient):

@@ -4,7 +4,7 @@ from typing import Sequence, TypeAlias, Union
 
 from httpx import QueryParams
 from neoclient import converters
-from neoclient.models import ClientOptions, PreRequest
+from neoclient.models import ClientOptions, RequestOptions
 from neoclient.operation import Operation
 from neoclient.specification import ClientSpecification
 from neoclient.types import QueryTypes
@@ -14,7 +14,7 @@ from neoclient.types import QueryTypes
 """
 
 CompositionTarget: TypeAlias = Union[
-    PreRequest, ClientOptions, Operation, ClientSpecification
+    RequestOptions, ClientOptions, Operation, ClientSpecification
 ]
 
 
@@ -27,7 +27,7 @@ class CompositionError(Exception):
 class Composer:
     def compose(self, target: CompositionTarget, /) -> None:
         methods = {
-            PreRequest: self.compose_request,
+            RequestOptions: self.compose_request,
             ClientOptions: self.compose_client,
             Operation: self.compose_operation,
             ClientSpecification: self.compose_client_spec,
@@ -37,8 +37,8 @@ class Composer:
 
         return method(target)
 
-    def compose_request(self, request: PreRequest, /) -> None:
-        raise CompositionError.not_supported(PreRequest)
+    def compose_request(self, request: RequestOptions, /) -> None:
+        raise CompositionError.not_supported(RequestOptions)
 
     def compose_client(self, client: ClientOptions, /) -> None:
         raise CompositionError.not_supported(ClientOptions)
@@ -92,7 +92,7 @@ class QueryComposer(Composer):
         self.key = key
         self.values = converters.convert_query_param(value)
 
-    def compose_request(self, request: PreRequest, /) -> None:
+    def compose_request(self, request: RequestOptions, /) -> None:
         request.params = self._apply(request.params)
 
     def compose_client(self, client: ClientOptions, /) -> None:

@@ -48,7 +48,7 @@ from .decorators._middleware import (
     raise_for_status,
 )
 from .decorators.request import delete, get, head, options, patch, post, put, request
-from .models import PreRequest, Request, Response
+from .models import RequestOptions, Request, Response
 from .param_functions import (
     URL,
     AllRequestState,

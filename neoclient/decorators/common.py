@@ -1,13 +1,19 @@
 from dataclasses import dataclass
-from typing import MutableSequence, Sequence
+from typing import MutableSequence, Sequence, Tuple
 
-from neoclient.decorators.api import Decorator
+from httpx import Headers
+
+from neoclient import converters, utils
+from neoclient.decorators.api import (
+    Decorator,
+    request_options_decorator,
+)
+from neoclient.models import RequestOptions
 
 from ..consumers import (
     CookieConsumer,
     CookiesConsumer,
     FollowRedirectsConsumer,
-    HeaderConsumer,
     HeadersConsumer,
     QueryConsumer,
     QueryParamsConsumer,
@@ -95,8 +101,20 @@ def cookies(cookies: CookiesTypes, /):
     return ConsumerDecorator(CookiesConsumer(cookies))
 
 
-def header(key: str, value: HeaderTypes):
-    return ConsumerDecorator(HeaderConsumer(key, value))
+def header(key: str, value: HeaderTypes, /, *, keep_existing: bool = False):
+    @request_options_decorator
+    def decorate(request_options: RequestOptions, /) -> None:
+        values: Sequence[str] = converters.convert_header(value)
+
+        headers_old: Headers = request_options.headers
+        headers_new: Headers = Headers([(key, value) for value in values])
+
+        if not keep_existing and key in headers_old:
+            del headers_old[key]
+
+        request_options.headers = utils.merge_headers(headers_old, headers_new)
+
+    return decorate
 
 
 def headers(headers: HeadersTypes, /):

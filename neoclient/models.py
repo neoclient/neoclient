@@ -67,7 +67,7 @@ __all__: Sequence[str] = (
     "ClientOptions",
     "Request",
     "Response",
-    "PreRequest",
+    "RequestOptions",
 )
 
 
@@ -353,7 +353,7 @@ class ClientOptions:
         )
 
 
-class PreRequest:
+class RequestOptions:
     method: str
     url: URL
     params: QueryParams
@@ -417,10 +417,10 @@ class PreRequest:
         return f'<{type(self).__name__}("{str(self.method)}", "{str(self.url)}")>'
 
     def __eq__(self, rhs: Any, /) -> bool:
-        if not isinstance(rhs, PreRequest):
+        if not isinstance(rhs, RequestOptions):
             return False
 
-        pre_request: PreRequest = rhs
+        pre_request: RequestOptions = rhs
 
         return all(
             (
@@ -481,7 +481,7 @@ class PreRequest:
 
         return request
 
-    def merge(self, pre_request: "PreRequest", /) -> "PreRequest":
+    def merge(self, pre_request: "RequestOptions", /) -> "RequestOptions":
         return self.__class__(
             method=pre_request.method,
             url=pre_request.url,
@@ -505,9 +505,9 @@ class PreRequest:
             follow_redirects=self.follow_redirects and pre_request.follow_redirects,
         )
 
-    def clone(self) -> "PreRequest":
+    def clone(self) -> "RequestOptions":
         return self.merge(
-            PreRequest(
+            RequestOptions(
                 method=self.method,
                 url=self.url,
                 follow_redirects=self.follow_redirects,
