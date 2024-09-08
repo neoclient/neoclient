@@ -21,34 +21,29 @@
 
 # --------------
 
-# from neoclient.decorators.api import (
-#     header_decorator,
-#     headers_decorator,
-#     operation_decorator,
-# )
-# from neoclient import get
-# from httpx import Headers
+from neoclient.decorators.api import (
+    header_decorator,
+    headers_decorator,
+    operation_decorator,
+)
+from neoclient import get
+from httpx import Headers
 
-# from neoclient.operation import Operation
-
-
-# @operation_decorator
-# def log_operation(operation: Operation, /) -> None:
-#     print("Operation:", operation)
+from neoclient.operation import Operation
 
 
-# @headers_decorator
-# def google_referer(headers: Headers, /) -> None:
-#     headers["referer"] = "https://www.google.com/"
+@operation_decorator
+def log_operation(operation: Operation, /) -> None:
+    print("Operation:", operation)
 
 
-# @header_decorator("name", "sam")
-# @log_operation
-# @google_referer
-# @get("https://httpbin.org/headers")
-# def headers(): ...
-
-# -------------------
+@headers_decorator
+def google_referer(headers: Headers, /) -> None:
+    headers["referer"] = "https://www.google.com/"
 
 
-from neoclient
+@header_decorator("name", "sam")
+@log_operation
+@google_referer
+@get("https://httpbin.org/headers")
+def headers(): ...

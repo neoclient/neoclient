@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from neoclient.composers import Composer, QueryComposer, compose
-from neoclient.models import ClientOptions, PreRequest
+from neoclient.models import ClientOptions, RequestOptions
 
 """
 from neoclient.models import PreRequest
@@ -22,7 +22,7 @@ compose(request, HeaderComposer("referer", "https://www.google.com/"))
 #         request.headers[self.key] = self.value
 
 client_options = ClientOptions()
-request_options = PreRequest("GET", "/")
+request_options = RequestOptions("GET", "/")
 
 compose(
     request_options,

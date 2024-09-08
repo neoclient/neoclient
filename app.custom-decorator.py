@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from neoclient import get
 from neoclient.decorators.api2 import RequestConsumer, build_decorator
-from neoclient.models import PreRequest
+from neoclient.models import RequestOptions
 
 """
 TODO: Write up documentation on how to create your own decorator.
@@ -29,7 +29,7 @@ def with_referer(referer: str, /):
 class RefererHeaderConsumer(RequestConsumer):
     referer: str
 
-    def consume_request(self, request: PreRequest, /):
+    def consume_request(self, request: RequestOptions, /):
         request.headers["referer"] = self.referer
 
 
@@ -39,5 +39,4 @@ def referer(referer: str, /):
 
 @referer("https://www.google.com/")
 @get("https://httpbin.org/headers")
-def headers():
-    ...
+def headers(): ...

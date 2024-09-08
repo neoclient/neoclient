@@ -12,7 +12,7 @@ from neoclient.decorators import referer
 
 class MyDecorator(Decorator):
     def decorate_operation(self, operation: Operation, /) -> None:
-        operation.pre_request.headers["x-message"] = "Hello, World!"
+        operation.request_options.headers["x-message"] = "Hello, World!"
 
 
 my_decorator: Decorator = MyDecorator()

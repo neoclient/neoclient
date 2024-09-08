@@ -17,9 +17,9 @@ from neoclient.consumers import HeaderConsumer
 
 add_referer = HeaderConsumer("referer", "https://www.google.com/")
 
-from neoclient import PreRequest
+from neoclient import RequestOptions
 
-request = PreRequest("GET", "/")
+request = RequestOptions("GET", "/")
 
 add_referer.consume_request(request)
 

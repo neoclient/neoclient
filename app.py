@@ -1,13 +1,8 @@
-from httpx import get
+from neoclient import NeoClient, header
+
+client = NeoClient("https://httpbin.org/", headers={"x-name": "client"})
 
 
-def ip() -> str:
-    return get("https://httpbin.org/ip").json()["origin"]
-
-
-from neoclient import get
-
-
-@get("https://httpbin.org/ip")
-def ip():
-    ...
+@header("x-name", ["a", "b"])
+@client.get("/headers")
+def headers(): ...
