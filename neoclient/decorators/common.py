@@ -45,8 +45,8 @@ __all__ = (
     "response_depends",
     "header",
     "headers",
-    "query",
-    "query_params",
+    "param",
+    "params",
     "timeout",
     "verify",
 )
@@ -122,7 +122,7 @@ def headers(headers: HeadersTypes, /):
     return ConsumerDecorator(HeadersConsumer(headers))
 
 
-def query(key: str, value: QueryTypes = None, /, *, overwrite: bool = True):
+def param(key: str, value: QueryTypes = None, /, *, overwrite: bool = True):
     @options_decorator
     def decorate(options: Options, /) -> None:
         values: Sequence[str] = converters.convert_query_param(value)
@@ -130,12 +130,12 @@ def query(key: str, value: QueryTypes = None, /, *, overwrite: bool = True):
         params_old: QueryParams = options.params
         params_new: QueryParams = QueryParams([(key, value) for value in values])
 
-        return utils.merge_query_params(params_old, params_new, overwrite=overwrite)
+        options.params = utils.merge_query_params(params_old, params_new, overwrite=overwrite)
 
     return decorate
 
 
-def query_params(params: QueryParamsTypes, /):
+def params(params: QueryParamsTypes, /):
     return ConsumerDecorator(QueryParamsConsumer(params))
 
 

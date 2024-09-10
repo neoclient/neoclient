@@ -52,7 +52,7 @@ def test_query(func: Callable) -> None:
     expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
     expected_pre_request.params = QueryParams({key: value})
 
-    decorators.query(key, value)(func)
+    decorators.param(key, value)(func)
 
     assert get_operation(func).request_options == expected_pre_request
 
@@ -99,7 +99,7 @@ def test_query_params(func: Callable) -> None:
     expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
     expected_pre_request.params = converters.convert_query_params(query_params)
 
-    decorators.query_params(query_params)(func)
+    decorators.params(query_params)(func)
 
     assert get_operation(func).request_options == expected_pre_request
 

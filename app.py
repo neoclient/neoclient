@@ -1,4 +1,4 @@
-from neoclient import NeoClient, header, query
+from neoclient import NeoClient, header, param, params
 
 client = NeoClient(
     "https://httpbin.org/",
@@ -7,8 +7,8 @@ client = NeoClient(
 )
 
 
-@query("sort", "asc")
-# @query("op", ["a", "b"])
-@header("x-name", ["a", "b"])
+@param("sort", "asc", overwrite=False)
+@params({"sort": "bob"})
+@header("x-name", "request")
 @client.get("/get")
 def get(): ...
