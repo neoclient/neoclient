@@ -15,7 +15,7 @@ from typing import (
     TypeVar,
 )
 
-from httpx import Headers
+from httpx import Headers, QueryParams
 from pydantic import BaseConfig, BaseModel, create_model
 from pydantic.fields import FieldInfo, Undefined
 from pydantic.typing import display_as_type
@@ -138,9 +138,33 @@ def is_generic_alias(type_: Type, /) -> bool:
     return typing.get_origin(type_) is not None
 
 
-def merge_headers(lhs: Headers, rhs: Headers, /) -> Headers:
-    """
-    Merge headers `lhs` and `rhs`, keeping all headers from both.
-    """
+def merge_headers(lhs: Headers, rhs: Headers, /, *, overwrite: bool = True) -> Headers:
+    if overwrite:
+        headers: Headers = lhs.copy()
 
-    return Headers((*lhs.multi_items(), *rhs.multi_items()))
+        key: str
+        for key in rhs:
+            if key in headers:
+                del headers[key]
+
+        return merge_headers(headers, rhs, overwrite=False)
+    else:
+        # Keep all headers from both
+        return Headers((*lhs.multi_items(), *rhs.multi_items()))
+
+
+def merge_query_params(
+    lhs: QueryParams, rhs: QueryParams, /, *, overwrite: bool = True
+) -> QueryParams:
+    if overwrite:
+        params: QueryParams = lhs
+
+        key: str
+        for key in rhs:
+            if key in params:
+                params = params.remove(key)
+
+        return merge_query_params(params, rhs, overwrite=False)
+    else:
+        # Keep all query params from both
+        return QueryParams((*lhs.multi_items(), *rhs.multi_items()))

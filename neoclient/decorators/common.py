@@ -1,11 +1,13 @@
 from dataclasses import dataclass
-from typing import MutableSequence, Sequence, Tuple
+from typing import MutableSequence, Sequence
 
-from httpx import Headers
+from httpx import Headers, QueryParams
 
 from neoclient import converters, utils
 from neoclient.decorators.api import (
     Decorator,
+    Options,
+    options_decorator,
     request_options_decorator,
 )
 from neoclient.models import RequestOptions
@@ -101,18 +103,17 @@ def cookies(cookies: CookiesTypes, /):
     return ConsumerDecorator(CookiesConsumer(cookies))
 
 
-def header(key: str, value: HeaderTypes, /, *, keep_existing: bool = False):
-    @request_options_decorator
-    def decorate(request_options: RequestOptions, /) -> None:
+def header(key: str, value: HeaderTypes, /, *, overwrite: bool = True):
+    @options_decorator
+    def decorate(options: Options, /) -> None:
         values: Sequence[str] = converters.convert_header(value)
 
-        headers_old: Headers = request_options.headers
+        headers_old: Headers = options.headers
         headers_new: Headers = Headers([(key, value) for value in values])
 
-        if not keep_existing and key in headers_old:
-            del headers_old[key]
-
-        request_options.headers = utils.merge_headers(headers_old, headers_new)
+        options.headers = utils.merge_headers(
+            headers_old, headers_new, overwrite=overwrite
+        )
 
     return decorate
 
@@ -121,8 +122,17 @@ def headers(headers: HeadersTypes, /):
     return ConsumerDecorator(HeadersConsumer(headers))
 
 
-def query(key: str, value: QueryTypes):
-    return ConsumerDecorator(QueryConsumer(key, value))
+def query(key: str, value: QueryTypes = None, /, *, overwrite: bool = True):
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        values: Sequence[str] = converters.convert_query_param(value)
+
+        params_old: QueryParams = options.params
+        params_new: QueryParams = QueryParams([(key, value) for value in values])
+
+        return utils.merge_query_params(params_old, params_new, overwrite=overwrite)
+
+    return decorate
 
 
 def query_params(params: QueryParamsTypes, /):
