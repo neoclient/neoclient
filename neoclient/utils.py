@@ -168,3 +168,21 @@ def merge_query_params(
     else:
         # Keep all query params from both
         return QueryParams((*lhs.multi_items(), *rhs.multi_items()))
+
+
+# def add_header(headers: Headers, /, key: str, value: str) -> Headers:
+#     return Headers((*headers.multi_items(), (key, value)))
+
+
+def add_header(headers: Headers, /, key: str, value: str) -> None:
+    new_headers: Headers = Headers(((key, value),))
+
+    headers._list.extend(new_headers._list)
+
+
+def add_headers(lhs: Headers, rhs: Headers, /) -> None:
+    """Add all headers from `rhs` to `lhs`, keeping duplicates."""
+    key: str
+    value: str
+    for key, value in rhs.multi_items():
+        add_header(lhs, key, value)

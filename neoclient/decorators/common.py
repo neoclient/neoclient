@@ -1,30 +1,29 @@
 from dataclasses import dataclass
-from typing import MutableSequence, Sequence
+from typing import Any, MutableSequence, Sequence
 
-from httpx import Headers, QueryParams
+from httpx import Cookies, Headers, QueryParams
 
 from neoclient import converters, utils
 from neoclient.decorators.api import (
     Decorator,
     Options,
+    cookies_decorator,
+    headers_decorator,
     options_decorator,
-    request_options_decorator,
+    params_decorator,
 )
-from neoclient.models import RequestOptions
+from neoclient.specification import ClientSpecification
 
 from ..consumers import (
     CookieConsumer,
     CookiesConsumer,
     FollowRedirectsConsumer,
     HeadersConsumer,
-    QueryConsumer,
     QueryParamsConsumer,
     TimeoutConsumer,
     VerifyConsumer,
 )
 from ..operation import Operation
-from ..services import ClientSpecification
-from ..specification import ClientSpecification
 from ..types import (
     CookiesTypes,
     CookieTypes,
@@ -39,16 +38,24 @@ from ..typing import Dependency
 from .old_api import ConsumerDecorator
 
 __all__ = (
-    "cookie",
-    "cookies",
     "request_depends",
     "response_depends",
+    "cookie",
+    "cookies",
+    "set_header",
+    "add_header",
     "header",
+    "set_headers",
+    "add_headers",
+    "update_headers",
     "headers",
+    "set_param",
+    "add_param",
     "param",
     "params",
     "timeout",
     "verify",
+    "follow_redirects",
 )
 
 
@@ -95,44 +102,136 @@ def response_depends(*dependencies: Dependency):
     return ResponseDependsDecorator(dependencies)
 
 
-def cookie(key: str, value: CookieTypes):
-    return ConsumerDecorator(CookieConsumer(key, value))
+def cookie(name: str, value: str, domain: str = "", path: str = "/"):
+    """Set a cookie value by name. May optionally include domain and path."""
 
-
-def cookies(cookies: CookiesTypes, /):
-    return ConsumerDecorator(CookiesConsumer(cookies))
-
-
-def header(key: str, value: HeaderTypes, /, *, overwrite: bool = True):
-    @options_decorator
-    def decorate(options: Options, /) -> None:
-        values: Sequence[str] = converters.convert_header(value)
-
-        headers_old: Headers = options.headers
-        headers_new: Headers = Headers([(key, value) for value in values])
-
-        options.headers = utils.merge_headers(
-            headers_old, headers_new, overwrite=overwrite
-        )
+    @cookies_decorator
+    def decorate(cookies: Cookies, /) -> None:
+        cookies.set(name, value, domain, path)
 
     return decorate
 
 
-def headers(headers: HeadersTypes, /):
-    return ConsumerDecorator(HeadersConsumer(headers))
-
-
-def param(key: str, value: QueryTypes = None, /, *, overwrite: bool = True):
+def set_cookies(cookies: CookiesTypes, /):
     @options_decorator
     def decorate(options: Options, /) -> None:
-        values: Sequence[str] = converters.convert_query_param(value)
-
-        params_old: QueryParams = options.params
-        params_new: QueryParams = QueryParams([(key, value) for value in values])
-
-        options.params = utils.merge_query_params(params_old, params_new, overwrite=overwrite)
+        options.cookies = converters.convert_cookies(cookies)
 
     return decorate
+
+
+def update_cookies(cookies: CookiesTypes, /):
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        options.cookies.update(converters.convert_cookies(cookies))
+
+    return decorate
+
+
+cookies = update_cookies
+
+
+# WARN: Currently only accepts a `str` value - should accept `HeaderTypes`?
+def set_header(key: str, value: str, /):
+    """
+    Set Header Decorator.
+
+    Set the header `key` to `value`, removing any duplicate entries.
+    Retains insertion order.
+
+    Args:
+        key:   The header key   (e.g. "User-Agent")
+        value: The header value (e.g. "Mozilla/5.0")
+
+    Returns:
+        TODO TODO TODO
+
+    Raises:
+        TODO: TODO
+    """
+
+    @headers_decorator
+    def decorate(headers: Headers, /) -> None:
+        headers[key] = value
+
+    return decorate
+
+
+def add_header(key: str, value: str, /):
+    """
+    Add Header Decorator.
+
+    Add the header `key` with value `value`, keeping any duplicate entries.
+    Retains insertion order.
+
+    Args:
+        key:   The header key   (e.g. "User-Agent")
+        value: The header value (e.g. "Mozilla/5.0")
+
+    Returns:
+        TODO TODO TODO
+
+    Raises:
+        TODO: TODO
+    """
+
+    @headers_decorator
+    def decorate(headers: Headers, /) -> None:
+        utils.add_header(headers, key, value)
+
+    return decorate
+
+
+# Header decorator
+header = add_header
+
+
+# NOTE: Should `HeadersTypes` should come as-is from `httpx`?
+def set_headers(headers: HeadersTypes, /):
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        options.headers = Headers(headers)
+
+    return decorate
+
+
+def add_headers(headers: HeadersTypes, /):
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        utils.add_headers(options.headers, Headers(headers))
+
+    return decorate
+
+
+def update_headers(headers: HeadersTypes, /):
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        options.headers.update(headers)
+
+    return decorate
+
+
+headers = add_headers
+
+
+# WARN: should accept `QueryTypes`?
+def set_param(key: str, value: Any = None):
+    @params_decorator
+    def decorate(params: QueryParams, /) -> QueryParams:
+        return params.set(key, value)
+
+    return decorate
+
+
+def add_param(key: str, value: Any = None):
+    @params_decorator
+    def decorate(params: QueryParams, /) -> QueryParams:
+        return params.add(key, value)
+
+    return decorate
+
+
+param = add_param
 
 
 def params(params: QueryParamsTypes, /):

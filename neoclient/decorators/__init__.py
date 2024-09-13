@@ -4,19 +4,7 @@ from ._headers import *
 from ._middleware import *
 
 from .old_api import CommonDecorator, OperationDecorator, ServiceDecorator
-from .common import (
-    cookie,
-    cookies,
-    follow_redirects,
-    header,
-    headers,
-    param,
-    params,
-    request_depends,
-    response_depends,
-    timeout,
-    verify,
-)
+from .common import *
 from .operation import content, data, files, json, mount, path, path_params
 from .request import delete, get, head, options, patch, post, put, request
 from .response import response

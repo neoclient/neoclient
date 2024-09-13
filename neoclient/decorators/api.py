@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Type, TypeVar, Union
 
-from httpx import Cookies, Headers
+from httpx import Cookies, Headers, QueryParams
 from neoclient.middlewares import Middleware
 from neoclient.models import ClientOptions, RequestOptions
 from neoclient.operation import Operation, get_operation
 from neoclient.services import Service
 from neoclient.specification import ClientSpecification
-from neoclient.typing import Consumer
+from neoclient.typing import Consumer, Function
 
 CS = TypeVar("CS", Callable[..., Any], Type[Service])
 
@@ -119,6 +119,13 @@ def headers_decorator(consumer: Consumer[Headers], /):
     @options_decorator
     def decorate(options: Options, /) -> None:
         consumer(options.headers)
+
+    return decorate
+
+def params_decorator(consumer: Function[QueryParams, QueryParams], /):
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        options.params = consumer(options.params)
 
     return decorate
 
