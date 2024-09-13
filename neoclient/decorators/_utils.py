@@ -1,10 +1,8 @@
-from typing import Sequence
-
 from ..param_functions import Request
-from .old_api import CS
-from .common import request_depends
+from .api import CS
+from ._common import request_depends
 
-__all__: Sequence[str] = ("persist_pre_request",)
+__all__ = ("persist_pre_request",)
 
 
 def _persist_pre_request_dependency(request=Request()):

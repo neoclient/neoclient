@@ -1,4 +1,4 @@
-from .common import header
+from ._common import header
 from ..enums import HTTPHeader
 
 __all__ = ("accept", "host", "referer", "user_agent")
