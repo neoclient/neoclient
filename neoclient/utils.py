@@ -186,3 +186,15 @@ def add_headers(lhs: Headers, rhs: Headers, /) -> None:
     value: str
     for key, value in rhs.multi_items():
         add_header(lhs, key, value)
+
+
+def add_params(lhs: QueryParams, rhs: QueryParams, /) -> QueryParams:
+    """Return a new QueryParams instance, appending the params from `lhs` and `rhs`"""
+    params: QueryParams = lhs
+
+    key: str
+    value: str
+    for key, value in rhs.multi_items():
+        params = params.add(key, value)
+
+    return params

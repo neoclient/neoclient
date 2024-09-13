@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Type, TypeVar, Union
+from typing import Any, Callable, MutableSequence, Type, TypeVar, Union
 
 from httpx import Cookies, Headers, QueryParams
 from neoclient.middlewares import Middleware
@@ -7,7 +7,7 @@ from neoclient.models import ClientOptions, RequestOptions
 from neoclient.operation import Operation, get_operation
 from neoclient.services import Service
 from neoclient.specification import ClientSpecification
-from neoclient.typing import Consumer, Function
+from neoclient.typing import Consumer, Dependency, Function
 
 CS = TypeVar("CS", Callable[..., Any], Type[Service])
 
@@ -100,7 +100,24 @@ def client_decorator(consumer: Consumer[ClientSpecification], /):
 #     def decorate(client: ClientSpecification, /) -> None:
 #         consumer(client.options)
 
+
 #     return decorate
+def client_options_decorator(consumer: Consumer[ClientOptions], /):
+    def get_client_options(target: DecoratorTarget, /) -> ClientOptions:
+        if isinstance(target, ClientSpecification):
+            return target.options
+        elif isinstance(target, Operation):
+            return target.client_options
+        else:
+            raise TypeError
+
+    @common_decorator
+    def decorate(target: DecoratorTarget, /) -> None:
+        client_options: ClientOptions = get_client_options(target)
+
+        consumer(client_options)
+
+    return decorate
 
 
 def request_options_decorator(consumer: Consumer[RequestOptions], /):
@@ -122,6 +139,7 @@ def headers_decorator(consumer: Consumer[Headers], /):
 
     return decorate
 
+
 def params_decorator(consumer: Function[QueryParams, QueryParams], /):
     @options_decorator
     def decorate(options: Options, /) -> None:
@@ -139,8 +157,24 @@ def cookies_decorator(consumer: Consumer[Cookies], /):
 
 
 def middleware_decorator(consumer: Consumer[Middleware], /):
-    @options_decorator
-    def decorate(options: Options, /) -> None:
-        consumer(options.middleware)
+    @common_decorator
+    def decorate(target: DecoratorTarget, /) -> None:
+        consumer(target.middleware)
+
+    return decorate
+
+
+def request_dependencies_decorator(consumer: Consumer[MutableSequence[Dependency]], /):
+    @common_decorator
+    def decorate(target: DecoratorTarget, /) -> None:
+        consumer(target.request_dependencies)
+
+    return decorate
+
+
+def response_dependencies_decorator(consumer: Consumer[MutableSequence[Dependency]], /):
+    @common_decorator
+    def decorate(target: DecoratorTarget, /) -> None:
+        consumer(target.response_dependencies)
 
     return decorate

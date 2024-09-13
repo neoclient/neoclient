@@ -1,46 +1,35 @@
-from dataclasses import dataclass
-from typing import Any, MutableSequence, Sequence
+from typing import Any, MutableSequence
 
 from httpx import Cookies, Headers, QueryParams
 
 from neoclient import converters, utils
 from neoclient.decorators.api import (
-    Decorator,
     Options,
+    client_options_decorator,
     cookies_decorator,
     headers_decorator,
     options_decorator,
     params_decorator,
+    request_dependencies_decorator,
+    response_dependencies_decorator,
 )
-from neoclient.specification import ClientSpecification
+from neoclient.models import ClientOptions
 
-from ..consumers import (
-    CookieConsumer,
-    CookiesConsumer,
-    FollowRedirectsConsumer,
-    HeadersConsumer,
-    QueryParamsConsumer,
-    TimeoutConsumer,
-    VerifyConsumer,
-)
-from ..operation import Operation
 from ..types import (
     CookiesTypes,
-    CookieTypes,
     HeadersTypes,
-    HeaderTypes,
     QueryParamsTypes,
-    QueryTypes,
     TimeoutTypes,
     VerifyTypes,
 )
 from ..typing import Dependency
-from .old_api import ConsumerDecorator
 
 __all__ = (
     "request_depends",
     "response_depends",
     "cookie",
+    "set_cookies",
+    "update_cookies",
     "cookies",
     "set_header",
     "add_header",
@@ -52,6 +41,9 @@ __all__ = (
     "set_param",
     "add_param",
     "param",
+    "set_params",
+    "add_params",
+    "merge_params",
     "params",
     "timeout",
     "verify",
@@ -59,47 +51,23 @@ __all__ = (
 )
 
 
-@dataclass
-class RequestDependsDecorator(Decorator):
-    dependencies: Sequence[Dependency]
-
-    def decorate_operation(self, operation: Operation, /) -> None:
-        return self.consumer(operation.request_dependencies)
-
-    def decorate_client(self, client: ClientSpecification, /) -> None:
-        return self.consumer(client.request_dependencies)
-
-    def _decorate_request_dependencies(
-        self, request_dependencies: MutableSequence[Dependency], /
-    ) -> None:
-        request_dependencies.extend(self.dependencies)
-
-
-@dataclass
-class ResponseDependsDecorator(Decorator):
-    dependencies: Sequence[Dependency]
-
-    def decorate_operation(self, operation: Operation, /) -> None:
-        return self.consumer(operation.response_dependencies)
-
-    def decorate_client(self, client: ClientSpecification, /) -> None:
-        return self.consumer(client.response_dependencies)
-
-    def _decorate_response_dependencies(
-        self, response_dependencies: MutableSequence[Dependency], /
-    ) -> None:
-        response_dependencies.extend(self.dependencies)
-
-
 # TODO: Type responses
 
 
 def request_depends(*dependencies: Dependency):
-    return RequestDependsDecorator(dependencies)
+    @request_dependencies_decorator
+    def decorate(request_dependencies: MutableSequence[Dependency], /) -> None:
+        request_dependencies.extend(dependencies)
+
+    return decorate
 
 
 def response_depends(*dependencies: Dependency):
-    return ResponseDependsDecorator(dependencies)
+    @response_dependencies_decorator
+    def decorate(response_dependencies: MutableSequence[Dependency], /) -> None:
+        response_dependencies.extend(dependencies)
+
+    return decorate
 
 
 def cookie(name: str, value: str, domain: str = "", path: str = "/"):
@@ -128,27 +96,13 @@ def update_cookies(cookies: CookiesTypes, /):
     return decorate
 
 
-cookies = update_cookies
+def cookies(cookies: CookiesTypes, /):
+    return update_cookies(cookies)
 
 
 # WARN: Currently only accepts a `str` value - should accept `HeaderTypes`?
 def set_header(key: str, value: str, /):
-    """
-    Set Header Decorator.
-
-    Set the header `key` to `value`, removing any duplicate entries.
-    Retains insertion order.
-
-    Args:
-        key:   The header key   (e.g. "User-Agent")
-        value: The header value (e.g. "Mozilla/5.0")
-
-    Returns:
-        TODO TODO TODO
-
-    Raises:
-        TODO: TODO
-    """
+    """Set the header `key` to `value`, removing any duplicate entries."""
 
     @headers_decorator
     def decorate(headers: Headers, /) -> None:
@@ -158,22 +112,7 @@ def set_header(key: str, value: str, /):
 
 
 def add_header(key: str, value: str, /):
-    """
-    Add Header Decorator.
-
-    Add the header `key` with value `value`, keeping any duplicate entries.
-    Retains insertion order.
-
-    Args:
-        key:   The header key   (e.g. "User-Agent")
-        value: The header value (e.g. "Mozilla/5.0")
-
-    Returns:
-        TODO TODO TODO
-
-    Raises:
-        TODO: TODO
-    """
+    """Add the header `key` with value `value`, keeping any duplicate entries."""
 
     @headers_decorator
     def decorate(headers: Headers, /) -> None:
@@ -182,8 +121,8 @@ def add_header(key: str, value: str, /):
     return decorate
 
 
-# Header decorator
-header = add_header
+def header(key: str, value: str, /):
+    return add_header(key, value)
 
 
 # NOTE: Should `HeadersTypes` should come as-is from `httpx`?
@@ -211,7 +150,8 @@ def update_headers(headers: HeadersTypes, /):
     return decorate
 
 
-headers = add_headers
+def headers(headers: HeadersTypes, /):
+    return add_headers(headers)
 
 
 # WARN: should accept `QueryTypes`?
@@ -231,20 +171,63 @@ def add_param(key: str, value: Any = None):
     return decorate
 
 
-param = add_param
+def param(key: str, value: Any = None):
+    return add_param(key, value)
+
+
+def set_params(params: QueryParamsTypes, /):
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        options.params = converters.convert_query_params(params)
+
+    return decorate
+
+
+def add_params(params: QueryParamsTypes, /):
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        options.params = utils.add_params(
+            options.params, converters.convert_query_params(params)
+        )
+
+    return decorate
+
+
+# Note: Should this instead use "update" terminology?
+def merge_params(params: QueryParamsTypes, /):
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        options.params = options.params.merge(converters.convert_query_params(params))
+
+    return decorate
 
 
 def params(params: QueryParamsTypes, /):
-    return ConsumerDecorator(QueryParamsConsumer(params))
+    return add_params(params)
 
 
 def timeout(timeout: TimeoutTypes, /):
-    return ConsumerDecorator(TimeoutConsumer(timeout))
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        options.timeout = converters.convert_timeout(timeout)
+
+    return decorate
 
 
+# Note: Does this decorator belong here?
+# It's common in that it can be applied to a ClientSpecification or Operation.
+# But it's not common in that it can only be applied to ClientOptions.
 def verify(verify: VerifyTypes, /):
-    return ConsumerDecorator(VerifyConsumer(verify))
+    @client_options_decorator
+    def decorate(client_options: ClientOptions, /) -> None:
+        client_options.verify = verify
+
+    return decorate
 
 
 def follow_redirects(follow_redirects: bool, /):
-    return ConsumerDecorator(FollowRedirectsConsumer(follow_redirects))
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        options.follow_redirects = follow_redirects
+
+    return decorate
