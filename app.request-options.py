@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Any, Optional, Union
 
-import httpx
 from httpx import Cookies, Headers, QueryParams, Timeout
 from httpx._config import DEFAULT_TIMEOUT_CONFIG
 from httpx._types import (
@@ -18,25 +17,21 @@ from httpx._types import (
 )
 from httpx._urls import URL
 
-# TEMP
-httpx.Request
-httpx.request
-httpx.Client.request
-
 MethodTypes = Union[str, bytes]
 
 
 @dataclass
 class RequestOpts:
+    # Note: These opts match the signature of httpx.Client.request
     method: str
     url: URL
-    params: QueryParams
-    headers: Headers
-    cookies: Cookies
     content: Optional[RequestContent]
     data: Optional[RequestData]
     files: Optional[RequestFiles]
     json: Optional[Any]
+    params: QueryParams
+    headers: Headers
+    cookies: Cookies
     auth: Optional[AuthTypes]
     follow_redirects: bool
     timeout: Timeout
