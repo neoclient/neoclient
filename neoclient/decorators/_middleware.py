@@ -2,7 +2,7 @@ from typing import Optional
 
 from mediate.protocols import MiddlewareCallable
 
-from neoclient.decorators.api import middleware_decorator
+from neoclient.decorators.api import CS, middleware_decorator
 
 from neoclient.middlewares import (
     ExpectedContentTypeMiddleware,
@@ -12,7 +12,6 @@ from neoclient.middlewares import (
     raise_for_status as raise_for_status_middleware,
 )
 from neoclient.models import Request, Response
-from .old_api import CS
 
 __all__ = (
     "middleware",
