@@ -34,4 +34,5 @@ def response_headers(headers: httpx.Headers = Headers(), /) -> httpx.Headers:
 @cookies({"name": "bob"})
 @cookies({"name": "sam"})
 @client.get("/get")
-def get(): ...
+def get():
+    ...

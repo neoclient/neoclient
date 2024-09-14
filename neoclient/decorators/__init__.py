@@ -3,10 +3,8 @@ from ._client import *
 from ._common import *
 from ._headers import *
 from ._middleware import *
+from ._operation import *
+from ._request import delete, get, head, options, patch, post, put, request
 from ._response import *
+from ._service import service
 from ._utils import *
-
-from .old_api import CommonDecorator, OperationDecorator, ServiceDecorator
-from .operation import content, data, files, json, mount, path, path_params
-from .request import delete, get, head, options, patch, post, put, request
-from .service import service

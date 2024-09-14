@@ -20,4 +20,5 @@ def google_referer(headers: Headers, /) -> None:
 @google_referer
 # @referer("https://www.google.com/")
 @get("https://httpbin.org/headers")
-def headers(): ...
+def headers():
+    ...

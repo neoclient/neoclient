@@ -46,4 +46,5 @@ def google_referer(headers: Headers, /) -> None:
 @log_operation
 @google_referer
 @get("https://httpbin.org/headers")
-def headers(): ...
+def headers():
+    ...

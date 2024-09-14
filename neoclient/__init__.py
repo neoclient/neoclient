@@ -47,7 +47,7 @@ from .decorators._middleware import (
     middleware,
     raise_for_status,
 )
-from .decorators.request import delete, get, head, options, patch, post, put, request
+from .decorators._request import delete, get, head, options, patch, post, put, request
 from .models import RequestOptions, Request, Response
 from .param_functions import (
     URL,
