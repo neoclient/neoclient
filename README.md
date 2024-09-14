@@ -19,24 +19,17 @@ def ip(): ...
 {'origin': '1.2.3.4'}
 ```
 
-If you've come from `requests`, the above example is equivelant to:
+If you've come from `requests` or `httpx`, the above example is equivelant to:
 ```python
 from requests import get
-
-def ip():
-    return get("https://httpbin.org/ip").json()
-```
-
-and practically identical for `httpx`:
-```python
-from httpx import get
+# or: from httpx import get
 
 def ip():
     return get("https://httpbin.org/ip").json()
 ```
 
 ### Client
-Endpoints can share configuration from a `NeoClient` instance:
+Operations can share configuration from a `NeoClient` instance:
 ```python
 from neoclient import NeoClient
 
