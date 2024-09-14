@@ -138,6 +138,7 @@ def is_generic_alias(type_: Type, /) -> bool:
     return typing.get_origin(type_) is not None
 
 
+# WARN: Currently unused
 def merge_headers(lhs: Headers, rhs: Headers, /, *, overwrite: bool = True) -> Headers:
     if overwrite:
         headers: Headers = lhs.copy()
@@ -153,6 +154,7 @@ def merge_headers(lhs: Headers, rhs: Headers, /, *, overwrite: bool = True) -> H
         return Headers((*lhs.multi_items(), *rhs.multi_items()))
 
 
+# WARN: Currently unused
 def merge_query_params(
     lhs: QueryParams, rhs: QueryParams, /, *, overwrite: bool = True
 ) -> QueryParams:
@@ -168,10 +170,6 @@ def merge_query_params(
     else:
         # Keep all query params from both
         return QueryParams((*lhs.multi_items(), *rhs.multi_items()))
-
-
-# def add_header(headers: Headers, /, key: str, value: str) -> Headers:
-#     return Headers((*headers.multi_items(), (key, value)))
 
 
 def add_header(headers: Headers, /, key: str, value: str) -> None:

@@ -94,14 +94,6 @@ def client_decorator(consumer: Consumer[ClientSpecification], /):
     return ClientDecorator(consumer)
 
 
-# WARN: Operations also contain ClientOptions - is this a sharp corner?
-# def client_options_decorator(consumer: Consumer[ClientOptions], /):
-#     @client_decorator
-#     def decorate(client: ClientSpecification, /) -> None:
-#         consumer(client.options)
-
-
-#     return decorate
 def client_options_decorator(consumer: Consumer[ClientOptions], /):
     def get_client_options(target: DecoratorTarget, /) -> ClientOptions:
         if isinstance(target, ClientSpecification):
