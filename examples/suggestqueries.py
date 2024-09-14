@@ -26,8 +26,7 @@ class SuggestQueries(Service):
         *,
         client: str,
         datasource: Optional[str] = None,
-    ) -> Response:
-        ...
+    ) -> Response: ...
 
 
 suggest_queries: SuggestQueries = SuggestQueries()

@@ -18,8 +18,7 @@ def log_request(call_next: CallNext, request: Request) -> Response:
 
 
 @client.get("/ip")
-def get_ip() -> Mapping[str, str]:
-    ...
+def get_ip() -> Mapping[str, str]: ...
 
 
 ip: Mapping[str, str] = get_ip()

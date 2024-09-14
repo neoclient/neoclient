@@ -40,13 +40,11 @@ ConfigType = Union[Type[Any], Mapping[str, Any]]
 @overload
 def validate(
     func: None = None, *, config: Optional[ConfigType] = None
-) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
-    ...
+) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]: ...
 
 
 @overload
-def validate(func: Callable[PS, RT]) -> Callable[PS, RT]:
-    ...
+def validate(func: Callable[PS, RT]) -> Callable[PS, RT]: ...
 
 
 def validate(

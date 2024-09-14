@@ -20,8 +20,9 @@ from .utils import build_response
 
 
 def test_get_fields() -> None:
-    def foo(query: str, body: dict, headers: Headers, cookie: int = Cookie()) -> None:
-        ...
+    def foo(
+        query: str, body: dict, headers: Headers, cookie: int = Cookie()
+    ) -> None: ...
 
     assert get_fields(foo) == {
         "query": (str, QueryParameter(alias="query")),

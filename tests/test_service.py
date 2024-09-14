@@ -32,8 +32,7 @@ class SomeService(Service):
     @request_depends(some_request_dependency)
     @middleware(some_middleware)
     @get("/foo")
-    def foo(self):
-        ...
+    def foo(self): ...
 
     @service.middleware
     def some_service_middleware(self, call_next, request):
@@ -88,8 +87,7 @@ def test_service_middleware() -> None:
 def test_service_response() -> None:
     class SomeService(Service):
         @get("/foo")
-        def foo(self) -> str:
-            ...
+        def foo(self) -> str: ...
 
         @service.response
         def some_service_response(self) -> str:

@@ -12,5 +12,4 @@ client: NeoClient = NeoClient("http://127.0.0.1:8000/")
 
 
 @client.post("/greet")
-def greet(person: Person) -> str:
-    ...
+def greet(person: Person) -> str: ...

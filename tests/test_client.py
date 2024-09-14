@@ -46,8 +46,7 @@ def test_bind(client: NeoClient) -> None:
         pass
 
     @request(method, endpoint, response=response)
-    def foo():
-        ...
+    def foo(): ...
 
     unbound_operation: Operation = get_operation(foo)
 
@@ -75,8 +74,7 @@ def test_request(client: NeoClient) -> None:
         return None
 
     @client.request(method, endpoint, response=response)
-    def foo():
-        ...
+    def foo(): ...
 
     assert get_operation(foo).request_options == RequestOptions(
         method=method,
@@ -88,8 +86,7 @@ def test_request(client: NeoClient) -> None:
 
 def test_query_not_required_omitted(client: NeoClient) -> None:
     @client.get("get")
-    def get(query: Optional[str] = Query(default=None)) -> RequestOptions:
-        ...
+    def get(query: Optional[str] = Query(default=None)) -> RequestOptions: ...
 
     assert get() == RequestOptions(
         method="GET",
@@ -99,8 +96,7 @@ def test_query_not_required_omitted(client: NeoClient) -> None:
 
 def test_query_required_not_omitted(client: NeoClient) -> None:
     @client.get("get")
-    def get(query: Optional[str] = Query(default=Required)) -> RequestOptions:
-        ...
+    def get(query: Optional[str] = Query(default=Required)) -> RequestOptions: ...
 
     assert get("foo") == RequestOptions(
         method="GET",
@@ -111,8 +107,7 @@ def test_query_required_not_omitted(client: NeoClient) -> None:
 
 def test_single_body_param(client: NeoClient) -> None:
     @client.post("/items/")
-    def create_item(item: Item = Body()) -> RequestOptions:
-        ...
+    def create_item(item: Item = Body()) -> RequestOptions: ...
 
     assert create_item(Item(id=1, name="item")) == RequestOptions(
         method="POST",
@@ -123,8 +118,7 @@ def test_single_body_param(client: NeoClient) -> None:
 
 def test_multiple_body_params(client: NeoClient) -> None:
     @client.post("/items/")
-    def create_item(user: User = Body(), item: Item = Body()) -> RequestOptions:
-        ...
+    def create_item(user: User = Body(), item: Item = Body()) -> RequestOptions: ...
 
     assert create_item(
         User(id=1, name="user"), Item(id=1, name="item")
@@ -142,8 +136,7 @@ def test_multiple_body_params_embedded(client: NeoClient) -> None:
     @client.post("/items/")
     def create_item(
         user: User = Body(embed=True), item: Item = Body(embed=True)
-    ) -> RequestOptions:
-        ...
+    ) -> RequestOptions: ...
 
     assert create_item(
         User(id=1, name="user"), Item(id=1, name="item")
@@ -159,8 +152,7 @@ def test_multiple_body_params_embedded(client: NeoClient) -> None:
 
 def test_single_query_param(client: NeoClient) -> None:
     @client.get("/items/")
-    def create_item(sort: str = Query()) -> RequestOptions:
-        ...
+    def create_item(sort: str = Query()) -> RequestOptions: ...
 
     assert create_item("ascending") == RequestOptions(
         method="GET",
@@ -173,8 +165,7 @@ def test_single_query_param(client: NeoClient) -> None:
 
 def test_multiple_query_params(client: NeoClient) -> None:
     @client.get("/items/")
-    def create_item(params: dict = QueryParams()) -> RequestOptions:
-        ...
+    def create_item(params: dict = QueryParams()) -> RequestOptions: ...
 
     assert create_item({"sort": "ascending"}) == RequestOptions(
         method="GET",
@@ -199,8 +190,7 @@ def test_client_middleware(client: NeoClient) -> None:
         )
 
     @client.get("/foo")
-    def foo() -> Response:
-        ...
+    def foo() -> Response: ...
 
     response: Response = foo()
 
@@ -216,21 +206,18 @@ def test_client_request_dependencies(client: NeoClient) -> None:
     assert client.request_dependencies == [request_dependency]
 
     @client.get("/foo")
-    def foo():
-        ...
+    def foo(): ...
 
     assert get_operation(foo).request_dependencies == [request_dependency]
 
 
 def test_client_response_dependencies(client: NeoClient) -> None:
     @client.response_depends
-    def response_dependency():
-        ...
+    def response_dependency(): ...
 
     assert client.response_dependencies == [response_dependency]
 
     @client.get("/foo")
-    def foo():
-        ...
+    def foo(): ...
 
     assert get_operation(foo).response_dependencies == [response_dependency]

@@ -14,8 +14,7 @@ class Repository:
 @base_url("https://api.github.com/")
 class GitHub(Service):
     @get("users/{user}/repos")
-    def list_repos(self, user: str) -> List[Repository]:
-        ...
+    def list_repos(self, user: str) -> List[Repository]: ...
 
 
 service: GitHub = GitHub()

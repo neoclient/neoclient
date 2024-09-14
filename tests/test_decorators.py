@@ -29,8 +29,7 @@ from neoclient.typing import CallNext
 @fixture
 def func() -> Callable:
     @get("/foo")
-    def foo() -> RequestOptions:
-        ...
+    def foo() -> RequestOptions: ...
 
     return foo
 
@@ -39,8 +38,7 @@ def func() -> Callable:
 def service() -> Type[Service]:
     class SomeService(Service):
         @get("/foo")
-        def foo(self):
-            ...
+        def foo(self): ...
 
     return SomeService
 
