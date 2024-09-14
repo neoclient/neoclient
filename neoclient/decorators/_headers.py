@@ -1,34 +1,22 @@
-from typing import Sequence
-
-from ..consumers import HeaderConsumer
+from ._common import header
 from ..enums import HTTPHeader
-from .api import CommonDecorator, ConsumerDecorator
 
-__all__: Sequence[str] = ("accept", "referer", "user_agent")
+__all__ = ("accept", "host", "referer", "user_agent")
 
-
-def accept(*content_types: str) -> CommonDecorator:
-    return ConsumerDecorator(
-        HeaderConsumer(
-            HTTPHeader.ACCEPT,
-            ",".join(content_types),
-        )
-    )
+# TODO: Type responses
 
 
-def referer(referer: str, /) -> CommonDecorator:
-    return ConsumerDecorator(
-        HeaderConsumer(
-            HTTPHeader.REFERER,
-            referer,
-        )
-    )
+def accept(*content_types: str):
+    return header(HTTPHeader.ACCEPT, ",".join(content_types))
 
 
-def user_agent(user_agent: str, /) -> CommonDecorator:
-    return ConsumerDecorator(
-        HeaderConsumer(
-            HTTPHeader.USER_AGENT,
-            user_agent,
-        )
-    )
+def host(host: str, /):
+    return header(HTTPHeader.HOST, host)
+
+
+def referer(referer: str, /):
+    return header(HTTPHeader.REFERER, referer)
+
+
+def user_agent(user_agent: str, /):
+    return header(HTTPHeader.USER_AGENT, user_agent)

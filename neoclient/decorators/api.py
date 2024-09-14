@@ -1,172 +1,172 @@
-from abc import abstractmethod
 from dataclasses import dataclass
-from typing import (
-    Any,
-    Callable,
-    Protocol,
-    Sequence,
-    Type,
-    TypeVar,
-    Union,
-    runtime_checkable,
-)
+from typing import Any, Callable, MutableSequence, Type, TypeVar, Union
 
-from ..errors import CompositionError
-from ..models import ClientOptions, PreRequest
-from ..operation import Operation, get_operation
-from ..services import Service
-from ..specification import ClientSpecification
-from ..typing import Consumer, SupportsConsumeClient, SupportsConsumeRequest
+from httpx import Cookies, Headers, QueryParams
+from neoclient.middlewares import Middleware
+from neoclient.models import ClientOptions, RequestOptions
+from neoclient.operation import Operation, get_operation
+from neoclient.services import Service
+from neoclient.specification import ClientSpecification
+from neoclient.typing import Consumer, Dependency, Function
 
-__all__: Sequence[str] = (
-    # Protocols
-    "OperationDecorator",
-    "ServiceDecorator",
-    "CommonDecorator",
-    # Wrappers
-    "ConsumerDecorator",
-    "OperationConsumerDecorator",
-    "ServiceConsumerDecorator",
-)
-
-C = TypeVar("C", bound=Callable[..., Any])
-S = TypeVar("S", bound=Type[Service])
 CS = TypeVar("CS", Callable[..., Any], Type[Service])
 
-
-@runtime_checkable
-class SupportsConsumeClientSpecification(Protocol):
-    @abstractmethod
-    def consume_client_spec(self, client_specification: ClientSpecification, /) -> None:
-        ...
+DecoratorTarget = Union[Operation, ClientSpecification]
+Options = Union[ClientOptions, RequestOptions]
 
 
-@runtime_checkable
-class SupportsConsumeOperation(Protocol):
-    @abstractmethod
-    def consume_operation(self, operation: Operation, /) -> None:
-        ...
-
-
-class ClientSpecificationConsumer(Consumer[ClientSpecification], Protocol):
+class DecorationError(Exception):
     pass
 
 
-class OperationConsumer(Consumer[Operation], Protocol):
-    pass
-
-
-class OperationDecorator(Protocol):
-    @abstractmethod
-    def __call__(self, target: C, /) -> C:
-        raise NotImplementedError
-
-
-class ServiceDecorator(Protocol):
-    @abstractmethod
-    def __call__(self, target: S, /) -> S:
-        raise NotImplementedError
-
-
-class CommonDecorator(Protocol):
-    @abstractmethod
-    def __call__(self, target: CS, /) -> CS:
-        raise NotImplementedError
-
-
-@dataclass
-class OperationConsumerDecorator(OperationDecorator):
-    consumer: Union[
-        SupportsConsumeOperation,
-        SupportsConsumeRequest,
-        SupportsConsumeClient,
-    ]
-
-    def __call__(self, target: C, /) -> C:
-        if not callable(target):
-            raise CompositionError(f"Target of unsupported type {type(target)}")
-
-        operation: Operation = get_operation(target)
-
-        if isinstance(self.consumer, SupportsConsumeOperation):
-            self.consumer.consume_operation(operation)
-        elif isinstance(self.consumer, SupportsConsumeRequest):
-            pre_request: PreRequest = operation.pre_request
-
-            self.consumer.consume_request(pre_request)
-        elif isinstance(self.consumer, SupportsConsumeClient):
-            client_options: ClientOptions = operation.client_options
-
-            self.consumer.consume_client(client_options)
-        else:
-            raise CompositionError(
-                f"Consumer {self.consumer} does not support consuming a request or client"
-            )
-
-        return target
-
-
-@dataclass
-class ServiceConsumerDecorator(ServiceDecorator):
-    consumer: Union[SupportsConsumeClientSpecification, SupportsConsumeClient]
-
-    def __call__(self, target: S, /) -> S:
-        if not isinstance(target, type):
-            raise CompositionError(f"Target of unsupported type {type(target)}")
-
-        if not issubclass(target, Service):
-            raise CompositionError(f"Target class is not a subclass of {Service}")
-
-        specification: ClientSpecification = target._spec
-        options: ClientOptions = specification.options
-
-        if isinstance(self.consumer, SupportsConsumeClientSpecification):
-            self.consumer.consume_client_spec(specification)
-        elif isinstance(self.consumer, SupportsConsumeClient):
-            self.consumer.consume_client(options)
-        else:
-            raise CompositionError(
-                f"Consumer {self.consumer} does not support consuming client specification or options"
-            )
-
-        return target
-
-
-@dataclass
-class ConsumerDecorator(CommonDecorator):
-    consumer: Union[
-        SupportsConsumeOperation,
-        SupportsConsumeRequest,
-        SupportsConsumeClientSpecification,
-        SupportsConsumeClient,
-    ]
-
+class Decorator:
     def __call__(self, target: CS, /) -> CS:
         if isinstance(target, type):
-            if not isinstance(
-                self.consumer,
-                (SupportsConsumeClientSpecification, SupportsConsumeClient),
-            ):
-                raise CompositionError(
-                    f"Consumer {type(self.consumer).__name__!r} does not support consumption"
-                    f" of type {Service}"
-                )
+            if not issubclass(target, Service):
+                raise DecorationError(f"Target class is not a subclass of {Service}")
 
-            return ServiceConsumerDecorator(self.consumer)(target)
+            specification: ClientSpecification = target._spec
+
+            self.decorate_client(specification)
         elif callable(target):
-            if not isinstance(
-                self.consumer,
-                (
-                    SupportsConsumeOperation,
-                    SupportsConsumeRequest,
-                    SupportsConsumeClient,
-                ),
-            ):
-                raise CompositionError(
-                    f"Consumer {type(self.consumer).__name__!r} does not support consuming"
-                    f" target of type {type(target)}"
-                )
+            operation: Operation = get_operation(target)
 
-            return OperationConsumerDecorator(self.consumer)(target)
+            self.decorate_operation(operation)
         else:
-            raise CompositionError(f"Target of unsupported type {type(target)}")
+            raise DecorationError(f"Target of unsupported type {type(target)}")
+
+        return target
+
+    def decorate_operation(self, operation: Operation, /) -> None:
+        raise DecorationError("Decorating operation not supported")
+
+    def decorate_client(self, client: ClientSpecification, /) -> None:
+        raise DecorationError("Decorating client not supported")
+
+
+@dataclass
+class CommonDecorator(Decorator):
+    consumer: Consumer[DecoratorTarget]
+
+    def decorate_operation(self, operation: Operation, /) -> None:
+        return self.consumer(operation)
+
+    def decorate_client(self, client: ClientSpecification, /) -> None:
+        return self.consumer(client)
+
+
+@dataclass
+class OperationDecorator(Decorator):
+    consumer: Consumer[Operation]
+
+    def decorate_operation(self, operation: Operation, /) -> None:
+        self.consumer(operation)
+
+
+@dataclass
+class ClientDecorator(Decorator):
+    consumer: Consumer[ClientSpecification]
+
+    def decorate_client(self, client: ClientSpecification, /) -> None:
+        self.consumer(client)
+
+
+@dataclass
+class OptionsDecorator(Decorator):
+    consumer: Consumer[Options]
+
+    def decorate_operation(self, operation: Operation, /) -> None:
+        return self.consumer(operation.request_options)
+
+    def decorate_client(self, client: ClientSpecification, /) -> None:
+        return self.consumer(client.options)
+
+
+def common_decorator(consumer: Consumer[DecoratorTarget], /):
+    return CommonDecorator(consumer)
+
+
+def operation_decorator(consumer: Consumer[Operation], /):
+    return OperationDecorator(consumer)
+
+
+def client_decorator(consumer: Consumer[ClientSpecification], /):
+    return ClientDecorator(consumer)
+
+
+def client_options_decorator(consumer: Consumer[ClientOptions], /):
+    def get_client_options(target: DecoratorTarget, /) -> ClientOptions:
+        if isinstance(target, ClientSpecification):
+            return target.options
+        elif isinstance(target, Operation):
+            return target.client_options
+        else:
+            raise TypeError
+
+    @common_decorator
+    def decorate(target: DecoratorTarget, /) -> None:
+        client_options: ClientOptions = get_client_options(target)
+
+        consumer(client_options)
+
+    return decorate
+
+
+def request_options_decorator(consumer: Consumer[RequestOptions], /):
+    @operation_decorator
+    def decorate(operation: Operation, /) -> None:
+        consumer(operation.request_options)
+
+    return decorate
+
+
+def options_decorator(consumer: Consumer[Options], /):
+    return OptionsDecorator(consumer)
+
+
+def headers_decorator(consumer: Consumer[Headers], /):
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        consumer(options.headers)
+
+    return decorate
+
+
+def params_decorator(consumer: Function[QueryParams, QueryParams], /):
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        options.params = consumer(options.params)
+
+    return decorate
+
+
+def cookies_decorator(consumer: Consumer[Cookies], /):
+    @options_decorator
+    def decorate(options: Options, /) -> None:
+        consumer(options.cookies)
+
+    return decorate
+
+
+def middleware_decorator(consumer: Consumer[Middleware], /):
+    @common_decorator
+    def decorate(target: DecoratorTarget, /) -> None:
+        consumer(target.middleware)
+
+    return decorate
+
+
+def request_dependencies_decorator(consumer: Consumer[MutableSequence[Dependency]], /):
+    @common_decorator
+    def decorate(target: DecoratorTarget, /) -> None:
+        consumer(target.request_dependencies)
+
+    return decorate
+
+
+def response_dependencies_decorator(consumer: Consumer[MutableSequence[Dependency]], /):
+    @common_decorator
+    def decorate(target: DecoratorTarget, /) -> None:
+        consumer(target.response_dependencies)
+
+    return decorate

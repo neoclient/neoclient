@@ -29,8 +29,8 @@ from .decorators import (
     mount,
     path,
     path_params,
-    query,
-    query_params,
+    param,
+    params,
     request_depends,
     response,
     response_depends,
@@ -39,16 +39,16 @@ from .decorators import (
     verify,
 )
 from .decorators._headers import accept, referer, user_agent
-from .decorators.auth import auth, basic_auth
-from .decorators.middleware import (
+from .decorators._auth import auth, basic_auth
+from .decorators._middleware import (
     expect_content_type,
     expect_header,
     expect_status,
     middleware,
     raise_for_status,
 )
-from .decorators.request import delete, get, head, options, patch, post, put, request
-from .models import PreRequest, Request, Response
+from .decorators._request import delete, get, head, options, patch, post, put, request
+from .models import RequestOptions, Request, Response
 from .param_functions import (
     URL,
     AllRequestState,

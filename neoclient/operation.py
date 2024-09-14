@@ -2,7 +2,7 @@ import functools
 import inspect
 from dataclasses import dataclass, field
 from json import JSONDecodeError
-from types import FunctionType
+from types import FunctionType, MethodType
 from typing import Any, Callable, Generic, MutableSequence, Optional, Sequence, TypeVar
 
 import httpx
@@ -14,7 +14,7 @@ from typing_extensions import ParamSpec
 from .composition import compose
 from .errors import NotAnOperationError
 from .middlewares import Middleware
-from .models import ClientOptions, PreRequest, Request, Response
+from .models import ClientOptions, RequestOptions, Request, Response
 from .resolution import resolve_request, resolve_response
 from .typing import Dependency
 
@@ -52,7 +52,7 @@ def get_operation(func: Callable, /) -> "Operation":
 class Operation(Generic[PS, RT_co]):
     func: Callable[PS, RT_co]
     client_options: ClientOptions
-    pre_request: PreRequest
+    request_options: RequestOptions
     client: Optional[Client] = None
     response: Optional[Dependency] = None
     middleware: Middleware = field(default_factory=Middleware)
@@ -71,7 +71,7 @@ class Operation(Generic[PS, RT_co]):
         # Create a clone of the request options, so that mutations don't
         # affect the original copy.
         # Mutations to the request options will occur during composition.
-        pre_request: PreRequest = self.pre_request.clone()
+        pre_request: RequestOptions = self.request_options.clone()
 
         # Compose the request using the provided arguments
         compose(self.func, pre_request, args, kwargs)
@@ -88,7 +88,7 @@ class Operation(Generic[PS, RT_co]):
 
         return_annotation: Any = inspect.signature(self.func).return_annotation
 
-        if return_annotation is PreRequest:
+        if return_annotation is RequestOptions:
             return pre_request
         if return_annotation is Request:
             return request
@@ -118,14 +118,17 @@ class Operation(Generic[PS, RT_co]):
             # the response against the class instance's `__call__` method, otherwise
             # inspection of the dependency may inadvertently be inspecting the
             # `__init__` method instead.
-            if not isinstance(self.response, FunctionType) and hasattr(
+            if not isinstance(self.response, (FunctionType, MethodType)) and hasattr(
                 self.response, "__call__"
             ):
                 resolved_response = resolve_response(self.response.__call__, response)
             else:
                 resolved_response = resolve_response(self.response, response)
 
-            return pydantic.parse_obj_as(return_annotation, resolved_response)
+            if return_annotation is inspect.Parameter.empty:
+                return resolved_response
+            else:
+                return pydantic.parse_obj_as(return_annotation, resolved_response)
 
         if return_annotation is inspect.Parameter.empty:
             try:

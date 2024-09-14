@@ -1,6 +1,6 @@
 from typing import Any, List, Mapping, NamedTuple, Optional
 
-from neoclient import Query, Service, base_url, get, query_params
+from neoclient import Query, Service, base_url, get, params
 
 
 class Suggestion(NamedTuple):
@@ -17,7 +17,7 @@ class Response(NamedTuple):
 
 @base_url("https://suggestqueries.google.com/")
 class SuggestQueries(Service):
-    @query_params({"xhr": "t", "hjson": "t"})
+    @params({"xhr": "t", "hjson": "t"})
     @get("/complete/search")
     def complete_search(
         self,

@@ -1,8 +1,12 @@
 from dataclasses import dataclass
-from typing import Optional, Sequence, Type, TypeVar
+from typing import Any, Callable, Optional, Sequence, Type, TypeVar
 
 from httpx import URL
 from mediate.protocols import MiddlewareCallable, MiddlewareMethod
+
+from neoclient.specification import ClientSpecification
+
+from .api import Decorator
 
 from ..annotations import (
     service_middleware,
@@ -12,17 +16,17 @@ from ..annotations import (
 )
 from ..models import Request, Response
 from ..typing import Dependency
-from .api import C, S, ServiceDecorator
 
-__all__: Sequence[str] = ("service",)
+__all__ = ("service",)
 
+C = TypeVar("C", bound=Callable[..., Any])
 M = TypeVar(
     "M", MiddlewareCallable[Request, Response], MiddlewareMethod[Request, Response]
 )
 
 
 @dataclass
-class ServiceDecoratorImpl(ServiceDecorator):
+class ServiceDecoratorImpl(Decorator):
     base_url: Optional[str] = None
     middlewares: Optional[Sequence[MiddlewareCallable[Request, Response]]] = None
     default_response: Optional[Dependency] = None
@@ -44,19 +48,17 @@ class ServiceDecoratorImpl(ServiceDecorator):
         self.request_dependencies = request_dependencies
         self.response_dependencies = response_dependencies
 
-    def __call__(self, target: S, /) -> S:
+    def decorate_client(self, client: ClientSpecification, /) -> None:
         if self.base_url is not None:
-            target._spec.options.base_url = URL(self.base_url)
+            client.options.base_url = URL(self.base_url)
         if self.middlewares is not None:
-            target._spec.middleware.add_all(self.middlewares)
+            client.middleware.add_all(self.middlewares)
         if self.default_response is not None:
-            target._spec.default_response = self.default_response
+            client.default_response = self.default_response
         if self.request_dependencies is not None:
-            target._spec.request_dependencies.extend(self.request_dependencies)
+            client.request_dependencies.extend(self.request_dependencies)
         if self.response_dependencies is not None:
-            target._spec.response_dependencies.extend(self.response_dependencies)
-
-        return target
+            client.response_dependencies.extend(self.response_dependencies)
 
     @staticmethod
     def middleware(middleware: M, /) -> M:

@@ -3,7 +3,7 @@ from typing import Any, Optional, Sequence, TypeVar
 
 from httpx import Cookies, Headers, QueryParams
 
-from .models import PreRequest, Response, State
+from .models import RequestOptions, Response, State
 from .typing import ResponseResolver, SupportsResolveRequest, SupportsResolveResponse
 
 __all__: Sequence[str] = (
@@ -24,7 +24,7 @@ T = TypeVar("T")
 class QueryResolver(SupportsResolveRequest, SupportsResolveResponse):
     name: str
 
-    def resolve_request(self, request: PreRequest, /) -> Optional[Sequence[str]]:
+    def resolve_request(self, request: RequestOptions, /) -> Optional[Sequence[str]]:
         return self.resolve(request.params)
 
     def resolve_response(self, response: Response, /) -> Optional[Sequence[str]]:
@@ -41,7 +41,7 @@ class QueryResolver(SupportsResolveRequest, SupportsResolveResponse):
 class HeaderResolver(SupportsResolveRequest, SupportsResolveResponse):
     name: str
 
-    def resolve_request(self, request: PreRequest, /) -> Optional[Sequence[str]]:
+    def resolve_request(self, request: RequestOptions, /) -> Optional[Sequence[str]]:
         return self.resolve(request.headers)
 
     def resolve_response(self, response: Response, /) -> Optional[Sequence[str]]:
@@ -58,7 +58,7 @@ class HeaderResolver(SupportsResolveRequest, SupportsResolveResponse):
 class CookieResolver(SupportsResolveRequest, SupportsResolveResponse):
     name: str
 
-    def resolve_request(self, request: PreRequest, /) -> Optional[str]:
+    def resolve_request(self, request: RequestOptions, /) -> Optional[str]:
         return self.resolve(request.cookies)
 
     def resolve_response(self, response: Response, /) -> Optional[str]:
@@ -70,7 +70,7 @@ class CookieResolver(SupportsResolveRequest, SupportsResolveResponse):
 
 class QueryParamsResolver(SupportsResolveRequest, SupportsResolveResponse):
     @staticmethod
-    def resolve_request(request: PreRequest, /) -> QueryParams:
+    def resolve_request(request: RequestOptions, /) -> QueryParams:
         return request.params
 
     @staticmethod
@@ -80,7 +80,7 @@ class QueryParamsResolver(SupportsResolveRequest, SupportsResolveResponse):
 
 class HeadersResolver(SupportsResolveRequest, SupportsResolveResponse):
     @staticmethod
-    def resolve_request(request: PreRequest, /) -> Headers:
+    def resolve_request(request: RequestOptions, /) -> Headers:
         return request.headers
 
     @staticmethod
@@ -90,7 +90,7 @@ class HeadersResolver(SupportsResolveRequest, SupportsResolveResponse):
 
 class CookiesResolver(SupportsResolveRequest, SupportsResolveResponse):
     @staticmethod
-    def resolve_request(request: PreRequest, /) -> Cookies:
+    def resolve_request(request: RequestOptions, /) -> Cookies:
         return request.cookies
 
     @staticmethod
@@ -108,7 +108,7 @@ class BodyResolver(ResponseResolver[Any]):
 class StateResolver(SupportsResolveRequest, SupportsResolveResponse):
     key: str
 
-    def resolve_request(self, request: PreRequest, /) -> Any:
+    def resolve_request(self, request: RequestOptions, /) -> Any:
         return self.resolve(request.state)
 
     def resolve_response(self, response: Response, /) -> Any:
