@@ -385,7 +385,11 @@ class RequestOptions:
         state: Optional[State] = None,
         follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
     ) -> None:
-        self.method = method if isinstance(method, str) else method.decode()
+        self.method = (
+            method.decode("ascii").upper()
+            if isinstance(method, bytes)
+            else method.upper()
+        )
         self.url = URL(url)
         self.params = (
             converters.convert_query_params(params)
@@ -414,7 +418,9 @@ class RequestOptions:
         self.follow_redirects = follow_redirects
 
     def __repr__(self) -> str:
-        return f'<{type(self).__name__}("{str(self.method)}", "{str(self.url)}")>'
+        class_name: str = type(self).__name__
+        url: str = str(self.url)
+        return f"<{class_name}({self.method!r}, {url!r})>"
 
     def __eq__(self, rhs: Any, /) -> bool:
         if not isinstance(rhs, RequestOptions):
