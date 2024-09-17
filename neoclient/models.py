@@ -467,8 +467,10 @@ class BaseRequestOpts:
         return dataclasses.replace(
             self,
             timeout=(
-                self.timeout if self.timeout is not None else USE_CLIENT_DEFAULT
-            ),  #  type: ignore
+                self.timeout
+                if self.timeout is not None
+                else USE_CLIENT_DEFAULT  #  type: ignore
+            ),
         )
 
     def validate(self) -> None:
