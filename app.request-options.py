@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 import dataclasses
-from typing import Any, MutableMapping, Optional, Union
+from typing import Any, MutableMapping, Optional, Set, Union
 from typing_extensions import Self
 
 import httpx
-from neoclient import Request
+from neoclient import Request, utils
 from httpx import Client, Cookies, Headers, QueryParams, Response, Timeout
 from httpx._client import UseClientDefault, USE_CLIENT_DEFAULT
 from httpx._types import (
@@ -22,6 +22,7 @@ from httpx._types import (
 from httpx._urls import URL
 
 from neoclient import converters
+from neoclient.errors import IncompatiblePathParameters
 from neoclient.models import State
 from neoclient.types import PathParamsTypes
 
@@ -43,7 +44,6 @@ class BaseRequestOpts:
     auth: Optional[AuthTypes]
     follow_redirects: bool
     timeout: Optional[Timeout]
-    # timeout: Union[Timeout, UseClientDefault]
     extensions: RequestExtensions
 
     def __init__(
@@ -123,6 +123,9 @@ class BaseRequestOpts:
             self,
             timeout=self.timeout if self.timeout is not None else USE_CLIENT_DEFAULT, #  type: ignore
         )
+    
+    def validate(self) -> None:
+        return
 
 
 @dataclass(repr=False)
@@ -183,6 +186,22 @@ class RequestOpts(BaseRequestOpts):
     def formatted_url(self) -> URL:
         # NOTE: Does URL encoding affect this?
         return URL(str(self.url).format(**self.path_params))
+    
+    def validate(self):
+        # NOTE: Does URL encoding affect this?
+        url: str = str(self.url)
+
+        expected_path_params: Set[str] = utils.parse_format_string(url)
+        actual_path_params: Set[str] = set(self.path_params.keys())
+
+        print(url, expected_path_params, actual_path_params)
+
+        # Validate path params are correct
+        if expected_path_params != actual_path_params:
+            raise IncompatiblePathParameters(
+                f"Expected {tuple(expected_path_params)}, got {tuple(actual_path_params)}"
+            )
+    
 
     # TODO: merge, validate
 
@@ -190,5 +209,6 @@ class RequestOpts(BaseRequestOpts):
 r: RequestOpts = RequestOpts(
     "GET",
     "/eat/{food}?desert={desert}&cond_sauces={sauces}",
-    path_params={"food": "pizza", "desert": "chocolate", "sauces": "ketchup"},
+    # path_params={"food": "pizza", "desert": "chocolate", "sauces": "ketchup"},
+    path_params={"food": "pizza", "desert": "chocolate"},
 )

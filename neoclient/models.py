@@ -1,3 +1,4 @@
+import dataclasses
 import urllib.parse
 from dataclasses import dataclass
 from types import SimpleNamespace
@@ -14,9 +15,11 @@ from typing import (
     Set,
     Union,
 )
+from typing_extensions import Self
 
 import httpx
-from httpx import URL, BaseTransport, Cookies, Headers, Limits, QueryParams, Timeout
+from httpx import URL, BaseTransport, Client, Cookies, Headers, Limits, QueryParams, Timeout
+from httpx._client import UseClientDefault, USE_CLIENT_DEFAULT
 
 from . import converters, utils
 from .constants import USER_AGENT
@@ -67,7 +70,7 @@ __all__: Sequence[str] = (
     "ClientOptions",
     "Request",
     "Response",
-    "RequestOptions",
+    "RequestOpts",
 )
 
 
@@ -352,21 +355,22 @@ class ClientOptions:
             default_encoding=self.default_encoding,
         )
 
-
-class RequestOptions:
+@dataclass
+class BaseRequestOpts:
+    # Note: These opts match the signature of httpx.Client.request
     method: str
     url: URL
-    params: QueryParams
-    headers: Headers
-    cookies: Cookies
     content: Optional[RequestContent]
     data: Optional[RequestData]
     files: Optional[RequestFiles]
-    json: Optional[JsonTypes]
-    timeout: Optional[Timeout]
-    path_params: MutableMapping[str, str]
-    state: State
+    json: Optional[Any]
+    params: QueryParams
+    headers: Headers
+    cookies: Cookies
+    auth: Optional[AuthTypes]
     follow_redirects: bool
+    timeout: Optional[Timeout]
+    extensions: RequestExtensions
 
     def __init__(
         self,
@@ -379,11 +383,11 @@ class RequestOptions:
         content: Optional[RequestContent] = None,
         data: Optional[RequestData] = None,
         files: Optional[RequestFiles] = None,
-        json: Optional[JsonTypes] = None,
-        timeout: Optional[TimeoutTypes] = None,
-        path_params: Optional[PathParamsTypes] = None,
-        state: Optional[State] = None,
-        follow_redirects: bool = DEFAULT_FOLLOW_REDIRECTS,
+        json: Optional[Any] = None,
+        auth: Optional[AuthTypes] = None,
+        follow_redirects: bool = False,
+        timeout: Union[TimeoutTypes, UseClientDefault] = USE_CLIENT_DEFAULT,
+        extensions: Optional[RequestExtensions] = None,
     ) -> None:
         self.method = (
             method.decode("ascii").upper()
@@ -406,128 +410,126 @@ class RequestOptions:
         self.data = data
         self.files = files
         self.json = json
+        self.auth = auth
+        self.follow_redirects = follow_redirects
+        # NOTE: Should `converters.convert_timeout` be used here?
         self.timeout = (
-            converters.convert_timeout(timeout) if timeout is not None else None
+            Timeout(timeout) if not isinstance(timeout, UseClientDefault) else None
         )
+        self.extensions = extensions if extensions is not None else {}
+
+    def __repr__(self) -> str:
+        class_name = self.__class__.__name__
+        url = str(self.url)
+        return f"<{class_name}({self.method!r}, {url!r})>"
+
+    def build(self, client: Optional[Client] = None) -> httpx.Request:
+        if client is None:
+            client = Client()
+
+        return client.build_request(
+            method=self.method,
+            url=self.url,
+            content=self.content,
+            data=self.data,
+            files=self.files,
+            json=self.json,
+            params=self.params,
+            headers=self.headers,
+            cookies=self.cookies,
+            timeout=self.timeout if self.timeout is not None else USE_CLIENT_DEFAULT,
+            extensions=self.extensions,
+        )
+
+    def send(self, client: Optional[Client] = None) -> httpx.Response:
+        if client is None:
+            client = Client()
+
+        request: httpx.Request = self.build(client)
+
+        return client.send(
+            request,
+            auth=self.auth,
+            follow_redirects=self.follow_redirects,
+        )
+
+    def copy(self) -> Self:
+        return dataclasses.replace(
+            self,
+            timeout=self.timeout if self.timeout is not None else USE_CLIENT_DEFAULT, #  type: ignore
+        )
+    
+    def validate(self) -> None:
+        return
+
+
+@dataclass(repr=False)
+class RequestOpts(BaseRequestOpts):
+    path_params: MutableMapping[str, str]
+    state: State
+
+    def __init__(
+        self,
+        method: MethodTypes,
+        url: URLTypes,
+        *,
+        params: Optional[QueryParamsTypes] = None,
+        headers: Optional[HeadersTypes] = None,
+        cookies: Optional[CookiesTypes] = None,
+        content: Optional[RequestContent] = None,
+        data: Optional[RequestData] = None,
+        files: Optional[RequestFiles] = None,
+        json: Optional[Any] = None,
+        auth: Optional[AuthTypes] = None,
+        follow_redirects: bool = False,
+        timeout: Union[TimeoutTypes, UseClientDefault] = USE_CLIENT_DEFAULT,
+        extensions: Optional[RequestExtensions] = None,
+        # Extras
+        path_params: Optional[PathParamsTypes] = None,
+        state: Optional[State] = None,
+    ) -> None:
+        super().__init__(
+            method=method,
+            url=url,
+            params=params,
+            headers=headers,
+            cookies=cookies,
+            content=content,
+            data=data,
+            files=files,
+            json=json,
+            auth=auth,
+            follow_redirects=follow_redirects,
+            timeout=timeout,
+            extensions=extensions,
+        )
+
         self.path_params = (
             converters.convert_path_params(path_params)
             if path_params is not None
             else {}
         )
         self.state = state if state is not None else State()
-        self.follow_redirects = follow_redirects
 
-    def __repr__(self) -> str:
-        class_name: str = type(self).__name__
-        url: str = str(self.url)
-        return f"<{class_name}({self.method!r}, {url!r})>"
+    def build(self, client: Optional[Client] = None) -> Request:
+        request_opts: RequestOpts = dataclasses.replace(self, url=self.formatted_url)
+        request: httpx.Request = BaseRequestOpts.build(request_opts, client)
 
-    def __eq__(self, rhs: Any, /) -> bool:
-        if not isinstance(rhs, RequestOptions):
-            return False
+        return Request.from_httpx_request(request, state=self.state)
 
-        pre_request: RequestOptions = rhs
-
-        return all(
-            (
-                self.method == pre_request.method,
-                self.url == pre_request.url,
-                self.params == pre_request.params,
-                self.headers == pre_request.headers,
-                self.cookies == pre_request.cookies,
-                self.content == pre_request.content,
-                self.data == pre_request.data,
-                self.files == pre_request.files,
-                self.json == pre_request.json,
-                self.timeout == pre_request.timeout,
-                self.path_params == pre_request.path_params,
-                self.state == pre_request.state,
-                self.follow_redirects == pre_request.follow_redirects,
-            )
-        )
-
-    def build_request(self, client: Optional[httpx.Client]) -> Request:
-        url: str = self._get_formatted_url()
-
-        extensions: Dict[str, Any] = {}
-
-        if client is None:
-            if self.timeout is not None:
-                extensions["timeout"] = self.timeout.as_dict()
-
-            return Request(
-                self.method,
-                url,
-                params=self.params,
-                headers=self.headers,
-                cookies=self.cookies,
-                content=self.content,
-                data=self.data,
-                files=self.files,
-                json=self.json,
-                extensions=extensions,
-                state=self.state,
-            )
-
-        httpx_request: httpx.Request = client.build_request(
-            self.method,
-            url,
-            params=self.params,
-            headers=self.headers,
-            cookies=self.cookies,
-            content=self.content,
-            data=self.data,
-            files=self.files,
-            json=self.json,
-            timeout=self.timeout,
-            extensions=extensions,
-        )
-
-        request: Request = Request.from_httpx_request(httpx_request, state=self.state)
-
-        return request
-
-    def merge(self, pre_request: "RequestOptions", /) -> "RequestOptions":
-        return self.__class__(
-            method=pre_request.method,
-            url=pre_request.url,
-            params=self.params.merge(pre_request.params),
-            headers=httpx.Headers({**self.headers, **pre_request.headers}),
-            cookies=httpx.Cookies({**self.cookies, **pre_request.cookies}),
-            content=(
-                pre_request.content if pre_request.content is not None else self.content
-            ),
-            data=(pre_request.data if pre_request.data is not None else self.data),
-            files=(pre_request.files if pre_request.files is not None else self.files),
-            json=(pre_request.json if pre_request.json is not None else self.json),
-            timeout=(
-                pre_request.timeout if pre_request.timeout is not None else self.timeout
-            ),
-            path_params={
-                **self.path_params,
-                **pre_request.path_params,
-            },
-            state=State({**self.state, **pre_request.state}),
-            follow_redirects=self.follow_redirects and pre_request.follow_redirects,
-        )
-
-    def clone(self) -> "RequestOptions":
-        return self.merge(
-            RequestOptions(
-                method=self.method,
-                url=self.url,
-                follow_redirects=self.follow_redirects,
-            )
-        )
-
-    def _get_formatted_url(self) -> str:
-        return urllib.parse.unquote(str(self.url)).format(**self.path_params)
-
+    @property
+    def formatted_url(self) -> URL:
+        # NOTE: Does URL encoding affect this?
+        return URL(str(self.url).format(**self.path_params))
+    
     def validate(self):
-        url: str = urllib.parse.unquote(str(self.url))
+        # NOTE: Does URL encoding affect this?
+        url: str = str(self.url)
 
         expected_path_params: Set[str] = utils.parse_format_string(url)
         actual_path_params: Set[str] = set(self.path_params.keys())
+
+        print(url, expected_path_params, actual_path_params)
 
         # Validate path params are correct
         if expected_path_params != actual_path_params:

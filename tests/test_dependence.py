@@ -7,7 +7,7 @@ from neoclient import Cookie
 from neoclient.dependence import DependencyParameter, DependencyResolver, get_fields
 from neoclient.enums import HTTPMethod
 from neoclient.errors import ResolutionError
-from neoclient.models import RequestOptions, Response
+from neoclient.models import RequestOpts, Response
 from neoclient.param_functions import Request
 from neoclient.params import (
     BodyParameter,
@@ -41,10 +41,10 @@ def test_DependencyResolver_resolve_response() -> None:
 
 
 def test_DependencyResolver_resolve_request() -> None:
-    def dependency(request=Request()) -> RequestOptions:
+    def dependency(request=Request()) -> RequestOpts:
         return request
 
-    request: RequestOptions = RequestOptions(HTTPMethod.GET, "https://foo.com/")
+    request: RequestOpts = RequestOpts(HTTPMethod.GET, "https://foo.com/")
 
     assert DependencyResolver(dependency).resolve_request(request) == request
 

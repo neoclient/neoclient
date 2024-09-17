@@ -38,7 +38,7 @@ from .defaults import (
 )
 from .enums import HTTPHeader, HTTPMethod
 from .middlewares import Middleware
-from .models import ClientOptions, RequestOptions, Request, Response
+from .models import ClientOptions, RequestOpts, Request, Response
 from .operation import Operation, get_operation
 from .types import (
     AuthTypes,
@@ -232,7 +232,7 @@ class Client:
         response: Optional[Dependency] = None,
     ) -> Callable[[Callable[PS, RT]], Callable[PS, RT]]:
         client_options: ClientOptions = ClientOptions()
-        pre_request: RequestOptions = RequestOptions(
+        pre_request: RequestOpts = RequestOpts(
             method=method,
             url=endpoint,
         )
