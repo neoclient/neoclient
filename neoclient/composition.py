@@ -49,9 +49,9 @@ def get_fields(
 
     validated_function: ValidatedFunction = ValidatedFunction(func)
 
-    parameters: Mapping[
-        str, inspect.Parameter
-    ] = validated_function.signature.parameters
+    parameters: Mapping[str, inspect.Parameter] = (
+        validated_function.signature.parameters
+    )
 
     fields: MutableMapping[str, Tuple[Any, Parameter]] = {}
 

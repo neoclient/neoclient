@@ -158,16 +158,13 @@ class ComposableSingletonParameter(ABC, Parameter, Generic[K, V]):
         consumer(request)
 
     @abstractmethod
-    def parse_key(self, key: str, /) -> K:
-        ...
+    def parse_key(self, key: str, /) -> K: ...
 
     @abstractmethod
-    def parse_value(self, value: Any, /) -> V:
-        ...
+    def parse_value(self, value: Any, /) -> V: ...
 
     @abstractmethod
-    def build_consumer(self, key: K, value: V) -> RequestConsumer:
-        ...
+    def build_consumer(self, key: K, value: V) -> RequestConsumer: ...
 
 
 class ResolvableSingletonParameter(ABC, Parameter, Generic[K, V]):
@@ -196,16 +193,13 @@ class ResolvableSingletonParameter(ABC, Parameter, Generic[K, V]):
         return resolver(response)
 
     @abstractmethod
-    def parse_key(self, key: str, /) -> K:
-        ...
+    def parse_key(self, key: str, /) -> K: ...
 
     @abstractmethod
-    def build_request_resolver(self, key: K) -> RequestResolver[V]:
-        ...
+    def build_request_resolver(self, key: K) -> RequestResolver[V]: ...
 
     @abstractmethod
-    def build_response_resolver(self, key: K) -> ResponseResolver[V]:
-        ...
+    def build_response_resolver(self, key: K) -> ResponseResolver[V]: ...
 
 
 class ComposableSingletonStringParameter(ComposableSingletonParameter[str, str]):

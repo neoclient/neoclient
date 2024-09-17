@@ -14,8 +14,7 @@ class Response:
 @base_url("https://httpbin.org/")
 class Httpbin(Service):
     @get("/get")
-    def get(self, message: str) -> Response:
-        ...
+    def get(self, message: str) -> Response: ...
 
 
 httpbin: Httpbin = Httpbin()
