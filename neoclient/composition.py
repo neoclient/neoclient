@@ -20,7 +20,7 @@ from pydantic.fields import FieldInfo, ModelField
 
 from . import api, utils
 from .errors import DuplicateParameters
-from .models import RequestOptions
+from .models import RequestOpts
 from .params import (
     BodyParameter,
     Parameter,
@@ -38,7 +38,7 @@ __all__: Sequence[str] = (
 
 
 def get_fields(
-    request: RequestOptions,
+    request: RequestOpts,
     func: Callable,
 ) -> Mapping[str, Tuple[Any, Parameter]]:
     path_params: Set[str] = (
@@ -145,7 +145,7 @@ def validate_fields(fields: Mapping[str, Tuple[Any, Parameter]], /) -> None:
 
 def compose(
     func: Callable,
-    request: RequestOptions,
+    request: RequestOpts,
     args: Tuple[Any, ...],
     kwargs: Mapping[str, Any],
 ) -> None:

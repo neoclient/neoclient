@@ -4,7 +4,7 @@ from typing import Any, Callable, Protocol, Sequence, TypeVar, runtime_checkable
 import mediate
 from typing_extensions import TypeAlias
 
-from .models import ClientOptions, RequestOptions, Request, Response
+from .models import ClientOptions, RequestOpts, Request, Response
 
 __all__: Sequence[str] = (
     "AnyCallable",
@@ -62,11 +62,11 @@ class ResponseResolver(Function[Response, T_co], Protocol[T_co]):
     pass
 
 
-class RequestResolver(Function[RequestOptions, T_co], Protocol[T_co]):
+class RequestResolver(Function[RequestOpts, T_co], Protocol[T_co]):
     pass
 
 
-class RequestConsumer(Consumer[RequestOptions], Protocol):
+class RequestConsumer(Consumer[RequestOpts], Protocol):
     pass
 
 
@@ -75,13 +75,13 @@ class ClientConsumer(Consumer[ClientOptions], Protocol):
 
 
 class Composer(Protocol):
-    def compose(self, request: RequestOptions, argument: Any, /) -> None: ...
+    def compose(self, request: RequestOpts, argument: Any, /) -> None: ...
 
 
 @runtime_checkable
 class SupportsConsumeRequest(Protocol):
     @abstractmethod
-    def consume_request(self, request: RequestOptions, /) -> None: ...
+    def consume_request(self, request: RequestOpts, /) -> None: ...
 
 
 @runtime_checkable
@@ -93,7 +93,7 @@ class SupportsConsumeClient(Protocol):
 @runtime_checkable
 class SupportsResolveRequest(Protocol[T_co]):
     @abstractmethod
-    def resolve_request(self, request: RequestOptions, /) -> T_co: ...
+    def resolve_request(self, request: RequestOpts, /) -> T_co: ...
 
 
 @runtime_checkable

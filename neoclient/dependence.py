@@ -23,7 +23,7 @@ from pydantic.fields import FieldInfo, ModelField
 
 from . import api, utils
 from .errors import PreparationError, ResolutionError
-from .models import RequestOptions, Request, Response, State
+from .models import RequestOpts, Request, Response, State
 from .params import (
     AllStateParameter,
     BodyParameter,
@@ -48,7 +48,7 @@ def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
         arbitrary_types_allowed: bool = True
 
     infer_lookup: Mapping[Type[Any], Type[Parameter]] = {
-        RequestOptions: RequestParameter,
+        RequestOpts: RequestParameter,
         Request: RequestParameter,
         Response: ResponseParameter,
         httpx.Request: RequestParameter,
@@ -111,7 +111,7 @@ class DependencyResolver(Generic[T]):
 
     def resolve_request(
         self,
-        request: RequestOptions,
+        request: RequestOpts,
         /,
         *,
         cache: Optional[MutableMapping[Parameter, Any]] = None,
@@ -129,7 +129,7 @@ class DependencyResolver(Generic[T]):
 
     def resolve(
         self,
-        request_or_response: Union[RequestOptions, Response],
+        request_or_response: Union[RequestOpts, Response],
         /,
         *,
         cache: Optional[MutableMapping[Parameter, Any]] = None,
@@ -155,7 +155,7 @@ class DependencyResolver(Generic[T]):
                 cache_parameter: bool = True
 
                 if isinstance(parameter, DependencyParameter):
-                    if isinstance(request_or_response, RequestOptions):
+                    if isinstance(request_or_response, RequestOpts):
                         resolution = parameter.resolve_request(
                             request_or_response,
                             cache=cache,
@@ -168,7 +168,7 @@ class DependencyResolver(Generic[T]):
 
                     cache_parameter = parameter.use_cache
                 else:
-                    if isinstance(request_or_response, RequestOptions):
+                    if isinstance(request_or_response, RequestOpts):
                         resolution = parameter.resolve_request(request_or_response)
                     else:
                         resolution = parameter.resolve_response(request_or_response)
@@ -225,7 +225,7 @@ class DependencyParameter(Parameter):
 
     def resolve_request(
         self,
-        request: RequestOptions,
+        request: RequestOpts,
         /,
         *,
         cache: Optional[MutableMapping[Parameter, Any]] = None,

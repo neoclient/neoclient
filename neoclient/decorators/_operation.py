@@ -1,7 +1,7 @@
 from typing import Mapping
 
 from neoclient.decorators.api import request_options_decorator
-from neoclient.models import RequestOptions
+from neoclient.models import RequestOpts
 
 from ..converters import convert_path_param, convert_path_params
 from ..types import (
@@ -28,7 +28,7 @@ __all__ = (
 
 def content(content: RequestContent, /):
     @request_options_decorator
-    def decorate(request_options: RequestOptions, /) -> None:
+    def decorate(request_options: RequestOpts, /) -> None:
         request_options.content = content
 
     return decorate
@@ -36,7 +36,7 @@ def content(content: RequestContent, /):
 
 def data(data: RequestData, /):
     @request_options_decorator
-    def decorate(request_options: RequestOptions, /) -> None:
+    def decorate(request_options: RequestOpts, /) -> None:
         request_options.data = data
 
     return decorate
@@ -44,7 +44,7 @@ def data(data: RequestData, /):
 
 def files(files: RequestFiles, /):
     @request_options_decorator
-    def decorate(request_options: RequestOptions, /) -> None:
+    def decorate(request_options: RequestOpts, /) -> None:
         request_options.files = files
 
     return decorate
@@ -52,7 +52,7 @@ def files(files: RequestFiles, /):
 
 def json(json: JsonTypes, /):
     @request_options_decorator
-    def decorate(request_options: RequestOptions, /) -> None:
+    def decorate(request_options: RequestOpts, /) -> None:
         request_options.json = json
 
     return decorate
@@ -60,7 +60,7 @@ def json(json: JsonTypes, /):
 
 def mount(path: str, /):
     @request_options_decorator
-    def decorate(request_options: RequestOptions, /) -> None:
+    def decorate(request_options: RequestOpts, /) -> None:
         request_options.url = request_options.url.copy_with(
             path=path + request_options.url.path
         )
@@ -75,7 +75,7 @@ def path(
     delimiter: str = "/",
 ):
     @request_options_decorator
-    def decorate(request_options: RequestOptions, /) -> None:
+    def decorate(request_options: RequestOpts, /) -> None:
         converted_value: str = convert_path_param(value, delimiter=delimiter)
 
         request_options.path_params[key] = converted_value
@@ -90,7 +90,7 @@ def path_params(
     delimiter: str = "/",
 ):
     @request_options_decorator
-    def decorate(request_options: RequestOptions, /) -> None:
+    def decorate(request_options: RequestOpts, /) -> None:
         converted_path_params: Mapping[str, str] = convert_path_params(
             path_params, delimiter=delimiter
         )

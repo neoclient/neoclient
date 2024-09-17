@@ -14,7 +14,7 @@ from typing_extensions import ParamSpec
 from .composition import compose
 from .errors import NotAnOperationError
 from .middlewares import Middleware
-from .models import ClientOptions, RequestOptions, Request, Response
+from .models import ClientOptions, RequestOpts, Request, Response
 from .resolution import resolve_request, resolve_response
 from .typing import Dependency
 
@@ -52,7 +52,7 @@ def get_operation(func: Callable, /) -> "Operation":
 class Operation(Generic[PS, RT_co]):
     func: Callable[PS, RT_co]
     client_options: ClientOptions
-    request_options: RequestOptions
+    request_options: RequestOpts
     client: Optional[Client] = None
     response: Optional[Dependency] = None
     middleware: Middleware = field(default_factory=Middleware)
@@ -71,7 +71,7 @@ class Operation(Generic[PS, RT_co]):
         # Create a clone of the request options, so that mutations don't
         # affect the original copy.
         # Mutations to the request options will occur during composition.
-        pre_request: RequestOptions = self.request_options.clone()
+        pre_request: RequestOpts = self.request_options.copy()
 
         # Compose the request using the provided arguments
         compose(self.func, pre_request, args, kwargs)
@@ -84,11 +84,11 @@ class Operation(Generic[PS, RT_co]):
         # Validate the pre-request (e.g. to ensure no path params have been missed)
         pre_request.validate()
 
-        request: Request = pre_request.build_request(client)
+        request: Request = pre_request.build(client)
 
         return_annotation: Any = inspect.signature(self.func).return_annotation
 
-        if return_annotation is RequestOptions:
+        if return_annotation is RequestOpts:
             return pre_request
         if return_annotation is Request:
             return request

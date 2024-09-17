@@ -1,7 +1,7 @@
 import pytest
 
 from neoclient.errors import ResolutionError
-from neoclient.models import RequestOptions, Response, State
+from neoclient.models import RequestOpts, Response, State
 from neoclient.params import (
     AllRequestStateParameter,
     AllResponseStateParameter,
@@ -15,7 +15,7 @@ from . import utils
 def test_AllRequestStateParameter() -> None:
     state: State = State({"name": "sam", "age": 43})
 
-    request: RequestOptions = utils.build_pre_request(state=state)
+    request: RequestOpts = utils.build_pre_request(state=state)
     response: Response = utils.build_response(request=utils.build_request(state=state))
 
     parameter: Parameter = AllRequestStateParameter()
@@ -40,7 +40,7 @@ def test_AllResponseStateParameter() -> None:
 def test_AllStateParameter() -> None:
     state: State = State({"name": "sam", "age": 43})
 
-    request: RequestOptions = utils.build_pre_request(state=state)
+    request: RequestOpts = utils.build_pre_request(state=state)
     response: Response = utils.build_response(state=state)
 
     parameter: Parameter = AllStateParameter()

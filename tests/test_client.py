@@ -6,7 +6,7 @@ from pydantic import BaseModel, Required
 
 from neoclient import Body, NeoClient, Query, QueryParams
 from neoclient.decorators import request
-from neoclient.models import RequestOptions, Request, Response
+from neoclient.models import RequestOpts, Request, Response
 from neoclient.operation import Operation, get_operation
 from neoclient.typing import CallNext
 
@@ -76,7 +76,7 @@ def test_request(client: NeoClient) -> None:
     @client.request(method, endpoint, response=response)
     def foo(): ...
 
-    assert get_operation(foo).request_options == RequestOptions(
+    assert get_operation(foo).request_options == RequestOpts(
         method=method,
         url=endpoint,
     )
@@ -86,9 +86,9 @@ def test_request(client: NeoClient) -> None:
 
 def test_query_not_required_omitted(client: NeoClient) -> None:
     @client.get("get")
-    def get(query: Optional[str] = Query(default=None)) -> RequestOptions: ...
+    def get(query: Optional[str] = Query(default=None)) -> RequestOpts: ...
 
-    assert get() == RequestOptions(
+    assert get() == RequestOpts(
         method="GET",
         url="get",
     )
@@ -96,9 +96,9 @@ def test_query_not_required_omitted(client: NeoClient) -> None:
 
 def test_query_required_not_omitted(client: NeoClient) -> None:
     @client.get("get")
-    def get(query: Optional[str] = Query(default=Required)) -> RequestOptions: ...
+    def get(query: Optional[str] = Query(default=Required)) -> RequestOpts: ...
 
-    assert get("foo") == RequestOptions(
+    assert get("foo") == RequestOpts(
         method="GET",
         url="get",
         params={"query": "foo"},
@@ -107,9 +107,9 @@ def test_query_required_not_omitted(client: NeoClient) -> None:
 
 def test_single_body_param(client: NeoClient) -> None:
     @client.post("/items/")
-    def create_item(item: Item = Body()) -> RequestOptions: ...
+    def create_item(item: Item = Body()) -> RequestOpts: ...
 
-    assert create_item(Item(id=1, name="item")) == RequestOptions(
+    assert create_item(Item(id=1, name="item")) == RequestOpts(
         method="POST",
         url="/items/",
         json={"id": 1, "name": "item"},
@@ -118,11 +118,9 @@ def test_single_body_param(client: NeoClient) -> None:
 
 def test_multiple_body_params(client: NeoClient) -> None:
     @client.post("/items/")
-    def create_item(user: User = Body(), item: Item = Body()) -> RequestOptions: ...
+    def create_item(user: User = Body(), item: Item = Body()) -> RequestOpts: ...
 
-    assert create_item(
-        User(id=1, name="user"), Item(id=1, name="item")
-    ) == RequestOptions(
+    assert create_item(User(id=1, name="user"), Item(id=1, name="item")) == RequestOpts(
         method="POST",
         url="/items/",
         json={
@@ -136,11 +134,9 @@ def test_multiple_body_params_embedded(client: NeoClient) -> None:
     @client.post("/items/")
     def create_item(
         user: User = Body(embed=True), item: Item = Body(embed=True)
-    ) -> RequestOptions: ...
+    ) -> RequestOpts: ...
 
-    assert create_item(
-        User(id=1, name="user"), Item(id=1, name="item")
-    ) == RequestOptions(
+    assert create_item(User(id=1, name="user"), Item(id=1, name="item")) == RequestOpts(
         method="POST",
         url="/items/",
         json={
@@ -152,9 +148,9 @@ def test_multiple_body_params_embedded(client: NeoClient) -> None:
 
 def test_single_query_param(client: NeoClient) -> None:
     @client.get("/items/")
-    def create_item(sort: str = Query()) -> RequestOptions: ...
+    def create_item(sort: str = Query()) -> RequestOpts: ...
 
-    assert create_item("ascending") == RequestOptions(
+    assert create_item("ascending") == RequestOpts(
         method="GET",
         url="/items/",
         params={
@@ -165,9 +161,9 @@ def test_single_query_param(client: NeoClient) -> None:
 
 def test_multiple_query_params(client: NeoClient) -> None:
     @client.get("/items/")
-    def create_item(params: dict = QueryParams()) -> RequestOptions: ...
+    def create_item(params: dict = QueryParams()) -> RequestOpts: ...
 
-    assert create_item({"sort": "ascending"}) == RequestOptions(
+    assert create_item({"sort": "ascending"}) == RequestOpts(
         method="GET",
         url="/items/",
         params={

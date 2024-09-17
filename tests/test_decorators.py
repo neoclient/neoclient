@@ -9,7 +9,7 @@ from neoclient import converters, decorators, get
 from neoclient.auths import Auth, BasicAuth
 from neoclient.defaults import DEFAULT_FOLLOW_REDIRECTS
 from neoclient.middlewares import AuthMiddleware
-from neoclient.models import ClientOptions, RequestOptions, Request, Response, State
+from neoclient.models import ClientOptions, RequestOpts, Request, Response, State
 from neoclient.operation import get_operation
 from neoclient.services import Service
 from neoclient.types import (
@@ -29,7 +29,7 @@ from neoclient.typing import CallNext
 @fixture
 def func() -> Callable:
     @get("/foo")
-    def foo() -> RequestOptions: ...
+    def foo() -> RequestOpts: ...
 
     return foo
 
@@ -47,7 +47,7 @@ def test_query(func: Callable) -> None:
     key: str = "name"
     value: str = "sam"
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.params = QueryParams({key: value})
 
     decorators.param(key, value)(func)
@@ -59,7 +59,7 @@ def test_header(func: Callable) -> None:
     key: str = "name"
     value: str = "sam"
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.headers = Headers({key: value})
 
     decorators.header(key, value)(func)
@@ -71,7 +71,7 @@ def test_cookie(func: Callable) -> None:
     key: str = "name"
     value: str = "sam"
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.cookies = Cookies({key: value})
 
     decorators.cookie(key, value)(func)
@@ -83,7 +83,7 @@ def test_path(func: Callable) -> None:
     key: str = "name"
     value: str = "sam"
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.path_params = {key: value}
 
     decorators.path(key, value)(func)
@@ -94,7 +94,7 @@ def test_path(func: Callable) -> None:
 def test_query_params(func: Callable) -> None:
     query_params: QueryParamsTypes = {"name": "sam"}
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.params = converters.convert_query_params(query_params)
 
     decorators.params(query_params)(func)
@@ -105,7 +105,7 @@ def test_query_params(func: Callable) -> None:
 def test_headers(func: Callable) -> None:
     headers: HeadersTypes = {"name": "sam"}
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.headers = converters.convert_headers(headers)
 
     decorators.headers(headers)(func)
@@ -116,7 +116,7 @@ def test_headers(func: Callable) -> None:
 def test_cookies(func: Callable) -> None:
     cookies: CookiesTypes = {"name": "sam"}
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.cookies = converters.convert_cookies(cookies)
 
     decorators.cookies(cookies)(func)
@@ -127,7 +127,7 @@ def test_cookies(func: Callable) -> None:
 def test_path_params(func: Callable) -> None:
     path_params: PathParamsTypes = {"name": "sam"}
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.path_params = converters.convert_path_params(path_params)
 
     decorators.path_params(path_params)(func)
@@ -138,7 +138,7 @@ def test_path_params(func: Callable) -> None:
 def test_content(func: Callable) -> None:
     content: RequestContent = "content"
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.content = content
 
     decorators.content(content)(func)
@@ -149,7 +149,7 @@ def test_content(func: Callable) -> None:
 def test_data(func: Callable) -> None:
     data: RequestData = {"name": "sam"}
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.data = data
 
     decorators.data(data)(func)
@@ -160,7 +160,7 @@ def test_data(func: Callable) -> None:
 def test_files(func: Callable) -> None:
     files: RequestFiles = {"file.txt": BytesIO(b"content")}
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.files = files
 
     decorators.files(files)(func)
@@ -171,7 +171,7 @@ def test_files(func: Callable) -> None:
 def test_json(func: Callable) -> None:
     json: JsonTypes = {"name": "sam"}
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.json = json
 
     decorators.json(json)(func)
@@ -182,7 +182,7 @@ def test_json(func: Callable) -> None:
 def test_timeout(func: Callable) -> None:
     timeout: TimeoutTypes = 5.0
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.timeout = converters.convert_timeout(timeout)
 
     decorators.timeout(timeout)(func)
@@ -193,7 +193,7 @@ def test_timeout(func: Callable) -> None:
 def test_mount(func: Callable) -> None:
     mount: str = "/mount"
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.url = URL("/mount/foo")
 
     decorators.mount(mount)(func)
@@ -264,7 +264,7 @@ def test_response_depends(func: Callable[..., Any]) -> None:
 def test_user_agent(func: Callable) -> None:
     user_agent: str = "foo/1.0"
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.headers = Headers({"User-Agent": user_agent})
 
     decorators.user_agent(user_agent)(func)
@@ -275,7 +275,7 @@ def test_user_agent(func: Callable) -> None:
 def test_accept(func: Callable) -> None:
     accept: str = "en-GB"
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.headers = Headers({"Accept": accept})
 
     decorators.accept(accept)(func)
@@ -286,7 +286,7 @@ def test_accept(func: Callable) -> None:
 def test_referer(func: Callable) -> None:
     referer: str = "https://foo.bar/"
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.headers = Headers({"Referer": referer})
 
     decorators.referer(referer)(func)
@@ -327,16 +327,16 @@ def test_persist_pre_request(func: Callable[..., Any]) -> None:
 
     assert len(get_operation(func).request_dependencies) == 1
 
-    pre_request: RequestOptions = func()
+    pre_request: RequestOpts = func()
 
     assert hasattr(pre_request.state, "pre_request")
-    assert isinstance(pre_request.state.pre_request, RequestOptions)
+    assert isinstance(pre_request.state.pre_request, RequestOpts)
 
 
 def test_follow_redirects(func: Callable[..., Any]) -> None:
     follow_redirects: bool = not DEFAULT_FOLLOW_REDIRECTS
 
-    expected_pre_request: RequestOptions = get_operation(func).request_options.clone()
+    expected_pre_request: RequestOpts = get_operation(func).request_options.copy()
     expected_pre_request.follow_redirects = follow_redirects
 
     decorators.follow_redirects(follow_redirects)(func)

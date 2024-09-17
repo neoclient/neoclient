@@ -3,7 +3,7 @@ from typing import Any, Callable, MutableSequence, Type, TypeVar, Union
 
 from httpx import Cookies, Headers, QueryParams
 from neoclient.middlewares import Middleware
-from neoclient.models import ClientOptions, RequestOptions
+from neoclient.models import ClientOptions, RequestOpts
 from neoclient.operation import Operation, get_operation
 from neoclient.services import Service
 from neoclient.specification import ClientSpecification
@@ -12,7 +12,7 @@ from neoclient.typing import Consumer, Dependency, Function
 CS = TypeVar("CS", Callable[..., Any], Type[Service])
 
 DecoratorTarget = Union[Operation, ClientSpecification]
-Options = Union[ClientOptions, RequestOptions]
+Options = Union[ClientOptions, RequestOpts]
 
 
 class DecorationError(Exception):
@@ -112,7 +112,7 @@ def client_options_decorator(consumer: Consumer[ClientOptions], /):
     return decorate
 
 
-def request_options_decorator(consumer: Consumer[RequestOptions], /):
+def request_options_decorator(consumer: Consumer[RequestOpts], /):
     @operation_decorator
     def decorate(operation: Operation, /) -> None:
         consumer(operation.request_options)
