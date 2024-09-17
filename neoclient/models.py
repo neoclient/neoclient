@@ -18,7 +18,16 @@ from typing import (
 from typing_extensions import Self
 
 import httpx
-from httpx import URL, BaseTransport, Client, Cookies, Headers, Limits, QueryParams, Timeout
+from httpx import (
+    URL,
+    BaseTransport,
+    Client,
+    Cookies,
+    Headers,
+    Limits,
+    QueryParams,
+    Timeout,
+)
 from httpx._client import UseClientDefault, USE_CLIENT_DEFAULT
 
 from . import converters, utils
@@ -355,6 +364,7 @@ class ClientOptions:
             default_encoding=self.default_encoding,
         )
 
+
 @dataclass
 class BaseRequestOpts:
     # Note: These opts match the signature of httpx.Client.request
@@ -456,9 +466,11 @@ class BaseRequestOpts:
     def copy(self) -> Self:
         return dataclasses.replace(
             self,
-            timeout=self.timeout if self.timeout is not None else USE_CLIENT_DEFAULT, #  type: ignore
+            timeout=self.timeout
+            if self.timeout is not None
+            else USE_CLIENT_DEFAULT,  #  type: ignore
         )
-    
+
     def validate(self) -> None:
         return
 
@@ -521,15 +533,13 @@ class RequestOpts(BaseRequestOpts):
     def formatted_url(self) -> URL:
         # NOTE: Does URL encoding affect this?
         return URL(str(self.url).format(**self.path_params))
-    
+
     def validate(self):
         # NOTE: Does URL encoding affect this?
         url: str = str(self.url)
 
         expected_path_params: Set[str] = utils.parse_format_string(url)
         actual_path_params: Set[str] = set(self.path_params.keys())
-
-        print(url, expected_path_params, actual_path_params)
 
         # Validate path params are correct
         if expected_path_params != actual_path_params:

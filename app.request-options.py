@@ -121,9 +121,11 @@ class BaseRequestOpts:
     def copy(self) -> Self:
         return dataclasses.replace(
             self,
-            timeout=self.timeout if self.timeout is not None else USE_CLIENT_DEFAULT, #  type: ignore
+            timeout=self.timeout
+            if self.timeout is not None
+            else USE_CLIENT_DEFAULT,  #  type: ignore
         )
-    
+
     def validate(self) -> None:
         return
 
@@ -186,7 +188,7 @@ class RequestOpts(BaseRequestOpts):
     def formatted_url(self) -> URL:
         # NOTE: Does URL encoding affect this?
         return URL(str(self.url).format(**self.path_params))
-    
+
     def validate(self):
         # NOTE: Does URL encoding affect this?
         url: str = str(self.url)
@@ -201,7 +203,6 @@ class RequestOpts(BaseRequestOpts):
             raise IncompatiblePathParameters(
                 f"Expected {tuple(expected_path_params)}, got {tuple(actual_path_params)}"
             )
-    
 
     # TODO: merge, validate
 

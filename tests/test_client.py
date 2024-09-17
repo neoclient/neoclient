@@ -126,9 +126,7 @@ def test_multiple_body_params(client: NeoClient) -> None:
     def create_item(user: User = Body(), item: Item = Body()) -> RequestOpts:
         ...
 
-    assert create_item(
-        User(id=1, name="user"), Item(id=1, name="item")
-    ) == RequestOpts(
+    assert create_item(User(id=1, name="user"), Item(id=1, name="item")) == RequestOpts(
         method="POST",
         url="/items/",
         json={
@@ -145,9 +143,7 @@ def test_multiple_body_params_embedded(client: NeoClient) -> None:
     ) -> RequestOpts:
         ...
 
-    assert create_item(
-        User(id=1, name="user"), Item(id=1, name="item")
-    ) == RequestOpts(
+    assert create_item(User(id=1, name="user"), Item(id=1, name="item")) == RequestOpts(
         method="POST",
         url="/items/",
         json={
