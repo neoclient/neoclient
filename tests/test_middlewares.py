@@ -1,10 +1,10 @@
 import pytest
 
 from neoclient import Request, Response
-from neoclient.auths import Auth, BasicAuth
+from neoclient.auth import Auth, BasicAuth
 from neoclient.enums import HTTPHeader
 from neoclient.errors import ExpectedContentTypeError
-from neoclient.middlewares import AuthMiddleware, ExpectedContentTypeMiddleware
+from neoclient.middleware import AuthMiddleware, ExpectedContentTypeMiddleware
 from neoclient.typing import MiddlewareCallable
 
 from . import utils

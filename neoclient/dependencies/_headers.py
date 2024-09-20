@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Callable, Optional, Sequence
+from typing import Callable, Optional
 
 from neoclient.enums import HTTPHeader
 
 from ..models import Headers
 
-__all__: Sequence[str] = ("header", "location", "server")
+__all__ = ("header", "location", "server")
 
 
 @dataclass

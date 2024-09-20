@@ -1,12 +1,12 @@
 from abc import abstractmethod
-from typing import Any, Callable, Protocol, Sequence, TypeVar, runtime_checkable
+from typing import Any, Callable, Protocol, TypeVar, runtime_checkable
 
 import mediate
 from typing_extensions import TypeAlias
 
 from .models import ClientOptions, RequestOpts, Request, Response
 
-__all__: Sequence[str] = (
+__all__ = (
     "AnyCallable",
     "CallNext",
     "Decorator",

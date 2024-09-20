@@ -1,4 +1,4 @@
-from typing import Any, Callable, Mapping, Sequence, Tuple, Type
+from typing import Any, Callable, Mapping, Tuple, Type
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
@@ -6,7 +6,7 @@ from pydantic.fields import FieldInfo
 from . import utils
 from .validation import create_func_model
 
-__all__: Sequence[str] = (
+__all__ = (
     "create_model_cls",
     "create_model",
     "bind_arguments",

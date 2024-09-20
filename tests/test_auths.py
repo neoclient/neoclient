@@ -1,4 +1,4 @@
-from neoclient.auths import BasicAuth
+from neoclient.auth import BasicAuth
 from neoclient.enums import HTTPHeader
 from neoclient.models import Request
 

@@ -1,10 +1,8 @@
-from typing import Sequence
-
 from annotate import Annotation
 
 from .enums import Entity
 
-__all__: Sequence[str] = (
+__all__ = (
     "service_middleware",
     "service_response",
     "service_request_dependency",

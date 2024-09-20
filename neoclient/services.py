@@ -7,13 +7,13 @@ from mediate.protocols import MiddlewareCallable
 from .client import Client
 from .enums import Entity
 from .errors import ServiceInitialisationError
-from .middlewares import Middleware
+from .middleware import Middleware
 from .models import Request, Response
 from .operation import Operation, get_operation, has_operation
 from .specification import ClientSpecification
 from .typing import Dependency
 
-__all__: Sequence[str] = ("Service",)
+__all__ = ("Service",)
 
 
 class ServiceMeta(type):

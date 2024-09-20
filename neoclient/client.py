@@ -37,7 +37,7 @@ from .defaults import (
     DEFAULT_TRUST_ENV,
 )
 from .enums import HTTPHeader, HTTPMethod
-from .middlewares import Middleware
+from .middleware import Middleware
 from .models import ClientOptions, RequestOpts, Request, Response
 from .operation import Operation, get_operation
 from .types import (
@@ -55,7 +55,7 @@ from .types import (
 )
 from .typing import Dependency
 
-__all__: Sequence[str] = (
+__all__ = (
     "Session",
     "Client",
     "NeoClient",

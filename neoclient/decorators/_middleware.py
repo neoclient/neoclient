@@ -4,7 +4,7 @@ from mediate.protocols import MiddlewareCallable
 
 from neoclient.decorators.api import CS, middleware_decorator
 
-from neoclient.middlewares import (
+from neoclient.middleware import (
     ExpectedContentTypeMiddleware,
     ExpectedHeaderMiddleware,
     ExpectedStatusCodeMiddleware,

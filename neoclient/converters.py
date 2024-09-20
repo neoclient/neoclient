@@ -19,7 +19,7 @@ from .types import (
 )
 from .utils import is_primitive
 
-__all__: Sequence[str] = (
+__all__ = (
     "convert_query_param",
     "convert_header",
     "convert_cookie",

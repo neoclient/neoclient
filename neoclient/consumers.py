@@ -22,7 +22,7 @@ from .types import (
 )
 from .typing import SupportsConsumeClient, SupportsConsumeRequest
 
-__all__: Sequence[str] = (
+__all__ = (
     "QueryConsumer",
     "HeaderConsumer",
     "CookieConsumer",

@@ -1,11 +1,11 @@
 from datetime import timedelta
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional
 
 from httpx import URL, Cookies, Headers, QueryParams, Request, Response
 
 from ..types import StreamTypes
 
-__all__: Sequence[str] = (
+__all__ = (
     "charset_encoding",
     "content",
     "cookies",

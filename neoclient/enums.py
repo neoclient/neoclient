@@ -1,7 +1,6 @@
 from enum import Enum, auto
-from typing import Sequence
 
-__all__: Sequence[str] = (
+__all__ = (
     "Entity",
     "HTTPMethod",
     "HTTPHeader",

@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Optional
 
 from httpx import URL, Limits, Timeout
 
@@ -14,7 +14,7 @@ from .types import (
     VerifyTypes,
 )
 
-__all__: Sequence[str] = (
+__all__ = (
     "DEFAULT_BASE_URL",
     "DEFAULT_AUTH",
     "DEFAULT_PARAMS",

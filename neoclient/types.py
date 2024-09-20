@@ -20,7 +20,7 @@ from httpx._types import (
 )
 from typing_extensions import TypeAlias
 
-__all__: Sequence[str] = (
+__all__ = (
     "AuthTypes",
     "CertTypes",
     "ProxiesTypes",
@@ -63,11 +63,13 @@ QueryTypes: TypeAlias = Any
 HeaderTypes: TypeAlias = Union[Primitive, Sequence[Primitive]]
 CookieTypes: TypeAlias = Any
 PathTypes: TypeAlias = Union[Primitive, Sequence[Primitive]]
+# NOTE: This `QueryParamsTypes` differs from `httpx._types.QueryParamTypes`
+# as it accepts sequences instead of lists/tuples
 QueryParamsTypes: TypeAlias = Union[
     QueryParams,
     Mapping[str, Union[Primitive, Sequence[Primitive]]],
     Sequence[Tuple[str, Primitive]],
-    Sequence[str],
+    Sequence[str], # added
     str,
     bytes,
 ]

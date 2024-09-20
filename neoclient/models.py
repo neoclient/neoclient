@@ -68,7 +68,7 @@ from .types import (
     VerifyTypes,
 )
 
-__all__: Sequence[str] = (
+__all__ = (
     # httpx models
     "Cookies",
     "Headers",
