@@ -1,7 +1,10 @@
+from typing import Any
+
 from di import Container, bind_by_type
+from di.api.dependencies import DependentBase
 from di.dependent import Dependent
 from di.executors import SyncExecutor
-from httpx import Request, Headers, Response
+from httpx import Headers, Request, Response
 
 request = Request("GET", "/", headers={"origin": "Request!"})
 response = Response(200, headers={"origin": "Response!"})
@@ -44,25 +47,32 @@ def build_response_container() -> Container:
     return container
 
 
-container = build_response_container()
-
-# container.bind(bind_by_type(Dependent(extract_headers_from_request, scope="request"), Headers))
-# container.bind(bind_by_type(Dependent(extract_headers_from_response, scope="response"), Headers))
-# container.bind(bind_by_type(Dependent(Request, wire=False, scope="request"), Request))
-# container.bind(bind_by_type(Dependent(extract_request, scope="response"), Request))
-
+request_container = build_request_container()
+response_container = build_response_container()
 executor = SyncExecutor()
 
-# solved = container.solve(Dependent(extract_origin), scopes=("request", "response"))
-solved = container.solve(Dependent(extract_origin), scopes=(None,))
 
-# with container.enter_scope("response") as state:
-with container.enter_scope(None) as state:
-    origin = solved.execute_sync(
-        # executor=executor, state=state, values={Request: request}
-        executor=executor,
-        state=state,
-        values={Response: response},
-    )
+def solve_from_request(dependent: DependentBase[Any], /) -> str:
+    solved = request_container.solve(Dependent(dependent), scopes=(None,))
 
-print(origin)
+    with request_container.enter_scope(None) as state:
+        return solved.execute_sync(
+            executor=executor,
+            state=state,
+            values={Request: request},
+        )
+
+
+def solve_from_response(dependent: DependentBase[Any], /) -> str:
+    solved = response_container.solve(Dependent(dependent), scopes=(None,))
+
+    with response_container.enter_scope(None) as state:
+        return solved.execute_sync(
+            executor=executor,
+            state=state,
+            values={Response: response},
+        )
+
+
+o1 = solve_from_request(extract_origin)
+o2 = solve_from_response(extract_origin)
