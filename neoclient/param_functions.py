@@ -26,7 +26,7 @@ from .params import (
 )
 from .typing import Supplier
 
-__all__: Sequence[str] = (
+__all__ = (
     "Query",
     "Header",
     "Cookie",

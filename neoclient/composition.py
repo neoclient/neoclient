@@ -10,7 +10,6 @@ from typing import (
     Mapping,
     MutableMapping,
     MutableSequence,
-    Sequence,
     Set,
     Tuple,
 )
@@ -30,7 +29,7 @@ from .params import (
 )
 from .validation import ValidatedFunction
 
-__all__: Sequence[str] = (
+__all__ = (
     "get_fields",
     "validate_fields",
     "compose",

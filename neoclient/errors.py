@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
 
 from .enums import HTTPHeader
 
-__all__: Sequence[str] = (
+__all__ = (
     "DuplicateParameters",
     "IncompatiblePathParameters",
     "PreparationError",

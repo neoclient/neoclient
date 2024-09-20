@@ -1,5 +1,5 @@
-from ..auths import Auth, BasicAuth
-from ..middlewares import AuthMiddleware
+from ..auth import Auth, BasicAuth
+from ..middleware import AuthMiddleware
 from ._middleware import middleware
 
 __all__ = ("auth", "basic_auth")

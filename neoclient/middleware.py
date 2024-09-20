@@ -5,7 +5,7 @@ import mediate
 import mediatype
 from mediatype import MediaType
 
-from .auths import Auth
+from .auth import Auth
 from .enums import HTTPHeader
 from .errors import (
     ExpectedContentTypeError,
@@ -15,7 +15,7 @@ from .errors import (
 from .models import Request, Response
 from .typing import CallNext, MiddlewareCallable
 
-__all__: Sequence[str] = (
+__all__ = (
     "Middleware",
     "AuthMiddleware",
     "ExpectedStatusCodeMiddleware",

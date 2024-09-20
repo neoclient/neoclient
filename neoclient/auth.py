@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 from base64 import b64encode
 from dataclasses import dataclass
-from typing import Sequence, TypeVar
+from typing import TypeVar
 
 import httpx
 
 from .enums import HTTPHeader
 
-__all__: Sequence[str] = (
+__all__ = (
     "Auth",
     "BasicAuth",
 )

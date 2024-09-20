@@ -1,11 +1,11 @@
 from dataclasses import dataclass, field
-from typing import MutableSequence, Optional, Sequence
+from typing import MutableSequence, Optional
 
-from .middlewares import Middleware
+from .middleware import Middleware
 from .models import ClientOptions
 from .typing import Dependency
 
-__all__: Sequence[str] = ("ClientSpecification",)
+__all__ = ("ClientSpecification",)
 
 
 @dataclass

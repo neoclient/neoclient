@@ -8,7 +8,6 @@ from typing import (
     MutableMapping,
     MutableSequence,
     Optional,
-    Sequence,
     Set,
     Tuple,
     Type,
@@ -20,7 +19,7 @@ from pydantic import BaseConfig, BaseModel, create_model
 from pydantic.fields import FieldInfo, Undefined
 from pydantic.typing import display_as_type
 
-__all__: Sequence[str] = (
+__all__ = (
     "parse_format_string",
     "bind_arguments",
     "is_primitive",

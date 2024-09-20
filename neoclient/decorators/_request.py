@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Optional, Sequence, TypeVar
+from typing import Callable, Optional, TypeVar
 
 from typing_extensions import ParamSpec
 
@@ -7,7 +7,7 @@ from ..client import Client
 from ..enums import HTTPMethod
 from ..typing import Dependency
 
-__all__: Sequence[str] = (
+__all__ = (
     "request",
     "put",
     "get",

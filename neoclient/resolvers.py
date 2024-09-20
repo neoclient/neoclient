@@ -6,7 +6,7 @@ from httpx import Cookies, Headers, QueryParams
 from .models import RequestOpts, Response, State
 from .typing import ResponseResolver, SupportsResolveRequest, SupportsResolveResponse
 
-__all__: Sequence[str] = (
+__all__ = (
     "BodyResolver",
     "CookieResolver",
     "CookiesResolver",

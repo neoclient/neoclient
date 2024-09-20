@@ -53,7 +53,7 @@ from .types import CookiesTypes, HeadersTypes, PathParamsTypes, QueryParamsTypes
 from .typing import RequestConsumer, RequestResolver, ResponseResolver, Supplier
 from .utils import parse_obj_as
 
-__all__: Sequence[str] = (
+__all__ = (
     "QueryParameter",
     "HeaderParameter",
     "CookieParameter",

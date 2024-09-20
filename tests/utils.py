@@ -1,10 +1,9 @@
 from http import HTTPStatus
-from typing import Sequence
 
 from neoclient.enums import HTTPMethod
 from neoclient.models import RequestOpts, Request, Response
 
-__all__: Sequence[str] = (
+__all__ = (
     "build_request",
     "build_response",
 )

@@ -3,7 +3,7 @@ import inspect
 from dataclasses import dataclass, field
 from json import JSONDecodeError
 from types import FunctionType, MethodType
-from typing import Any, Callable, Generic, MutableSequence, Optional, Sequence, TypeVar
+from typing import Any, Callable, Generic, MutableSequence, Optional, TypeVar
 
 import httpx
 import pydantic
@@ -13,12 +13,12 @@ from typing_extensions import ParamSpec
 
 from .composition import compose
 from .errors import NotAnOperationError
-from .middlewares import Middleware
+from .middleware import Middleware
 from .models import ClientOptions, RequestOpts, Request, Response
 from .resolution import resolve_request, resolve_response
 from .typing import Dependency
 
-__all__: Sequence[str] = (
+__all__ = (
     "set_operation",
     "has_operation",
     "get_operation",
