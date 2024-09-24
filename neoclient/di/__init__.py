@@ -1,27 +1,101 @@
-from typing import TypeVar
-from ..models import RequestOpts, Response
-from di.api.providers import DependencyProviderType
+from typing import Any, Final, Mapping, TypeVar
+from ..models import RequestOpts, Response, Headers, Cookies, URL, QueryParams
+
+from di import Container, bind_by_type, SolvedDependent
+from di.api.providers import DependencyProviderType, DependencyProvider
+from di.api.executor import SupportsSyncExecutor
+from di.dependent import Dependent
+from di.executors import SyncExecutor
+
+EXECUTOR: Final[SupportsSyncExecutor] = SyncExecutor()
 
 T = TypeVar("T")
 
 
-def inject_response(dependency: DependencyProviderType[T], response: Response) -> T:
-    raise NotImplementedError
+# Common dependencies:
+def _url_from_request(request: RequestOpts, /) -> URL:
+    return request.url
 
 
-def inject_request(dependency: DependencyProviderType[T], request: RequestOpts) -> T:
-    raise NotImplementedError
+def _params_from_url(url: URL, /) -> QueryParams:
+    return url.params
 
 
-"""
+# Request-scoped dependencies:
+def _headers_from_request(request: RequestOpts, /) -> Headers:
+    return request.headers
+
+
+def _cookies_from_request(request: RequestOpts, /) -> Cookies:
+    return request.cookies
+
+
+# Response-scoped dependencies:
+def _request_from_response(response: Response, /) -> RequestOpts:
+    return response.request
+
+
+def _headers_from_response(response: Response, /) -> Headers:
+    return response.headers
+
+
+def _cookies_from_response(response: Response, /) -> Cookies:
+    return response.cookies
+
+
+request_container = Container()
+# neuter:
+request_container.bind(bind_by_type(Dependent(RequestOpts, wire=False), RequestOpts))
+request_container.bind(bind_by_type(Dependent(Response, wire=False), Response))
+# common:
+request_container.bind(bind_by_type(Dependent(_url_from_request), URL))
+request_container.bind(bind_by_type(Dependent(_params_from_url), QueryParams))
+# request:
+request_container.bind(bind_by_type(Dependent(_headers_from_request), Headers))
+request_container.bind(bind_by_type(Dependent(_cookies_from_request), Cookies))
+
+response_container = Container()
+# neuter:
+response_container.bind(bind_by_type(Dependent(Response, wire=False), Response))
+# common:
+response_container.bind(bind_by_type(Dependent(_url_from_request), URL))
+response_container.bind(bind_by_type(Dependent(_params_from_url), QueryParams))
+# response:
+response_container.bind(bind_by_type(Dependent(_request_from_response), RequestOpts))
+response_container.bind(bind_by_type(Dependent(_headers_from_response), Headers))
+response_container.bind(bind_by_type(Dependent(_cookies_from_response), Cookies))
+
+
+def _solve_and_execute(
+    container: Container,
+    dependent: DependencyProviderType[T],
+    values: Mapping[DependencyProvider, Any] | None = None,
+) -> T:
+    solved: SolvedDependent[T] = container.solve(
+        Dependent(dependent),
+        scopes=(None,),
+    )
+
+    with container.enter_scope(None) as state:
+        return solved.execute_sync(
+            executor=EXECUTOR,
+            state=state,
+            values=values,
+        )
+
+
 # inject, solve, execute, resolve, handle
-from neoclient.di import inject_request
-from neoclient import Request
+def inject_request(dependent: DependencyProviderType[T], request: RequestOpts) -> T:
+    return _solve_and_execute(
+        request_container,
+        dependent,
+        {RequestOpts: request},
+    )
 
-my_request = Request("GET", "/")
 
-def my_referer_dependency(request: Request) -> str:
-  return request.headers["referer"]
-
-referer = inject_request(my_referer_dependency, my_request)
-"""
+def inject_response(dependent: DependencyProviderType[T], response: Response) -> T:
+    return _solve_and_execute(
+        response_container,
+        dependent,
+        {Response: response},
+    )
