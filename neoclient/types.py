@@ -69,7 +69,7 @@ QueryParamsTypes: TypeAlias = Union[
     QueryParams,
     Mapping[str, Union[Primitive, Sequence[Primitive]]],
     Sequence[Tuple[str, Primitive]],
-    Sequence[str], # added
+    Sequence[str],  # added
     str,
     bytes,
 ]

@@ -1,12 +1,12 @@
 import inspect
 from typing import Any, NoReturn, Optional
-from typing_extensions import Annotated
-from di import Container
+
+import httpx
+from di import Container, bind_by_type
+from di.api.dependencies import DependentBase
 from di.dependent import Dependent, Marker
 from di.executors import SyncExecutor
-from di.api.dependencies import DependentBase
-from di import bind_by_type
-import httpx
+from typing_extensions import Annotated
 
 # class Request(httpx.Request):
 #     @classmethod
@@ -45,25 +45,28 @@ response = httpx.Response(
     request=request,
 )
 
+
 def dep_request(response: httpx.Response, /) -> httpx.Request:
     return response.request
+
 
 # def extract_headers(request: httpx.Request, /) -> httpx.Headers:
 # def extract_headers(request: Annotated[httpx.Request, Marker(request_stub, wire=False)], /) -> httpx.Headers:
 def extract_headers(
-    request: httpx.Request, /
+    request: httpx.Request,
+    /,
     # r: Annotated[httpx.Request, Marker(wire=False)], /
 ) -> httpx.Headers:
     return request.headers
 
 
 def _raise(param: Optional[inspect.Parameter], dependent: DependentBase[Any]) -> Any:
-    raise RuntimeError(
-        f"The parameter {param} to {dependent.call} is not wirable"
-    )
+    raise RuntimeError(f"The parameter {param} to {dependent.call} is not wirable")
+
 
 def _raise2() -> NoReturn:
     raise RuntimeError("Not wirable")
+
 
 container = Container()
 # bind_by_type

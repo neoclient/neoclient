@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from httpx import QueryParams
+
 from di import Container
 from di.dependent import Dependent
 from di.executors import SyncExecutor
+from httpx import QueryParams
 
 
 class A: ...

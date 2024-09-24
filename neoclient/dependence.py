@@ -23,7 +23,7 @@ from pydantic.fields import FieldInfo, ModelField
 
 from . import api, utils
 from .errors import PreparationError, ResolutionError
-from .models import RequestOpts, Request, Response, State
+from .models import Request, RequestOpts, Response, State
 from .params import (
     AllStateParameter,
     BodyParameter,

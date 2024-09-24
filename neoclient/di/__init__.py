@@ -1,11 +1,21 @@
 from typing import Any, Final, Mapping, TypeVar
-from ..models import RequestOpts, Response, Headers, Cookies, URL, QueryParams
 
-from di import Container, bind_by_type, SolvedDependent
-from di.api.providers import DependencyProviderType, DependencyProvider
+from di import Container, SolvedDependent, bind_by_type
 from di.api.executor import SupportsSyncExecutor
+from di.api.providers import DependencyProvider, DependencyProviderType
 from di.dependent import Dependent
 from di.executors import SyncExecutor
+
+from ..models import (
+    URL,
+    Cookies,
+    Headers,
+    QueryParams,
+    Request,
+    RequestOpts,
+    Response,
+    State,
+)
 
 EXECUTOR: Final[SupportsSyncExecutor] = SyncExecutor()
 
@@ -30,8 +40,12 @@ def _cookies_from_request(request: RequestOpts, /) -> Cookies:
     return request.cookies
 
 
+def _state_from_request(request: RequestOpts, /) -> State:
+    return request.state
+
+
 # Response-scoped dependencies:
-def _request_from_response(response: Response, /) -> RequestOpts:
+def _request_from_response(response: Response, /) -> Request:
     return response.request
 
 
@@ -41,6 +55,10 @@ def _headers_from_response(response: Response, /) -> Headers:
 
 def _cookies_from_response(response: Response, /) -> Cookies:
     return response.cookies
+
+
+def _state_from_response(response: Response, /) -> State:
+    return response.state
 
 
 request_container = Container()
@@ -53,17 +71,20 @@ request_container.bind(bind_by_type(Dependent(_params_from_url), QueryParams))
 # request:
 request_container.bind(bind_by_type(Dependent(_headers_from_request), Headers))
 request_container.bind(bind_by_type(Dependent(_cookies_from_request), Cookies))
+request_container.bind(bind_by_type(Dependent(_state_from_request), State))
 
 response_container = Container()
 # neuter:
+request_container.bind(bind_by_type(Dependent(RequestOpts, wire=False), RequestOpts))
 response_container.bind(bind_by_type(Dependent(Response, wire=False), Response))
 # common:
 response_container.bind(bind_by_type(Dependent(_url_from_request), URL))
 response_container.bind(bind_by_type(Dependent(_params_from_url), QueryParams))
 # response:
-response_container.bind(bind_by_type(Dependent(_request_from_response), RequestOpts))
+response_container.bind(bind_by_type(Dependent(_request_from_response), Request))
 response_container.bind(bind_by_type(Dependent(_headers_from_response), Headers))
 response_container.bind(bind_by_type(Dependent(_cookies_from_response), Cookies))
+response_container.bind(bind_by_type(Dependent(_state_from_response), State))
 
 
 def _solve_and_execute(
