@@ -91,9 +91,11 @@ def _solve_and_execute(
     container: Container,
     dependent: DependencyProviderType[T],
     values: Mapping[DependencyProvider, Any] | None = None,
+    *,
+    use_cache: bool = True,
 ) -> T:
     solved: SolvedDependent[T] = container.solve(
-        Dependent(dependent),
+        Dependent(dependent, use_cache=use_cache),
         scopes=(None,),
     )
 
@@ -106,17 +108,29 @@ def _solve_and_execute(
 
 
 # inject, solve, execute, resolve, handle
-def inject_request(dependent: DependencyProviderType[T], request: RequestOpts) -> T:
+def inject_request(
+    dependent: DependencyProviderType[T],
+    request: RequestOpts,
+    *,
+    use_cache: bool = True,
+) -> T:
     return _solve_and_execute(
         request_container,
         dependent,
         {RequestOpts: request},
+        use_cache=use_cache,
     )
 
 
-def inject_response(dependent: DependencyProviderType[T], response: Response) -> T:
+def inject_response(
+    dependent: DependencyProviderType[T],
+    response: Response,
+    *,
+    use_cache: bool = True,
+) -> T:
     return _solve_and_execute(
         response_container,
         dependent,
         {Response: response},
+        use_cache=use_cache,
     )
