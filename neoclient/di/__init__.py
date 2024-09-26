@@ -1,10 +1,30 @@
-from typing import Any, Final, Mapping, TypeVar
+import dataclasses
+import inspect
+from typing import Any, Final, Mapping, Optional, Type, TypeVar
 
+import httpx
 from di import Container, SolvedDependent, bind_by_type
+from di.api.dependencies import DependentBase
 from di.api.executor import SupportsSyncExecutor
 from di.api.providers import DependencyProvider, DependencyProviderType
 from di.dependent import Dependent
 from di.executors import SyncExecutor
+from pydantic import BaseModel
+from pydantic.fields import ModelField, Undefined, FieldInfo
+
+from neoclient import utils
+from neoclient.params import (
+    Parameter,
+    AllStateParameter,
+    CookiesParameter,
+    HeadersParameter,
+    QueryParameter,
+    QueryParamsParameter,
+    RequestParameter,
+    ResponseParameter,
+    URLParameter,
+)
+from neoclient.validation import create_func_model, parameter_to_model_field
 
 from ..models import (
     URL,
@@ -85,6 +105,97 @@ response_container.bind(bind_by_type(Dependent(_request_from_response), Request)
 response_container.bind(bind_by_type(Dependent(_headers_from_response), Headers))
 response_container.bind(bind_by_type(Dependent(_cookies_from_response), Cookies))
 response_container.bind(bind_by_type(Dependent(_state_from_response), State))
+
+
+# Bind Hook(s)
+# WARN: The order is important for bind hooks. Later binds take precedence.
+PARAMETER_INFERENCE_LOOKUP: Mapping[Type[Any], Type[Parameter]] = {
+    # RequestOpts: RequestParameter,
+    # Request: RequestParameter,
+    # Response: ResponseParameter,
+    # httpx.Request: RequestParameter,
+    # httpx.Response: ResponseParameter,
+    # URL: URLParameter,
+    # QueryParams: QueryParamsParameter,
+    # Headers: HeadersParameter,
+    # Cookies: CookiesParameter,
+    # State: AllStateParameter,
+}
+
+
+def _bind_hook_parameter_inference(
+    param: Optional[inspect.Parameter], dependent: DependentBase[Any]
+) -> Optional[DependentBase[Any]]:
+    if param is None:
+        return None
+
+    print(param.name, param.kind, param.default, param.annotation)
+
+    model_field: ModelField = parameter_to_model_field(param)
+    field_info: FieldInfo = model_field.field_info
+
+    parameter: Parameter
+
+    if isinstance(field_info, Parameter):
+        parameter = field_info
+    elif isinstance(model_field.annotation, str):
+        parameter = QueryParameter(
+            default=utils.get_default(field_info),
+        )
+    else:
+        raise Exception("wtf")
+    
+    # Create a clone of the parameter so that any mutations do not affect the original
+    parameter_clone: Parameter = dataclasses.replace(parameter)
+
+    parameter_clone.prepare(model_field)
+
+    return Dependent(lambda: f"inferred that {param.name} is a {type(parameter).__name__}")
+
+    # return None
+
+        # if model_field.annotation in infer_lookup:
+        #     parameter = infer_lookup[model_field.annotation]()
+        # elif (
+        #     (
+        #         isinstance(model_field.annotation, type)
+        #         and issubclass(model_field.annotation, (BaseModel, dict))
+        #     )
+        #     or dataclasses.is_dataclass(model_field.annotation)
+        #     or (
+        #         utils.is_generic_alias(model_field.annotation)
+        #         and typing.get_origin(model_field.annotation)
+        #         in (collections.abc.Mapping,)
+        #     )
+        # ):
+        #     parameter = BodyParameter(
+        #         default=utils.get_default(field_info),
+        #     )
+
+    # Exit, as inference not needed?
+    # if isinstance(field_info, FieldInfo):
+    #     return None
+
+    # If type is obvious (e.g. Headers, Cookies)
+    # ...
+
+    # If type looks like a body parameter (e.g. is a dataclass or model)
+    # ...
+
+    # Otherwise, assume it's a query parameter
+    # parameter = QueryParameter(
+    #     default=utils.get_default(field_info),
+    # )
+    # return
+
+    # print(repr(model_field), repr(model_field.field_info))
+    # print()
+
+    # return None
+
+
+request_container.bind(_bind_hook_parameter_inference)
+response_container.bind(_bind_hook_parameter_inference)
 
 
 def _solve_and_execute(

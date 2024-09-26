@@ -23,6 +23,7 @@ from pydantic.main import BaseModel, create_model
 from pydantic.typing import get_all_type_hints
 from pydantic.utils import to_camel
 from typing_extensions import ParamSpec
+from pydantic.fields import ModelField
 
 __all__ = (
     "create_func_model",
@@ -69,7 +70,7 @@ def validate(
 
 
 def create_func_model(
-    function: Callable,
+    name: str,
     fields: Mapping[str, Any],
     *,
     config: Optional[ConfigType] = None,
@@ -96,10 +97,23 @@ def create_func_model(
     )
 
     return create_model(
-        to_camel(function.__name__),
+        to_camel(name),
         __base__=ValidatedFunctionBaseModel,
         **fields,
     )
+
+# NOTE: Does this belong here? It's not currently used by this module.
+def parameter_to_model_field(parameter: Parameter, /) -> ModelField:
+    annotation: Any = (
+        Any if parameter.annotation is Parameter.empty else parameter.annotation
+    )
+    default: Any = (
+        Undefined if parameter.default is Parameter.empty else parameter.default
+    )
+
+    return create_func_model(
+        parameter.name, {parameter.name: (annotation, default)}
+    ).__fields__[parameter.name]
 
 
 class ValidatedFunction(Generic[PS, RT]):
@@ -135,7 +149,7 @@ class ValidatedFunction(Generic[PS, RT]):
             else:
                 fields[parameter_name] = (annotation, default)
 
-        self.model = create_func_model(function, fields, config=config)
+        self.model = create_func_model(function.__name__, fields, config=config)
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__}(function={self.function!r})>"
