@@ -31,7 +31,8 @@ response = Response(
 #     return state
 
 
-def my_dependency(name: str = Query()) -> str:
+# def my_dependency(name: str = Query()) -> str:
+def my_dependency(name: str) -> str:
     return f"Hello, {name!r}"
 
 

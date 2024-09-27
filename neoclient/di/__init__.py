@@ -126,6 +126,8 @@ PARAMETER_INFERENCE_LOOKUP: Mapping[Type[Any], Type[Parameter]] = {
 def _bind_hook_parameter_inference(
     param: Optional[inspect.Parameter], dependent: DependentBase[Any]
 ) -> Optional[DependentBase[Any]]:
+    print("_bind_hook_parameter_inference", repr(param), dependent)
+
     if param is None:
         return None
 
@@ -138,19 +140,30 @@ def _bind_hook_parameter_inference(
 
     if isinstance(field_info, Parameter):
         parameter = field_info
-    elif isinstance(model_field.annotation, str):
+    # elif model_field.annotation in PARAMETER_INFERENCE_LOOKUP:
+    #     parameter = PARAMETER_INFERENCE_LOOKUP[model_field.annotation]()
+    elif issubclass(model_field.annotation, str): # TEMP
         parameter = QueryParameter(
             default=utils.get_default(field_info),
         )
     else:
-        raise Exception("wtf")
+        # raise Exception("wtf")
+        return None # assume a dep will exist for it
     
     # Create a clone of the parameter so that any mutations do not affect the original
     parameter_clone: Parameter = dataclasses.replace(parameter)
 
     parameter_clone.prepare(model_field)
 
-    return Dependent(lambda: f"inferred that {param.name} is a {type(parameter).__name__}")
+    print(repr(parameter_clone), parameter_clone.alias)
+
+    # TODO: Rename me.
+    # def supply():
+    #     return parameter_clone.resolve_request(...) # FIXME
+
+    # return Dependent(lambda: f"inferred that {param.name} is a {type(parameter).__name__}")
+    # return Dependent(parameter_clone.to_dependent(), wire=False)
+    return Dependent(parameter_clone.to_dependent())
 
     # return None
 
