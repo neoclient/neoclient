@@ -11,7 +11,7 @@ from typing import (
 
 from di import Container
 from di.api.dependencies import DependentBase
-from di.api.providers import DependencyProviderType
+from di.api.providers import DependencyProvider, DependencyProviderType
 from di.dependent import Dependent
 from di.executors import SyncExecutor
 from httpx import Headers, QueryParams
@@ -38,9 +38,12 @@ def bean(func: C, /) -> C:
 
 
 @bean
-def extract_headers_from_request(request: RequestOpts, /) -> Headers:
+def _headers(request: RequestOpts, /) -> Headers:
     return request.headers
 
+@bean
+def _params(request: RequestOpts, /) -> QueryParams:
+    return request.params
 
 container = Container()
 
@@ -58,6 +61,17 @@ container = Container()
 # container.bind(bind_by_type(Dependent(RequestOpts, wire=False), RequestOpts))
 
 
+def infer_dependency(
+    parameter: inspect.Parameter, /
+) -> Optional[DependencyProvider]:
+    if parameter.name == "headers":
+        return _headers
+    elif parameter.name == "params":
+        return _params
+    
+    return None
+
+
 def _bind_hook(
     param: Optional[inspect.Parameter], dependent: DependentBase[Any]
 ) -> Optional[DependentBase[Any]]:
@@ -68,7 +82,7 @@ def _bind_hook(
 
     if not isinstance(param.annotation, type):
         raise NotImplementedError  # TODO
-    
+
     # TEMP
     if param.annotation is RequestOpts:
         return Dependent(RequestOpts, wire=False)
@@ -85,6 +99,12 @@ def _bind_hook(
         return Dependent(providers[0])
         # return None
 
+    # Attempt inference
+    inferred = infer_dependency(param)
+
+    if inferred is not None:
+        return Dependent(inferred)
+
     raise Exception(f"No provider registered for {param.annotation!r}")
 
 
@@ -92,7 +112,7 @@ def _bind_hook(
 container.bind(_bind_hook)
 
 
-def my_dependency(params: QueryParams, /):
+def my_dependency(params):
     return params
 
 
@@ -106,7 +126,5 @@ with container.enter_scope(None) as state:
     d = solved.execute_sync(
         executor=executor,
         state=state,
-        values={
-            RequestOpts: RequestOpts("GET", "/", headers={"x-name": "bob"})
-        },
+        values={RequestOpts: RequestOpts("GET", "/", params={"sort": "asc"}, headers={"x-name": "bob"})},
     )
