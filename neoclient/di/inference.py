@@ -1,18 +1,29 @@
 import inspect
-from typing import Mapping, Optional
+from typing import Optional
 
 from di.api.providers import DependencyProvider
+from httpx import Cookies, Headers, QueryParams
 
-from neoclient.di.dependencies import request_headers, request_params
+from neoclient.di.dependencies import DEPENDENCIES
+from neoclient.di.enums import Profile
 
-NAME_LOOKUP: Mapping[str, DependencyProvider] = {
-    "headers": request_headers,
-    "params": request_params,
+# TODO: Support names like "request_headers"
+NAME_LOOKUP = {
+    "headers": Headers,
+    "params": QueryParams,
+    "cookies": Cookies,
 }
 
 
-def infer_dependency(parameter: inspect.Parameter, /) -> Optional[DependencyProvider]:
+def infer_dependency(
+    parameter: inspect.Parameter, profile: Profile
+) -> Optional[DependencyProvider]:
+    dependencies = DEPENDENCIES[profile]
+
     if parameter.name in NAME_LOOKUP:
-        return NAME_LOOKUP[parameter.name]
+        typ = NAME_LOOKUP[parameter.name]
+
+        if typ in dependencies:
+            return dependencies[typ]
 
     return None
