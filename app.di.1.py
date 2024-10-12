@@ -70,7 +70,8 @@ def _raise2() -> NoReturn:
 
 container = Container()
 # bind_by_type
-container.bind(bind_by_type(Dependent(wire=False, call=_raise2), httpx.Request))
+# container.bind(bind_by_type(Dependent(wire=False, call=_raise2), httpx.Request))
+container.bind(bind_by_type(Dependent(httpx.Request, wire=False), httpx.Request))
 # container.bind(bind_by_type(Dependent(wire=False, call=_raise2), httpx.Request, covariant=True))
 # container.bind(match_by_parameter_name)
 executor = SyncExecutor()

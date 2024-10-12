@@ -11,8 +11,8 @@ def bind_hook(
     param: Optional[Parameter], dependent: DependentBase[Any]
 ) -> Optional[DependentBase[Any]]:
     print("bind hook called", param, dependent)
-    if param is not None and param.name == "name":
-        return Dependent(lambda: "Name!", scope=None)
+    # if param is not None and param.name == "name":
+    #     return Dependent(lambda: "Name!", scope=None)
     return None
 
 

@@ -8,7 +8,7 @@ from di.executors import SyncExecutor
 from httpx import Headers, Request, Response
 
 request = Request("GET", "/", headers={"origin": "Request!"})
-response = Response(200, headers={"origin": "Response!"})
+response = Response(200, headers={"origin": "Response!"}, request=request)
 
 request_container = Container()
 request_container.bind(bind_by_type(Dependent(Request, wire=False), Request))
@@ -58,14 +58,17 @@ def extract_origin(headers: Headers, /) -> str:
     return headers["origin"]
 
 
-def my_dependency(origin: Annotated[str, Marker(extract_origin)], /) -> str:
-    return f"Origin: {origin}"
+# def my_dependency(origin: Annotated[str, Marker(extract_origin)], /) -> str:
+#     return f"Origin: {origin}"
+
+def my_dependency(request: Request, /) -> Request:
+    return request
 
 
 executor = SyncExecutor()
 
 
-def solve_from_request(dependent: DependentBase[Any], /) -> str:
+def solve_from_request(dependent, /) -> str:
     solved = request_container.solve(Dependent(dependent), scopes=(None,))
 
     with request_container.enter_scope(None) as state:
@@ -76,7 +79,7 @@ def solve_from_request(dependent: DependentBase[Any], /) -> str:
         )
 
 
-def solve_from_response(dependent: DependentBase[Any], /) -> str:
+def solve_from_response(dependent, /) -> str:
     solved = response_container.solve(Dependent(dependent), scopes=(None,))
 
     with response_container.enter_scope(None) as state:

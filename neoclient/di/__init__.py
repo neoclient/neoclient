@@ -95,7 +95,7 @@ request_container.bind(bind_by_type(Dependent(_state_from_request), State))
 
 response_container = Container()
 # neuter:
-request_container.bind(bind_by_type(Dependent(RequestOpts, wire=False), RequestOpts))
+response_container.bind(bind_by_type(Dependent(RequestOpts, wire=False), RequestOpts))
 response_container.bind(bind_by_type(Dependent(Response, wire=False), Response))
 # common:
 response_container.bind(bind_by_type(Dependent(_url_from_request), URL))
@@ -136,7 +136,15 @@ def _bind_hook_parameter_inference(
     model_field: ModelField = parameter_to_model_field(param)
     field_info: FieldInfo = model_field.field_info
 
+    print(repr(model_field), repr(model_field.annotation))
+
     parameter: Parameter
+
+    # TEMP HACK
+    if model_field.annotation is RequestOpts:
+        # return Dependent(RequestOpts, wire=False)
+        # return Dependent(lambda: None, wire=False)
+        return None
 
     if isinstance(field_info, Parameter):
         parameter = field_info
@@ -207,8 +215,8 @@ def _bind_hook_parameter_inference(
     # return None
 
 
-request_container.bind(_bind_hook_parameter_inference)
-response_container.bind(_bind_hook_parameter_inference)
+# request_container.bind(_bind_hook_parameter_inference)
+# response_container.bind(_bind_hook_parameter_inference)
 
 
 def _solve_and_execute(
@@ -218,17 +226,22 @@ def _solve_and_execute(
     *,
     use_cache: bool = True,
 ) -> T:
+    print("solve - start")
     solved: SolvedDependent[T] = container.solve(
         Dependent(dependent, use_cache=use_cache),
         scopes=(None,),
     )
+    print("solve - end")
 
     with container.enter_scope(None) as state:
-        return solved.execute_sync(
+        print("execute - start")
+        tmp =  solved.execute_sync(
             executor=EXECUTOR,
             state=state,
             values=values,
         )
+        print("execute - end")
+        return tmp
 
 
 # inject, solve, execute, resolve, handle
