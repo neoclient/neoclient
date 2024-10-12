@@ -19,12 +19,11 @@ from typing import (
 
 from pydantic import BaseConfig, ConfigDict
 from pydantic.config import Extra
-from pydantic.fields import Undefined
+from pydantic.fields import ModelField, Undefined
 from pydantic.main import BaseModel, create_model
 from pydantic.typing import get_all_type_hints
 from pydantic.utils import to_camel
 from typing_extensions import ParamSpec
-from pydantic.fields import ModelField
 
 __all__ = (
     "create_func_model",

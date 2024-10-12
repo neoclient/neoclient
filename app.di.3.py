@@ -1,14 +1,15 @@
 import inspect
 from typing import Any, NoReturn, Optional
-from di import bind_by_type
-from httpx import URL, Headers, Request
 
-from neoclient import Query
-from neoclient.di import inject_request, inject_response, response_container
-from neoclient.models import RequestOpts, Response, State
+from di import bind_by_type
 from di.api.dependencies import DependentBase
 from di.dependent import Dependent
 from di.exceptions import WiringError
+from httpx import URL, Headers, Request
+
+from neoclient import Query
+from neoclient.di.old_impl import inject_request, inject_response, response_container
+from neoclient.models import RequestOpts, Response, State
 
 request_opts = RequestOpts(
     "GET",
@@ -24,24 +25,26 @@ response = Response(
     state=State({"key": "resp456"}),
 )
 
+
 def not_wirable() -> NoReturn:
     # raise WiringError("Not wirable")
     raise Exception("Not wirable")
 
+
 NOT_WIRABLE = Dependent(not_wirable)
+
 
 def _bind_hook(
     param: Optional[inspect.Parameter], dependent: DependentBase[Any]
 ) -> Optional[DependentBase[Any]]:
     print("_bind_hook", repr(param), dependent)
 
-
     if param is None:
         return None
-    
+
     if param.annotation is RequestOpts:
         # return Dependent(lambda: "test")
-    #     print("is request opts")
+        #     print("is request opts")
         return Dependent(RequestOpts, wire=False)
     #     # return Dependent(lambda: None, wire=True)
     #     return NOT_WIRABLE
@@ -49,6 +52,7 @@ def _bind_hook(
     # raise Exception
 
     return None
+
 
 response_container.bind(bind_by_type(Dependent(lambda: "psyche"), RequestOpts))
 response_container.bind(_bind_hook)
@@ -69,8 +73,10 @@ response_container.bind(_bind_hook)
 # def my_dependency(name: str) -> str:
 #     return f"Hello, {name!r}"
 
+
 def my_dependency(request: RequestOpts, /) -> RequestOpts:
     return request
+
 
 # def my_dependency(request: Request, /) -> Request:
 #     return request

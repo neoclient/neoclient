@@ -61,6 +61,7 @@ def extract_origin(headers: Headers, /) -> str:
 # def my_dependency(origin: Annotated[str, Marker(extract_origin)], /) -> str:
 #     return f"Origin: {origin}"
 
+
 def my_dependency(request: Request, /) -> Request:
     return request
 

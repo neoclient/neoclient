@@ -15,6 +15,7 @@ from typing import (
 
 import fastapi.encoders
 import httpx
+from di.api.providers import DependencyProviderType
 from httpx import Cookies, Headers, QueryParams
 from pydantic import Required
 from pydantic.fields import FieldInfo, ModelField, Undefined
@@ -52,7 +53,6 @@ from .resolvers import (
 from .types import CookiesTypes, HeadersTypes, PathParamsTypes, QueryParamsTypes
 from .typing import RequestConsumer, RequestResolver, ResponseResolver, Supplier
 from .utils import parse_obj_as
-from di.api.providers import DependencyProviderType
 
 __all__ = (
     "QueryParameter",
@@ -140,7 +140,7 @@ class Parameter(FieldInfo):
 
     # TODO: Make abstract method?
     def to_dependent(self) -> DependencyProviderType[Any]:
-        raise NotImplementedError # TODO: Handle correctly.
+        raise NotImplementedError  # TODO: Handle correctly.
 
 
 class ComposableSingletonParameter(ABC, Parameter, Generic[K, V]):
@@ -241,17 +241,17 @@ class QueryParameter(
         self, key: str
     ) -> ResponseResolver[Optional[Sequence[str]]]:
         return QueryResolver(key).resolve_response
-    
+
     def to_dependent(self) -> DependencyProviderType[Optional[str]]:
         if self.alias is None:
-            raise Exception # TODO: Handle properly.
+            raise Exception  # TODO: Handle properly.
 
         key: str = self.parse_key(self.alias)
 
         # WARN: Doesn't currently support Sequence[str]
         def extract_param(params: QueryParams, /) -> Optional[str]:
             return params.get(key)
-        
+
         return extract_param
 
 

@@ -41,9 +41,11 @@ def bean(func: C, /) -> C:
 def _headers(request: RequestOpts, /) -> Headers:
     return request.headers
 
+
 @bean
 def _params(request: RequestOpts, /) -> QueryParams:
     return request.params
+
 
 container = Container()
 
@@ -61,14 +63,12 @@ container = Container()
 # container.bind(bind_by_type(Dependent(RequestOpts, wire=False), RequestOpts))
 
 
-def infer_dependency(
-    parameter: inspect.Parameter, /
-) -> Optional[DependencyProvider]:
+def infer_dependency(parameter: inspect.Parameter, /) -> Optional[DependencyProvider]:
     if parameter.name == "headers":
         return _headers
     elif parameter.name == "params":
         return _params
-    
+
     return None
 
 
@@ -126,5 +126,9 @@ with container.enter_scope(None) as state:
     d = solved.execute_sync(
         executor=executor,
         state=state,
-        values={RequestOpts: RequestOpts("GET", "/", params={"sort": "asc"}, headers={"x-name": "bob"})},
+        values={
+            RequestOpts: RequestOpts(
+                "GET", "/", params={"sort": "asc"}, headers={"x-name": "bob"}
+            )
+        },
     )

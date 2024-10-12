@@ -10,14 +10,16 @@ from di.api.providers import DependencyProvider, DependencyProviderType
 from di.dependent import Dependent
 from di.executors import SyncExecutor
 from pydantic import BaseModel
-from pydantic.fields import ModelField, Undefined, FieldInfo
+from pydantic.fields import FieldInfo, ModelField, Undefined
 
 from neoclient import utils
+from neoclient.di.dependencies import DEPENDENCIES
+from neoclient.di.inference import infer_dependency
 from neoclient.params import (
-    Parameter,
     AllStateParameter,
     CookiesParameter,
     HeadersParameter,
+    Parameter,
     QueryParameter,
     QueryParamsParameter,
     RequestParameter,
@@ -37,186 +39,46 @@ from ..models import (
     State,
 )
 
-EXECUTOR: Final[SupportsSyncExecutor] = SyncExecutor()
-
 T = TypeVar("T")
 
-
-# Common dependencies:
-def _url_from_request(request: RequestOpts, /) -> URL:
-    return request.url
+EXECUTOR: Final[SupportsSyncExecutor] = SyncExecutor()
 
 
-def _params_from_url(url: URL, /) -> QueryParams:
-    return url.params
-
-
-# Request-scoped dependencies:
-def _headers_from_request(request: RequestOpts, /) -> Headers:
-    return request.headers
-
-
-def _cookies_from_request(request: RequestOpts, /) -> Cookies:
-    return request.cookies
-
-
-def _state_from_request(request: RequestOpts, /) -> State:
-    return request.state
-
-
-# Response-scoped dependencies:
-def _request_from_response(response: Response, /) -> Request:
-    return response.request
-
-
-def _headers_from_response(response: Response, /) -> Headers:
-    return response.headers
-
-
-def _cookies_from_response(response: Response, /) -> Cookies:
-    return response.cookies
-
-
-def _state_from_response(response: Response, /) -> State:
-    return response.state
-
-
-request_container = Container()
-# neuter:
-request_container.bind(bind_by_type(Dependent(RequestOpts, wire=False), RequestOpts))
-request_container.bind(bind_by_type(Dependent(Response, wire=False), Response))
-# common:
-request_container.bind(bind_by_type(Dependent(_url_from_request), URL))
-request_container.bind(bind_by_type(Dependent(_params_from_url), QueryParams))
-# request:
-request_container.bind(bind_by_type(Dependent(_headers_from_request), Headers))
-request_container.bind(bind_by_type(Dependent(_cookies_from_request), Cookies))
-request_container.bind(bind_by_type(Dependent(_state_from_request), State))
-
-response_container = Container()
-# neuter:
-response_container.bind(bind_by_type(Dependent(RequestOpts, wire=False), RequestOpts))
-response_container.bind(bind_by_type(Dependent(Response, wire=False), Response))
-# common:
-response_container.bind(bind_by_type(Dependent(_url_from_request), URL))
-response_container.bind(bind_by_type(Dependent(_params_from_url), QueryParams))
-# response:
-response_container.bind(bind_by_type(Dependent(_request_from_response), Request))
-response_container.bind(bind_by_type(Dependent(_headers_from_response), Headers))
-response_container.bind(bind_by_type(Dependent(_cookies_from_response), Cookies))
-response_container.bind(bind_by_type(Dependent(_state_from_response), State))
-
-
-# Bind Hook(s)
-# WARN: The order is important for bind hooks. Later binds take precedence.
-PARAMETER_INFERENCE_LOOKUP: Mapping[Type[Any], Type[Parameter]] = {
-    # RequestOpts: RequestParameter,
-    # Request: RequestParameter,
-    # Response: ResponseParameter,
-    # httpx.Request: RequestParameter,
-    # httpx.Response: ResponseParameter,
-    # URL: URLParameter,
-    # QueryParams: QueryParamsParameter,
-    # Headers: HeadersParameter,
-    # Cookies: CookiesParameter,
-    # State: AllStateParameter,
-}
-
-
-def _bind_hook_parameter_inference(
+def _bind_hook(
     param: Optional[inspect.Parameter], dependent: DependentBase[Any]
 ) -> Optional[DependentBase[Any]]:
-    print("_bind_hook_parameter_inference", repr(param), dependent)
+    print("_bind_hook", repr(param), dependent)
 
     if param is None:
         return None
 
-    print(param.name, param.kind, param.default, param.annotation)
+    if not isinstance(param.annotation, type):
+        raise NotImplementedError  # TODO
 
-    model_field: ModelField = parameter_to_model_field(param)
-    field_info: FieldInfo = model_field.field_info
+    # TEMP
+    if param.annotation is RequestOpts:
+        return Dependent(RequestOpts, wire=False)
 
-    print(repr(model_field), repr(model_field.annotation))
+    dependency: type = param.annotation
 
-    parameter: Parameter
+    # TODO: Improve this check (allow subclasses)
+    if dependency in DEPENDENCIES:
+        provider = DEPENDENCIES[dependency]
 
-    # TEMP HACK
-    if model_field.annotation is RequestOpts:
-        # return Dependent(RequestOpts, wire=False)
-        # return Dependent(lambda: None, wire=False)
-        return None
+        # if len(providers) != 1:
+        #     raise NotImplementedError  # TODO
 
-    if isinstance(field_info, Parameter):
-        parameter = field_info
-    # elif model_field.annotation in PARAMETER_INFERENCE_LOOKUP:
-    #     parameter = PARAMETER_INFERENCE_LOOKUP[model_field.annotation]()
-    elif issubclass(model_field.annotation, str): # TEMP
-        parameter = QueryParameter(
-            default=utils.get_default(field_info),
-        )
-    else:
-        # raise Exception("wtf")
-        return None # assume a dep will exist for it
-    
-    # Create a clone of the parameter so that any mutations do not affect the original
-    parameter_clone: Parameter = dataclasses.replace(parameter)
+        # return Dependent(providers[0])
+        return Dependent(provider)
+        # return None
 
-    parameter_clone.prepare(model_field)
+    # Attempt inference
+    inferred = infer_dependency(param)
 
-    print(repr(parameter_clone), parameter_clone.alias)
+    if inferred is not None:
+        return Dependent(inferred)
 
-    # TODO: Rename me.
-    # def supply():
-    #     return parameter_clone.resolve_request(...) # FIXME
-
-    # return Dependent(lambda: f"inferred that {param.name} is a {type(parameter).__name__}")
-    # return Dependent(parameter_clone.to_dependent(), wire=False)
-    return Dependent(parameter_clone.to_dependent())
-
-    # return None
-
-        # if model_field.annotation in infer_lookup:
-        #     parameter = infer_lookup[model_field.annotation]()
-        # elif (
-        #     (
-        #         isinstance(model_field.annotation, type)
-        #         and issubclass(model_field.annotation, (BaseModel, dict))
-        #     )
-        #     or dataclasses.is_dataclass(model_field.annotation)
-        #     or (
-        #         utils.is_generic_alias(model_field.annotation)
-        #         and typing.get_origin(model_field.annotation)
-        #         in (collections.abc.Mapping,)
-        #     )
-        # ):
-        #     parameter = BodyParameter(
-        #         default=utils.get_default(field_info),
-        #     )
-
-    # Exit, as inference not needed?
-    # if isinstance(field_info, FieldInfo):
-    #     return None
-
-    # If type is obvious (e.g. Headers, Cookies)
-    # ...
-
-    # If type looks like a body parameter (e.g. is a dataclass or model)
-    # ...
-
-    # Otherwise, assume it's a query parameter
-    # parameter = QueryParameter(
-    #     default=utils.get_default(field_info),
-    # )
-    # return
-
-    # print(repr(model_field), repr(model_field.field_info))
-    # print()
-
-    # return None
-
-
-# request_container.bind(_bind_hook_parameter_inference)
-# response_container.bind(_bind_hook_parameter_inference)
+    raise Exception(f"No provider registered for {param.annotation!r}")
 
 
 def _solve_and_execute(
@@ -235,13 +97,18 @@ def _solve_and_execute(
 
     with container.enter_scope(None) as state:
         print("execute - start")
-        tmp =  solved.execute_sync(
+        tmp = solved.execute_sync(
             executor=EXECUTOR,
             state=state,
             values=values,
         )
         print("execute - end")
         return tmp
+
+
+# TEMP
+request_container = Container()
+request_container.bind(_bind_hook)
 
 
 # inject, solve, execute, resolve, handle
@@ -255,19 +122,5 @@ def inject_request(
         request_container,
         dependent,
         {RequestOpts: request},
-        use_cache=use_cache,
-    )
-
-
-def inject_response(
-    dependent: DependencyProviderType[T],
-    response: Response,
-    *,
-    use_cache: bool = True,
-) -> T:
-    return _solve_and_execute(
-        response_container,
-        dependent,
-        {Response: response},
         use_cache=use_cache,
     )

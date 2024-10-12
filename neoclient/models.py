@@ -366,12 +366,14 @@ class ClientOptions:
             default_encoding=self.default_encoding,
         )
 
+
 # FIXME: Temp hack to fix forwardref
-TempAuthTypes=Union[
+TempAuthTypes = Union[
     Tuple[Union[str, bytes], Union[str, bytes]],
     Callable[[httpx.Request], httpx.Request],
     Auth,
 ]
+
 
 # WARN: This cannot be a dataclass until uplifted to Pydantic V2.
 # If this uses a dataclass with Pydantic V1, this will invoke bug #136.
@@ -406,7 +408,7 @@ class BaseRequestOpts:
         files: Optional[RequestFiles] = None,
         json: Optional[Any] = None,
         # auth: Optional[AuthTypes] = None,
-        auth: Optional[TempAuthTypes] = None, # TEMP
+        auth: Optional[TempAuthTypes] = None,  # TEMP
         follow_redirects: bool = False,
         timeout: Union[TimeoutTypes, UseClientDefault] = USE_CLIENT_DEFAULT,
         extensions: Optional[RequestExtensions] = None,
@@ -512,7 +514,7 @@ class BaseRequestOpts:
     #         timeout=self.timeout if self.timeout is not None else USE_CLIENT_DEFAULT,
     #         extensions=self.extensions,
     #     )
-    
+
     #     for key, val in changes.items():
     #         setattr(obj, key, val)
 
@@ -556,7 +558,7 @@ class RequestOpts(BaseRequestOpts):
         files: Optional[RequestFiles] = None,
         json: Optional[Any] = None,
         # auth: Optional[AuthTypes] = None,
-        auth: Optional[TempAuthTypes] = None, # TEMP
+        auth: Optional[TempAuthTypes] = None,  # TEMP
         follow_redirects: bool = False,
         timeout: Union[TimeoutTypes, UseClientDefault] = USE_CLIENT_DEFAULT,
         extensions: Optional[RequestExtensions] = None,
@@ -600,7 +602,7 @@ class RequestOpts(BaseRequestOpts):
     #             self.state == request_opts.state,
     #         )
     #     )
-    
+
     # TODO: Type me.
     # FIXME: This implementation is jank and lashed together.
     # def _replace(self, /, **changes) -> Self:

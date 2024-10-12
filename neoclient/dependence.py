@@ -21,7 +21,7 @@ from httpx import URL, Cookies, Headers, QueryParams
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo, ModelField
 
-from neoclient.di import inject_request, inject_response
+from neoclient.di.old_impl import inject_request, inject_response
 
 from . import api, utils
 from .errors import PreparationError, ResolutionError

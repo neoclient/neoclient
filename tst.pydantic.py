@@ -1,5 +1,6 @@
-from httpx import QueryParams
 import pydantic
+from httpx import QueryParams
+
 from neoclient.models import RequestOpts
 
 
