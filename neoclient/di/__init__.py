@@ -10,9 +10,11 @@ from di.api.providers import DependencyProvider, DependencyProviderType
 from di.dependent import Dependent
 from di.exceptions import WiringError
 from di.executors import SyncExecutor
+from pydantic.fields import FieldInfo, ModelField, Undefined
 
 from neoclient.di.dependencies import DEPENDENCIES
 from neoclient.di.inference import infer_dependency
+from neoclient.validation import parameter_to_model_field
 
 from ..models import RequestOpts, Response
 from .enums import Profile
@@ -28,10 +30,17 @@ def _build_bind_hook(profile: Profile, /):
     def _bind_hook(
         param: Optional[inspect.Parameter], dependent: DependentBase[Any]
     ) -> Optional[DependentBase[Any]]:
-        # print("_bind_hook", repr(param), dependent)
+        print("_bind_hook", repr(param), dependent)
 
+        # If there's no parameter, than a dependent is already known.
+        # As a dependent is already known, we don't need to anything.
         if param is None:
             return None
+        
+        model_field: ModelField = parameter_to_model_field(param)
+        field_info: FieldInfo = model_field.field_info
+
+        print(repr(model_field), repr(model_field.annotation)) # TEMP
 
         if not isinstance(param.annotation, type):
             raise NotImplementedError  # TODO

@@ -8,7 +8,7 @@ from di.exceptions import WiringError
 from httpx import URL, Headers, Request
 
 from neoclient import Query
-from neoclient.di.old_impl import inject_request, inject_response, response_container
+from neoclient.di import inject_request, inject_response, response_container
 from neoclient.models import RequestOpts, Response, State
 
 request_opts = RequestOpts(
