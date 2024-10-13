@@ -22,6 +22,17 @@ from neoclient.validation import parameter_to_model_field
 from ..models import RequestOpts, Response
 from .enums import Profile
 
+# No inference:
+# * Parameter metadata exists, use that. (e.g. headers = Headers())
+# Inference:
+# 1. Parameter name matches a path parameter, assume a path param
+# 2. Type is a known dependency (e.g. headers: Headers), no inference needed.
+# 3. Type indicates a body parameter (e.g. user: User), treat as body parameter.
+# 4. Assume query parameter
+# Don't do:
+# * Infer by name? Only do if not typed? Only do for select few? (FastAPI doesn't do this.)
+
+
 T = TypeVar("T")
 
 EXECUTOR: Final[SupportsSyncExecutor] = SyncExecutor()
@@ -81,9 +92,6 @@ def _build_bind_hook(profile: Profile, /):
             parameter = QueryParameter(
                 default=utils.get_default(field_info),
             )
-        # n. Inference failed (shouldn't happen?)
-        # else:
-        #     raise NotImplementedError  # TODO
 
         # Create a clone of the parameter so that any mutations do not affect the original
         parameter_clone: Parameter = dataclasses.replace(parameter)
@@ -93,25 +101,6 @@ def _build_bind_hook(profile: Profile, /):
         print(repr(parameter_clone), parameter_clone.alias)
 
         return Dependent(parameter_clone.to_dependent())
-
-        # if not isinstance(param.annotation, type):
-        #     raise NotImplementedError  # TODO
-
-        # # TEMP
-        # if param.annotation in (RequestOpts, Response, httpx.Response):
-        #     return None # these should already be stubbed
-
-        # dependency: type = param.annotation
-
-        # # TODO: Improve this check (allow subclasses?)
-        # if dependency in dependencies:
-        #     provider = dependencies[dependency]
-        #     return Dependent(provider)
-
-        # inferred = infer_dependency(param, profile)
-
-        # if inferred is not None:
-        #     return Dependent(inferred)
 
         # raise WiringError(
         #     f"No dependency provider of type {param.annotation!r} found for parameter {param.name!r}",
@@ -128,23 +117,17 @@ def _solve_and_execute(
     *,
     use_cache: bool = True,
 ) -> T:
-    # print("solve - start")
     solved: SolvedDependent[T] = container.solve(
         Dependent(dependent, use_cache=use_cache),
         scopes=(None,),
     )
-    # rich.pretty.pprint(solved.dag)
-    # print("solve - end")
 
     with container.enter_scope(None) as state:
-        # print("execute - start")
-        tmp = solved.execute_sync(
+        return solved.execute_sync(
             executor=EXECUTOR,
             state=state,
             values=values,
         )
-        # print("execute - end")
-        return tmp
 
 
 # TEMP
