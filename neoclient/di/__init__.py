@@ -1,3 +1,4 @@
+import dataclasses
 import inspect
 from typing import Any, Final, Mapping, Optional, TypeVar
 
@@ -12,8 +13,10 @@ from di.exceptions import WiringError
 from di.executors import SyncExecutor
 from pydantic.fields import FieldInfo, ModelField, Undefined
 
+from neoclient import utils
 from neoclient.di.dependencies import DEPENDENCIES
 from neoclient.di.inference import infer_dependency
+from neoclient.params import Parameter, QueryParameter, QueryParamsParameter
 from neoclient.validation import parameter_to_model_field
 
 from ..models import RequestOpts, Response
@@ -32,39 +35,88 @@ def _build_bind_hook(profile: Profile, /):
     ) -> Optional[DependentBase[Any]]:
         print("_bind_hook", repr(param), dependent)
 
-        # If there's no parameter, than a dependent is already known.
+        # If there's no parameter, then a dependent is already known.
         # As a dependent is already known, we don't need to anything.
         if param is None:
             return None
-        
+
+        # The parameter needs to be stubbed, as a value will be provided
+        # during execution.
+        if param.annotation in (RequestOpts, Response, httpx.Response):
+            return None  # these should already be stubbed
+
         model_field: ModelField = parameter_to_model_field(param)
         field_info: FieldInfo = model_field.field_info
 
-        print(repr(model_field), repr(model_field.annotation)) # TEMP
+        # The aim of the game is to convert an inspect Parameter into a
+        # neoclient Parameter.
+        parameter: Parameter
 
-        if not isinstance(param.annotation, type):
-            raise NotImplementedError  # TODO
+        print(repr(model_field), repr(model_field.annotation), repr(field_info))  # TEMP
 
-        # TEMP
-        if param.annotation in (RequestOpts, Response, httpx.Response):
-            return None # these should already be stubbed
+        # 1. Parameter metadata exists! Let's use that.
+        if isinstance(field_info, Parameter):
+            parameter = field_info
+        # n. Parameter is variadic, special case. (deprecated: di doesn't like.)
+        # elif param.kind in (
+        #     inspect.Parameter.VAR_POSITIONAL,
+        #     inspect.Parameter.VAR_KEYWORD,
+        # ):
+        #     parameter = QueryParamsParameter()
+        # n. Parameter name matches a path parameter (during composition only)
+        # elif profile is Profile.REQUEST and param.name in path_params:
+        #     ...
+        # n. Parameter type is a known dependency (TODO: Support subclasses)
+        elif isinstance(param.annotation, type) and param.annotation in dependencies:
+            return Dependent(
+                dependencies[param.annotation]
+            )  # TODO: Use a neoclient Depends parameter?
+        # n. Parameter type indicates a body parameter
+        # ...
+        # n. Otherwise, assume a query parameter
+        else:
+            # Note: What if the type is non-primitive (e.g. foo: Foo),
+            # do we always want to assume a query parameter?
+            # What does FastAPI do?
+            parameter = QueryParameter(
+                default=utils.get_default(field_info),
+            )
+        # n. Inference failed (shouldn't happen?)
+        # else:
+        #     raise NotImplementedError  # TODO
 
-        dependency: type = param.annotation
+        # Create a clone of the parameter so that any mutations do not affect the original
+        parameter_clone: Parameter = dataclasses.replace(parameter)
 
-        # TODO: Improve this check (allow subclasses?)
-        if dependency in dependencies:
-            provider = dependencies[dependency]
-            return Dependent(provider)
+        parameter_clone.prepare(model_field)
 
-        inferred = infer_dependency(param, profile)
+        print(repr(parameter_clone), parameter_clone.alias)
 
-        if inferred is not None:
-            return Dependent(inferred)
+        return Dependent(parameter_clone.to_dependent())
 
-        raise WiringError(
-            f"No dependency provider of type {param.annotation!r} found for parameter {param.name!r}",
-            [],
-        )
+        # if not isinstance(param.annotation, type):
+        #     raise NotImplementedError  # TODO
+
+        # # TEMP
+        # if param.annotation in (RequestOpts, Response, httpx.Response):
+        #     return None # these should already be stubbed
+
+        # dependency: type = param.annotation
+
+        # # TODO: Improve this check (allow subclasses?)
+        # if dependency in dependencies:
+        #     provider = dependencies[dependency]
+        #     return Dependent(provider)
+
+        # inferred = infer_dependency(param, profile)
+
+        # if inferred is not None:
+        #     return Dependent(inferred)
+
+        # raise WiringError(
+        #     f"No dependency provider of type {param.annotation!r} found for parameter {param.name!r}",
+        #     [],
+        # )
 
     return _bind_hook
 
