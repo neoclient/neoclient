@@ -70,3 +70,13 @@ def response_headers(response: httpx.Response, /) -> Headers:
 @dependency(profile=Profile.RESPONSE)
 def response_cookies(response: httpx.Response, /) -> Cookies:
     return response.cookies
+
+
+@dependency(profile=Profile.RESPONSE)
+def response_request(response: httpx.Response, /) -> httpx.Request:
+    return response.request
+
+
+@dependency(profile=Profile.RESPONSE)
+def response_request_params(request: httpx.Request, /) -> QueryParams:
+    return request.url.params

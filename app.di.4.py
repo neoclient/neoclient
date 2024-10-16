@@ -20,8 +20,8 @@ d = inject_request(request_dependency, request_opts)
 
 # def response_dependency(headers):
 #     return headers
-def response_dependency(**params):
-    return params
+def response_dependency(sort):
+    return sort
 
 
 # "response" injection

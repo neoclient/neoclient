@@ -1,9 +1,8 @@
 import dataclasses
 import inspect
-from typing import Any, Final, Mapping, Optional, TypeVar
+from typing import Any, Final, Mapping, Optional, Set, TypeVar, Union
 
 import httpx
-import rich.pretty
 from di import Container, SolvedDependent, bind_by_type
 from di.api.dependencies import DependentBase
 from di.api.executor import SupportsSyncExecutor
@@ -11,12 +10,11 @@ from di.api.providers import DependencyProvider, DependencyProviderType
 from di.dependent import Dependent
 from di.exceptions import WiringError
 from di.executors import SyncExecutor
-from pydantic.fields import FieldInfo, ModelField, Undefined
+from pydantic.fields import FieldInfo, ModelField
 
 from neoclient import utils
 from neoclient.di.dependencies import DEPENDENCIES
-from neoclient.di.inference import infer_dependency
-from neoclient.params import Parameter, QueryParameter, QueryParamsParameter
+from neoclient.params import Parameter, QueryParameter
 from neoclient.validation import parameter_to_model_field
 
 from ..models import RequestOpts, Response
@@ -37,14 +35,86 @@ T = TypeVar("T")
 
 EXECUTOR: Final[SupportsSyncExecutor] = SyncExecutor()
 
+DO_NOT_AUTOWIRE: Set[type] = {RequestOpts, Response, httpx.Response}
 
-def _build_bind_hook(profile: Profile, /):
+
+# # @dataclasses.dataclass(unsafe_hash=True, init=False)
+# @dataclasses.dataclass(unsafe_hash=True)
+# class NoParameter:  # (Parameter):
+#     """
+#     Parameter class for when no parameter metadata was specified.
+
+#     This parameter will perform *inference* and morph into an appropriate
+#     parameter based on the subject of the injection.
+#     """
+
+#     parameter: inspect.Parameter
+#     profile: Profile
+
+#     # def __init__(self, parameter: inspect.Parameter, profile: Profile) -> None:
+#     #     super().__init__()
+
+#     #     self.parameter = parameter
+#     #     self.profile = profile
+
+#     # def compose(self, request: RequestOpts, argument: Any, /) -> None:
+#     #     raise CompositionError(f"Parameter {type(self)!r} is not composable")
+
+#     # def resolve_response(self, response: Response, /) -> Any:
+#     #     raise ResolutionError(
+#     #         f"Parameter {type(self)!r} is not resolvable for type {Response!r}"
+#     #     )
+
+#     # def resolve_request(self, request: RequestOpts, /) -> Any:
+#     #     raise ResolutionError(
+#     #         f"Parameter {type(self)!r} is not resolvable for type {RequestOpts!r}"
+#     #     )
+
+#     def to_dependent(self) -> DependencyProviderType[Any]:
+#         if self.profile is Profile.REQUEST:
+
+#             def apply(request: RequestOpts, /):
+#                 raise NotImplementedError("Inference logic here?")
+
+#             return apply
+#         else:
+#             raise NotImplementedError  # TODO
+
+#     def prepare(self, model_field: ModelField, /) -> None:
+#         return
+
+
+# def dep_no_param_req(request: RequestOpts, /) -> Any:
+#     raise NotImplementedError
+
+
+# def dep_no_param_resp(response: Response, /) -> Any:
+#     raise NotImplementedError
+
+# def _do_infer(subject: Union[RequestOpts, Response], /):
+#     ...
+
+# def dep_no_param(parameter: inspect.Parameter, /):
+#     def f(profile: Profile, container: Container, /):
+#         cls = RequestOpts if profile is Profile.REQUEST else Response
+
+
+#         # return _solve_and_execute(container, Dependent(cls))
+
+#     return f
+
+
+def _build_bind_hook(subject: Union[RequestOpts, Response], /):
+    profile: Profile = (
+        Profile.REQUEST if isinstance(subject, RequestOpts) else Profile.RESPONSE
+    )
     dependencies = DEPENDENCIES[profile]
 
     def _bind_hook(
         param: Optional[inspect.Parameter], dependent: DependentBase[Any]
     ) -> Optional[DependentBase[Any]]:
-        print("_bind_hook", repr(param), dependent)
+        # print("_bind_hook", repr(param), dependent)
+        # input()
 
         # If there's no parameter, then a dependent is already known.
         # As a dependent is already known, we don't need to anything.
@@ -53,7 +123,7 @@ def _build_bind_hook(profile: Profile, /):
 
         # The parameter needs to be stubbed, as a value will be provided
         # during execution.
-        if param.annotation in (RequestOpts, Response, httpx.Response):
+        if param.annotation in DO_NOT_AUTOWIRE:
             return None  # these should already be stubbed
 
         model_field: ModelField = parameter_to_model_field(param)
@@ -63,7 +133,7 @@ def _build_bind_hook(profile: Profile, /):
         # neoclient Parameter.
         parameter: Parameter
 
-        print(repr(model_field), repr(model_field.annotation), repr(field_info))  # TEMP
+        # print(repr(model_field), repr(model_field.annotation), repr(field_info))  # TEMP
 
         # 1. Parameter metadata exists! Let's use that.
         if isinstance(field_info, Parameter):
@@ -92,13 +162,23 @@ def _build_bind_hook(profile: Profile, /):
             parameter = QueryParameter(
                 default=utils.get_default(field_info),
             )
+        # else:
+            # parameter = NoParameter(parameter=param, profile=profile)
+            # return Dependent(
+            #     {
+            #         Profile.REQUEST: dep_no_param_req,
+            #         Profile.RESPONSE: dep_no_param_resp,
+            #     }[profile]
+            # )
+            # return Dependent(dep_no_param)
+            # raise NotImplementedError
 
         # Create a clone of the parameter so that any mutations do not affect the original
         parameter_clone: Parameter = dataclasses.replace(parameter)
 
         parameter_clone.prepare(model_field)
 
-        print(repr(parameter_clone), parameter_clone.alias)
+        # print(repr(parameter_clone), parameter_clone.alias)
 
         return Dependent(parameter_clone.to_dependent())
 
@@ -110,18 +190,23 @@ def _build_bind_hook(profile: Profile, /):
     return _bind_hook
 
 
-def _solve_and_execute(
+def _solve(
     container: Container,
     dependent: DependencyProviderType[T],
-    values: Mapping[DependencyProvider, Any] | None = None,
     *,
     use_cache: bool = True,
-) -> T:
-    solved: SolvedDependent[T] = container.solve(
+) -> SolvedDependent[T]:
+    return container.solve(
         Dependent(dependent, use_cache=use_cache),
         scopes=(None,),
     )
 
+
+def _execute(
+    container: Container,
+    solved: SolvedDependent[T],
+    values: Mapping[DependencyProvider, Any] | None = None,
+) -> T:
     with container.enter_scope(None) as state:
         return solved.execute_sync(
             executor=EXECUTOR,
@@ -130,16 +215,28 @@ def _solve_and_execute(
         )
 
 
+def _solve_and_execute(
+    container: Container,
+    dependent: DependencyProviderType[T],
+    values: Mapping[DependencyProvider, Any] | None = None,
+    *,
+    use_cache: bool = True,
+) -> T:
+    solved: SolvedDependent[T] = _solve(container, dependent, use_cache=use_cache)
+
+    return _execute(container, solved, values)
+
+
 # TEMP
 request_container = Container()
 request_container.bind(bind_by_type(Dependent(RequestOpts, wire=False), RequestOpts))
-request_container.bind(_build_bind_hook(Profile.REQUEST))
+# request_container.bind(_build_bind_hook(Profile.REQUEST))
 response_container = Container()
 response_container.bind(bind_by_type(Dependent(RequestOpts, wire=False), RequestOpts))
 response_container.bind(
     bind_by_type(Dependent(httpx.Response, wire=False), httpx.Response, covariant=True)
 )
-response_container.bind(_build_bind_hook(Profile.RESPONSE))
+# response_container.bind(_build_bind_hook(Profile.RESPONSE))
 
 
 # inject, solve, execute, resolve, handle
@@ -149,11 +246,22 @@ def inject_request(
     *,
     use_cache: bool = True,
 ) -> T:
-    return _solve_and_execute(
+    with request_container.bind(_build_bind_hook(request)):
+        solved: SolvedDependent[T] = _solve(
+            request_container, dependent, use_cache=use_cache
+        )
+
+    return _execute(
         request_container,
-        dependent,
-        {RequestOpts: request},
-        use_cache=use_cache,
+        solved,
+        {
+            # Environment
+            # Profile: Profile.REQUEST,
+            # Container: request_container,
+            # SolvedDependent: solved,
+            # Subject
+            RequestOpts: request,
+        },
     )
 
 
@@ -163,12 +271,21 @@ def inject_response(
     *,
     use_cache: bool = True,
 ) -> T:
-    return _solve_and_execute(
+    with response_container.bind(_build_bind_hook(response)):
+        solved: SolvedDependent[T] = _solve(
+            response_container, dependent, use_cache=use_cache
+        )
+
+    return _execute(
         response_container,
-        dependent,
+        solved,
         {
+            # Environment
+            # Profile: Profile.RESPONSE,
+            # Container: request_container,
+            # SolvedDependent: solved,
+            # Subject
             Response: response,
             httpx.Response: response,  # Included as `di` doesn't seem to respect covariance
         },
-        use_cache=use_cache,
     )
