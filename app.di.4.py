@@ -4,8 +4,8 @@ from neoclient.models import RequestOpts, Request, Response
 
 # def request_dependency(headers):
 #     return headers
-def request_dependency(sort):
-    return sort
+def request_dependency(**params):
+    return params
 
 
 # "request" injection

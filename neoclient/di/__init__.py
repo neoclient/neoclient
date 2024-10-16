@@ -38,72 +38,6 @@ EXECUTOR: Final[SupportsSyncExecutor] = SyncExecutor()
 DO_NOT_AUTOWIRE: Set[type] = {RequestOpts, Response, httpx.Response}
 
 
-# # @dataclasses.dataclass(unsafe_hash=True, init=False)
-# @dataclasses.dataclass(unsafe_hash=True)
-# class NoParameter:  # (Parameter):
-#     """
-#     Parameter class for when no parameter metadata was specified.
-
-#     This parameter will perform *inference* and morph into an appropriate
-#     parameter based on the subject of the injection.
-#     """
-
-#     parameter: inspect.Parameter
-#     profile: Profile
-
-#     # def __init__(self, parameter: inspect.Parameter, profile: Profile) -> None:
-#     #     super().__init__()
-
-#     #     self.parameter = parameter
-#     #     self.profile = profile
-
-#     # def compose(self, request: RequestOpts, argument: Any, /) -> None:
-#     #     raise CompositionError(f"Parameter {type(self)!r} is not composable")
-
-#     # def resolve_response(self, response: Response, /) -> Any:
-#     #     raise ResolutionError(
-#     #         f"Parameter {type(self)!r} is not resolvable for type {Response!r}"
-#     #     )
-
-#     # def resolve_request(self, request: RequestOpts, /) -> Any:
-#     #     raise ResolutionError(
-#     #         f"Parameter {type(self)!r} is not resolvable for type {RequestOpts!r}"
-#     #     )
-
-#     def to_dependent(self) -> DependencyProviderType[Any]:
-#         if self.profile is Profile.REQUEST:
-
-#             def apply(request: RequestOpts, /):
-#                 raise NotImplementedError("Inference logic here?")
-
-#             return apply
-#         else:
-#             raise NotImplementedError  # TODO
-
-#     def prepare(self, model_field: ModelField, /) -> None:
-#         return
-
-
-# def dep_no_param_req(request: RequestOpts, /) -> Any:
-#     raise NotImplementedError
-
-
-# def dep_no_param_resp(response: Response, /) -> Any:
-#     raise NotImplementedError
-
-# def _do_infer(subject: Union[RequestOpts, Response], /):
-#     ...
-
-# def dep_no_param(parameter: inspect.Parameter, /):
-#     def f(profile: Profile, container: Container, /):
-#         cls = RequestOpts if profile is Profile.REQUEST else Response
-
-
-#         # return _solve_and_execute(container, Dependent(cls))
-
-#     return f
-
-
 def _build_bind_hook(subject: Union[RequestOpts, Response], /):
     profile: Profile = (
         Profile.REQUEST if isinstance(subject, RequestOpts) else Profile.RESPONSE
@@ -113,8 +47,7 @@ def _build_bind_hook(subject: Union[RequestOpts, Response], /):
     def _bind_hook(
         param: Optional[inspect.Parameter], dependent: DependentBase[Any]
     ) -> Optional[DependentBase[Any]]:
-        # print("_bind_hook", repr(param), dependent)
-        # input()
+        print("_bind_hook", repr(param), dependent)
 
         # If there's no parameter, then a dependent is already known.
         # As a dependent is already known, we don't need to anything.
@@ -138,12 +71,6 @@ def _build_bind_hook(subject: Union[RequestOpts, Response], /):
         # 1. Parameter metadata exists! Let's use that.
         if isinstance(field_info, Parameter):
             parameter = field_info
-        # n. Parameter is variadic, special case. (deprecated: di doesn't like.)
-        # elif param.kind in (
-        #     inspect.Parameter.VAR_POSITIONAL,
-        #     inspect.Parameter.VAR_KEYWORD,
-        # ):
-        #     parameter = QueryParamsParameter()
         # n. Parameter name matches a path parameter (during composition only)
         # elif profile is Profile.REQUEST and param.name in path_params:
         #     ...
@@ -162,16 +89,6 @@ def _build_bind_hook(subject: Union[RequestOpts, Response], /):
             parameter = QueryParameter(
                 default=utils.get_default(field_info),
             )
-        # else:
-            # parameter = NoParameter(parameter=param, profile=profile)
-            # return Dependent(
-            #     {
-            #         Profile.REQUEST: dep_no_param_req,
-            #         Profile.RESPONSE: dep_no_param_resp,
-            #     }[profile]
-            # )
-            # return Dependent(dep_no_param)
-            # raise NotImplementedError
 
         # Create a clone of the parameter so that any mutations do not affect the original
         parameter_clone: Parameter = dataclasses.replace(parameter)
@@ -230,13 +147,11 @@ def _solve_and_execute(
 # TEMP
 request_container = Container()
 request_container.bind(bind_by_type(Dependent(RequestOpts, wire=False), RequestOpts))
-# request_container.bind(_build_bind_hook(Profile.REQUEST))
 response_container = Container()
 response_container.bind(bind_by_type(Dependent(RequestOpts, wire=False), RequestOpts))
 response_container.bind(
     bind_by_type(Dependent(httpx.Response, wire=False), httpx.Response, covariant=True)
 )
-# response_container.bind(_build_bind_hook(Profile.RESPONSE))
 
 
 # inject, solve, execute, resolve, handle
@@ -255,11 +170,6 @@ def inject_request(
         request_container,
         solved,
         {
-            # Environment
-            # Profile: Profile.REQUEST,
-            # Container: request_container,
-            # SolvedDependent: solved,
-            # Subject
             RequestOpts: request,
         },
     )
@@ -280,12 +190,8 @@ def inject_response(
         response_container,
         solved,
         {
-            # Environment
-            # Profile: Profile.RESPONSE,
-            # Container: request_container,
-            # SolvedDependent: solved,
-            # Subject
             Response: response,
-            httpx.Response: response,  # Included as `di` doesn't seem to respect covariance
+            # Included as `di` doesn't seem to respect covariance
+            httpx.Response: response,
         },
     )
