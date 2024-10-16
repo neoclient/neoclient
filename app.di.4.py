@@ -4,16 +4,17 @@ from neoclient.models import RequestOpts, Request, Response
 
 # def request_dependency(headers):
 #     return headers
-def request_dependency(**params):
-    return params
+def request_dependency(name):
+    return name
 
 
 # "request" injection
 request_opts = RequestOpts(
     "GET",
-    "/",
+    "/{name}",
     params={"sort": "req-asc"},
     headers={"x-source": "request-opts"},
+    path_params={"name": "sam"},
 )
 d = inject_request(request_dependency, request_opts)
 

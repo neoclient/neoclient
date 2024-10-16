@@ -311,6 +311,18 @@ class PathParameter(ComposableSingletonStringParameter):
     def build_consumer(self, key: str, value: str) -> RequestConsumer:
         return PathConsumer(key, value).consume_request
 
+    def to_dependent(self) -> DependencyProviderType[Optional[str]]:
+        if self.alias is None:
+            raise Exception  # TODO: Handle properly.
+
+        key: str = self.parse_key(self.alias)
+
+        # WARN: Doesn't currently support Sequence[str]
+        def extract_param(request: RequestOpts, /) -> Optional[str]:
+            return request.path_params.get(key)
+
+        return extract_param
+
 
 class QueryParamsParameter(Parameter):
     def compose(self, request: RequestOpts, argument: Any, /) -> None:

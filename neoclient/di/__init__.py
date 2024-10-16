@@ -14,7 +14,7 @@ from pydantic.fields import FieldInfo, ModelField
 
 from neoclient import utils
 from neoclient.di.dependencies import DEPENDENCIES
-from neoclient.params import Parameter, QueryParameter
+from neoclient.params import Parameter, PathParameter, QueryParameter
 from neoclient.validation import parameter_to_model_field
 
 from ..models import RequestOpts, Response
@@ -68,12 +68,21 @@ def _build_bind_hook(subject: Union[RequestOpts, Response], /):
 
         # print(repr(model_field), repr(model_field.annotation), repr(field_info))  # TEMP
 
+        path_params: Set[str] = (
+            utils.parse_format_string(str(subject.url))
+            if profile is Profile.REQUEST
+            else set()
+        )
+
         # 1. Parameter metadata exists! Let's use that.
         if isinstance(field_info, Parameter):
             parameter = field_info
         # n. Parameter name matches a path parameter (during composition only)
-        # elif profile is Profile.REQUEST and param.name in path_params:
-        #     ...
+        elif param.name in path_params:
+            parameter = PathParameter(
+                alias=param.name,
+                default=utils.get_default(field_info),
+            )
         # n. Parameter type is a known dependency (TODO: Support subclasses)
         elif isinstance(param.annotation, type) and param.annotation in dependencies:
             return Dependent(
