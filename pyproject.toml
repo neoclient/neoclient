@@ -38,7 +38,6 @@ show_error_codes = true
 warn_redundant_casts = true
 warn_unused_configs = true
 warn_unused_ignores = true
-# allow_empty_bodies = true
 exclude = ["examples/"]
 
 [tool.pytest.ini_options]
