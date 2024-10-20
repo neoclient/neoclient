@@ -138,9 +138,17 @@ class Parameter(FieldInfo):
         if self.alias is None:
             self.alias = model_field.name
 
+    # ALPHA/BETA METHODS
     # TODO: Make abstract method?
-    def to_dependent(self) -> DependencyProviderType[Any]:
-        raise NotImplementedError  # TODO: Handle correctly.
+    # def to_dependent(self) -> DependencyProviderType[Any]:
+    #     raise NotImplementedError  # TODO: Handle correctly.
+    def get_resolution_dependent(self) -> DependencyProviderType[Any]:
+        raise NotImplementedError  # TODO: Handle correctly. (abstract?)
+
+    def get_composition_dependent(
+        self, argument: Any, /
+    ) -> DependencyProviderType[None]:
+        raise NotImplementedError  # TODO: Handle correctly. (abstract?)
 
 
 class ComposableSingletonParameter(ABC, Parameter, Generic[K, V]):
@@ -242,7 +250,7 @@ class QueryParameter(
     ) -> ResponseResolver[Optional[Sequence[str]]]:
         return QueryResolver(key).resolve_response
 
-    def to_dependent(self) -> DependencyProviderType[Optional[str]]:
+    def get_resolution_dependent(self) -> DependencyProviderType[Optional[str]]:
         if self.alias is None:
             raise Exception  # TODO: Handle properly.
 
@@ -253,6 +261,14 @@ class QueryParameter(
             return params.get(key)
 
         return extract_param
+
+    def get_composition_dependent(
+        self, argument: Any, /
+    ) -> DependencyProviderType[None]:
+        def _do_compose(request: RequestOpts, /):
+            self.compose(request, argument)
+
+        return _do_compose
 
 
 @dataclass(unsafe_hash=True)
@@ -311,7 +327,7 @@ class PathParameter(ComposableSingletonStringParameter):
     def build_consumer(self, key: str, value: str) -> RequestConsumer:
         return PathConsumer(key, value).consume_request
 
-    def to_dependent(self) -> DependencyProviderType[Optional[str]]:
+    def get_resolution_dependent(self) -> DependencyProviderType[Optional[str]]:
         if self.alias is None:
             raise Exception  # TODO: Handle properly.
 
