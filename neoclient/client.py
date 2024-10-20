@@ -19,8 +19,9 @@ from mediate.protocols import MiddlewareCallable
 from roster import Record
 from typing_extensions import ParamSpec
 
+from neoclient.di import get_parameters
+
 from . import converters
-# from .composition import get_fields, validate_fields
 from .composition import validate_fields
 from .constants import USER_AGENT
 from .defaults import (
@@ -270,8 +271,7 @@ class Client:
             )
 
             # Validate operation function parameters are acceptable
-            # WARN: Temporarily disabled
-            # validate_fields(get_fields(operation.request_options, func))
+            validate_fields(get_parameters(func, operation.request_options))
 
             return operation.wrapper
 

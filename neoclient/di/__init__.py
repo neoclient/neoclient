@@ -1,6 +1,17 @@
 import dataclasses
 import inspect
-from typing import Any, Callable, Final, Mapping, MutableMapping, Optional, Set, Tuple, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Final,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 import httpx
 from di import Container, SolvedDependent, bind_by_type
@@ -159,9 +170,7 @@ def inject_response(
     )
 
 
-def infer(
-    param: inspect.Parameter, subject: Union[RequestOpts, Response]
-) -> Parameter:
+def infer(param: inspect.Parameter, subject: Union[RequestOpts, Response]) -> Parameter:
     profile: Profile = (
         Profile.REQUEST if isinstance(subject, RequestOpts) else Profile.RESPONSE
     )
@@ -266,7 +275,9 @@ def compose(
     for field_name, (_, parameter) in fields.items():
         argument: Any = validated_arguments[field_name]
 
-        dependent: DependencyProviderType[None] = parameter.get_composition_dependent(argument)
+        dependent: DependencyProviderType[None] = parameter.get_composition_dependent(
+            argument
+        )
 
         with request_container.bind(_build_bind_hook(request)):
             solved: SolvedDependent[None] = _solve(
