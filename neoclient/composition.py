@@ -4,15 +4,7 @@ import inspect
 import typing
 import urllib.parse
 from collections import Counter
-from typing import (
-    Any,
-    Callable,
-    Mapping,
-    MutableMapping,
-    MutableSequence,
-    Set,
-    Tuple,
-)
+from typing import Any, Callable, Mapping, MutableMapping, MutableSequence, Set, Tuple
 
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo, ModelField

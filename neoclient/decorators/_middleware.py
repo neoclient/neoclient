@@ -3,14 +3,13 @@ from typing import Optional
 from mediate.protocols import MiddlewareCallable
 
 from neoclient.decorators.api import CS, middleware_decorator
-
 from neoclient.middleware import (
     ExpectedContentTypeMiddleware,
     ExpectedHeaderMiddleware,
     ExpectedStatusCodeMiddleware,
     Middleware,
-    raise_for_status as raise_for_status_middleware,
 )
+from neoclient.middleware import raise_for_status as raise_for_status_middleware
 from neoclient.models import Request, Response
 
 __all__ = (

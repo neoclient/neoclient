@@ -38,7 +38,7 @@ from .defaults import (
 )
 from .enums import HTTPHeader, HTTPMethod
 from .middleware import Middleware
-from .models import ClientOptions, RequestOpts, Request, Response
+from .models import ClientOptions, Request, RequestOpts, Response
 from .operation import Operation, get_operation
 from .types import (
     AuthTypes,

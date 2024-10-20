@@ -4,7 +4,7 @@ from typing import Any, Callable, Protocol, TypeVar, runtime_checkable
 import mediate
 from typing_extensions import TypeAlias
 
-from .models import ClientOptions, RequestOpts, Request, Response
+from .models import ClientOptions, Request, RequestOpts, Response
 
 __all__ = (
     "AnyCallable",
