@@ -21,6 +21,8 @@ from httpx import URL, Cookies, Headers, QueryParams
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo, ModelField
 
+from neoclient.di import inject_request, inject_response
+
 from . import api, utils
 from .errors import PreparationError, ResolutionError
 from .models import Request, RequestOpts, Response, State
@@ -41,181 +43,209 @@ from .validation import ValidatedFunction
 
 T = TypeVar("T")
 
+"""
+Current issue:
+    NeoClient allows parameter "guessing" (inference), e.g.
+        @get("/user")
+        def get_user(id: str)...
 
-def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
-    class Config:
-        allow_population_by_field_name: bool = True
-        arbitrary_types_allowed: bool = True
+        Where get_user("123") translates to GET /user?id=123
 
-    infer_lookup: Mapping[Type[Any], Type[Parameter]] = {
-        RequestOpts: RequestParameter,
-        Request: RequestParameter,
-        Response: ResponseParameter,
-        httpx.Request: RequestParameter,
-        httpx.Response: ResponseParameter,
-        URL: URLParameter,
-        QueryParams: QueryParamsParameter,
-        Headers: HeadersParameter,
-        Cookies: CookiesParameter,
-        State: AllStateParameter,
-    }
+    The problem is that `di` is being tasked with resolving all the deps,
+    and sees `id` wants a `str`. It goes, "ooh I can build a string as it
+    has no dependencies!" and uses "". As `id` is not not associated with
+    a NeoClient `Parameter` in any way, it does literally nothing.
 
-    fields: MutableMapping[str, Tuple[Any, Parameter]] = {}
+    Instead, NeoClient needs to drip feed `di` dependencies after they've
+    been pre-processed (similar to how the old "inference" logic worked).
+    With this being the case, NeoClient sees `id` has no `Parameter`, so
+    assigns it `QueryParameter` (using its inference logic). *Only* if it's
+    a `DependencyParameter` does `di` need to be invoked. Though, even then
+    the problem persists as the dependency might depend on something relying
+    on inference?
 
-    field_name: str
-    model_field: ModelField
-    for field_name, model_field in ValidatedFunction(
-        func, config=Config
-    ).model.__fields__.items():
-        field_info: FieldInfo = model_field.field_info
-        parameter: Parameter
-
-        if not isinstance(field_info, Parameter):
-            if model_field.annotation in infer_lookup:
-                parameter = infer_lookup[model_field.annotation]()
-            elif (
-                (
-                    isinstance(model_field.annotation, type)
-                    and issubclass(model_field.annotation, (BaseModel, dict))
-                )
-                or dataclasses.is_dataclass(model_field.annotation)
-                or (
-                    utils.is_generic_alias(model_field.annotation)
-                    and typing.get_origin(model_field.annotation)
-                    in (collections.abc.Mapping,)
-                )
-            ):
-                parameter = BodyParameter(
-                    default=utils.get_default(field_info),
-                )
-            else:
-                parameter = QueryParameter(
-                    default=utils.get_default(field_info),
-                )
-        else:
-            parameter = field_info
-
-        # Create a clone of the parameter so that any mutations do not affect the original
-        parameter_clone: Parameter = dataclasses.replace(parameter)
-
-        parameter_clone.prepare(model_field)
-
-        fields[field_name] = (model_field.annotation, parameter_clone)
-
-    return fields
+    Perhaps a bind hook could be used for the inference logic?
+    https://adriangb.com/di/0.79.2/binds/#bind-hooks
+    Bind hooks get a copy of the dependent and the parameter, so could
+    detect if a `Parameter` was *explicitly* set. In theory this will
+    work and be a decent interim solution until switching to Annotated[]
+"""
 
 
-@dataclass
-class DependencyResolver(Generic[T]):
-    dependency: Callable[..., T]
+# def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
+#     class Config:
+#         allow_population_by_field_name: bool = True
+#         arbitrary_types_allowed: bool = True
 
-    def resolve_request(
-        self,
-        request: RequestOpts,
-        /,
-        *,
-        cache: Optional[MutableMapping[Parameter, Any]] = None,
-    ) -> T:
-        return self.resolve(request, cache=cache)
+#     infer_lookup: Mapping[Type[Any], Type[Parameter]] = {
+#         RequestOpts: RequestParameter,
+#         Request: RequestParameter,
+#         Response: ResponseParameter,
+#         httpx.Request: RequestParameter,
+#         httpx.Response: ResponseParameter,
+#         URL: URLParameter,
+#         QueryParams: QueryParamsParameter,
+#         Headers: HeadersParameter,
+#         Cookies: CookiesParameter,
+#         State: AllStateParameter,
+#     }
 
-    def resolve_response(
-        self,
-        response: Response,
-        /,
-        *,
-        cache: Optional[MutableMapping[Parameter, Any]] = None,
-    ) -> T:
-        return self.resolve(response, cache=cache)
+#     fields: MutableMapping[str, Tuple[Any, Parameter]] = {}
 
-    def resolve(
-        self,
-        request_or_response: Union[RequestOpts, Response],
-        /,
-        *,
-        cache: Optional[MutableMapping[Parameter, Any]] = None,
-    ) -> T:
-        if cache is None:
-            cache = {}
+#     field_name: str
+#     model_field: ModelField
+#     for field_name, model_field in ValidatedFunction(
+#         func, config=Config
+#     ).model.__fields__.items():
+#         field_info: FieldInfo = model_field.field_info
+#         parameter: Parameter
 
-        fields: Mapping[str, Tuple[Any, Parameter]] = get_fields(self.dependency)
+#         if not isinstance(field_info, Parameter):
+#             if model_field.annotation in infer_lookup:
+#                 parameter = infer_lookup[model_field.annotation]()
+#             elif (
+#                 (
+#                     isinstance(model_field.annotation, type)
+#                     and issubclass(model_field.annotation, (BaseModel, dict))
+#                 )
+#                 or dataclasses.is_dataclass(model_field.annotation)
+#                 or (
+#                     utils.is_generic_alias(model_field.annotation)
+#                     and typing.get_origin(model_field.annotation)
+#                     in (collections.abc.Mapping,)
+#                 )
+#             ):
+#                 parameter = BodyParameter(
+#                     default=utils.get_default(field_info),
+#                 )
+#             else:
+#                 parameter = QueryParameter(
+#                     default=utils.get_default(field_info),
+#                 )
+#         else:
+#             parameter = field_info
 
-        model_cls: Type[BaseModel] = api.create_model_cls(self.dependency, fields)
+#         # Create a clone of the parameter so that any mutations do not affect the original
+#         parameter_clone: Parameter = dataclasses.replace(parameter)
 
-        arguments: MutableMapping[str, Any] = {}
+#         parameter_clone.prepare(model_field)
 
-        field_name: str
-        field_annotation: Any
-        parameter: Parameter
-        for field_name, (field_annotation, parameter) in fields.items():
-            resolution: Any
+#         fields[field_name] = (model_field.annotation, parameter_clone)
 
-            if parameter in cache:
-                resolution = cache[parameter]
-            else:
-                cache_parameter: bool = True
+#     return fields
 
-                if isinstance(parameter, DependencyParameter):
-                    if isinstance(request_or_response, RequestOpts):
-                        resolution = parameter.resolve_request(
-                            request_or_response,
-                            cache=cache,
-                        )
-                    else:
-                        resolution = parameter.resolve_response(
-                            request_or_response,
-                            cache=cache,
-                        )
 
-                    cache_parameter = parameter.use_cache
-                else:
-                    if isinstance(request_or_response, RequestOpts):
-                        resolution = parameter.resolve_request(request_or_response)
-                    else:
-                        resolution = parameter.resolve_response(request_or_response)
+# @dataclass
+# class DependencyResolver(Generic[T]):
+#     dependency: Callable[..., T]
 
-                # If the parameter has a resolution function that is backed to
-                # a multi-value mapping (and will yield a sequence of values),
-                # inspect the field's annotation to decide whether to use the
-                # entire sequence, or only the first value within it.
-                if isinstance(parameter, (QueryParameter, HeaderParameter)):
-                    field_annotation_origin: Optional[Any] = typing.get_origin(
-                        field_annotation
-                    )
+#     def resolve_request(
+#         self,
+#         request: RequestOpts,
+#         /,
+#         *,
+#         cache: Optional[MutableMapping[Parameter, Any]] = None,
+#     ) -> T:
+#         return self.resolve(request, cache=cache)
 
-                    if (
-                        field_annotation is Any
-                        or field_annotation not in (list, tuple)
-                        and (
-                            not utils.is_generic_alias(field_annotation)
-                            or field_annotation_origin
-                            not in (list, tuple, collections.abc.Sequence)
-                        )
-                    ):
-                        if isinstance(resolution, Sequence) and resolution:
-                            resolution = resolution[0]
+#     def resolve_response(
+#         self,
+#         response: Response,
+#         /,
+#         *,
+#         cache: Optional[MutableMapping[Parameter, Any]] = None,
+#     ) -> T:
+#         return self.resolve(response, cache=cache)
 
-                if cache_parameter:
-                    cache[parameter] = resolution
+#     def resolve(
+#         self,
+#         request_or_response: Union[RequestOpts, Response],
+#         /,
+#         *,
+#         cache: Optional[MutableMapping[Parameter, Any]] = None,
+#     ) -> T:
+#         if cache is None:
+#             cache = {}
 
-            # If there is no resolution (e.g. missing header/query param etc.)
-            # and the parameter has a default, then we can omit the value from
-            # the arguments.
-            # This is done so that Pydantic will use the default value, rather
-            # than complaining that None was used.
-            if resolution is None and utils.has_default(parameter):
-                continue
+#         fields: Mapping[str, Tuple[Any, Parameter]] = get_fields(self.dependency)
 
-            arguments[field_name] = resolution
+#         model_cls: Type[BaseModel] = api.create_model_cls(self.dependency, fields)
 
-        model: BaseModel = model_cls(**arguments)
+#         arguments: MutableMapping[str, Any] = {}
 
-        validated_arguments: Mapping[str, Any] = model.dict()
+#         field_name: str
+#         field_annotation: Any
+#         parameter: Parameter
+#         for field_name, (field_annotation, parameter) in fields.items():
+#             resolution: Any
 
-        args: Tuple[Any, ...]
-        kwargs: Mapping[str, Any]
-        args, kwargs = utils.unpack_arguments(self.dependency, validated_arguments)
+#             if parameter in cache:
+#                 resolution = cache[parameter]
+#             else:
+#                 cache_parameter: bool = True
 
-        return self.dependency(*args, **kwargs)
+#                 if isinstance(parameter, DependencyParameter):
+#                     if isinstance(request_or_response, RequestOpts):
+#                         resolution = parameter.resolve_request(
+#                             request_or_response,
+#                             cache=cache,
+#                         )
+#                     else:
+#                         resolution = parameter.resolve_response(
+#                             request_or_response,
+#                             cache=cache,
+#                         )
+
+#                     cache_parameter = parameter.use_cache
+#                 else:
+#                     if isinstance(request_or_response, RequestOpts):
+#                         resolution = parameter.resolve_request(request_or_response)
+#                     else:
+#                         resolution = parameter.resolve_response(request_or_response)
+
+#                 # If the parameter has a resolution function that is backed to
+#                 # a multi-value mapping (and will yield a sequence of values),
+#                 # inspect the field's annotation to decide whether to use the
+#                 # entire sequence, or only the first value within it.
+#                 if isinstance(parameter, (QueryParameter, HeaderParameter)):
+#                     field_annotation_origin: Optional[Any] = typing.get_origin(
+#                         field_annotation
+#                     )
+
+#                     if (
+#                         field_annotation is Any
+#                         or field_annotation not in (list, tuple)
+#                         and (
+#                             not utils.is_generic_alias(field_annotation)
+#                             or field_annotation_origin
+#                             not in (list, tuple, collections.abc.Sequence)
+#                         )
+#                     ):
+#                         if isinstance(resolution, Sequence) and resolution:
+#                             resolution = resolution[0]
+
+#                 if cache_parameter:
+#                     cache[parameter] = resolution
+
+#             # If there is no resolution (e.g. missing header/query param etc.)
+#             # and the parameter has a default, then we can omit the value from
+#             # the arguments.
+#             # This is done so that Pydantic will use the default value, rather
+#             # than complaining that None was used.
+#             if resolution is None and utils.has_default(parameter):
+#                 continue
+
+#             arguments[field_name] = resolution
+
+#         model: BaseModel = model_cls(**arguments)
+
+#         validated_arguments: Mapping[str, Any] = model.dict()
+
+#         args: Tuple[Any, ...]
+#         kwargs: Mapping[str, Any]
+#         args, kwargs = utils.unpack_arguments(self.dependency, validated_arguments)
+
+#         return self.dependency(*args, **kwargs)
 
 
 @dataclass(unsafe_hash=True)
@@ -227,33 +257,37 @@ class DependencyParameter(Parameter):
         self,
         request: RequestOpts,
         /,
-        *,
-        cache: Optional[MutableMapping[Parameter, Any]] = None,
+        # *,
+        # cache: Optional[MutableMapping[Parameter, Any]] = None,
     ) -> Any:
         if self.dependency is None:
             raise ResolutionError(
                 f"Cannot resolve parameter {type(self)!r} without a dependency"
             )
 
-        return DependencyResolver(self.dependency).resolve_request(request, cache=cache)
+        # return DependencyResolver(self.dependency).resolve_request(request, cache=cache)
+        return inject_request(self.dependency, request, use_cache=self.use_cache)
 
     def resolve_response(
         self,
         response: Response,
         /,
-        *,
-        cache: Optional[MutableMapping[Parameter, Any]] = None,
+        # *,
+        # cache: Optional[MutableMapping[Parameter, Any]] = None,
     ) -> Any:
         if self.dependency is None:
             raise ResolutionError(
                 f"Cannot resolve parameter {type(self)!r} without a dependency"
             )
 
-        return DependencyResolver(self.dependency).resolve_response(
-            response, cache=cache
-        )
+        # return DependencyResolver(self.dependency).resolve_response(
+        #     response, cache=cache
+        # )
+        return inject_response(self.dependency, response, use_cache=self.use_cache)
 
     def prepare(self, field: ModelField, /) -> None:
+        super().prepare(field)
+
         if self.dependency is not None:
             return
 

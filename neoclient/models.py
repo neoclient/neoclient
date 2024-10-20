@@ -13,12 +13,14 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
 )
 
 import httpx
 from httpx import (
     URL,
+    Auth,
     BaseTransport,
     Client,
     Cookies,
@@ -365,7 +367,18 @@ class ClientOptions:
         )
 
 
-@dataclass
+# FIXME: Temp hack to fix forwardref
+TempAuthTypes = Union[
+    Tuple[Union[str, bytes], Union[str, bytes]],
+    Callable[[httpx.Request], httpx.Request],
+    Auth,
+]
+
+
+# WARN: This cannot be a dataclass until uplifted to Pydantic V2.
+# If this uses a dataclass with Pydantic V1, this will invoke bug #136.
+# Pydantic issue #1001 refers.
+# @dataclass
 class BaseRequestOpts:
     # Note: These opts match the signature of httpx.Client.request
     method: str
@@ -394,7 +407,8 @@ class BaseRequestOpts:
         data: Optional[RequestData] = None,
         files: Optional[RequestFiles] = None,
         json: Optional[Any] = None,
-        auth: Optional[AuthTypes] = None,
+        # auth: Optional[AuthTypes] = None,
+        auth: Optional[TempAuthTypes] = None,  # TEMP
         follow_redirects: bool = False,
         timeout: Union[TimeoutTypes, UseClientDefault] = USE_CLIENT_DEFAULT,
         extensions: Optional[RequestExtensions] = None,
@@ -433,6 +447,27 @@ class BaseRequestOpts:
         url = str(self.url)
         return f"<{class_name}({self.method!r}, {url!r})>"
 
+    def __eq__(self, rhs: Any, /) -> bool:
+        if not isinstance(rhs, BaseRequestOpts):
+            return False
+
+        request_opts: BaseRequestOpts = rhs
+
+        return all(
+            (
+                self.method == request_opts.method,
+                self.url == request_opts.url,
+                self.params == request_opts.params,
+                self.headers == request_opts.headers,
+                self.cookies == request_opts.cookies,
+                self.content == request_opts.content,
+                self.data == request_opts.data,
+                self.files == request_opts.files,
+                self.json == request_opts.json,
+                self.timeout == request_opts.timeout,
+            )
+        )
+
     def build(self, client: Optional[Client] = None) -> httpx.Request:
         if client is None:
             client = Client()
@@ -463,21 +498,49 @@ class BaseRequestOpts:
             follow_redirects=self.follow_redirects,
         )
 
-    def copy(self) -> Self:
-        return dataclasses.replace(
-            self,
-            timeout=(
-                self.timeout
-                if self.timeout is not None
-                else USE_CLIENT_DEFAULT  #  type: ignore
-            ),
+    # TODO: Type me.
+    # FIXME: This implementation is jank and lashed together.
+    def _replace(self, /, **changes) -> Self:
+        obj = type(self)(
+            method=self.method,
+            url=self.url,
+            content=self.content,
+            data=self.data,
+            files=self.files,
+            json=self.json,
+            params=self.params,
+            headers=self.headers,
+            cookies=self.cookies,
+            timeout=self.timeout if self.timeout is not None else USE_CLIENT_DEFAULT,
+            extensions=self.extensions,
         )
+
+        for key, val in changes.items():
+            setattr(obj, key, val)
+
+        return obj
+
+    # def copy(self) -> Self:
+    #     return dataclasses.replace(
+    #         self,
+    #         timeout=(
+    #             self.timeout
+    #             if self.timeout is not None
+    #             else USE_CLIENT_DEFAULT  #  type: ignore
+    #         ),
+    #     )
+
+    def copy(self) -> Self:
+        return self._replace()
 
     def validate(self) -> None:
         return
 
 
-@dataclass(repr=False)
+# WARN: This cannot be a dataclass until uplifted to Pydantic V2.
+# If this uses a dataclass with Pydantic V1, this will invoke bug #136.
+# Pydantic issue #1001 refers.
+# @dataclass(repr=False)
 class RequestOpts(BaseRequestOpts):
     path_params: MutableMapping[str, str]
     state: State
@@ -494,7 +557,8 @@ class RequestOpts(BaseRequestOpts):
         data: Optional[RequestData] = None,
         files: Optional[RequestFiles] = None,
         json: Optional[Any] = None,
-        auth: Optional[AuthTypes] = None,
+        # auth: Optional[AuthTypes] = None,
+        auth: Optional[TempAuthTypes] = None,  # TEMP
         follow_redirects: bool = False,
         timeout: Union[TimeoutTypes, UseClientDefault] = USE_CLIENT_DEFAULT,
         extensions: Optional[RequestExtensions] = None,
@@ -525,8 +589,36 @@ class RequestOpts(BaseRequestOpts):
         )
         self.state = state if state is not None else State()
 
+    def __eq__(self, rhs: Any, /) -> bool:
+        if not isinstance(rhs, RequestOpts):
+            return False
+
+        request_opts: RequestOpts = rhs
+
+        return all(
+            (
+                super().__eq__(rhs),
+                self.path_params == request_opts.path_params,
+                self.state == request_opts.state,
+            )
+        )
+
+    # TODO: Type me.
+    # FIXME: This implementation is jank and lashed together.
+    def _replace(self, /, **changes) -> Self:
+        obj = super()._replace()
+
+        obj.path_params = self.path_params
+        obj.state = self.state
+
+        for key, val in changes.items():
+            setattr(obj, key, val)
+
+        return obj
+
     def build(self, client: Optional[Client] = None) -> Request:
-        request_opts: RequestOpts = dataclasses.replace(self, url=self.formatted_url)
+        # request_opts: RequestOpts = dataclasses.replace(self, url=self.formatted_url)
+        request_opts: RequestOpts = self._replace(url=self.formatted_url)
         request: httpx.Request = BaseRequestOpts.build(request_opts, client)
 
         return Request.from_httpx_request(request, state=self.state)

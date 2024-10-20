@@ -11,7 +11,8 @@ from httpx import Client
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from .composition import compose
+from neoclient.di import compose
+
 from .errors import NotAnOperationError
 from .middleware import Middleware
 from .models import ClientOptions, Request, RequestOpts, Response

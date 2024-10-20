@@ -17,8 +17,9 @@ from typing import (
     overload,
 )
 
+from pydantic import BaseConfig, ConfigDict
 from pydantic.config import Extra
-from pydantic.fields import Undefined
+from pydantic.fields import ModelField, Undefined
 from pydantic.main import BaseModel, create_model
 from pydantic.typing import get_all_type_hints
 from pydantic.utils import to_camel
@@ -69,7 +70,7 @@ def validate(
 
 
 def create_func_model(
-    function: Callable,
+    name: str,
     fields: Mapping[str, Any],
     *,
     config: Optional[ConfigType] = None,
@@ -96,9 +97,50 @@ def create_func_model(
     )
 
     return create_model(
-        to_camel(function.__name__),
+        to_camel(name),
         __base__=ValidatedFunctionBaseModel,
         **fields,
+    )
+
+
+# NOTE: Does this belong here? It's not currently used by this module.
+# def parameter_to_model_field(parameter: Parameter, /) -> ModelField:
+#     class Config:
+#         arbitrary_types_allowed: bool = True
+
+#     annotation: Any = (
+#         Any if parameter.annotation is Parameter.empty else parameter.annotation
+#     )
+#     default: Any = (
+#         Undefined if parameter.default is Parameter.empty else parameter.default
+#     )
+
+
+#     return create_func_model(
+#         parameter.name,
+#         {parameter.name: (annotation, default)},
+#         config=Config,
+#     ).__fields__[parameter.name]
+def parameter_to_model_field(parameter: Parameter, /) -> ModelField:
+    class Config(BaseConfig):
+        # allow_population_by_field_name = True
+        arbitrary_types_allowed = True
+
+    annotation: Any = (
+        Any if parameter.annotation is Parameter.empty else parameter.annotation
+    )
+    default: Any = (
+        Undefined if parameter.default is Parameter.empty else parameter.default
+    )
+
+    return ModelField.infer(
+        name=parameter.name,
+        value=default,
+        annotation=annotation,
+        class_validators=None,
+        # class_validators={},
+        # config=BaseConfig,
+        config=Config,
     )
 
 
@@ -135,7 +177,7 @@ class ValidatedFunction(Generic[PS, RT]):
             else:
                 fields[parameter_name] = (annotation, default)
 
-        self.model = create_func_model(function, fields, config=config)
+        self.model = create_func_model(function.__name__, fields, config=config)
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__}(function={self.function!r})>"
