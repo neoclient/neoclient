@@ -72,67 +72,67 @@ Current issue:
 """
 
 
-def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
-    class Config:
-        allow_population_by_field_name: bool = True
-        arbitrary_types_allowed: bool = True
+# def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
+#     class Config:
+#         allow_population_by_field_name: bool = True
+#         arbitrary_types_allowed: bool = True
 
-    infer_lookup: Mapping[Type[Any], Type[Parameter]] = {
-        RequestOpts: RequestParameter,
-        Request: RequestParameter,
-        Response: ResponseParameter,
-        httpx.Request: RequestParameter,
-        httpx.Response: ResponseParameter,
-        URL: URLParameter,
-        QueryParams: QueryParamsParameter,
-        Headers: HeadersParameter,
-        Cookies: CookiesParameter,
-        State: AllStateParameter,
-    }
+#     infer_lookup: Mapping[Type[Any], Type[Parameter]] = {
+#         RequestOpts: RequestParameter,
+#         Request: RequestParameter,
+#         Response: ResponseParameter,
+#         httpx.Request: RequestParameter,
+#         httpx.Response: ResponseParameter,
+#         URL: URLParameter,
+#         QueryParams: QueryParamsParameter,
+#         Headers: HeadersParameter,
+#         Cookies: CookiesParameter,
+#         State: AllStateParameter,
+#     }
 
-    fields: MutableMapping[str, Tuple[Any, Parameter]] = {}
+#     fields: MutableMapping[str, Tuple[Any, Parameter]] = {}
 
-    field_name: str
-    model_field: ModelField
-    for field_name, model_field in ValidatedFunction(
-        func, config=Config
-    ).model.__fields__.items():
-        field_info: FieldInfo = model_field.field_info
-        parameter: Parameter
+#     field_name: str
+#     model_field: ModelField
+#     for field_name, model_field in ValidatedFunction(
+#         func, config=Config
+#     ).model.__fields__.items():
+#         field_info: FieldInfo = model_field.field_info
+#         parameter: Parameter
 
-        if not isinstance(field_info, Parameter):
-            if model_field.annotation in infer_lookup:
-                parameter = infer_lookup[model_field.annotation]()
-            elif (
-                (
-                    isinstance(model_field.annotation, type)
-                    and issubclass(model_field.annotation, (BaseModel, dict))
-                )
-                or dataclasses.is_dataclass(model_field.annotation)
-                or (
-                    utils.is_generic_alias(model_field.annotation)
-                    and typing.get_origin(model_field.annotation)
-                    in (collections.abc.Mapping,)
-                )
-            ):
-                parameter = BodyParameter(
-                    default=utils.get_default(field_info),
-                )
-            else:
-                parameter = QueryParameter(
-                    default=utils.get_default(field_info),
-                )
-        else:
-            parameter = field_info
+#         if not isinstance(field_info, Parameter):
+#             if model_field.annotation in infer_lookup:
+#                 parameter = infer_lookup[model_field.annotation]()
+#             elif (
+#                 (
+#                     isinstance(model_field.annotation, type)
+#                     and issubclass(model_field.annotation, (BaseModel, dict))
+#                 )
+#                 or dataclasses.is_dataclass(model_field.annotation)
+#                 or (
+#                     utils.is_generic_alias(model_field.annotation)
+#                     and typing.get_origin(model_field.annotation)
+#                     in (collections.abc.Mapping,)
+#                 )
+#             ):
+#                 parameter = BodyParameter(
+#                     default=utils.get_default(field_info),
+#                 )
+#             else:
+#                 parameter = QueryParameter(
+#                     default=utils.get_default(field_info),
+#                 )
+#         else:
+#             parameter = field_info
 
-        # Create a clone of the parameter so that any mutations do not affect the original
-        parameter_clone: Parameter = dataclasses.replace(parameter)
+#         # Create a clone of the parameter so that any mutations do not affect the original
+#         parameter_clone: Parameter = dataclasses.replace(parameter)
 
-        parameter_clone.prepare(model_field)
+#         parameter_clone.prepare(model_field)
 
-        fields[field_name] = (model_field.annotation, parameter_clone)
+#         fields[field_name] = (model_field.annotation, parameter_clone)
 
-    return fields
+#     return fields
 
 
 # @dataclass

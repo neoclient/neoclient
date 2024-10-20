@@ -20,7 +20,8 @@ from roster import Record
 from typing_extensions import ParamSpec
 
 from . import converters
-from .composition import get_fields, validate_fields
+# from .composition import get_fields, validate_fields
+from .composition import validate_fields
 from .constants import USER_AGENT
 from .defaults import (
     DEFAULT_AUTH,
@@ -269,7 +270,8 @@ class Client:
             )
 
             # Validate operation function parameters are acceptable
-            validate_fields(get_fields(operation.request_options, func))
+            # WARN: Temporarily disabled
+            # validate_fields(get_fields(operation.request_options, func))
 
             return operation.wrapper
 
