@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo, ModelField, Undefined, UndefinedType
 
 from neoclient import api, utils
-from neoclient.composition import get_fields, validate_fields
+from neoclient.composition import validate_fields
 from neoclient.di.dependencies import DEPENDENCIES
 from neoclient.params import Parameter, PathParameter, QueryParameter
 from neoclient.validation import ValidatedFunction, parameter_to_model_field
@@ -57,8 +57,6 @@ def _build_bind_hook(subject: Union[RequestOpts, Response], /):
             return None  # these should already be stubbed
 
         parameter: Parameter = infer(param, subject)
-
-        # print(repr(parameter_clone), parameter_clone.alias)
 
         return Dependent(parameter.get_resolution_dependent())
 
@@ -228,20 +226,7 @@ def get_parameters(
         validated_function.signature.parameters
     )
 
-    # print(parameters)
-
     metas: MutableMapping[str, Tuple[Any, Parameter]] = {}
-
-    # field_name: str
-    # model_field: ModelField
-    # for field_name, model_field in validated_function.model.__fields__.items():
-    #     raw_parameter: inspect.Parameter = parameters[field_name]
-    #     field_info: FieldInfo = model_field.field_info
-    #     parameter: Parameter
-
-    #     print(field_name, raw_parameter, field_info)
-
-    #     metas[field_name] = (model_field.annotation, parameter_clone)
 
     parameter: inspect.Parameter
     for parameter in parameters.values():
@@ -267,8 +252,6 @@ def compose(
     arguments: Mapping[str, Any] = api.bind_arguments(func, args, kwargs)
     fields: Mapping[str, Tuple[Any, Parameter]] = get_parameters(func, request)
 
-    # print(arguments, fields)
-
     # TODO: Do we still need/want to do this?
     # Validate that the fields are acceptable
     validate_fields(fields)
@@ -278,16 +261,12 @@ def compose(
     # By this stage the arguments have been validated
     validated_arguments: Mapping[str, Any] = model.dict()
 
-    # print(validated_arguments)
-
     field_name: str
     parameter: Parameter
     for field_name, (_, parameter) in fields.items():
         argument: Any = validated_arguments[field_name]
 
         dependent: DependencyProviderType[None] = parameter.get_composition_dependent(argument)
-
-        # do_compose(parameter, request, argument)
 
         with request_container.bind(_build_bind_hook(request)):
             solved: SolvedDependent[None] = _solve(

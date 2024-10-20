@@ -1,6 +1,7 @@
 from enum import Enum, auto
 
 
+# Also referred to as the "subject"
 class Profile(Enum):
     # The "request" profile is for dependencies working with the pre-request
     # object (RequestOpts).
