@@ -9,7 +9,7 @@ from neoclient import converters, decorators, get
 from neoclient.auth import Auth, BasicAuth
 from neoclient.defaults import DEFAULT_FOLLOW_REDIRECTS
 from neoclient.middleware import AuthMiddleware
-from neoclient.models import ClientOptions, RequestOpts, Request, Response, State
+from neoclient.models import ClientOptions, Request, RequestOpts, Response, State
 from neoclient.operation import get_operation
 from neoclient.services import Service
 from neoclient.types import (

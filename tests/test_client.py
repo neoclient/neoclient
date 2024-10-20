@@ -6,7 +6,7 @@ from pydantic import BaseModel, Required
 
 from neoclient import Body, NeoClient, Query, QueryParams
 from neoclient.decorators import request
-from neoclient.models import RequestOpts, Request, Response
+from neoclient.models import Request, RequestOpts, Response
 from neoclient.operation import Operation, get_operation
 from neoclient.typing import CallNext
 

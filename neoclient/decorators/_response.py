@@ -1,8 +1,7 @@
-from .api import DecoratorTarget, common_decorator
-
 from ..operation import Operation
 from ..specification import ClientSpecification
 from ..typing import Dependency
+from .api import DecoratorTarget, common_decorator
 
 __all__ = ("response",)
 

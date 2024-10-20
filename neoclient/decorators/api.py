@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, MutableSequence, Type, TypeVar, Union
 
 from httpx import Cookies, Headers, QueryParams
+
 from neoclient.middleware import Middleware
 from neoclient.models import ClientOptions, RequestOpts
 from neoclient.operation import Operation, get_operation

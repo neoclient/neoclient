@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 from neoclient.enums import HTTPMethod
-from neoclient.models import RequestOpts, Request, Response
+from neoclient.models import Request, RequestOpts, Response
 
 __all__ = (
     "build_request",

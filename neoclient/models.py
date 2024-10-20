@@ -15,7 +15,6 @@ from typing import (
     Set,
     Union,
 )
-from typing_extensions import Self
 
 import httpx
 from httpx import (
@@ -28,7 +27,8 @@ from httpx import (
     QueryParams,
     Timeout,
 )
-from httpx._client import UseClientDefault, USE_CLIENT_DEFAULT
+from httpx._client import USE_CLIENT_DEFAULT, UseClientDefault
+from typing_extensions import Self
 
 from . import converters, utils
 from .constants import USER_AGENT

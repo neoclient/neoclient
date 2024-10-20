@@ -6,8 +6,6 @@ from mediate.protocols import MiddlewareCallable, MiddlewareMethod
 
 from neoclient.specification import ClientSpecification
 
-from .api import Decorator
-
 from ..annotations import (
     service_middleware,
     service_request_dependency,
@@ -16,6 +14,7 @@ from ..annotations import (
 )
 from ..models import Request, Response
 from ..typing import Dependency
+from .api import Decorator
 
 __all__ = ("service",)
 

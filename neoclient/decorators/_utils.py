@@ -1,6 +1,6 @@
 from ..param_functions import Request
-from .api import CS
 from ._common import request_depends
+from .api import CS
 
 __all__ = ("persist_pre_request",)
 
