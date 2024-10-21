@@ -87,14 +87,25 @@ class DependencyParameter(Parameter):
         return self.dependency
 
 
-def _build_validation_wrapper(
-    dependent: DependencyProviderType[T], annotation: Any
+def _wrap_dependent(
+    dependent: DependencyProviderType[T], parameter: inspect.Parameter
 ) -> DependencyProviderType[T]:
-    type_ = Undefined if annotation is inspect.Parameter.empty else annotation
+    type_ = Undefined if parameter.annotation is inspect.Parameter.empty else parameter.annotation
 
     @functools.wraps(dependent)
     def wrapper(*args, **kwargs) -> T:
         obj: Any = dependent(*args, **kwargs)
+
+        model_field: ModelField = parameter_to_model_field(parameter)
+        field_info: FieldInfo = model_field.field_info
+
+        # If there is no resolution (e.g. missing header/query param etc.)
+        # and the parameter has a default, then we can omit the value from
+        # the arguments.
+        # This is done so that Pydantic will use the default value, rather
+        # than complaining that None was used.
+        if obj is None and utils.has_default(field_info):
+            obj = utils.get_default(field_info)
 
         return utils.parse_obj_as(type_, obj)
 
@@ -118,8 +129,8 @@ def _build_bind_hook(subject: Union[RequestOpts, Response], /):
         parameter: Parameter = infer(param, subject)
 
         return Dependent(
-            _build_validation_wrapper(
-                parameter.get_resolution_dependent(), param.annotation
+            _wrap_dependent(
+                parameter.get_resolution_dependent(), param
             )
         )
 

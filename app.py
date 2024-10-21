@@ -4,7 +4,7 @@ from neoclient.models import Headers, QueryParams, RequestOpts
 r = RequestOpts("GET", "/", headers={"x-name": "bob"}, params={"age": "123"})
 
 
-def foo(name: str):
+def foo(name: str = "bob"):
     return name
 
 
