@@ -1,6 +1,8 @@
 import collections
 import dataclasses
+import functools
 import inspect
+import typing
 from typing import (
     Any,
     Callable,
@@ -13,7 +15,6 @@ from typing import (
     TypeVar,
     Union,
 )
-import typing
 
 import httpx
 from di import Container, SolvedDependent, bind_by_type
@@ -21,7 +22,6 @@ from di.api.dependencies import DependentBase
 from di.api.executor import SupportsSyncExecutor
 from di.api.providers import DependencyProvider, DependencyProviderType
 from di.dependent import Dependent
-from di.exceptions import WiringError
 from di.executors import SyncExecutor
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo, ModelField, Undefined, UndefinedType
@@ -35,17 +35,6 @@ from neoclient.validation import ValidatedFunction, parameter_to_model_field
 
 from ..models import RequestOpts, Response
 from .enums import Profile
-
-# No inference:
-# * Parameter metadata exists, use that. (e.g. headers = Headers())
-# Inference:
-# 1. Parameter name matches a path parameter, assume a path param
-# 2. Type is a known dependency (e.g. headers: Headers), no inference needed.
-# 3. Type indicates a body parameter (e.g. user: User), treat as body parameter.
-# 4. Assume query parameter
-# Don't do:
-# * Infer by name? Only do if not typed? Only do for select few? (FastAPI doesn't do this.)
-
 
 T = TypeVar("T")
 
@@ -97,19 +86,25 @@ class DependencyParameter(Parameter):
 
         return self.dependency
 
-    # def get_composition_dependent(
-    #     self, argument: Any, /
-    # ) -> DependencyProviderType[None]:
-    #     if self.dependency is None:
-    #         raise NotImplementedError # TODO: Handle correctly.
+
+def _build_validation_wrapper(
+    dependent: DependencyProviderType[T], annotation: Any
+) -> DependencyProviderType[T]:
+    type_ = Undefined if annotation is inspect.Parameter.empty else annotation
+
+    @functools.wraps(dependent)
+    def wrapper(*args, **kwargs) -> T:
+        obj: Any = dependent(*args, **kwargs)
+
+        return utils.parse_obj_as(type_, obj)
+
+    return wrapper
 
 
 def _build_bind_hook(subject: Union[RequestOpts, Response], /):
     def _bind_hook(
         param: Optional[inspect.Parameter], dependent: DependentBase[Any]
     ) -> Optional[DependentBase[Any]]:
-        # print("_bind_hook", repr(param), dependent)
-
         # If there's no parameter, then a dependent is already known.
         # As a dependent is already known, we don't need to anything.
         if param is None:
@@ -122,12 +117,11 @@ def _build_bind_hook(subject: Union[RequestOpts, Response], /):
 
         parameter: Parameter = infer(param, subject)
 
-        return Dependent(parameter.get_resolution_dependent())
-
-        # raise WiringError(
-        #     f"No dependency provider of type {param.annotation!r} found for parameter {param.name!r}",
-        #     [],
-        # )
+        return Dependent(
+            _build_validation_wrapper(
+                parameter.get_resolution_dependent(), param.annotation
+            )
+        )
 
     return _bind_hook
 
@@ -245,24 +239,18 @@ def infer(param: inspect.Parameter, subject: Union[RequestOpts, Response]) -> Pa
     # 1. Parameter metadata exists! Let's use that.
     if isinstance(field_info, Parameter):
         parameter = field_info
-    # n. Parameter name matches a path parameter (during composition only)
+    # 2. Parameter name matches a path parameter (during composition only)
     elif param.name in path_params:
         parameter = PathParameter(
             alias=param.name,
             default=utils.get_default(field_info),
         )
-    # n. Parameter type is a known dependency (TODO: Support subclasses)
+    # 3. Parameter type is a known dependency (TODO: Support subclasses)
     elif isinstance(param.annotation, type) and param.annotation in dependencies:
         dependent: DependencyProviderType[type] = dependencies[param.annotation]
 
         return DependencyParameter(dependency=dependent)
-
-        # raise NotImplementedError
-        # # parameter = DependencyParameter(...)
-        # return Dependent(
-        #     dependencies[param.annotation]
-        # )  # TODO: Use a neoclient Depends parameter?
-    # n. Parameter type indicates a body parameter
+    # 4. Parameter type indicates a body parameter
     elif (
         (
             isinstance(model_field.annotation, type)
@@ -277,7 +265,7 @@ def infer(param: inspect.Parameter, subject: Union[RequestOpts, Response]) -> Pa
         parameter = BodyParameter(
             default=utils.get_default(field_info),
         )
-    # n. Otherwise, assume a query parameter
+    # 5. Otherwise, assume a query parameter
     else:
         # Note: What if the type is non-primitive (e.g. foo: Foo),
         # do we always want to assume a query parameter?

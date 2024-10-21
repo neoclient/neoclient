@@ -16,7 +16,6 @@ from neoclient.di import compose, inject_request, inject_response
 from .errors import NotAnOperationError
 from .middleware import Middleware
 from .models import ClientOptions, Request, RequestOpts, Response
-# from .resolution import resolve_request, resolve_response
 from .typing import Dependency
 
 __all__ = (

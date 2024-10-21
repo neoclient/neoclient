@@ -1,11 +1,11 @@
-from neoclient.models import Headers, RequestOpts
 from neoclient.di import inject_request
+from neoclient.models import Headers, QueryParams, RequestOpts
 
-r = RequestOpts("GET", "/", headers={"x-name": "bob"})
+r = RequestOpts("GET", "/", headers={"x-name": "bob"}, params={"age": "123"})
 
 
-def foo(headers: Headers):
-    return headers
+def foo(age: int):
+    return age
 
 
 d = inject_request(foo, r)
