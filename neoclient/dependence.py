@@ -1,75 +1,47 @@
-import collections.abc
-import dataclasses
-import typing
-from dataclasses import dataclass
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+# import collections.abc
+# import dataclasses
+# import typing
+# from dataclasses import dataclass
+# from typing import (
+#     Any,
+#     Callable,
+#     Generic,
+#     Mapping,
+#     MutableMapping,
+#     Optional,
+#     Sequence,
+#     Tuple,
+#     Type,
+#     TypeVar,
+#     Union,
+# )
 
-import httpx
-from httpx import URL, Cookies, Headers, QueryParams
-from pydantic import BaseModel
-from pydantic.fields import FieldInfo, ModelField
+# import httpx
+# from httpx import URL, Cookies, Headers, QueryParams
+# from pydantic import BaseModel
+# from pydantic.fields import FieldInfo, ModelField
 
-from neoclient.di import inject_request, inject_response
+# from neoclient.di import inject_request, inject_response
 
-from . import api, utils
-from .errors import PreparationError, ResolutionError
-from .models import Request, RequestOpts, Response, State
-from .params import (
-    AllStateParameter,
-    BodyParameter,
-    CookiesParameter,
-    HeaderParameter,
-    HeadersParameter,
-    Parameter,
-    QueryParameter,
-    QueryParamsParameter,
-    RequestParameter,
-    ResponseParameter,
-    URLParameter,
-)
-from .validation import ValidatedFunction
+# from . import api, utils
+# from .errors import PreparationError, ResolutionError
+# from .models import Request, RequestOpts, Response, State
+# from .params import (
+#     AllStateParameter,
+#     BodyParameter,
+#     CookiesParameter,
+#     HeaderParameter,
+#     HeadersParameter,
+#     Parameter,
+#     QueryParameter,
+#     QueryParamsParameter,
+#     RequestParameter,
+#     ResponseParameter,
+#     URLParameter,
+# )
+# from .validation import ValidatedFunction
 
-T = TypeVar("T")
-
-"""
-Current issue:
-    NeoClient allows parameter "guessing" (inference), e.g.
-        @get("/user")
-        def get_user(id: str)...
-
-        Where get_user("123") translates to GET /user?id=123
-
-    The problem is that `di` is being tasked with resolving all the deps,
-    and sees `id` wants a `str`. It goes, "ooh I can build a string as it
-    has no dependencies!" and uses "". As `id` is not not associated with
-    a NeoClient `Parameter` in any way, it does literally nothing.
-
-    Instead, NeoClient needs to drip feed `di` dependencies after they've
-    been pre-processed (similar to how the old "inference" logic worked).
-    With this being the case, NeoClient sees `id` has no `Parameter`, so
-    assigns it `QueryParameter` (using its inference logic). *Only* if it's
-    a `DependencyParameter` does `di` need to be invoked. Though, even then
-    the problem persists as the dependency might depend on something relying
-    on inference?
-
-    Perhaps a bind hook could be used for the inference logic?
-    https://adriangb.com/di/0.79.2/binds/#bind-hooks
-    Bind hooks get a copy of the dependent and the parameter, so could
-    detect if a `Parameter` was *explicitly* set. In theory this will
-    work and be a decent interim solution until switching to Annotated[]
-"""
+# T = TypeVar("T")
 
 
 # def get_fields(func: Callable, /) -> Mapping[str, Tuple[Any, Parameter]]:
@@ -248,55 +220,55 @@ Current issue:
 #         return self.dependency(*args, **kwargs)
 
 
-@dataclass(unsafe_hash=True)
-class DependencyParameter(Parameter):
-    dependency: Optional[Callable] = None
-    use_cache: bool = True
+# @dataclass(unsafe_hash=True)
+# class DependencyParameter(Parameter):
+#     dependency: Optional[Callable] = None
+#     use_cache: bool = True
 
-    def resolve_request(
-        self,
-        request: RequestOpts,
-        /,
-        # *,
-        # cache: Optional[MutableMapping[Parameter, Any]] = None,
-    ) -> Any:
-        if self.dependency is None:
-            raise ResolutionError(
-                f"Cannot resolve parameter {type(self)!r} without a dependency"
-            )
+#     def resolve_request(
+#         self,
+#         request: RequestOpts,
+#         /,
+#         # *,
+#         # cache: Optional[MutableMapping[Parameter, Any]] = None,
+#     ) -> Any:
+#         if self.dependency is None:
+#             raise ResolutionError(
+#                 f"Cannot resolve parameter {type(self)!r} without a dependency"
+#             )
 
-        # return DependencyResolver(self.dependency).resolve_request(request, cache=cache)
-        return inject_request(self.dependency, request, use_cache=self.use_cache)
+#         # return DependencyResolver(self.dependency).resolve_request(request, cache=cache)
+#         return inject_request(self.dependency, request, use_cache=self.use_cache)
 
-    def resolve_response(
-        self,
-        response: Response,
-        /,
-        # *,
-        # cache: Optional[MutableMapping[Parameter, Any]] = None,
-    ) -> Any:
-        if self.dependency is None:
-            raise ResolutionError(
-                f"Cannot resolve parameter {type(self)!r} without a dependency"
-            )
+#     def resolve_response(
+#         self,
+#         response: Response,
+#         /,
+#         # *,
+#         # cache: Optional[MutableMapping[Parameter, Any]] = None,
+#     ) -> Any:
+#         if self.dependency is None:
+#             raise ResolutionError(
+#                 f"Cannot resolve parameter {type(self)!r} without a dependency"
+#             )
 
-        # return DependencyResolver(self.dependency).resolve_response(
-        #     response, cache=cache
-        # )
-        return inject_response(self.dependency, response, use_cache=self.use_cache)
+#         # return DependencyResolver(self.dependency).resolve_response(
+#         #     response, cache=cache
+#         # )
+#         return inject_response(self.dependency, response, use_cache=self.use_cache)
 
-    def prepare(self, field: ModelField, /) -> None:
-        super().prepare(field)
+#     def prepare(self, field: ModelField, /) -> None:
+#         super().prepare(field)
 
-        if self.dependency is not None:
-            return
+#         if self.dependency is not None:
+#             return
 
-        # NOTE: The annotation will nearly always be callable (e.g. `int`)
-        # This check needs to be changed to check for non primitive callables,
-        # and more generally, nothing out of the standard library.
-        if not callable(field.annotation):
-            raise PreparationError(
-                f"Failed to prepare parameter: {self!r}. Dependency has non-callable annotation"
-            )
+#         # NOTE: The annotation will nearly always be callable (e.g. `int`)
+#         # This check needs to be changed to check for non primitive callables,
+#         # and more generally, nothing out of the standard library.
+#         if not callable(field.annotation):
+#             raise PreparationError(
+#                 f"Failed to prepare parameter: {self!r}. Dependency has non-callable annotation"
+#             )
 
-        self.dependency = field.annotation
+#         self.dependency = field.annotation

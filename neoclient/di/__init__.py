@@ -1,3 +1,4 @@
+import collections
 import dataclasses
 import inspect
 from typing import (
@@ -12,6 +13,7 @@ from typing import (
     TypeVar,
     Union,
 )
+import typing
 
 import httpx
 from di import Container, SolvedDependent, bind_by_type
@@ -27,7 +29,8 @@ from pydantic.fields import FieldInfo, ModelField, Undefined, UndefinedType
 from neoclient import api, utils
 from neoclient.composition import validate_fields
 from neoclient.di.dependencies import DEPENDENCIES
-from neoclient.params import Parameter, PathParameter, QueryParameter
+from neoclient.errors import PreparationError, ResolutionError
+from neoclient.params import BodyParameter, Parameter, PathParameter, QueryParameter
 from neoclient.validation import ValidatedFunction, parameter_to_model_field
 
 from ..models import RequestOpts, Response
@@ -49,6 +52,56 @@ T = TypeVar("T")
 EXECUTOR: Final[SupportsSyncExecutor] = SyncExecutor()
 
 DO_NOT_AUTOWIRE: Set[type] = {RequestOpts, Response, httpx.Response}
+
+
+@dataclasses.dataclass(unsafe_hash=True)
+class DependencyParameter(Parameter):
+    dependency: Optional[Callable] = None
+    use_cache: bool = True
+
+    def resolve_request(self, request: RequestOpts, /) -> Any:
+        if self.dependency is None:
+            raise ResolutionError(
+                f"Cannot resolve parameter {type(self)!r} without a dependency"
+            )
+
+        return inject_request(self.dependency, request, use_cache=self.use_cache)
+
+    def resolve_response(self, response: Response, /) -> Any:
+        if self.dependency is None:
+            raise ResolutionError(
+                f"Cannot resolve parameter {type(self)!r} without a dependency"
+            )
+
+        return inject_response(self.dependency, response, use_cache=self.use_cache)
+
+    def prepare(self, field: ModelField, /) -> None:
+        super().prepare(field)
+
+        if self.dependency is not None:
+            return
+
+        # NOTE: The annotation will nearly always be callable (e.g. `int`)
+        # This check needs to be changed to check for non primitive callables,
+        # and more generally, nothing out of the standard library.
+        if not callable(field.annotation):
+            raise PreparationError(
+                f"Failed to prepare parameter: {self!r}. Dependency has non-callable annotation"
+            )
+
+        self.dependency = field.annotation
+
+    def get_resolution_dependent(self) -> DependencyProviderType[Any]:
+        if self.dependency is None:
+            raise NotImplementedError  # TODO: Handle correctly.
+
+        return self.dependency
+
+    # def get_composition_dependent(
+    #     self, argument: Any, /
+    # ) -> DependencyProviderType[None]:
+    #     if self.dependency is None:
+    #         raise NotImplementedError # TODO: Handle correctly.
 
 
 def _build_bind_hook(subject: Union[RequestOpts, Response], /):
@@ -183,8 +236,6 @@ def infer(param: inspect.Parameter, subject: Union[RequestOpts, Response]) -> Pa
     # neoclient Parameter.
     parameter: Parameter
 
-    # print(repr(model_field), repr(model_field.annotation), repr(field_info))  # TEMP
-
     path_params: Set[str] = (
         utils.parse_format_string(str(subject.url))
         if profile is Profile.REQUEST
@@ -202,13 +253,30 @@ def infer(param: inspect.Parameter, subject: Union[RequestOpts, Response]) -> Pa
         )
     # n. Parameter type is a known dependency (TODO: Support subclasses)
     elif isinstance(param.annotation, type) and param.annotation in dependencies:
-        raise NotImplementedError
+        dependent: DependencyProviderType[type] = dependencies[param.annotation]
+
+        return DependencyParameter(dependency=dependent)
+
+        # raise NotImplementedError
         # # parameter = DependencyParameter(...)
         # return Dependent(
         #     dependencies[param.annotation]
         # )  # TODO: Use a neoclient Depends parameter?
     # n. Parameter type indicates a body parameter
-    # ...
+    elif (
+        (
+            isinstance(model_field.annotation, type)
+            and issubclass(model_field.annotation, (BaseModel, dict))
+        )
+        or dataclasses.is_dataclass(model_field.annotation)
+        or (
+            utils.is_generic_alias(model_field.annotation)
+            and typing.get_origin(model_field.annotation) in (collections.abc.Mapping,)
+        )
+    ):
+        parameter = BodyParameter(
+            default=utils.get_default(field_info),
+        )
     # n. Otherwise, assume a query parameter
     else:
         # Note: What if the type is non-primitive (e.g. foo: Foo),

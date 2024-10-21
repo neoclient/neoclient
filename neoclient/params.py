@@ -148,7 +148,8 @@ class Parameter(FieldInfo):
     def get_composition_dependent(
         self, argument: Any, /
     ) -> DependencyProviderType[None]:
-        raise NotImplementedError  # TODO: Handle correctly. (abstract?)
+        # raise NotImplementedError  # TODO: Handle correctly. (abstract?)
+        raise CompositionError(f"Parameter {type(self)!r} is not composable")
 
 
 class ComposableSingletonParameter(ABC, Parameter, Generic[K, V]):
