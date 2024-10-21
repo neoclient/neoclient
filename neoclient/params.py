@@ -258,6 +258,8 @@ class QueryParameter(
         key: str = self.parse_key(self.alias)
 
         # WARN: Doesn't currently support Sequence[str]
+        # Current thought process on this is that if they care, they should
+        # wire-in the parent (e.g. QueryParams in this case).
         def extract_param(params: QueryParams, /) -> Optional[str]:
             return params.get(key)
 
