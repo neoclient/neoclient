@@ -1,10 +1,9 @@
-from typing import Any, Callable, Optional, Sequence, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 from pydantic.fields import Undefined
 
 from neoclient.di import DependencyParameter
 
-# from .dependence import DependencyParameter
 from .params import (
     AllRequestStateParameter,
     AllResponseStateParameter,
