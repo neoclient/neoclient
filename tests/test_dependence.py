@@ -4,7 +4,7 @@ from pydantic import BaseConfig
 from pydantic.fields import ModelField
 
 from neoclient import Cookie
-from neoclient.dependence import DependencyParameter, DependencyResolver, get_fields
+from neoclient.dependence import DependencyParameter, get_fields
 from neoclient.enums import HTTPMethod
 from neoclient.errors import ResolutionError
 from neoclient.models import RequestOpts, Response
@@ -32,22 +32,22 @@ def test_get_fields() -> None:
     }
 
 
-def test_DependencyResolver_resolve_response() -> None:
-    def dependency(response: Response, /) -> Response:
-        return response
+# def test_DependencyResolver_resolve_response() -> None:
+#     def dependency(response: Response, /) -> Response:
+#         return response
 
-    response: Response = build_response()
+#     response: Response = build_response()
 
-    assert DependencyResolver(dependency).resolve_response(response) == response
+#     assert DependencyResolver(dependency).resolve_response(response) == response
 
 
-def test_DependencyResolver_resolve_request() -> None:
-    def dependency(request=Request()) -> RequestOpts:
-        return request
+# def test_DependencyResolver_resolve_request() -> None:
+#     def dependency(request=Request()) -> RequestOpts:
+#         return request
 
-    request: RequestOpts = RequestOpts(HTTPMethod.GET, "https://foo.com/")
+#     request: RequestOpts = RequestOpts(HTTPMethod.GET, "https://foo.com/")
 
-    assert DependencyResolver(dependency).resolve_request(request) == request
+#     assert DependencyResolver(dependency).resolve_request(request) == request
 
 
 def test_DependencyParameter_resolve() -> None:

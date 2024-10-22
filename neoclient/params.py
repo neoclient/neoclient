@@ -15,6 +15,7 @@ from typing import (
 
 import fastapi.encoders
 import httpx
+from di.api.providers import DependencyProviderType
 from httpx import Cookies, Headers, QueryParams
 from pydantic import Required
 from pydantic.fields import FieldInfo, ModelField, Undefined
@@ -137,6 +138,16 @@ class Parameter(FieldInfo):
         if self.alias is None:
             self.alias = model_field.name
 
+    # ALPHA/BETA METHODS
+    # TODO: Make abstract method?
+    def get_resolution_dependent(self) -> DependencyProviderType[Any]:
+        raise ResolutionError(f"Parameter {type(self)!r} is not resolvable")
+
+    def get_composition_dependent(
+        self, argument: Any, /
+    ) -> DependencyProviderType[None]:
+        raise CompositionError(f"Parameter {type(self)!r} is not composable")
+
 
 class ComposableSingletonParameter(ABC, Parameter, Generic[K, V]):
     def compose(self, request: RequestOpts, argument: Any, /) -> None:
@@ -237,6 +248,28 @@ class QueryParameter(
     ) -> ResponseResolver[Optional[Sequence[str]]]:
         return QueryResolver(key).resolve_response
 
+    def get_resolution_dependent(self) -> DependencyProviderType[Optional[str]]:
+        if self.alias is None:
+            raise Exception  # TODO: Handle properly.
+
+        key: str = self.parse_key(self.alias)
+
+        # WARN: Doesn't currently support Sequence[str]
+        # Current thought process on this is that if they care, they should
+        # wire-in the parent (e.g. QueryParams in this case).
+        def extract_param(params: QueryParams, /) -> Optional[str]:
+            return params.get(key)
+
+        return extract_param
+
+    def get_composition_dependent(
+        self, argument: Any, /
+    ) -> DependencyProviderType[None]:
+        def _do_compose(request: RequestOpts, /):
+            self.compose(request, argument)
+
+        return _do_compose
+
 
 @dataclass(unsafe_hash=True)
 class HeaderParameter(
@@ -293,6 +326,18 @@ class PathParameter(ComposableSingletonStringParameter):
 
     def build_consumer(self, key: str, value: str) -> RequestConsumer:
         return PathConsumer(key, value).consume_request
+
+    def get_resolution_dependent(self) -> DependencyProviderType[Optional[str]]:
+        if self.alias is None:
+            raise Exception  # TODO: Handle properly.
+
+        key: str = self.parse_key(self.alias)
+
+        # WARN: Doesn't currently support Sequence[str]
+        def extract_param(request: RequestOpts, /) -> Optional[str]:
+            return request.path_params.get(key)
+
+        return extract_param
 
 
 class QueryParamsParameter(Parameter):
