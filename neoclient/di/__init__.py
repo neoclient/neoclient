@@ -9,6 +9,7 @@ from typing import (
     Final,
     Mapping,
     MutableMapping,
+    MutableSequence,
     Optional,
     Set,
     Tuple,
@@ -27,20 +28,66 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo, ModelField, Undefined, UndefinedType
 
 from neoclient import api, utils
-from neoclient.composition import validate_fields
 from neoclient.di.dependencies import DEPENDENCIES
-from neoclient.errors import PreparationError, ResolutionError
+from neoclient.errors import DuplicateParameters, PreparationError, ResolutionError
 from neoclient.params import BodyParameter, Parameter, PathParameter, QueryParameter
 from neoclient.validation import ValidatedFunction, parameter_to_model_field
 
 from ..models import RequestOpts, Response
 from .enums import Profile
 
+# NeoClient needs to change its behaviour around body parameters based on how many of them there are.
+# This logic is currently broken in the new di implementation.
+# This could be implemented as some sort of pre-processing?
+# After inference happens, a parameter type is known for all function parameters, e.g:
+#   [QueryParameter, BodyParameter, BodyParameter, HeaderParameter]
+# Each parameter currently gets "prepared" (e.g. it needs to learn about their parameter/model field)
+#   Parameters could be "prepared" using more info such as the entire function?
+#   e.g. my_parameter.prepare(model_field, model)
+#   which is essentially: my_parameter.prepare(parameter, function)
+#   need to make sure that inference etc. doesn't need to happen multiple times
+#   though if something wants to interrogate the model/function
+# This logic is essentially to cover:
+# https://fastapi.tiangolo.com/tutorial/body-multiple-params/#multiple-body-parameters
+# total_body_fields: int = sum(
+#     isinstance(parameter, BodyParameter) for _, parameter in fields.values()
+# )
+# if total_body_fields > 1:
+#     field: str
+#     annotation: Any
+#     param: Parameter
+#     for field, (annotation, param) in fields.items():
+#         if not isinstance(param, BodyParameter):
+#             continue
+
+#         param = dataclasses.replace(param, embed=True)
+
+#         fields[field] = (annotation, param)
+
 T = TypeVar("T")
 
 EXECUTOR: Final[SupportsSyncExecutor] = SyncExecutor()
 
 DO_NOT_AUTOWIRE: Set[type] = {RequestOpts, Response, httpx.Response}
+
+
+def validate_fields(fields: Mapping[str, Tuple[Any, Parameter]], /) -> None:
+    parameter_aliases: MutableSequence[str] = [
+        parameter.alias
+        for _, parameter in fields.values()
+        if parameter.alias is not None
+    ]
+
+    # Validate that there are no parameters using the same alias
+    #   For example, the following function should fail validation:
+    #       @get("/")
+    #       def foo(a: str = Query(alias="name"), b: str = Query(alias="name")): ...
+    alias_counts: Mapping[str, int] = collections.Counter(parameter_aliases)
+    duplicate_aliases: Set[str] = {
+        alias for alias, count in alias_counts.items() if count > 1
+    }
+    if duplicate_aliases:
+        raise DuplicateParameters(f"Duplicate parameters: {duplicate_aliases!r}")
 
 
 @dataclasses.dataclass(unsafe_hash=True)
@@ -90,7 +137,11 @@ class DependencyParameter(Parameter):
 def _wrap_dependent(
     dependent: DependencyProviderType[T], parameter: inspect.Parameter
 ) -> DependencyProviderType[T]:
-    type_ = Undefined if parameter.annotation is inspect.Parameter.empty else parameter.annotation
+    type_ = (
+        Undefined
+        if parameter.annotation is inspect.Parameter.empty
+        else parameter.annotation
+    )
 
     @functools.wraps(dependent)
     def wrapper(*args, **kwargs) -> T:
@@ -128,11 +179,7 @@ def _build_bind_hook(subject: Union[RequestOpts, Response], /):
 
         parameter: Parameter = infer(param, subject)
 
-        return Dependent(
-            _wrap_dependent(
-                parameter.get_resolution_dependent(), param
-            )
-        )
+        return Dependent(_wrap_dependent(parameter.get_resolution_dependent(), param))
 
     return _bind_hook
 

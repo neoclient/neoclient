@@ -140,15 +140,12 @@ class Parameter(FieldInfo):
 
     # ALPHA/BETA METHODS
     # TODO: Make abstract method?
-    # def to_dependent(self) -> DependencyProviderType[Any]:
-    #     raise NotImplementedError  # TODO: Handle correctly.
     def get_resolution_dependent(self) -> DependencyProviderType[Any]:
-        raise NotImplementedError  # TODO: Handle correctly. (abstract?)
+        raise ResolutionError(f"Parameter {type(self)!r} is not resolvable")
 
     def get_composition_dependent(
         self, argument: Any, /
     ) -> DependencyProviderType[None]:
-        # raise NotImplementedError  # TODO: Handle correctly. (abstract?)
         raise CompositionError(f"Parameter {type(self)!r} is not composable")
 
 
