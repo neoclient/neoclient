@@ -16,7 +16,7 @@ from typing import (
 
 from httpx import Headers, QueryParams
 from pydantic import BaseConfig, BaseModel, create_model
-from pydantic.fields import FieldInfo, Undefined, ModelField
+from pydantic.fields import FieldInfo, ModelField, Undefined
 from pydantic.typing import display_as_type
 
 __all__ = (

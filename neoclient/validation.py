@@ -17,9 +17,8 @@ from typing import (
     overload,
 )
 
-from pydantic import BaseConfig, ConfigDict
 from pydantic.config import Extra
-from pydantic.fields import ModelField, Undefined
+from pydantic.fields import Undefined
 from pydantic.main import BaseModel, create_model
 from pydantic.typing import get_all_type_hints
 from pydantic.utils import to_camel
