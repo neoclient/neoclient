@@ -31,7 +31,7 @@ from neoclient import api, utils
 from neoclient.di.dependencies import DEPENDENCIES
 from neoclient.errors import DuplicateParameters, PreparationError, ResolutionError
 from neoclient.params import BodyParameter, Parameter, PathParameter, QueryParameter
-from neoclient.validation import ValidatedFunction, parameter_to_model_field
+from neoclient.validation import ValidatedFunction
 
 from ..models import RequestOpts, Response
 from .enums import Profile
@@ -147,7 +147,7 @@ def _wrap_dependent(
     def wrapper(*args, **kwargs) -> T:
         obj: Any = dependent(*args, **kwargs)
 
-        model_field: ModelField = parameter_to_model_field(parameter)
+        model_field: ModelField = utils.parameter_to_model_field(parameter)
         field_info: FieldInfo = model_field.field_info
 
         # If there is no resolution (e.g. missing header/query param etc.)
@@ -281,7 +281,7 @@ def infer(param: inspect.Parameter, subject: Union[RequestOpts, Response]) -> Pa
     )
     dependencies = DEPENDENCIES[profile]
 
-    model_field: ModelField = parameter_to_model_field(param)
+    model_field: ModelField = utils.parameter_to_model_field(param)
     field_info: FieldInfo = model_field.field_info
 
     # The aim of the game is to convert an inspect Parameter into a

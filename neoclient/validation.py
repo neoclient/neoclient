@@ -103,47 +103,6 @@ def create_func_model(
     )
 
 
-# NOTE: Does this belong here? It's not currently used by this module.
-# def parameter_to_model_field(parameter: Parameter, /) -> ModelField:
-#     class Config:
-#         arbitrary_types_allowed: bool = True
-
-#     annotation: Any = (
-#         Any if parameter.annotation is Parameter.empty else parameter.annotation
-#     )
-#     default: Any = (
-#         Undefined if parameter.default is Parameter.empty else parameter.default
-#     )
-
-
-#     return create_func_model(
-#         parameter.name,
-#         {parameter.name: (annotation, default)},
-#         config=Config,
-#     ).__fields__[parameter.name]
-def parameter_to_model_field(parameter: Parameter, /) -> ModelField:
-    class Config(BaseConfig):
-        # allow_population_by_field_name = True
-        arbitrary_types_allowed = True
-
-    annotation: Any = (
-        Any if parameter.annotation is Parameter.empty else parameter.annotation
-    )
-    default: Any = (
-        Undefined if parameter.default is Parameter.empty else parameter.default
-    )
-
-    return ModelField.infer(
-        name=parameter.name,
-        value=default,
-        annotation=annotation,
-        class_validators=None,
-        # class_validators={},
-        # config=BaseConfig,
-        config=Config,
-    )
-
-
 class ValidatedFunction(Generic[PS, RT]):
     function: Callable[PS, RT]
     model: Type[BaseModel]
